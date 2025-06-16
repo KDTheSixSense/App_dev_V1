@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # アプリケーションコンテナ (Next.js, Prisma)
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    working_dir: /workspaces/my-next-app/src
+    volumes:
+      - ..:/workspaces/my-next-app:cached
+    command: sleep infinity
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+      - "5556:5555"
+    # このコンテナが.envファイルを読むように設定
+    env_file:
+      - ../.env # docker-compose.ymlから見て一つ上の階層の.envファイル
+
+  # データベースコンテナ (PostgreSQL)
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    # このコンテナも.envファイルを読むように設定
+    # これにより、POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DBが自動で設定される
+    env_file:
+      - ../.env # docker-compose.ymlから見て一つ上の階層の.envファイル
+
+# 名前付きボリュームの定義
+volumes:
+  db_data:
