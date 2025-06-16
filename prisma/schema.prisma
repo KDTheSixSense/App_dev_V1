@@ -1,0 +1,18 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // 使用するデータベースプロバイダ
+  url      = env("DATABASE_URL") // 環境変数からデータベースURLを取得
+}
+
+// 例: Userモデル
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

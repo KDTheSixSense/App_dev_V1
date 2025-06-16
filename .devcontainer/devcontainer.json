@@ -1,0 +1,48 @@
+{
+    "name": "Node.js & Next.js & Prisma Development (with Docker Compose)", // 名前の更新 (任意)
+    // "build": { // ★ 削除: Docker Composeを使う場合、buildはdocker-compose.ymlに移動
+    //     "dockerfile": "Dockerfile",
+    //     "context": ".."
+    // },
+    "dockerComposeFile": [ // ★ 追加: docker-compose.ymlのパス
+        "docker-compose.yml"
+    ],
+    "service": "app", // ★ 追加: docker-compose.ymlでDev Containerとして使うサービスの名前
+    "workspaceFolder": "/workspaces/my-next-app", // ★ 更新: ワークスペースのパス (docker-compose.ymlのvolumesと合わせる)
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "bradlc.vscode-tailwindcss",
+                "yoavbls.pretty-ts-errors",
+                "ms-vscode.vscode-typescript-next",
+                "prisma.prisma"
+            ],
+            "settings": {
+                "editor.formatOnSave": true,
+                "eslint.alwaysShowStatus": true,
+                "eslint.validate": [
+                    "javascript",
+                    "javascriptreact",
+                    "typescript",
+                    "typescriptreact"
+                ],
+                "typescript.tsdk": "node_modules/typescript/lib"
+            }
+        }
+    },
+    "remoteUser": "node",
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "20"
+        }
+        // PostgreSQLクライアントが必要な場合
+        // "ghcr.io/devcontainers/features/postgresql-client:1": {
+        //     "version": "latest"
+        // }
+    },
+    "postCreateCommand": "npm install && npm install prisma @prisma/client",
+    "forwardPorts": [3000]
+}
