@@ -5,7 +5,7 @@
     //     "context": ".."
     // },
     "dockerComposeFile": [ // ★ 追加: docker-compose.ymlのパス
-        "docker-compose.yml"
+        "../docker-compose.yml"
     ],
     "service": "app", // ★ 追加: docker-compose.ymlでDev Containerとして使うサービスの名前
     "workspaceFolder": "/workspaces/my-next-app", // ★ 更新: ワークスペースのパス (docker-compose.ymlのvolumesと合わせる)
