@@ -4,7 +4,7 @@ const Page: NextPage = () => {
   return (
     <>
     <div>
-        hello world
+        課題作成ページ
     </div>
     </>
   )
