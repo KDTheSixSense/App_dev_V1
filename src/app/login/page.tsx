@@ -26,7 +26,7 @@ const Login = () => {
                 {/* //見出しとラベル */}
                 <h1 className="mb-4 text-2xl font-medium text-grey-700">ログイン</h1>
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-grey-600">メールアドレス</label>
+                    <label className="block text-sm font-medium text-gray-600">メールアドレス</label>
                     
                     {/* //入力部分 */}
                     <input
