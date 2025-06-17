@@ -4,7 +4,7 @@ const Page: NextPage = () => {
   return (
     <>
     <div>
-        assignment_creation Page
+        profile Page
     </div>
     </>
   )

@@ -24,6 +24,7 @@ const CreateQuestionsPage: React.FC = () => {
     router.push('/create_questions/qualification_creation');
   };
 
+  // カスタム問題作成ボタンのクリックハンドラ
   const handleCreateCustomClick = () => {
     // 指定されたパスに遷移
     // /create_questions/assignment_creation は、
