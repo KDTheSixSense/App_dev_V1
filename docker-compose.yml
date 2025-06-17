@@ -5,11 +5,13 @@ services:
     tty: true
     volumes:
       - ./src:/app
+      - node_modules:/app/node_modules
     environment:
       - WATCHPACK_POLLING=true
     command: sh -c "npm run dev"
     ports:
       - "3000:3000"
+      - "5555:5555"
   db:
     image: postgres:latest
     environment:
@@ -23,3 +25,4 @@ services:
       
 volumes:
   db_data:
+  node_modules:
