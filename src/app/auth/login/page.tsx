@@ -18,27 +18,45 @@ const Login = () => {
     const { register, handleSubmit, formState: { errors } } = useForm<Inputs>();
     const [loading, setLoading] = React.useState(false);
 
+    //非同期関数
     const onSubmit = async(data: Inputs) => {
         console.log("送信データ:", data);
     // ここにAPI呼び出しや状態更新処理を書く
+        //API通信の状態を示す
         setLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
+        //POSTリクエストを/api/auth/loginに送信
+        const res = await fetch('/api/auth/login', {
         method: 'POST',
+        //JSON形式
         headers: { 'Content-Type': 'application/json' },
+        //JSオブジェクトをJSON文字列変換
         body: JSON.stringify(data),
       });
+      //レスポンスが成功ではない
       if (!res.ok) {
         throw new Error('ログイン失敗');
       }
+      //JSONデータをJSオブジェクトに変換
       const result = await res.json();
       console.log('ログイン成功:', result);
       // ここに成功時の処理（例: トークン保存、ページ遷移）を追加
+
+
+
+
+
+
+
+
     } catch (error) {
       alert('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
     } finally {
       setLoading(false);
     }
+        //成功失敗でも必ず行う処理
+
+
 
     };
 
@@ -89,8 +107,8 @@ const Login = () => {
                         {...register("password", {
                             required: "パスワードは必須です",
                             minLength: {
-                                value: 8,
-                                message: "パスワードは8文字以上でなくてはなりません",
+                                value: 4,
+                                message: "パスワードは4文字以上でなくてはなりません",
                             },
                         })}
                         type="password"

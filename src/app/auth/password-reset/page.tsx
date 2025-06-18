@@ -29,6 +29,14 @@ const PasswordReset = () => {
   const onSubmit = (data: Inputs) => {
     console.log("フォームデータ:", data);
     // ここにパスワードリセットAPIなどの処理を追加
+
+
+
+
+
+
+
+    
   };
 
   return (
@@ -59,8 +67,8 @@ const PasswordReset = () => {
             {...register("newpassword", {
               required: "パスワードは必須です",
               minLength: {
-                value: 8,
-                message: "パスワードは8文字以上でなくてはなりません",
+                value: 4,
+                message: "パスワードは4文字以上でなくてはなりません",
               },
             })}
             type="password"
