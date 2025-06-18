@@ -15,7 +15,7 @@ env:
 
   # ★ マニフェスト用リポジトリの情報を指定
   MANIFEST_REPO: RyoNagashiro9280/k8s-manifest # ★ユーザー名/リポジトリ名
-  MANIFEST_PATH: charts/my-nextjs-app/values.yaml  # ★Helmチャートのvalues.yamlまでのパス
+  MANIFEST_PATH: charts/next-chart/values.yaml  # ★Helmチャートのvalues.yamlまでのパス
 
 jobs:
   # ジョブ1: Dockerイメージをビルドしてプッシュする
