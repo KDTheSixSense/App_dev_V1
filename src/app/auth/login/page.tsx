@@ -16,10 +16,46 @@ type Inputs = {
 const Login = () => {
     //useFormフックの呼び出し const以下の関数受け取り
     const { register, handleSubmit, formState: { errors } } = useForm<Inputs>();
-    
-    const onSubmit = (data: Inputs) => {
-    console.log("送信データ:", data);
+    const [loading, setLoading] = React.useState(false);
+
+    //非同期関数
+    const onSubmit = async(data: Inputs) => {
+        console.log("送信データ:", data);
     // ここにAPI呼び出しや状態更新処理を書く
+        //API通信の状態を示す
+        setLoading(true);
+    try {
+        //POSTリクエストを/api/auth/loginに送信
+        const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        //JSON形式
+        headers: { 'Content-Type': 'application/json' },
+        //JSオブジェクトをJSON文字列変換
+        body: JSON.stringify(data),
+      });
+      //レスポンスが成功ではない
+      if (!res.ok) {
+        throw new Error('ログイン失敗');
+      }
+      //JSONデータをJSオブジェクトに変換
+      const result = await res.json();
+      console.log('ログイン成功:', result);
+      // ここに成功時の処理（例: トークン保存、ページ遷移）を追加
+
+
+
+
+
+
+
+
+    } catch (error) {
+      alert('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+    } finally {
+      setLoading(false);
+    }
+        //成功失敗でも必ず行う処理
+
 
 
     };
@@ -29,9 +65,10 @@ const Login = () => {
         //Tailwind CSSを使用して見た目の変更・hookで入力チェック
         <div className="flex flex-col items-center justify-center h-screen">
             <form onSubmit={handleSubmit(onSubmit)} className="w-96 p-8 bg-white rounded-lg shadow-md">
+                
+                
 
                 {/*見出しとラベル*/}
-
                 <h1 className="mb-4 text-2xl font-medium text-gray-700">ログイン</h1>
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-600">メールアドレス</label>
@@ -70,8 +107,8 @@ const Login = () => {
                         {...register("password", {
                             required: "パスワードは必須です",
                             minLength: {
-                                value: 8,
-                                message: "パスワードは8文字以上でなくてはなりません",
+                                value: 4,
+                                message: "パスワードは4文字以上でなくてはなりません",
                             },
                         })}
                         type="password"
@@ -84,15 +121,20 @@ const Login = () => {
 
                 {/*ログインボタン*/}
                 <div className="flex justify-end">
-                    <button type="submit" className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700">
-                        ログイン
+                    <button
+                        type="submit"disabled={loading}
+                        className={`px-4 py-2 font-bold text-white rounded ${
+                        loading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'
+                    }`}
+                    >
+                    {loading ? 'ログイン中...' : 'ログイン'}
                     </button>
                 </div>
                 
                 {/*新規登録への案内リンク*/}
                 <div className="mt-4">
                     <span className="text-sm text-gray-600">初めてのご利用の方は</span>
-                    <Link href="/register" className="ml-1 text-sm font-bold text-blue-500 hover:text-blue-700">
+                    <Link href="/auth/register" className="ml-1 text-sm font-bold text-blue-500 hover:text-blue-700">
                         こちら
                     </Link>
                 </div>
@@ -100,7 +142,7 @@ const Login = () => {
                 {/*パスワード変更画面へのリンク*/}
                 <div className="mt-4">
                     <span className="text-sm text-gray-600">パスワードをお忘れの方は</span>
-                    <Link href="/password-reset" className="ml-1 text-sm font-bold text-blue-500 hover:text-blue-700">
+                    <Link href="/auth/password-reset" className="ml-1 text-sm font-bold text-blue-500 hover:text-blue-700">
                         こちら
                     </Link>
                 </div>
