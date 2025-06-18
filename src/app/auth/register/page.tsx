@@ -1,6 +1,8 @@
 'use client';
 import React from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";  // App Router用
+
 
 type Inputs = {
   email: string;
@@ -9,6 +11,9 @@ type Inputs = {
 };
 
 const Register = () => {
+
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -16,10 +21,20 @@ const Register = () => {
     getValues,
   } = useForm<Inputs>();
 
+  // 戻るボタン処理
+  const handleBack = () => {
+    router.push('/auth/login');  // 戻り先のパスを適宜設定してください
+  };
+
+
   // 送信時の処理
   const onSubmit = (data: Inputs) => {
     console.log("登録データ", data);
     // ここにAPI呼び出しや登録処理を書く
+
+
+
+    
   };
 
   return (
@@ -50,8 +65,8 @@ const Register = () => {
             {...register("newpassword", {
               required: "パスワードは必須です",
               minLength: {
-                value: 8,
-                message: "パスワードは8文字以上でなくてはなりません",
+                value: 4,
+                message: "パスワードは4文字以上でなくてはなりません",
               },
             })}
             type="password"
@@ -76,7 +91,15 @@ const Register = () => {
           )}
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-4">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
+          >
+            戻る
+          </button>
+
           <button
             type="submit"
             className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
