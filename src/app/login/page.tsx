@@ -29,10 +29,9 @@ const Login = () => {
         //Tailwind CSSを使用して見た目の変更・hookで入力チェック
         <div className="flex flex-col items-center justify-center h-screen">
             <form onSubmit={handleSubmit(onSubmit)} className="w-96 p-8 bg-white rounded-lg shadow-md">
-                
-                
 
                 {/*見出しとラベル*/}
+
                 <h1 className="mb-4 text-2xl font-medium text-gray-700">ログイン</h1>
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-600">メールアドレス</label>
