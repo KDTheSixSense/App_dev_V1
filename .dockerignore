@@ -1,0 +1,28 @@
+# ルートレベルの依存関係とビルド出力
+node_modules
+.next
+
+# サブディレクトリ内の依存関係とビルド出力
+src/node_modules
+src/.next
+src/app/password-reset
+src/app/register
+
+# あるいは、ワイルドカードを使って全てのnode_modulesを無視する
+# **/node_modules
+# **/.next
+
+# 環境変数ファイル
+.env
+.env*.local
+.env.local
+.env.production.local
+
+# Git
+.git
+.gitignore
+
+# その他
+README.md
+.devcontainer
+docker-compose.yml
