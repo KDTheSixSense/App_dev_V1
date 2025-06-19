@@ -1,10 +1,13 @@
-//ログイン画面
+//ログイン画面フォーム上で表示させる
+
+//現状、エラーをアラート表示にしているが工程進めば
 
 //クライアントコンポーネント
 'use client';
 import React from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 
 //email/password　の型宣言
 type Inputs = {
@@ -14,6 +17,9 @@ type Inputs = {
 
 
 const Login = () => {
+
+    const router = useRouter();
+
     //useFormフックの呼び出し const以下の関数受け取り
     const { register, handleSubmit, formState: { errors } } = useForm<Inputs>();
     const [loading, setLoading] = React.useState(false);
@@ -42,12 +48,8 @@ const Login = () => {
       console.log('ログイン成功:', result);
       // ここに成功時の処理（例: トークン保存、ページ遷移）を追加
 
-
-
-
-
-
-
+      // '/home'ページに遷移
+      router.push('/home'); 
 
     } catch (error) {
       alert('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
@@ -142,7 +144,7 @@ const Login = () => {
                 {/*パスワード変更画面へのリンク*/}
                 <div className="mt-4">
                     <span className="text-sm text-gray-600">パスワードをお忘れの方は</span>
-                    <Link href="/auth/password-reset" className="ml-1 text-sm font-bold text-blue-500 hover:text-blue-700">
+                    <Link href="/auth/mail" className="ml-1 text-sm font-bold text-blue-500 hover:text-blue-700">
                         こちら
                     </Link>
                 </div>

@@ -26,18 +26,34 @@ const PasswordReset = () => {
   };
 
   // フォーム送信時処理
-  const onSubmit = (data: Inputs) => {
-    console.log("フォームデータ:", data);
-    // ここにパスワードリセットAPIなどの処理を追加
+  const onSubmit = async (data: Inputs) => {
+  try {
 
+    const res = await fetch('/api/auth/password-reset', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: data.email,
+        newPassword: data.newpassword,
+      }),
+    });
 
+    const result = await res.json();
 
+    if (!res.ok) {
+      alert(result.message || 'パスワード変更に失敗しました');
+      return;
+    }
 
-
-
-
-    
-  };
+    alert('パスワードを変更しました');
+    router.push('/auth/login');
+  } catch (error) {
+    console.error('エラー:', error);
+    alert('システムエラーが発生しました');
+  }
+};
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
