@@ -8,6 +8,7 @@ type Inputs = {
   email: string;
   newpassword: string;
   anspassword?: string;
+  birth?: string;
 };
 
 const Register = () => {
@@ -28,14 +29,47 @@ const Register = () => {
 
 
   // 送信時の処理
-  const onSubmit = (data: Inputs) => {
-    console.log("登録データ", data);
-    // ここにAPI呼び出しや登録処理を書く
+  const onSubmit = async (data: Inputs) => {
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.newpassword,
+        birth: data.birth,
+      }),
+    });
 
+    const text = await res.text(); // 先に読み込む
 
+    if (!res.ok) {
+      try {
+        const json = JSON.parse(text);
+        alert(json.message || '登録失敗');
+      } catch {
+        alert('登録に失敗しました（無効なレスポンス）');
+      }
+      return;
+    }
 
-    
-  };
+    try {
+      const json = JSON.parse(text);
+      alert(json.message || '登録成功');
+      router.push('/auth/login');
+    } catch {
+      alert('登録は成功しましたが、レスポンスが不正です');
+      router.push('/auth/login');
+    }
+
+  } catch (err) {
+    console.error('登録時エラー:', err);
+    alert('登録中にエラーが発生しました');
+  }
+};
+
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
@@ -76,6 +110,25 @@ const Register = () => {
             <span className="text-sm text-red-600">{errors.newpassword.message}</span>
           )}
 
+        </div>
+
+        {/* 生年月日入力 */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-600">生年月日</label>
+          <input
+            {...register("birth", {
+              required: "生年月日は必須です",
+            })}
+            type="date"
+            className="w-full p-2 mt-1 border-2 rounded-md"
+          />
+          {errors.birth && (
+            <span className="text-sm text-red-600">{errors.birth.message}</span>
+          )}
+        </div>
+        
+
+          <div className="mb-4">
           <label className="block text-sm font-medium text-gray-600 mt-4">パスワード確認</label>
           <input
             {...register("anspassword", {
