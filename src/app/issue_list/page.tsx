@@ -1,15 +1,35 @@
-'use client'; // useRouter を使うため、クライアントコンポーネントであることを明示
+/**
+ * @file 問題カテゴリ選択ページのメインコンポーネントです。
+ * @description
+ * このページは、ユーザーが学習したい問題のカテゴリ（ITパスポート、基本情報など）を
+ * 選択するためのメニュー画面として機能します。
+ * 各カテゴリはカード形式で表示され、クリックすると対応する問題ページへ遷移します。
+ */
 
+// 'use client' は、このコンポーネントがクライアントサイドで動作することを示すNext.jsの宣言です。
+// これにより、useStateやuseEffect、useRouterなどのReactフックが使用可能になります。
+'use client'; 
+
+// --- React / Next.js のコア機能 ---
 import React from 'react';
-import { useRouter } from 'next/navigation'; // useRouter をインポート
-import IssueCard from './components/IssueCard'; // QuestionCard から IssueCard に変更
-import AdviceSection from './components/AdviceSection';
+import { useRouter } from 'next/navigation'; // Next.jsのページ遷移（ナビゲーション）機能をインポート
 
-// カードのデータ
+// --- 自作コンポーネント ---
+// 画面を構成する各UIパーツをインポートします。
+import IssueCard from './components/IssueCard';     // 各問題カテゴリを表示するカードコンポーネント
+import AdviceSection from './components/AdviceSection'; // 右側に表示されるアドバイスセクションのコンポーネント
+
+/**
+ * @constant questionCategories
+ * @description
+ * 画面に表示する問題カテゴリのデータを定義した配列です。
+ * タイトル、説明、そしてカードがクリックされたときに遷移する先のパス（URL）を保持します。
+ * 新しいカテゴリを追加する場合は、この配列に新しいオブジェクトを追加するだけで済みます。
+ */
 const questionCategories = [
   { title: 'ITパスポート', description: 'Title\nDescription', path: '/issue_list/it_passport_problem' },
   { title: '基本情報 科目A', description: 'Title\nDescription', path: '/issue_list/basic_info_a_problem' },
-  { title: '基本情報 科目B', description: 'Title\nDescription', path: '/issue_list/basic_info_b_problem' }, // ★遷移先パスを追加★
+  { title: '基本情報 科目B', description: 'Title\nDescription', path: '/issue_list/basic_info_b_problem/1' }, // 科目Bは最初の問題(ID:1)に直接遷移
   { title: '応用情報 午前', description: 'Title\nDescription', path: '/issue_list/applied_info_morning_problem' },
   { title: '応用情報 午後', description: 'Title\nDescription', path: '/issue_list/applied_info_afternoon_problem' },
   { title: '情報検定', description: 'Title\nDescription', path: '/issue_list/information_exam_problem' },
@@ -18,37 +38,61 @@ const questionCategories = [
   { title: 'Python', description: 'Title\nDescription', path: '/issue_list/python_problem' },
 ];
 
+/**
+ * 問題カテゴリ選択ページコンポーネント
+ */
 const QuestionsPage: React.FC = () => {
-  const router = useRouter(); // useRouter フックを初期化
+  // --- Hooks ---
+  // Next.jsのルーター機能を初期化し、プログラムによるページ遷移を可能にします。
+  const router = useRouter();
 
-  // カードがクリックされたときのハンドラ
+  // --- Handlers ---
+  // ユーザーのアクション（ボタンクリックなど）に応じて実行される関数です。
+
+  /**
+   * IssueCardコンポーネントがクリックされたときに呼び出される処理。
+   * @param path - 遷移先のURLパス文字列。
+   */
   const handleCardClick = (path: string) => {
+    // pathが空や未定義でないことを確認
     if (path) {
-      router.push(path); // 指定されたパスに遷移
+      // 指定されたパスにページを遷移させる
+      router.push(path);
     } else {
+      // もしpathが設定されていないカードがクリックされた場合のフォールバック処理
       console.log('このカテゴリには遷移パスが設定されていません。');
-      // ここで、パスが設定されていない場合のフォールバック処理やアラートなどを表示できます
+      // ここで、ユーザーにアラートを表示するなどの対応も可能です。
     }
   };
 
+  // --- Render (画面描画) ---
+  // 画面の構造をJSX（HTMLに似た記法）で記述します。
   return (
+    // ページ全体のコンテナ。背景色や最小の高さなどを設定。
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
-      {/* 上部のナビゲーションバー部分は、このコンポーネントのスコープ外にあると仮定します。
-          通常はLayoutコンポーネントや別のヘッダーコンポーネントで管理されます。 */}
-
+      
       {/* メインコンテンツエリア */}
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8">
+        
         {/* 左側の出題項目（9つのカード）エリア */}
         <div className="flex-1 bg-white p-8 rounded-lg shadow-md">
           <h2 className="text-xl font-bold mb-6 text-gray-700">出題項目</h2>
+          
+          {/* カードをグリッドレイアウトで表示。画面サイズに応じて列数が変わるレスポンシブ対応。 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* `questionCategories` 配列の要素を一つずつ取り出し、IssueCardコンポーネントとして画面に表示します。 */}
             {questionCategories.map((category, index) => (
-              <IssueCard // QuestionCard から IssueCard に変更
+              <IssueCard
+                // Reactがリスト内の各要素を効率的に管理するために必要な、一意の `key` を設定します。
                 key={index}
+                // カードに表示するタイトルを渡します。
                 title={category.title}
+                // カードに表示する説明文を渡します。
                 description={category.description}
-                onClick={() => handleCardClick(category.path)} // ★onClick ハンドラを追加★
-                // isSelected={category.title === '基本情報 科目B'} // ★基本情報 科目Bが選択されているスタイルを適用するためのpropsを追加（オプション）★
+                // カードがクリックされたときに `handleCardClick` 関数を実行するように設定します。
+                // その際、そのカテゴリに対応する `path` を引数として渡します。
+                onClick={() => handleCardClick(category.path)}
               />
             ))}
           </div>
@@ -60,10 +104,9 @@ const QuestionsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 下部のライトブルーのフッターのような部分 (もしあれば) */}
-      {/* <div className="w-full h-20 bg-blue-400 mt-10"></div> */}
     </div>
   );
 };
 
+// このコンポーネントを他のファイルからインポートして使用できるようにします。
 export default QuestionsPage;

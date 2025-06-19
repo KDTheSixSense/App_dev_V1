@@ -15,6 +15,7 @@ interface AnswerOption {
  * ProblemStatement コンポーネントが受け取るプロップスの型を定義するインターフェース。
  */
 interface ProblemStatementProps {
+  description: string;
   programText: string;               // 表示するプログラム（疑似言語）のテキスト
   answerOptions: AnswerOption[];     // 解答群の選択肢の配列
   onSelectAnswer: (selectedValue: string) => void; // 解答が選択されたときに呼び出される関数
@@ -29,6 +30,7 @@ interface ProblemStatementProps {
 // ProblemStatement コンポーネントの定義
 // このコンポーネントは、問題文、疑似言語プログラム、解答群、そして解答後の解説を表示します。
 const ProblemStatement: React.FC<ProblemStatementProps> = ({
+  description,
   programText,       // プログラムテキスト
   answerOptions,     // 解答の選択肢
   onSelectAnswer,    // 解答選択時のハンドラ
@@ -47,22 +49,9 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
       {/* タイトルと問題文の間の区切り線 */}
       <hr className="mb-6 border-gray-300" />
 
-      {/* 問題文のセクション */}
-      <div className="mb-6">
-        {/* 問題の穴埋め部分の最初の文 */}
-        <p className="text-base text-gray-800 mb-2">
-          {t.questionSentence1} {/* 例: "次の記述中の" */}
-          {/* 穴埋め用の空白部分 */}
-          <span className="inline-block border-b border-gray-400 w-20 text-center">　　　</span>
-          {t.questionSentence2} {/* 例: "に入れる正しい答えを、解答群の中から選べ。" */}
-        </p>
-        {/* 問題の穴埋め部分の2番目の文 */}
-        <p className="text-base text-gray-800">
-          {t.questionSentence3} {/* 例: "プログラムを実行すると、" */}
-          {/* 穴埋め用の空白部分 */}
-          <span className="inline-block border-b border-gray-400 w-16 text-center">　　　</span>
-          {t.questionSentence4} {/* 例: "と出力される。" */}
-        </p>
+      {/* 問題文のエリア */}
+      <div className="mb-6 text-base text-gray-800 leading-relaxed">
+        {description}
       </div>
 
       {/* プログラム（疑似言語）の表示セクション */}
