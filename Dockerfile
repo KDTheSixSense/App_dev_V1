@@ -36,6 +36,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Prismaのスキーマファイルも実行環境にコピーする
+# これがないと、実行時にPrismaがスキーマを見つけられずにエラーになることがある
+COPY --from=builder /app/prisma ./prisma
+
 USER nextjs
 
 EXPOSE 3000
