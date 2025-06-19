@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "./home/Header"; //home/Headerとbodyを読み込み、HeaderとBodyに定義
-import Body from "./home/body";
+import Body from "./home/Body";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
