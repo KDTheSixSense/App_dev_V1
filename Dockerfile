@@ -7,15 +7,20 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # 依存関係のファイルだけを先にコピー
-COPY src/package.json src/package-lock.json* ./
+COPY app/src/package.json ./
+COPY app/src/package-lock.json* ./
+# prismaのスキーマファイルも先にコピーしておく
+COPY app/src/prisma ./prisma/
 
 # 依存関係をインストール
+# ここで、package.json の "postinstall" スクリプトが自動で実行されて、
+# "prisma generate" も一緒にやってくれる！
 RUN npm install
 
-# プロジェクトのソースコードを全部コピー
-COPY src/ .
+# アプリケーションのソースコードを全部コピー
+COPY app/src/ .
 
-# Next.jsアプリをビルド (next.config.js に output: 'standalone' がある前提)
+# Next.jsアプリをビルド
 RUN npm run build
 
 
@@ -31,10 +36,14 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # ビルダー(builder)ステージから、実行に必要なファイルだけをコピー
-# standaloneモードの出力を使うと、これだけでOK
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# ★ standaloneモードでも、Prismaのスキーマファイルと生成されたクライアントが必要！
+# .next/standalone/node_modules/@prisma/client には生成済みクライアントがあるはずやけど、
+# スキーマファイルも一緒に置いとくのが安全。
+COPY --from=builder /app/prisma ./prisma
 
 USER nextjs
 
