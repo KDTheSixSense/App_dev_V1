@@ -9,6 +9,11 @@ services:
     working_dir: /workspaces/my-next-app/src
     volumes:
       - ..:/workspaces/my-next-app:cached
+
+    #environment:
+    #  - WATCHPACK_POLLING=true
+    #  - NEXT_PUBLIC_BASE_URL=http://localhost:3000
+
     command: sleep infinity
     depends_on:
       - db
@@ -17,7 +22,9 @@ services:
       - "5556:5555"
     # このコンテナが.envファイルを読むように設定
     env_file:
+
       - .env # docker-compose.ymlから見て一つ上の階層の.envファイル
+      - ../.env.local
 
   # データベースコンテナ (PostgreSQL)
   db:
