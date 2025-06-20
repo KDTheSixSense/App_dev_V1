@@ -23,7 +23,7 @@ services:
     # このコンテナが.envファイルを読むように設定
     env_file:
 
-      - ../.env # docker-compose.ymlから見て一つ上の階層の.envファイル
+      - .env # docker-compose.ymlから見て一つ上の階層の.envファイル
       - ../.env.local
 
   # データベースコンテナ (PostgreSQL)
@@ -37,7 +37,7 @@ services:
     # このコンテナも.envファイルを読むように設定
     # これにより、POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DBが自動で設定される
     env_file:
-      - ../.env # docker-compose.ymlから見て一つ上の階層の.envファイル
+      - .env # docker-compose.ymlから見て一つ上の階層の.envファイル
 
 # 名前付きボリュームの定義
 volumes:
