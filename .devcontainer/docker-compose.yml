@@ -22,6 +22,7 @@ services:
       - "5556:5555"
     # このコンテナが.envファイルを読むように設定
     env_file:
+
       - ../.env # docker-compose.ymlから見て一つ上の階層の.envファイル
       - ../.env.local
 
