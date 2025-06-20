@@ -17,6 +17,7 @@ src/app/register
 .env*.local
 .env.local
 .env.production.local
+/.devcontainer/.env
 
 # Git
 .git
