@@ -7,6 +7,10 @@ services:
       - ./src:/app
     environment:
       - WATCHPACK_POLLING=true
+
+    env_file:
+      - .env.local
+
     command: sh -c "npm run dev"
     ports:
       - "3000:3000"

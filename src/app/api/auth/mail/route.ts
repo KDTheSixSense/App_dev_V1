@@ -1,9 +1,7 @@
-// api/auth/mail.ts （POSTで呼び出される想定）
-// api/auth/password-reset/route.ts
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { randomBytes, createHash } from 'crypto'; // createHash を追加
+import { randomBytes, createHash } from 'crypto';
+import nodemailer from 'nodemailer'; // Nodemailerをインポートします
 
 export async function POST(req: Request) {
   try {
@@ -11,41 +9,54 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({ where: { email } });
 
-    // ★ 修正点1: ユーザーが存在する場合のみ処理を行う
     if (user) {
-      // ★ 修正点3: トークンを生成し、ハッシュ化する
+      // --- トークン生成ロジック ---
       const rawToken = randomBytes(32).toString('hex');
       const hashedToken = createHash('sha256').update(rawToken).digest('hex');
-      
-      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1時間後
+      const expires = new Date(Date.now() + 3600000); // 1時間後
 
-      // ★ 修正点2: DBスキーマに合わせた正しいフィールド名を使用
       await prisma.user.update({
         where: { email },
         data: {
-          resetPasswordToken: hashedToken, // ハッシュ化したトークンを保存
+          resetPasswordToken: hashedToken,
           resetPasswordTokenExpiry: expires,
         },
       });
 
-      // メールにはハッシュ化する前の生のトークンを使用する
       const resetUrl = `https://yourdomain.com/reset-password?token=${rawToken}`;
-      const message = `パスワードをリセットするには、次のリンクをクリックしてください:\n\n${resetUrl}`;
+      console.log(`[開発用] リセットURL: ${resetUrl}`);
 
-      // 実際のメール送信処理
-      // await sendMail(email, message);
-      console.log(`[開発用] リセットURL: ${resetUrl}`); // 開発中はコンソールで確認
+      // --- Nodemailer (Gmail) メール送信ロジック ---
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_SERVER_USER,
+          pass: process.env.EMAIL_SERVER_PASSWORD, // 16桁のアプリパスワード
+        },
+      });
+
+      const mailOptions = {
+        from: `"あなたのサービス名" <${process.env.EMAIL_FROM}>`,
+        to: email,
+        subject: 'パスワードの再設定について',
+        html: `
+          <p>パスワードを再設定するには、以下のリンクをクリックしてください。</p>
+          <p>このリンクは1時間有効です。</p>
+          <a href="${resetUrl}">${resetUrl}</a>
+        `,
+      };
+
+      await transporter.sendMail(mailOptions);
+      
+      console.log(`Gmail経由でメール送信成功 (to: ${email})`);
     }
     
-    // ★ 修正点1: ユーザーの存在有無に関わらず、常に同じ成功応答を返す
-    // ★ 修正点4: NextResponse.json() を使用
     return NextResponse.json({ 
-      message: 'パスワード再設定用のメールを送信しました。メールボックスをご確認ください。' 
+      message: 'パスワード再設定用のリクエストを受け付けました。' 
     });
 
   } catch (error) {
-    console.error(error);
-    // 予期せぬエラーが発生した場合も、詳細を返さず一般的なメッセージを返す
+    console.error('!!! Gmail送信またはDB処理でエラーが発生 !!!', error);
     return NextResponse.json({ message: 'サーバーでエラーが発生しました。' }, { status: 500 });
   }
 }
