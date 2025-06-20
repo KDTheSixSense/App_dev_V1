@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0 ",
     "build": "next build",
-    "start": "next start -H 0.0.0.0", 
+    "start": "next start -H 0.0.0.0",
     "lint": "next lint"
   },
   "dependencies": {
@@ -28,6 +28,10 @@
     "@types/react-dom": "^19",
     "prisma": "^6.10.0",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   }
 }
