@@ -1,21 +1,20 @@
 // lib/mail.ts
-import nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer'; // nodemailerをインポートします
 
 // メール送信関数の定義
 export async function sendPasswordResetEmail(to: string, url: string) {
-  // 1. 送信に使用するSMTPサーバーの情報を設定
-  //    実際には環境変数から取得するのが安全です
+  // 1. Gmail用の送信設定を作成します
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: 'gmail', // Gmailサービスを指定
     auth: {
-      user: process.env.EMAIL_SERVER_USER, // .env.localファイルから取得
-      pass: process.env.EMAIL_SERVER_PASSWORD, // .env.localファイルから取得
+      user: process.env.EMAIL_SERVER_USER, // .env.localから取得
+      pass: process.env.EMAIL_SERVER_PASSWORD, // .env.localから取得 (16桁のアプリパスワード)
     },
   });
 
-  // 2. 送信するメールの内容を設定
+  // 2. 送信するメールの内容を設定します
   const mailOptions = {
-    from: `"あなたのサービス名" <${process.env.EMAIL_FROM}>`, // 送信元
+    from: `"INFOPIA" <${process.env.EMAIL_FROM}>`, // 送信元
     to: to, // 送信先
     subject: 'パスワードの再設定について', // 件名
     html: `
@@ -25,13 +24,12 @@ export async function sendPasswordResetEmail(to: string, url: string) {
     `,
   };
 
-  // 3. メールを送信
+  // 3. メールを送信します
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent successfully.');
+    console.log('Password reset email sent successfully via Gmail.');
   } catch (error) {
-    console.error('Failed to send password reset email:', error);
-    // エラーを投げるか、あるいはここで適切に処理します
+    console.error('Failed to send email via Gmail:', error);
     throw new Error('Email could not be sent.');
   }
 }
