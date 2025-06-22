@@ -1,4 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User{
+  id        Int      @id @default(autoincrement()) // ID: 整数型、主キー、自動増分
+  email     String   @unique                       // メールアドレス: 文字列型、ユニーク
+  password  String                               // パスワード: 文字列型
+  hash      String?                              // ハッシュ値: 文字列型、Null許容
+  username  String?                              // ユーザー名: 文字列型、Null許容
+  year      Int?                                 // 年: 整数型、Null許容
+  class     Int?                                 // クラス: 整数型、Null許容
+  birth     DateTime @db.Date                    // 誕生日: 日付型、Null許容
+
+  }
