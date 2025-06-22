@@ -9,7 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+<<<<<<< HEAD
     "lucide-react": "^0.517.0",
+=======
+    "@prisma/client": "^6.10.0",
+>>>>>>> a162b691c818232fc723dedd9c50b2511b305c1d
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -20,6 +24,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "prisma": "^6.10.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
