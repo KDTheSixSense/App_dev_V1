@@ -225,7 +225,7 @@ export const problems: Problem[] = [
     },
     correctAnswer: '17',
     explanationText: { ja: `makeNewArray({3, 2, 1, 6, 5, 4})を呼び出したときの処理の流れをトレースしていきます...\n`, en: ``},
-    initialVariables: { in: [3, 2, 1, 6, 5, 4], out: [], i: null, tail: null }, // この問題では入力配列が固定
+    initialVariables: { in: null, out: null, i: null, tail: null }, // この問題では入力配列が固定
     // traceLogic: ループ処理を持つため、各行の処理を定義します。
     // ループの制御は `calculateNextLine` が担当します。
     traceLogic: [
