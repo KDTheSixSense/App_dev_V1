@@ -1,31 +1,32 @@
-# ステージ1: ビルド環境 (依存関係のインストールとアプリケーションのビルド)
+# --------------------------------------------------------------------
+# ステージ1: ビルダー (Builder)
+# --------------------------------------------------------------------
 FROM node:20-alpine AS builder
 
-# 作業ディレクトリを設定
+# Next.jsプロジェクトのルートを作業ディレクトリにする
 WORKDIR /app
 
-# 依存関係のファイルを先にコピーして、キャッシュを効かせる
-COPY package.json yarn.lock* package-lock.json* ./
+# 依存関係のファイルを先にコピー
+COPY src/package.json src/package-lock.json* ./
 
-# 依存関係をインストール (npm, yarn, pnpm など、あんたが使ってるものに合わせてな)
-# RUN yarn install
+# 依存関係をインストール
 RUN npm install
 
-# アプリケーションのソースコードを全部コピー
-COPY . .
+# プロジェクトのソースコードを全部コピー
+COPY src/ .
 
-# ★ ビルド時に必要な環境変数をここで設定
-# ARG NEXT_PUBLIC_API_ENDPOINT=https://api.example.com
-# ENV NEXT_PUBLIC_API_ENDPOINT=$NEXT_PUBLIC_API_ENDPOINT
+# ★★★★★★★★★★★★★★★★★★★★★★★
+# ★ ここに Prisma Client を生成するコマンドを追加！ ★
+# ★★★★★★★★★★★★★★★★★★★★★★★
+RUN npx prisma generate
 
-# Next.jsアプリをビルド
+# Next.jsアプリをビルド (next.config.js に output: 'standalone' がある前提)
 RUN npm run build
 
-# 実行時に必要な本番用の依存関係だけをインストール
-RUN npm prune --production
 
-
-# ステージ2: 実行環境 (軽量なイメージ)
+# --------------------------------------------------------------------
+# ステージ2: ランナー (Runner)
+# --------------------------------------------------------------------
 FROM node:20-alpine AS runner
 
 WORKDIR /app
@@ -34,22 +35,21 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# ビルドステージから、実行に必要なファイルだけをコピー
+# ビルダー(builder)ステージから、実行に必要なファイルだけをコピー
+# standaloneモードの出力を使うと、これだけでOK
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# ディレクトリの所有者を新しいユーザーに変更
+# Prismaのスキーマファイルも実行環境にコピーする
+# これがないと、実行時にPrismaがスキーマを見つけられずにエラーになることがある
+COPY --from=builder /app/prisma ./prisma
+
 USER nextjs
-RUN chown -R nextjs:nodejs ./.next
 
-# Next.jsアプリが使うポートを公開
 EXPOSE 3000
 
-# ★ 実行時に必要な環境変数を設定 (これはKubernetesのSecret/ConfigMapから渡すのが本番流)
-# ENV NODE_ENV=production
-# ENV DATABASE_URL=... (Secretから)
+ENV NODE_ENV=production
 
 # アプリケーションを起動
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
