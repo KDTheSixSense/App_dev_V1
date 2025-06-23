@@ -91,18 +91,34 @@ const router =useRouter();
           </ul>
         </nav>
       </div>
-      <div className='flex items-center justify-end ml-auto mr-2 w-20 h-20'>
-        <div className='flex flex-col items-center justify-center'>
-          <div className='flex w-10 h-5'>
-            <p>ランク</p>
+      <div className='flex items-center ml-auto mr-2 w-40 h-20'>
+        <div className='flex flex-col items-center justify-center w-25 h-20'>
+          <div className='flex w-full h-8 justify-center'>
+            <Image
+              src="/images/test_rank.png"
+              alt="ユーザーアイコン"
+              width={60}
+              height={30}
+            />
           </div>
-          <div className='flex w-10 h-5'>
-            <p>日数</p>
+          <div className='flex w-full h-8 justify-center'>
+            <Image
+              src="/images/test_login.png"
+              alt="ユーザーアイコン"
+              width={60}
+              height={30}
+            />
           </div>
         </div>
-        <div className='flex items-center justify-end border-2 px border-[#ccc] rounded-full h-10 w-10 bg-white'>
+        <div className='flex items-center justify-end rounded-full h-15 w-15 bg-white'>
           <Link href="/" className="">
-            ログイン
+            <Image
+              src="/images/test_icon.webp"
+              alt="ユーザーアイコン"
+              width={60}
+              height={60}
+              className="rounded-full"
+            />
           </Link>
         </div>
       </div>
