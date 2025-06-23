@@ -22,8 +22,11 @@ export async function POST(req: Request) {
           resetPasswordTokenExpiry: expires,
         },
       });
+      
+      // 環境変数からベースURLを取得
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-      const resetUrl = `https://yourdomain.com/reset-password?token=${rawToken}`;
+      const resetUrl = `${baseUrl}/reset-password/${rawToken}`;
       console.log(`[開発用] リセットURL: ${resetUrl}`);
 
       // --- Nodemailer (Gmail) メール送信ロジック ---
@@ -36,7 +39,7 @@ export async function POST(req: Request) {
       });
 
       const mailOptions = {
-        from: `"あなたのサービス名" <${process.env.EMAIL_FROM}>`,
+        from: `"INFOPIA" <${process.env.EMAIL_FROM}>`,
         to: email,
         subject: 'パスワードの再設定について',
         html: `

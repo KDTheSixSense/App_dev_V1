@@ -34,7 +34,7 @@ const router =useRouter();
               </button>
             </div>
             <div className='flex w-20 h-20 items-center justify-center m-0'>
-              <button onClick={() => router.push('/')} className="hover:bg-[#ddd] flex flex-col transition-colors justify-center items-center rounded">
+              <button onClick={() => router.push('/issue_list')} className="hover:bg-[#ddd] flex flex-col transition-colors justify-center items-center rounded">
                 <Image
                     src="/images/question_list.png"
                     alt="問題一覧"
