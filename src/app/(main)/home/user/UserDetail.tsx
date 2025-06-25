@@ -5,6 +5,18 @@ export default async function UserDetail() {
 
     const user = await prisma.user.findFirst();
 
+    let progressPercentage = 0;
+    let currentXpInLevel = 0;
+    const requiredXpForLevelUp = 1000;
+
+    if (user) {
+        // 1. 現在のレベルでの経験値を取得
+        currentXpInLevel = user.xp % requiredXpForLevelUp;
+
+        // 2. パーセンテージを計算
+        progressPercentage = (currentXpInLevel / requiredXpForLevelUp) * 100;
+    }
+
     return (
         <div className="flex flex-col w-full max-w-150 h-100 rounded-lg shadow-lg p-4">
             <div className="flex items-center w-full h-50 gap-10 pl-10">
@@ -31,7 +43,7 @@ export default async function UserDetail() {
                     )}
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-5 relative overflow-hidden mt-2">
-                    <div className="bg-lime-400 rounded-full h-full absolute top-0 left-0" style={{ width:'50%'}}>
+                    <div className="bg-lime-400 rounded-full h-full absolute top-0 left-0" style={{ width: `${progressPercentage}%`}}>
                     </div>
                 </div>
             </div>
