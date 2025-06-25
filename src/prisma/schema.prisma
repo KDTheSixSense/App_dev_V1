@@ -18,7 +18,10 @@ model User{
   birth     DateTime? @db.Date                    // 誕生日: 日付型、Null許容
   resetPasswordToken         String?
   resetPasswordTokenExpiry DateTime?
+  level     Int @default(1)                     //アカウントレベル
+  xp        Int @default(0)                     //総経験値
 
+  progresses UserSubjectProgress[] // このユーザーの科目別進捗のリスト
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
   // answers   UserAnswer[]
 }
@@ -89,4 +92,33 @@ model UserAnswer {
   // --- 制約 ---
   // 同じユーザーが同じ問題に複数回解答した履歴をすべて残す想定です。
   // もし最新の解答状況だけを記録したい場合は `@@unique([userId, problemId])` を追加します。
+}
+
+//科目テーブル
+model Subject {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+
+  userProgresses UserSubjectProgress[] // この科目を学習しているユーザーの進捗リスト
+}
+
+model UserSubjectProgress {
+  level Int @default(1)                     //科目ごとのレベル
+  xp    Int @default(0)                     //科目ごとの経験値
+
+// --- リレーションのためのフィールド ---
+  userId    Int
+  subjectId Int
+
+  // --- リレーション定義 ---
+  // この進捗がどのユーザーのものかを示す
+  user    User    @relation(fields: [userId], references: [id])
+  // この進捗がどの科目のものかを示す
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  // --- 複合主キー ---
+  // userIdとsubjectIdの組み合わせがユニークであることを保証する
+  // (一人のユーザーが同じ科目で複数の進捗を持つことはないため)
+  @@id([userId, subjectId])
 }
