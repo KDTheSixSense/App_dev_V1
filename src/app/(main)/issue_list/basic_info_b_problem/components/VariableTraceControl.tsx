@@ -12,14 +12,15 @@ import React from 'react';
 
 // --- 型定義 ---
 // 外部ファイルから、このコンポーネントが必要とするデータの型定義をインポートします。
-import { Problem } from '../data/problems';
+//import { Problem } from '../data/problems';
+import type { SerializableProblem } from '@/lib/data';
 
 /**
  * @interface VariableTraceControlProps
  * @description このコンポーネントが親コンポーネント（page.tsx）から受け取るProps（データや関数）の型を定義します。
  */
 interface VariableTraceControlProps {
-  problem: Problem;                                           // 現在表示中の問題データ全体
+  problem: SerializableProblem;                                         // 現在表示中の問題データ全体
   variables: Record<string, number | null | string | number[]>; // プログラム内の変数の状態 (例: { x: 1, y: 2 })
   onNextTrace: () => void;                                    // 「次のトレース」ボタンが押されたときに実行される関数
   isTraceFinished: boolean;                                   // トレースが完了したかどうかのフラグ
