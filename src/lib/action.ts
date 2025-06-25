@@ -1,29 +1,35 @@
 import { prisma } from './prisma';
-import { calculateLevelFromXp } from './leveling'; // Step 2で更新した関数をインポート
+import { calculateLevelFromXp } from './leveling';
 
 /**
- * ユーザーに経験値を加算し、レベルアップ処理を行う関数（統一総量XPモデル版）
+ * ユーザーに経験値を加算し、レベルアップ処理を行う関数（最終版）
  * @param userId - 対象のユーザーID
  * @param subjectId - 対象の科目ID
- * @param xpAmount - 加算する経験値の量
+ * @param difficultyName - 難易度の名前 (例: "Easy", "上級")
  */
-export async function addXp(userId: number, subjectId: number, xpAmount: number) {
+export async function addXp(userId: number, subjectId: number, difficultyName: string) {
 
+  // 1. 難易度名から獲得XP量を取得
+  const difficulty = await prisma.difficulty.findUnique({
+    where: { name: difficultyName },
+  });
+
+  if (!difficulty) {
+    throw new Error(`'${difficultyName}' が見つかりません。`);
+  }
+  const xpAmount = difficulty.xp;
+  console.log(`${difficultyName}: ${xpAmount}xp`);
+  
+  // 2. トランザクションでXPを加算・レベルアップ処理
   const result = await prisma.$transaction(async (tx) => {
     
-    // === 1. 科目レベルの更新処理 ===
-
-    // a. 科目の総XPを加算し、更新後の進捗データを取得
+    // === 2a. 科目レベルの更新処理 ===
     const updatedProgress = await tx.userSubjectProgress.upsert({
       where: { userId_subjectId: { userId, subjectId } },
       create: { userId, subjectId, xp: xpAmount, level: 1 },
       update: { xp: { increment: xpAmount } },
     });
-
-    // b. 新しい科目レベルを計算
     const newSubjectLevel = calculateLevelFromXp(updatedProgress.xp);
-
-    // c. 計算後のレベルが現在のDBの値と異なれば、レベルを更新
     if (newSubjectLevel > updatedProgress.level) {
       await tx.userSubjectProgress.update({
         where: { userId_subjectId: { userId, subjectId } },
@@ -32,27 +38,22 @@ export async function addXp(userId: number, subjectId: number, xpAmount: number)
       console.log(`[科目レベルアップ!] subjectId:${subjectId} がレベル ${newSubjectLevel} に！`);
     }
 
-    // === 2. アカウントレベルの更新処理 ===
-
-    // a. アカウントの総XPを加算し、更新後のユーザーデータを取得
-    const updatedUser = await tx.user.update({
+    // === 2b. アカウントレベルの更新処理 ===
+    let user = await tx.user.update({
       where: { id: userId },
       data: { xp: { increment: xpAmount } },
     });
-
-    // b. 新しいアカウントレベルを計算
-    const newAccountLevel = calculateLevelFromXp(updatedUser.xp);
-    
-    // c. 計算後のレベルが現在のDBの値と異なれば、レベルを更新
-    if (newAccountLevel > updatedUser.level) {
-      await tx.user.update({
+    const newAccountLevel = calculateLevelFromXp(user.xp);
+    if (newAccountLevel > user.level) {
+      // レベルアップ後の最新情報で user 変数を上書きする
+      user = await tx.user.update({
         where: { id: userId },
         data: { level: newAccountLevel },
       });
-      console.log(`[アカウントレベルアップ!] ${updatedUser.username} がアカウントレベル ${newAccountLevel} に！`);
+      console.log(`[アカウントレベルアップ!] ${user.username} がアカウントレベル ${newAccountLevel} に！`);
     }
 
-    return { updatedUser, updatedProgress };
+    return { updatedUser: user, updatedProgress };
   });
 
   console.log('XP加算処理が完了しました。');

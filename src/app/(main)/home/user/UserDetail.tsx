@@ -24,7 +24,11 @@ export default async function UserDetail() {
             <div className="flex flex-col w-full h-20 mt-2 px-6">
                 <div className="flex items-center h-16">
                     <p className="text-xl">ランク：</p>
-                    <p className="text-2xl font-bold ml-2">99</p>
+                    {user ? (
+                        <p className="text-2xl font-bold ml-2">{user.level}</p>
+                    ):(
+                        <p className="text-2xl font-bold ml-2">1</p>
+                    )}
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-5 relative overflow-hidden mt-2">
                     <div className="bg-lime-400 rounded-full h-full absolute top-0 left-0" style={{ width:'50%'}}>
