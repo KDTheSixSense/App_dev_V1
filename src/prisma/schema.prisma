@@ -122,3 +122,10 @@ model UserSubjectProgress {
   // (一人のユーザーが同じ科目で複数の進捗を持つことはないため)
   @@id([userId, subjectId])
 }
+
+// 難易度と獲得XPのマスタテーブル
+model Difficulty {
+  id   Int    @id @default(autoincrement())
+  name String @unique // 難易度名 (例: "Easy", "Normal", "Hard")
+  xp   Int    // この難易度で得られる経験値
+}

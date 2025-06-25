@@ -23,7 +23,7 @@ const router =useRouter();
         <nav>
           <ul className="flex space-x-6">
             <div className='flex w-20 h-20 items-center justify-center m-0'>
-              <button onClick={() => router.push('/')} className="hover:bg-[#ddd] flex flex-col transition-colors justify-center items-center rounded">
+              <button onClick={() => router.push('/home')} className="hover:bg-[#ddd] flex flex-col transition-colors justify-center items-center rounded">
                 <Image
                     src="/images/home.png"
                     alt="ホーム"
