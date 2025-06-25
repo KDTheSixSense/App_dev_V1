@@ -48,6 +48,7 @@ export interface Problem {
   explanationText: { ja: string; en: string };  // 解答後に表示される解説文
   initialVariables: VariablesState;             // トレース開始時の変数の初期状態
   traceLogic: TraceStep[];                      // プログラムの各行に対応するトレース処理の配列
+  logicType: string;
   
   // --- 以下は特定の種類の問題でのみ使用するオプションのプロパティです ---
   
@@ -56,7 +57,7 @@ export interface Problem {
    * @property {number[]} presets - ユーザーが選択できるトレース開始時のプリセット値 (例: [3, 5, 15, 7])
    */
   traceOptions?: {
-    presets: number[];
+    presets?: number[];
   };
 
   /**
@@ -81,6 +82,7 @@ export const problems: Problem[] = [
   // =================================================================================
   {
     id: '1',
+    logicType: 'VARIABLE_SWAP',
     title: { ja: "サンプル問題 [科目B] 問1", en: "Sample Problem [Subject B] Q1" },
     description: { ja: "次の記述中の□に入れる正しい答えを、解答群の中から選べ。プログラムを実行すると'　　'と出力される。", en: "What are the values of y and z after executing the following program?" },
     programLines: {
@@ -123,6 +125,7 @@ export const problems: Problem[] = [
   // =================================================================================
   {
     id: '2',
+    logicType: 'FIZZ_BUZZ',
     title: { ja: "サンプル問題 [科目B] 問2", en: "Sample Problem [Subject B] Q2" },
     description: { ja: "次のプログラム中の a ~ c に入れる正しい答えの組み合わせを、解答群の中から選べ。関数 fizzBuzz は、引数で与えられた値が、3で割り切れて5で割り切れない場合は\"3で割り切れる\"を、5で割り切れて3で割り切れない場合は\"5で割り切れる\"を、3と5で割り切れる場合は\"3と5で割り切れる\"を返します。それ以外の場合は\"3でも5でも割り切れない\"を返します。", en: "" },
     programLines: {
@@ -196,6 +199,7 @@ export const problems: Problem[] = [
   // =================================================================================
   {
     id: '3',
+    logicType: 'ARRAY_SUM',
     title: { ja: "サンプル問題 [科目B] 問3", en: "Sample Problem [Subject B] Q3" },
     description: {
       ja: "配列の要素番号は1から始まる。関数 makeNewArray は、要素数2以上の整数型の配列を引数にとり、整数型の配列を返す関数である。関数 makeNewArray を makeNewArray({3, 2, 1, 6, 5, 4})として呼び出したとき、戻り値の配列の要素番号5の値は[ ]となる。",
