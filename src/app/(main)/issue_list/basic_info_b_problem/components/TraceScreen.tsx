@@ -48,7 +48,7 @@ const TraceScreen: React.FC<TraceScreenProps> = ({ programLines, currentLine, la
               // `left-[-35px]`: 左端から-35pxの位置に配置（コードの行番号のさらに左）
               // `top-1/2 -translate-y-1/2`: 親要素の高さの中央に垂直方向を揃える
               // `text-red-500 text-xl`: 赤色で大きな文字サイズ
-              <span className="absolute left-[-35px] top-1/2 -translate-y-1/2 text-red-500 text-xl">
+              <span className="absolute left-[-25px] top-1/2 -translate-y-1/2 text-red-500 text-xl">
                 → {/* 矢印記号 */}
               </span>
             ) : null /* 現在の行でなければ何も表示しない */}
