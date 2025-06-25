@@ -8,7 +8,7 @@ import Pet from "./Pet/PetStatus"
 export default function Body() {
   return (
     <div className='bg-white'>
-      <main className="flex w-full min-h-screen text-center pt-4 ml-20 mr-20 gap-10">
+      <main className="flex w-full min-h-screen text-center pt-6 ml-20 mr-20 gap-10">
         <div className="flex flex-col w-full max-w-150 min-h-screen">
           <UserDetail />
           <RankingPage />

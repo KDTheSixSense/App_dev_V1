@@ -8,7 +8,7 @@ export default function Header() {
 const router =useRouter();
 
   return (
-    <header className="bg-[#fff] text-white shadow-md flex w-full">
+    <header className="bg-[#fff] text-white border-b border-gray-200 flex w-full">
       <div className="flex items-center w-50 h-20 mx-4">
         <Link href={"/"} className="text-2xl font-bold transition-colors">
           <Image 

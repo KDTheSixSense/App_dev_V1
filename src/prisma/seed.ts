@@ -162,7 +162,7 @@ async function main() {
   console.log('Seeding users...');
   // ... (ユーザー作成のコードは変更なし) ...
   const alice = await prisma.user.upsert({
-    where: { email: 'alice@example.com' }, update: {}, create: { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', birth: new Date('2002-04-15') },
+    where: { email: 'bob@example.com' }, update: {}, create: { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', birth: new Date('2002-04-15') },
   });
   console.log('✅ Users seeded.');
   
@@ -171,8 +171,8 @@ async function main() {
   // =================================================================
   console.log('Testing addXp function with difficulty...');
   if (alice) {
-    // Aliceさんに「プログラミング(subjectId: 1)」を「上級」難易度でクリアしたとしてXPを加算
-    // addXp関数側で '上級' に対応するXP(800)を調べて加算してくれる
+    // Aliceさんに「プログラミング(subjectId: 1)」を「むずかしい」難易度でクリアしたとしてXPを加算
+    // addXp関数側で 'むずかしい' に対応するXP(1200)を調べて加算してくれる
     await addXp(alice.id, 1, 'むずかしい'); 
   }
   
