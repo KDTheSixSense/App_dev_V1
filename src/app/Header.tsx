@@ -8,7 +8,7 @@ export default function Header() {
 const router =useRouter();
 
   return (
-    <header className="bg-[#fff] text-white shadow-md flex w-full">
+    <header className="bg-[#fff] text-white border-b border-gray-200 flex w-full">
       <div className="flex items-center w-50 h-20 mx-4">
         <Link href={"/"} className="text-2xl font-bold transition-colors">
           <Image 
@@ -23,7 +23,7 @@ const router =useRouter();
         <nav>
           <ul className="flex space-x-6">
             <div className='flex w-20 h-20 items-center justify-center m-0'>
-              <button onClick={() => router.push('/')} className="hover:bg-[#ddd] flex flex-col transition-colors justify-center items-center rounded">
+              <button onClick={() => router.push('/home')} className="hover:bg-[#ddd] flex flex-col transition-colors justify-center items-center rounded">
                 <Image
                     src="/images/home.png"
                     alt="ホーム"
