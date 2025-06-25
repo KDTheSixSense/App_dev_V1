@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react'
-import { Play, Send, FileText, Lightbulb, Code, BookOpen, ChevronDown, Eye, EyeOff, CheckCircle } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Play, Send, FileText, Code, ChevronDown, Eye, EyeOff, CheckCircle } from 'lucide-react';
 
-function App() {
-  const [selectedLanguage, setSelectedLanguage] = useState('python')
-  const [userCode, setUserCode] = useState('')
-  const [executionResult, setExecutionResult] = useState('')
-  const [showSampleCode, setShowSampleCode] = useState(false)
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false)
-  const [showAIHint, setShowAIHint] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitResult, setSubmitResult] = useState(null)
+const CreateQuestionsPage: React.FC = () => {
+  const router = useRouter();
+  const [selectedLanguage, setSelectedLanguage] = useState('python');
+  const [userCode, setUserCode] = useState('');
+  const [executionResult, setExecutionResult] = useState('');
+  const [showSampleCode, setShowSampleCode] = useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [showAIHint, setShowAIHint] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitResult, setSubmitResult] = useState<any>(null);
 
   const sampleProblem = {
     title: 'for文とif文を組み合わせてみよう',
@@ -54,7 +56,7 @@ class Program {
     }
 }`
     },
-  }
+  };
 
   const languages = [
     { value: 'python', label: 'Python' },
@@ -62,20 +64,20 @@ class Program {
     { value: 'java', label: 'Java' },
     { value: 'cpp', label: 'C++' },
     { value: 'csharp', label: 'C#' }
-  ]
+  ];
 
   useEffect(() => {
-    setUserCode('')
-    setExecutionResult('')
-  }, [selectedLanguage])
+    setUserCode('');
+    setExecutionResult('');
+  }, [selectedLanguage]);
 
   const handleExecute = async () => {
     if (!userCode.trim()) {
-      setExecutionResult('コードを入力してください。')
-      return
+      setExecutionResult('コードを入力してください。');
+      return;
     }
 
-    setExecutionResult('実行中...')
+    setExecutionResult('実行中...');
 
     try {
       const response = await fetch('/api/execute_code', {
@@ -87,32 +89,31 @@ class Program {
           language: selectedLanguage,
           source_code: userCode,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
         if (data.build_result && data.build_result.stderr) {
-          setExecutionResult(`ビルドエラー:\n${data.build_result.stderr}`)
+          setExecutionResult(`ビルドエラー:\n${data.build_result.stderr}`);
         } else if (data.build_result && data.build_result.stdout) {
-          setExecutionResult(`ビルド出力:\n${data.build_result.stdout}`)
+          setExecutionResult(`ビルド出力:\n${data.build_result.stdout}`);
         } else if (data.program_output && data.program_output.stderr) {
-          setExecutionResult(`実行時エラー:\n${data.program_output.stderr}`)
+          setExecutionResult(`実行時エラー:\n${data.program_output.stderr}`);
         } else if (data.program_output && data.program_output.stdout) {
-          setExecutionResult(data.program_output.stdout)
+          setExecutionResult(data.program_output.stdout);
         } else {
-          setExecutionResult('不明な結果: ' + JSON.stringify(data))
+          setExecutionResult('不明な結果: ' + JSON.stringify(data));
         }
       } else {
-        setExecutionResult(`エラー: ${data.error || '不明なエラー'}`)
+        setExecutionResult(`エラー: ${data.error || '不明なエラー'}`);
       }
     } catch (error) {
-      console.error('Error executing code:', error)
-      setExecutionResult('コードの実行中にエラーが発生しました。')
+      console.error('Error executing code:', error);
+      setExecutionResult('コードの実行中にエラーが発生しました。');
     }
-  }
+  };
 
-  // FIXED SUBMIT FUNCTION - Handle both success and failure properly
   const handleSubmit = async () => {
     if (!userCode.trim()) {
       alert('コードを入力してから提出してください。');
@@ -136,22 +137,18 @@ class Program {
 
       const data = await response.json();
 
-      // FIXED: Handle both success and failure cases properly
       if (response.ok) {
         if (data.success) {
-          // Correct answer
-          alert(data.message); // "正解です！コードが正しく提出されました！"
+          alert(data.message);
           setExecutionResult(data.result);
           setSubmitResult(data);
         } else {
-          // Wrong answer - FIXED: This was missing before
-          alert(data.message); // "不正解です。出力が期待値と異なります。"
+          alert(data.message);
           setExecutionResult(data.result);
           setSubmitResult(data);
         }
         console.log('Submit Response:', data);
       } else {
-        // Server error
         alert(`エラー: ${data.error || '不明なエラー'}`);
         setExecutionResult(`エラー: ${data.error || '不明なエラー'}`);
         setSubmitResult({ success: false, error: data.error || '不明なエラー' });
@@ -167,23 +164,23 @@ class Program {
   };
 
   const getPlaceholder = () => {
-    const lang = languages.find(l => l.value === selectedLanguage)?.label || 'コード'
-    return `${lang}でコードを入力してください...`
-  }
+    const lang = languages.find(l => l.value === selectedLanguage)?.label || 'コード';
+    return `${lang}でコードを入力してください...`;
+  };
 
   const getAIHintText = () => {
-    const lang = languages.find(l => l.value === selectedLanguage)?.label || 'コード'
-    return `${lang}で作成し、トレース結果を出力してみたがこれでいいのか？`
-  }
+    const lang = languages.find(l => l.value === selectedLanguage)?.label || 'コード';
+    return `${lang}で作成し、トレース結果を出力してみたがこれでいいのか？`;
+  };
 
-  const handleLanguageSelect = (langValue) => {
-    setSelectedLanguage(langValue)
-    setShowLanguageDropdown(false)
-  }
+  const handleLanguageSelect = (langValue: string) => {
+    setSelectedLanguage(langValue);
+    setShowLanguageDropdown(false);
+  };
 
-  const renderCodeWithLineNumbers = (code) => {
-    const lines = code.split('\n')
-    const lineCount = Math.max(lines.length, 10)
+  const renderCodeWithLineNumbers = (code: string) => {
+    const lines = code.split('\n');
+    const lineCount = Math.max(lines.length, 10);
     
     return (
       <div className="flex border border-gray-300 rounded-md overflow-hidden">
@@ -208,8 +205,23 @@ class Program {
           />
         </div>
       </div>
-    )
-  }
+    );
+  };
+
+  // 課題作成ボタンのクリックハンドラ
+  const handleCreateAssignmentClick = () => {
+    router.push('/create_questions/assignment_creation');
+  };
+
+  // 資格作成ボタンのクリックハンドラ
+  const handleCreateQualificationClick = () => {
+    router.push('/create_questions/qualification_creation');
+  };
+
+  // カスタム問題作成ボタンのクリックハンドラ
+  const handleCreateCustomClick = () => {
+    router.push('/create_questions/custom_creation');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -232,7 +244,7 @@ class Program {
           <button
             className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border transition-colors ${
               showAIHint 
-                ? 'bg-cyan-500 text-white border-bg-cyan-600' 
+                ? 'bg-cyan-500 text-white border-cyan-600' 
                 : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'
             }`}
             onClick={() => setShowAIHint(!showAIHint)}
@@ -270,7 +282,7 @@ class Program {
                   <span className="font-semibold text-green-800">サンプルコード ({languages.find(l => l.value === selectedLanguage)?.label})</span>
                 </div>
                 <pre className="text-sm text-green-700 bg-white p-2 rounded border overflow-x-auto">
-                  <code>{sampleProblem.sampleCode[selectedLanguage] || 'このプログラミング言語のサンプルコードは準備中です。'}</code>
+                  <code>{sampleProblem.sampleCode[selectedLanguage as keyof typeof sampleProblem.sampleCode] || 'このプログラミング言語のサンプルコードは準備中です。'}</code>
                 </pre>
               </div>
             )}
@@ -346,7 +358,7 @@ class Program {
                 </div>
               )}
 
-              {/* FIXED Submit Result Section */}
+              {/* Submit Result Section */}
               {submitResult && (
                 <div className={`border p-4 rounded-md mt-4 ${
                   submitResult.success 
@@ -461,82 +473,10 @@ class Program {
           )}
         </div>
       </div>
-    </div>
-  )
-}
 
-export default App
-
-=======
-//クライアントコンポーネント
-'use client';
-import React from "react";
-import { useRouter } from 'next/navigation'; // useRouter をインポート
-
-
-
-const CreateQuestionsPage: React.FC = () => {
-  const router = useRouter(); // useRouter フックを初期化
-
-  // 課題作成ボタンのクリックハンドラ
-  const handleCreateAssignmentClick = () => {
-    // 指定されたパスに遷移
-    // /create_questions/assignment_creation は、
-    // /workspaces/my-next-app/src/app/create_questions/assignment_creation/page.tsx にマッピングされます。
-    router.push('/create_questions/assignment_creation');
-  };
-
-  // 資格作成ボタンのクリックハンドラ
-  const handleCreateQualificationClick = () => {
-    // 指定されたパスに遷移
-    // /create_questions/assignment_creation は、
-    // /workspaces/my-next-app/src/app/create_questions/assignment_creation/page.tsx にマッピングされます。
-    router.push('/create_questions/qualification_creation');
-  };
-
-  // カスタム問題作成ボタンのクリックハンドラ
-  const handleCreateCustomClick = () => {
-    // 指定されたパスに遷移
-    // /create_questions/assignment_creation は、
-    // /workspaces/my-next-app/src/app/create_questions/assignment_creation/page.tsx にマッピングされます。
-    router.push('/create_questions/custom_creation');
-  };
-
-  return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      {/* This div represents the main content area, similar to the white background in the image */}
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md flex flex-col items-center">
-        {/* Button 1: 課題作成 (Create Assignment) */}
-        <button
-          onClick={handleCreateAssignmentClick} // クリックイベントハンドラを追加
-          className="w-full py-4 px-6 mb-6 text-xl font-semibold text-gray-800 bg-blue-200 rounded-lg shadow-sm
-                     hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75
-                     transition-colors duration-200"
-        >
-          課題作成
-        </button>
-
-        {/* Button 2: 資格問題作成 (Create Qualification Questions) */}
-        <button
-          onClick={handleCreateQualificationClick} // クリックイベントハンドラを追加
-          className="w-full py-4 px-6 mb-6 text-xl font-semibold text-gray-800 bg-blue-200 rounded-lg shadow-sm
-                     hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75
-                     transition-colors duration-200"
-        >
-          資格問題作成
-        </button>
-
-        {/* Button 3: カスタム問題作成 (Create Custom Questions) */}
-        <button
-          onClick={handleCreateCustomClick} // クリックイベントハンドラを追加
-          className="w-full py-4 px-6 text-xl font-semibold text-gray-800 bg-blue-200 rounded-lg shadow-sm
-                     hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75
-                     transition-colors duration-200"
-        >
-          カスタム問題作成
-        </button>
+      {/* Navigation Buttons Section */}
+      
       </div>
-    </div>
   );
 };
 
