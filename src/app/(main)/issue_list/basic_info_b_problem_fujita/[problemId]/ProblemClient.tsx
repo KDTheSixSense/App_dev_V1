@@ -227,7 +227,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
     const nextProblemId = await getNextProblemId(currentId);
     
     if (nextProblemId) {
-      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
+      router.push(`/issue_list/basic_info_b_problem_fujita/${nextProblemId}`);
     } else {
       alert("最後の問題です！");
       router.push('/issue_list');
