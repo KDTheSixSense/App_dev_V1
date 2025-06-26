@@ -4,31 +4,31 @@
  * このコンポーネントは、問題ページの右側（または中央下部）に配置され、以下の機能を提供します。
  * 1. プログラム内の変数の現在の値をリアルタイムで表示します。
  * 2. 「次のトレース」「もう一度トレース」ボタンでトレースを操作します。
- * 3. 特定の問題（例: FizzBuzz）では、トレース開始時の初期値をユーザーが選択できるボタンを表示します。
+ * 3. 特定の問題では、トレース開始時の初期値をユーザーが選択できるボタンを表示します。
  */
 
 // --- React / Next.js のコア機能 ---
 import React from 'react';
 
 // --- 型定義 ---
-// 外部ファイルから、このコンポーネントが必要とするデータの型定義をインポートします。
-//import { Problem } from '../data/problems';
 import type { SerializableProblem } from '@/lib/data';
+import type { VariablesState, QueueItem } from '../data/problems';
+
 
 /**
  * @interface VariableTraceControlProps
- * @description このコンポーネントが親コンポーネント（page.tsx）から受け取るProps（データや関数）の型を定義します。
+ * @description このコンポーネントが親コンポーネントから受け取るPropsの型を定義します。
  */
 interface VariableTraceControlProps {
-  problem: SerializableProblem;                                         // 現在表示中の問題データ全体
-  variables: Record<string, number | null | string | number[]>; // プログラム内の変数の状態 (例: { x: 1, y: 2 })
-  onNextTrace: () => void;                                    // 「次のトレース」ボタンが押されたときに実行される関数
-  isTraceFinished: boolean;                                   // トレースが完了したかどうかのフラグ
-  onResetTrace: () => void;                                   // 「もう一度トレース」ボタンが押されたときに実行される関数
-  currentTraceLine: number;                                   // 現在のトレースのステップ数
-  language: 'ja' | 'en';                                      // 現在の表示言語
-  textResources: any;                                         // UIに表示するテキスト集
-  onSetNum: (num: number) => void;                            // FizzBuzz問題などで、初期値を設定するために実行される関数
+  problem: SerializableProblem;                                         
+  variables: VariablesState; 
+  onNextTrace: () => void;
+  isTraceFinished: boolean;
+  onResetTrace: () => void;   
+  currentTraceLine: number;
+  language: 'ja' | 'en';
+  textResources: any;
+  onSetNum: (num: number) => void;
 }
 
 /**
@@ -42,46 +42,30 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
   onResetTrace,
   currentTraceLine,
   language,
-  textResources: t, // propsで受け取ったtextResourcesを、テンプレート内で `t` という短い名前で使えるようにします。
+  textResources: t,
   onSetNum,
 }) => {
-  // --- 算出プロパティ ---
-  // propsやstateから計算して得られる値を定義します。
-
-  // FizzBuzz問題のように、問題データに `traceOptions.presets` が設定されているかどうかを確認します。
-  const showPresets = problem.traceOptions?.presets;
   
-  // 変数 `num` が設定されているか（nullでないか）を確認します。
-  // これにより、「次のトレース」ボタンを有効化/無効化する条件として使います。
-  const isNumSet = variables.num !== null;
+  const showPresets = problem.traceOptions?.presets;
+  const isNumSet = variables?.num !== null;
 
-  // --- Render (画面描画) ---
-  // 画面の構造をJSX（HTMLに似た記法）で記述します。
   return (
-    // コンポーネント全体のコンテナ
     <div className="p-4 flex flex-col items-center">
-      
-      {/* --- タイトル --- */}
       <h3 className="text-xl font-bold mb-4 text-gray-800">{t.variableSectionTitle}</h3>
-
-      {/* --- 初期値選択ボタンエリア (特定の条件下でのみ表示) --- */}
-      {/* `showPresets` が存在する場合、つまり問題データにプリセットが定義されている場合のみ、このエリアを表示します。 */}
       {showPresets && (
         <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
           <p className="text-center font-semibold mb-3 text-gray-700">
             1. `num` の値を選択
           </p>
           <div className="flex gap-3 justify-center">
-            {/* プリセット値の配列をループして、値ごとにボタンを生成します。 */}
             {showPresets.map((num) => (
               <button
-                key={num} // Reactがリスト内の各要素を効率的に管理するために必要な、一意の `key` を設定します。
-                onClick={() => onSetNum(num)} // ボタンがクリックされたら、親から渡された`onSetNum`関数を実行します。
-                // 選択中のボタンのスタイルを動的に変更します。
+                key={num}
+                onClick={() => onSetNum(num)}
                 className={`flex-1 px-4 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105
                   ${variables.num === num 
-                    ? 'bg-emerald-500 ring-2 ring-emerald-300' // 現在選択されている値のボタンの色
-                    : 'bg-indigo-500 hover:bg-indigo-600'      // それ以外のボタンの色
+                    ? 'bg-emerald-500 ring-2 ring-emerald-300' 
+                    : 'bg-indigo-500 hover:bg-indigo-600'
                   }`}
               >
                 {num}
@@ -95,24 +79,42 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
       <div className="w-full mb-6">
         <p className="text-center font-semibold mb-3 text-gray-700">2. 変数の状態</p>
         <div className="grid grid-cols-1 gap-2 max-w-xs mx-auto">
-          {/* `variables` オブジェクトのキーと値を一つずつ取り出して表示します。 */}
-          {/* これにより、どんな名前や数の変数にも対応できる、汎用的な表示が可能になります。 */}
-          {Object.entries(variables).map(([name, value]) => (
-            <div key={name} className="flex items-center justify-between bg-white p-2 rounded border">
-              {/* 変数名を表示 (例: "num", "x", "out") */}
-              <span className="font-semibold mr-2 capitalize">{name}</span>
-              {/* 変数の値を表示 */}
-              <span className="font-mono bg-gray-100 border border-gray-300 px-3 py-1 rounded w-32 text-center overflow-x-auto">
-                { 
-                  // 値が配列の場合 (例: [3, 5, 6]) は、カンマ区切りの文字列に変換して表示
-                  Array.isArray(value) 
-                    ? `[${value.join(', ')}]` 
-                    // 値がnullの場合はハイフン'―'を、それ以外の場合はそのまま値を表示
-                    : (value !== null ? value.toString() : '―')
+          {/* 修正: 様々な型の変数を表示できるようにロジックを更新 */}
+          {Object.entries(variables).map(([name, value]) => {
+            let displayValue: string;
+            
+            if (value === null || typeof value === 'undefined') {
+                displayValue = '―';
+            } else if (Array.isArray(value)) {
+                if (value.length === 0) {
+                    displayValue = '[]';
+                } 
+                else if (name === 'queue' && typeof value[0] === 'object' && value[0] !== null) {
+                    const queueItems = value as QueueItem[];
+                    displayValue = `[${queueItems.map(item => `"${item.value}"(${item.prio})`).join(', ')}]`;
                 }
-              </span>
-            </div>
-          ))}
+                // 【追加】callStackを分かりやすく表示するロジック
+                else if (name === 'callStack' && typeof value[0] === 'object' && value[0] !== null) {
+                    const stackFrames = value as {n: number, pc: number}[];
+                    displayValue = `[${stackFrames.map(f => `order(${f.n}, pc:${f.pc})`).join(', ')}]`;
+                }
+                else {
+                    // ネストした配列も考慮して再帰的に文字列化
+                    displayValue = JSON.stringify(value, null, 0).replace(/"/g, '');
+                }
+            } else {
+                displayValue = value.toString();
+            }
+
+            return (
+                <div key={name} className="flex items-center justify-between bg-white p-2 rounded border">
+                    <span className="font-semibold mr-2 capitalize">{name}</span>
+                    <span className="font-mono bg-gray-100 border border-gray-300 px-3 py-1 rounded w-48 text-center overflow-x-auto custom-scrollbar">
+                        {displayValue}
+                    </span>
+                </div>
+            );
+          })}
         </div>
       </div>
 
@@ -120,29 +122,21 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
       <div className="w-full">
         <p className="text-center font-semibold mb-3 text-gray-700">3. トレース実行</p>
         <div className="flex w-full gap-4">
-          
-          {/* 「もう一度トレース」ボタン */}
           <button
-            onClick={onResetTrace} // クリックで親から渡された`onResetTrace`関数を実行
+            onClick={onResetTrace}
             className="flex-1 py-3 px-6 text-xl font-semibold rounded-lg shadow-sm bg-gray-200 text-gray-700 hover:bg-gray-300"
           >
             {t.resetTraceButton}
           </button>
-          
-          {/* 「次のトレース」ボタン */}
           <button
-            onClick={onNextTrace} // クリックで親から渡された`onNextTrace`関数を実行
-            // 特定の条件下でボタンを非活性化(disabled)します。
-            // 1. `isNumSet`がfalse (FizzBuzz問題でnumが未選択)
-            // 2. `isTraceFinished`がtrue (トレースが完了した)
-            disabled={!isNumSet || isTraceFinished} 
+            onClick={onNextTrace}
+            disabled={showPresets ? (!isNumSet || isTraceFinished) : isTraceFinished}
             className={`flex-1 py-3 px-6 text-xl font-semibold text-white rounded-lg shadow-sm transition-colors
-              ${(!isNumSet || isTraceFinished)
-                ? 'bg-gray-400 cursor-not-allowed' // 非活性時のスタイル (グレーアウト)
-                : 'bg-blue-500 hover:bg-blue-600'    // 有効時のスタイル
+              ${ (showPresets ? (!isNumSet || isTraceFinished) : isTraceFinished)
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600'
               }`}
           >
-            {/* トレースが完了しているかどうかでボタンのテキストを切り替えます */}
             {isTraceFinished ? t.traceCompletedButton : t.nextTraceButton}
           </button>
         </div>
@@ -151,5 +145,4 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
   );
 };
 
-// このコンポーネントを他のファイルからインポートして使用できるようにします。
 export default VariableTraceControl;
