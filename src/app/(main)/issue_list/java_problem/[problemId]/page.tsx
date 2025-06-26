@@ -1,4 +1,4 @@
-// src/app/(main)/issue_list/basic_info_b_problem/[problemId]/page.tsx
+// src/app/(main)/issue_list/java_problem/[problemId]/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,8 +10,9 @@ import KohakuChat from '../components/KohakuChat';
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem } from '@/lib/types';
-// ★修正: パスと関数名のタイポを修正 (basic_b__problem -> basic_info_b_problem, getBasicBProblemById -> getBasicInfoBProblemsById)★
-import { getBasicInfoBProblemsById } from '@/lib/issue_list/basic_info_b_problem/problem';
+// ここを修正: applied_info_morning_problem 用のデータソースをインポートする
+// 例: import { getAppliedInfoMorningProblemById } from '@/lib/issue_list/applied_info_morning_problem/problem';
+import { getJavaProblemsById } from '@/lib/issue_list/java_problem/problem'; // ★ここを修正しました★
 import { getNextProblemId } from '@/lib/actions'; // サーバーアクション
 
 // --- カスタムアラートモーダルコンポーネント ---
@@ -84,8 +85,9 @@ const ProblemDetailPage = () => {
   const params = useParams();
   const problemId = params.problemId as string;
 
-  // ★修正: getBasicInfoBProblemsById を呼び出すように変更★
-  const initialProblemData = getBasicInfoBProblemsById(problemId);
+  // ★要修正: `getProblemAById` ではなく、`applied_info_morning_problem` 用の関数を呼び出すべき
+  // 例: const initialProblemData = getAppliedInfoMorningProblemById(problemId);
+  const initialProblemData = getJavaProblemsById(problemId);
 
   const [problem, setProblem] = useState<SerializableProblem | undefined>(initialProblemData);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -97,8 +99,9 @@ const ProblemDetailPage = () => {
 
   // problemId または language が変更されたときに状態をリセットするエフェクト
   useEffect(() => {
-    // ★修正: getBasicInfoBProblemsById を呼び出すように変更★
-    const currentProblem = getBasicInfoBProblemsById(problemId);
+    // ★要修正: `getProblemAById` ではなく、`applied_info_morning_problem` 用の関数を呼び出すべき
+    // 例: const currentProblem = getAppliedInfoMorningProblemById(problemId);
+    const currentProblem = getJavaProblemsById(problemId);
     setProblem(currentProblem);
     setSelectedAnswer(null);
     setIsAnswered(false);
@@ -157,6 +160,8 @@ const ProblemDetailPage = () => {
     }, 1000);
   };
 
+  // ★ここから修正開始★
+  // handleNextProblem が二重定義されているため、一つにまとめます。
   const handleNextProblem = async () => {
     const currentProblemId = problem.id;
 
@@ -166,18 +171,18 @@ const ProblemDetailPage = () => {
       return;
     }
 
-    // カテゴリ名を 'basic_info_b_problem' に修正
-    const nextProblemId = await getNextProblemId(currentProblemId, 'basic_info_b_problem'); 
+    // `C#_problem` 用のカテゴリを渡す
+    const nextProblemId = await getNextProblemId(currentProblemId, 'java_problem'); 
 
     if (nextProblemId) {
-      // ★修正: router.push のパスを 'basic_info_b_problem' に修正★
-      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
+      router.push(`/issue_list/java_problem/${nextProblemId}`);
     } else {
-      setAlertMessage("最後の問題です！");
+      setAlertMessage("最後の問題です！"); // カスタムアラートを使用
       setShowAlert(true);
-      router.push('/issue_list');
+      router.push('/issue_list'); // 次の問題がない場合は、問題リストの概要ページへ
     }
   };
+  // ★ここまで修正完了★
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
@@ -202,6 +207,9 @@ const ProblemDetailPage = () => {
           />
         </div>
 
+        {/* トレース関連のUIは引き続き削除されている */}
+        {/* <div className="flex-1 flex flex-col gap-8">...</div> */}
+
         <div className="w-full lg:w-96 flex flex-col">
           <KohakuChat
             messages={chatMessages}
@@ -215,7 +223,7 @@ const ProblemDetailPage = () => {
       {isAnswered && (
         <div className="w-full max-w-lg mt-8 flex justify-center">
           <button
-            onClick={handleNextProblem}
+            onClick={handleNextProblem} // 修正された handleNextProblem を呼び出す
             className="w-full py-4 px-8 text-xl font-semibold text-white bg-green-500 rounded-lg shadow-lg hover:bg-green-600"
           >
             {t.nextProblemButton}
@@ -224,6 +232,6 @@ const ProblemDetailPage = () => {
       )}
     </div>
   );
-};
+}; // この閉じ括弧が余分だった可能性もあります。
 
 export default ProblemDetailPage;

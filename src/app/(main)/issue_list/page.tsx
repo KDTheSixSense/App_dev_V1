@@ -27,15 +27,16 @@ import AdviceSection from './components/AdviceSection'; // 右側に表示され
  * 新しいカテゴリを追加する場合は、この配列に新しいオブジェクトを追加するだけで済みます。
  */
 const questionCategories = [
-  { title: 'ITパスポート', description: 'Title\nDescription', path: '/issue_list/it_passport_problem' },
-  { title: '基本情報 科目A', description: 'Title\nDescription', path: '/issue_list/basic_info_a_problem' },
-  { title: '基本情報 科目B', description: 'Title\nDescription', path: '/issue_list/basic_info_b_problem/1' }, // 科目Bは最初の問題(ID:1)に直接遷移
-  { title: '応用情報 午前', description: 'Title\nDescription', path: '/issue_list/applied_info_morning_problem' },
-  { title: '応用情報 午後', description: 'Title\nDescription', path: '/issue_list/applied_info_afternoon_problem' },
-  { title: '情報検定', description: 'Title\nDescription', path: '/issue_list/information_exam_problem' },
-  { title: '学校課題', description: 'Title\nDescription', path: '/issue_list/school_assignment_problem' },
-  { title: 'Java', description: 'Title\nDescription', path: '/issue_list/java_problem' },
-  { title: 'Python', description: 'Title\nDescription', path: '/issue_list/python_problem' },
+  { title: '基本情報 科目A', description: 'Title\nDescription', path: '/issue_list/basic_info_a_problem/problems' },
+  { title: '基本情報 科目B', description: 'Title\nDescription', path: '/issue_list/basic_info_b_problem/problems' }, // 科目Bは最初の問題(ID:1)に直接遷移
+  { title: '応用情報 午前', description: 'Title\nDescription', path: '/issue_list/applied_info_morning_problem/problems' },
+  { title: '応用情報 午後', description: 'Title\nDescription', path: '/issue_list/applied_info_afternoon_problem/problems' },
+  { title: 'Python', description: 'Title\nDescription', path: '/issue_list/python_problem/problems' },
+  { title: 'JavaScript', description: 'Title\nDescription', path: '/issue_list/JavaScript_problem/problems' },
+  { title: 'Java', description: 'Title\nDescription', path: '/issue_list/java_problem/problems' },
+  { title: 'C++', description: 'Title\nDescription', path: '/issue_list/Cplus_problem/problems' },
+  { title: 'C#', description: 'Title\nDescription', path: '/issue_list/Csya_problem/problems' },
+
 ];
 
 /**

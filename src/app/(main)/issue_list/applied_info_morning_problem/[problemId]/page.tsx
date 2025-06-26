@@ -1,4 +1,4 @@
-// src/app/(main)/issue_list/basic_info_b_problem/[problemId]/page.tsx
+// src/app/(main)/issue_list/applied_info_morning_problem/[problemId]/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,8 +10,7 @@ import KohakuChat from '../components/KohakuChat';
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem } from '@/lib/types';
-// ★修正: パスと関数名のタイポを修正 (basic_b__problem -> basic_info_b_problem, getBasicBProblemById -> getBasicInfoBProblemsById)★
-import { getBasicInfoBProblemsById } from '@/lib/issue_list/basic_info_b_problem/problem';
+import { getAppliedInfoMorningProblemById } from '@/lib/issue_list/applied_info_morning_problem/problem';
 import { getNextProblemId } from '@/lib/actions'; // サーバーアクション
 
 // --- カスタムアラートモーダルコンポーネント ---
@@ -84,8 +83,7 @@ const ProblemDetailPage = () => {
   const params = useParams();
   const problemId = params.problemId as string;
 
-  // ★修正: getBasicInfoBProblemsById を呼び出すように変更★
-  const initialProblemData = getBasicInfoBProblemsById(problemId);
+  const initialProblemData = getAppliedInfoMorningProblemById(problemId);
 
   const [problem, setProblem] = useState<SerializableProblem | undefined>(initialProblemData);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -97,8 +95,7 @@ const ProblemDetailPage = () => {
 
   // problemId または language が変更されたときに状態をリセットするエフェクト
   useEffect(() => {
-    // ★修正: getBasicInfoBProblemsById を呼び出すように変更★
-    const currentProblem = getBasicInfoBProblemsById(problemId);
+    const currentProblem = getAppliedInfoMorningProblemById(problemId);
     setProblem(currentProblem);
     setSelectedAnswer(null);
     setIsAnswered(false);
@@ -166,12 +163,10 @@ const ProblemDetailPage = () => {
       return;
     }
 
-    // カテゴリ名を 'basic_info_b_problem' に修正
-    const nextProblemId = await getNextProblemId(currentProblemId, 'basic_info_b_problem'); 
+    const nextProblemId = await getNextProblemId(currentProblemId, 'applied_info_morning_problem'); 
 
     if (nextProblemId) {
-      // ★修正: router.push のパスを 'basic_info_b_problem' に修正★
-      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
+      router.push(`/issue_list/applied_info_morning_problem/${nextProblemId}`);
     } else {
       setAlertMessage("最後の問題です！");
       setShowAlert(true);

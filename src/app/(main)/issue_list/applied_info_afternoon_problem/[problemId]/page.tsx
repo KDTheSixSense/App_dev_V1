@@ -10,7 +10,7 @@ import KohakuChat from '../components/KohakuChat';
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem } from '@/lib/types';
-// ★修正: パスと関数名のタイポを修正 (basic_b__problem -> basic_info_b_problem, getBasicBProblemById -> getBasicInfoBProblemsById)★
+// 基本情報 科目B の問題データを取得する関数をインポート
 import { getBasicInfoBProblemsById } from '@/lib/issue_list/basic_info_b_problem/problem';
 import { getNextProblemId } from '@/lib/actions'; // サーバーアクション
 
@@ -84,7 +84,7 @@ const ProblemDetailPage = () => {
   const params = useParams();
   const problemId = params.problemId as string;
 
-  // ★修正: getBasicInfoBProblemsById を呼び出すように変更★
+  // 基本情報 科目B の問題データを取得する
   const initialProblemData = getBasicInfoBProblemsById(problemId);
 
   const [problem, setProblem] = useState<SerializableProblem | undefined>(initialProblemData);
@@ -97,7 +97,6 @@ const ProblemDetailPage = () => {
 
   // problemId または language が変更されたときに状態をリセットするエフェクト
   useEffect(() => {
-    // ★修正: getBasicInfoBProblemsById を呼び出すように変更★
     const currentProblem = getBasicInfoBProblemsById(problemId);
     setProblem(currentProblem);
     setSelectedAnswer(null);
@@ -166,16 +165,15 @@ const ProblemDetailPage = () => {
       return;
     }
 
-    // カテゴリ名を 'basic_info_b_problem' に修正
+    // 次の問題を取得するために 'basic_info_b_problem' カテゴリを指定
     const nextProblemId = await getNextProblemId(currentProblemId, 'basic_info_b_problem'); 
 
     if (nextProblemId) {
-      // ★修正: router.push のパスを 'basic_info_b_problem' に修正★
       router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
     } else {
-      setAlertMessage("最後の問題です！");
+      setAlertMessage("最後の問題です！"); // カスタムアラートを使用
       setShowAlert(true);
-      router.push('/issue_list');
+      router.push('/issue_list'); // 次の問題がない場合は、問題リストの概要ページへ
     }
   };
 
@@ -201,6 +199,28 @@ const ProblemDetailPage = () => {
             textResources={{ ...t, title: problem.title[language] || t.title }}
           />
         </div>
+
+        {/* 基本情報 科目B ではトレース関連のUIを完全に削除するため、このセクションは不要 */}
+        {/*
+        <div className="flex-1 flex flex-col gap-8">
+          <div className="bg-white p-8 rounded-lg shadow-md flex-grow overflow-hidden">
+            <div className="h-full flex flex-col">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">プログラム</h2>
+              <div className="bg-gray-50 p-4 rounded-md border border-gray-200 flex-grow overflow-auto text-sm font-mono whitespace-pre-wrap">
+                {problem.programLines?.[language]?.map((line, index) => (
+                  <div
+                    key={index}
+                    className={`py-1 px-2 rounded-sm bg-transparent`}
+                  >
+                    <span className="text-gray-500 mr-2">{index + 1}:</span>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        */}
 
         <div className="w-full lg:w-96 flex flex-col">
           <KohakuChat
