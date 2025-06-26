@@ -4,7 +4,11 @@ import { Prisma, PrismaClient } from '@prisma/client';
 // 例: import bcrypt from 'bcrypt';
 
 // ★重要★ あなたの環境の `problems.ts` ファイルへのパスが正しいか確認してください
+<<<<<<< HEAD
 import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/problems/problems'; 
+=======
+import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem_fujita/data/problems'; 
+>>>>>>> cde4e7f9e74611b53d5f11f7f7e596bd9f2f07f1
 
 import { addXp } from '../lib/action'; // 作成したaddXp関数をインポート
 
@@ -100,8 +104,7 @@ async function main() {
       initialVariables: p.initialVariables as unknown as Prisma.JsonObject,
       options: (p.traceOptions as unknown as Prisma.JsonObject) ?? Prisma.JsonNull,
       
-      // ★重要★ ロジック（関数）の代わりに、その種類を示す文字列を保存します
-      logicType: p.id === '1' ? 'VARIABLE_SWAP' : (p.id === '2' ? 'FIZZ_BUZZ' : 'ARRAY_SUM'),
+      logicType: p.logicType,
     };
 
     // 変換したデータを使って、データベースに新しい問題を作成します
