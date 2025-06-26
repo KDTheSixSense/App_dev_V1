@@ -100,8 +100,7 @@ async function main() {
       initialVariables: p.initialVariables as unknown as Prisma.JsonObject,
       options: (p.traceOptions as unknown as Prisma.JsonObject) ?? Prisma.JsonNull,
       
-      // ★重要★ ロジック（関数）の代わりに、その種類を示す文字列を保存します
-      logicType: p.id === '1' ? 'VARIABLE_SWAP' : (p.id === '2' ? 'FIZZ_BUZZ' : 'ARRAY_SUM'),
+      logicType: p.logicType,
     };
 
     // 変換したデータを使って、データベースに新しい問題を作成します
