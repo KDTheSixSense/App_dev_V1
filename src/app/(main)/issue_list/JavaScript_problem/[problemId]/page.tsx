@@ -1,4 +1,4 @@
-// src/app/(main)/issue_list/basic_info_b_problem/[problemId]/page.tsx
+// src/app/(main)/issue_list/JavaScript_problem/[problemId]/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,8 +10,7 @@ import KohakuChat from '../components/KohakuChat';
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem } from '@/lib/types';
-// ★修正: パスと関数名のタイポを修正 (basic_b__problem -> basic_info_b_problem, getBasicBProblemById -> getBasicInfoBProblemsById)★
-import { getBasicInfoBProblemsById } from '@/lib/issue_list/basic_info_b_problem/problem';
+import { getJavaScriptProblemsById } from '@/lib/issue_list/JavaScript_problem/problem'; // JavaScript問題用のデータソースをインポート
 import { getNextProblemId } from '@/lib/actions'; // サーバーアクション
 
 // --- カスタムアラートモーダルコンポーネント ---
@@ -84,8 +83,8 @@ const ProblemDetailPage = () => {
   const params = useParams();
   const problemId = params.problemId as string;
 
-  // ★修正: getBasicInfoBProblemsById を呼び出すように変更★
-  const initialProblemData = getBasicInfoBProblemsById(problemId);
+  // 問題データ取得関数を正しく呼び出し
+  const initialProblemData = getJavaScriptProblemsById(problemId);
 
   const [problem, setProblem] = useState<SerializableProblem | undefined>(initialProblemData);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -97,8 +96,8 @@ const ProblemDetailPage = () => {
 
   // problemId または language が変更されたときに状態をリセットするエフェクト
   useEffect(() => {
-    // ★修正: getBasicInfoBProblemsById を呼び出すように変更★
-    const currentProblem = getBasicInfoBProblemsById(problemId);
+    // 問題データ取得関数を正しく呼び出し
+    const currentProblem = getJavaScriptProblemsById(problemId);
     setProblem(currentProblem);
     setSelectedAnswer(null);
     setIsAnswered(false);
@@ -166,16 +165,15 @@ const ProblemDetailPage = () => {
       return;
     }
 
-    // カテゴリ名を 'basic_info_b_problem' に修正
-    const nextProblemId = await getNextProblemId(currentProblemId, 'basic_info_b_problem'); 
+    // JavaScript問題用のカテゴリを渡すように修正
+    const nextProblemId = await getNextProblemId(currentProblemId, 'JavaScript_problem'); 
 
     if (nextProblemId) {
-      // ★修正: router.push のパスを 'basic_info_b_problem' に修正★
-      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
+      router.push(`/issue_list/JavaScript_problem/${nextProblemId}`);
     } else {
-      setAlertMessage("最後の問題です！");
+      setAlertMessage("最後の問題です！"); // カスタムアラートを使用
       setShowAlert(true);
-      router.push('/issue_list');
+      router.push('/issue_list'); // 次の問題がない場合は、問題リストの概要ページへ
     }
   };
 
@@ -224,6 +222,6 @@ const ProblemDetailPage = () => {
       )}
     </div>
   );
-};
+}; // この閉じ括弧が余分だった可能性もあります。
 
 export default ProblemDetailPage;
