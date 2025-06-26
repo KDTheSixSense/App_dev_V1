@@ -23,7 +23,7 @@ model User{
 
   progresses UserSubjectProgress[] // このユーザーの科目別進捗のリスト
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
-  // answers   UserAnswer[]
+  answers   UserAnswer[]
 }
 
 /// 問題の情報をすべて格納するモデル
@@ -66,7 +66,7 @@ model Problem {
 
   // --- リレーション定義 ---
   // この問題に対する全ユーザーの解答リスト。UserAnswerモデルと1対多の関係。
-  // answers           UserAnswer[]
+  answers           UserAnswer[]
 }
 
 
@@ -86,8 +86,8 @@ model UserAnswer {
 
   // --- リレーション定義 ---
   // `@relation` は、どのカラムがどのテーブルのどのカラムと関連しているかをPrismaに教えます。
-  //user               User     @relation(fields: [userId], references: [id])
-  //problem            Problem  @relation(fields: [problemId], references: [id])
+  user               User?     @relation(fields: [userId], references: [id])
+  problem            Problem?  @relation(fields: [problemId], references: [id])
 
   // --- 制約 ---
   // 同じユーザーが同じ問題に複数回解答した履歴をすべて残す想定です。
