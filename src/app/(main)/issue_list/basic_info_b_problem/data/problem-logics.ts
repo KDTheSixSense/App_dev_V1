@@ -475,14 +475,16 @@ const binSortLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: 
     traceLogic: [
         /* 1 */ (vars) => vars,
         /* 2 */ (vars) => ({ ...vars, n: (vars.data as any[]).length }),
-        /* 3 */ (vars) => ({ ...vars, bins: new Array(vars.n).fill(null) }),
+        // ✅【修正点】binsのサイズをハードコードせず、nの値から動的に生成する
+        /* 3 */ (vars) => ({ ...vars, bins: new Array(vars.n as number).fill(null) }),
         /* 4 */ (vars) => ({ ...vars, i: 1 }),
         /* 5 */ (vars) => vars, // for ループの条件判定 (変数変更なし)
         /* 6 */ (vars) => {
-            const newBins = [...vars.bins];
+            const newBins = [...(vars.bins as any[])];
             const data = vars.data as number[];
             const i = vars.i as number;
             const value = data[i - 1]; // 配列のインデックスは0から
+            // 値がbins配列の範囲内にあるかチェック（安全対策）
             if (value > 0 && value <= newBins.length) {
               newBins[value - 1] = value; // 配列のインデックスは0から
             }
@@ -492,6 +494,11 @@ const binSortLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: 
         /* 8 */ (vars) => vars, // return
     ],
     calculateNextLine(currentLine, vars) {
+        // ✅【追加点】データが選択されるまでトレースを開始しない
+        if (vars.data === null) {
+            return currentLine;
+        }
+
         const lineNum = currentLine + 1; // 1-indexedの行番号
         
         switch (lineNum) {
@@ -510,6 +517,75 @@ const binSortLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: 
             default:
                 return 99;
         }
+    },
+};
+
+const fiveNumberSummaryLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+    traceLogic: [
+        /* 1: findRank Def */ (vars) => vars,
+        /* 2: findRank i Dec */ (vars) => vars,
+        /* 3: i ← ... */ (vars) => {
+            const sortedData = vars.sortedData as number[];
+            const p = vars.current_p as number;
+            const i = Math.ceil((sortedData.length - 1) * p);
+            return { ...vars, findRank_i: i };
+        },
+        /* 4: return ... */ (vars) => vars,
+        /* 5: Space */ (vars) => vars,
+        /* 6: summarize Def */ (vars) => vars,
+        /* 7: rankData ← {} */ (vars) => ({ ...vars, rankData: [] }),
+        /* 8: p ← {...} */ (vars) => ({ ...vars, p_values: [0, 0.25, 0.5, 0.75, 1] }),
+        /* 9: i Dec */ (vars) => {
+             // ループ開始時にiを初期化
+            if (vars.i === null) return { ...vars, i: 1 };
+            return vars;
+        },
+        /* 10: for loop */ (vars) => vars,
+        /* 11: rankData.append */ (vars) => {
+            const sortedData = vars.sortedData as number[];
+            const findRank_i = vars.findRank_i as number;
+            const valueToAdd = sortedData[findRank_i]; // 1-based to 0-based index
+            return {
+                ...vars,
+                rankData: [...(vars.rankData as number[]), valueToAdd],
+            };
+        },
+        /* 12: endfor */ (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
+        /* 13: return rankData */ (vars) => vars,
+    ],
+    calculateNextLine(currentLine, vars) {
+        const lineNum = currentLine + 1;
+        const callStack = (vars.callStack || []) as { name: string, return_to: number }[];
+
+        // --- summarize ループ制御 ---
+        if (lineNum === 10) { // for文の評価
+            const i = vars.i as number;
+            const p_values = vars.p_values as number[];
+            if (i <= p_values.length) {
+                // findRank呼び出し準備
+                vars.current_p = p_values[i - 1]; // iは1-based
+                callStack.push({ name: 'findRank', return_to: 12 }); // 戻り先はendfor
+                return 2; // findRankの3行目にジャンプ
+            } else {
+                return 12; // ループ終了、return rankDataへ
+            }
+        }
+
+        // --- findRank 実行後 ---
+        if (lineNum === 4) { // findRankのreturn後
+            const lastCall = callStack.pop();
+            if (lastCall) {
+                return 10; // rankData.append(11行目)へ
+            }
+        }
+        
+        // --- endfor後 ---
+        if (lineNum === 12) {
+             return 9; // forの条件評価に戻る
+        }
+
+        // デフォルトは次の行へ
+        return currentLine + 1;
     },
 };
 
@@ -561,6 +637,315 @@ const similarityRatioLogic: { traceLogic: TraceStep[]; calculateNextLine: (curre
     },
 };
 
+const binarySearchLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+    // 各行の実行に対応する変数更新ロジック
+    traceLogic: [
+        /* 1 */ (vars) => vars,
+        /* 2 */ (vars) => vars,
+        /* 3 */ (vars) => vars,
+        /* 4 */ (vars) => ({ ...vars, low: 1 }),
+        /* 5 */ (vars) => ({ ...vars, high: (vars.data as number[]).length }),
+        /* 6 */ (vars) => vars,
+        /* 7 */ (vars) => vars, // while の評価は calculateNextLine で行う
+        /* 8 */ (vars) => ({ ...vars, middle: Math.floor(((vars.low as number) + (vars.high as number)) / 2) }),
+        /* 9 */ (vars) => vars, // if の評価は calculateNextLine で行う
+        /* 10 */(vars) => ({ ...vars, low: vars.middle }), // 問題文のバグを再現
+        /* 11 */(vars) => vars, // elseif の評価は calculateNextLine で行う
+        /* 12 */(vars) => ({ ...vars, high: vars.middle }), // 問題文のバグを再現
+        /* 13 */(vars) => vars, // else
+        /* 14 */(vars) => ({ ...vars, result: vars.middle }),
+        /* 15 */(vars) => vars, // endif
+        /* 16 */(vars) => vars, // endwhile
+        /* 17 */(vars) => vars,
+        /* 18 */(vars) => ({ ...vars, result: -1 }),
+    ],
+    // 次に実行すべき行番号を計算するロジック
+    calculateNextLine(currentLine, vars) {
+        // データが選択されていない場合は進まない
+        if (vars.data === null || vars.target === null) {
+            return currentLine;
+        }
+
+        const { low, high, middle, data, target } = vars;
+
+        // 0-indexedの行番号で処理
+        switch (currentLine) {
+            case 6: // 7行目: while の評価
+                return (low as number) <= (high as number) ? 7 : 17; // -> 8行目 or 18行目
+
+            case 7: // 8行目: middle計算後 -> 9行目へ
+                return 8;
+
+            case 8: // 9行目: if の評価
+                const middleValue = (data as number[])[(middle as number) - 1];
+                if (middleValue < (target as number)) {
+                    return 9; // -> 10行目
+                } else if (middleValue > (target as number)) {
+                    return 10; // -> 11行目
+                } else {
+                    return 12; // -> 13行目
+                }
+
+            case 9: // 10行目: low更新後 -> 16行目(endwhile)へ
+                return 15;
+
+            case 10: // 11行目: elseif の評価
+                const middleValueElse = (data as number[])[(middle as number) - 1];
+                return (middleValueElse > (target as number)) ? 11 : 12; // -> 12行目 or 13行目
+
+            case 11: // 12行目: high更新後 -> 16行目(endwhile)へ
+                return 15;
+            
+            case 12: // 13行目: else の後 -> 14行目へ
+                return 13;
+
+            case 13: // 14行目: return 後 -> 終了
+                return 99; // 99など大きな値を返してトレースを終了させる
+
+            case 15: // 16行目: endwhile の後 -> ループ先頭(7行目)へ
+                return 6;
+            
+            case 17: // 18行目: return -1 の後 -> 終了
+                return 99;
+
+            // 初期化フェーズやその他の行
+            default:
+                return currentLine + 1;
+        }
+    },
+};
+
+const minimaxLogic: { traceLogic: TraceStep[] } = {
+    traceLogic: [
+        // ステップ0: 初期状態
+        (vars) => vars,
+        // ステップ1: Aの評価値を計算
+        (vars) => ({ ...vars, "a (Aの子の評価値)": 0 }),
+        // ステップ2: Bの評価値を計算
+        (vars) => ({ ...vars, "b (Bの子の評価値)": -10 }),
+        // ステップ3: 完了
+        (vars) => vars,
+    ],
+};
+
+const utf8EncodeLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+    traceLogic: [
+        /* 0: 1行目 */ (vars) => vars,
+        /* 1: 2行目 */ (vars) => vars,
+        /* 2: 3行目 */ (vars) => vars,
+        /* 3: 4行目 */ (vars) => ({ ...vars, utf8Bytes: [224, 128, 128] }),
+        /* 4: 5行目 */ (vars) => ({ ...vars, cp: vars.codePoint }),
+        /* 5: 6行目 */ (vars) => ({ ...vars, i: 3 }), // ループ変数iを3で初期化
+        /* 6: 7行目 */ (vars) => vars, // for ループの条件評価 (calculateNextLineで処理)
+        /* 7: 8行目 */ (vars) => {
+            const i = vars.i as number;
+            const cp = vars.cp as number;
+            const currentBytes = vars.utf8Bytes as number[];
+            const newBytes = [...currentBytes];
+            // cpを64で割った余りを加算
+            newBytes[i - 1] += cp % 64; // iは1-basedなので-1
+            return { ...vars, utf8Bytes: newBytes };
+        },
+        /* 8: 9行目 */ (vars) => {
+            // cpを64で割った商で更新
+            return { ...vars, cp: Math.floor((vars.cp as number) / 64) };
+        },
+        /* 9: 10行目*/ (vars) => ({ ...vars, i: (vars.i as number) - 1 }), // endforでiをデクリメント
+        /* 10: 11行目*/ (vars) => vars,
+    ],
+    calculateNextLine(currentLine, vars) {
+        // iが初期化されるまで(6行目まで)は単純に次に進む
+        if (vars.i === null && currentLine < 5) {
+            return currentLine + 1;
+        }
+
+        switch(currentLine) {
+            case 6: // for文の条件評価
+                return (vars.i as number) >= 1 ? 7 : 10; // ループ継続なら8行目へ、終了なら11行目へ
+            case 7: // 8行目実行後
+                return 8; // 9行目へ
+            case 8: // 9行目実行後
+                return 9; // 10行目(endfor)へ
+            case 9: // 10行目実行後 (iがデクリメントされる)
+                return 6; // 再びループの条件評価(7行目)へ
+            default:
+                return currentLine + 1;
+        }
+    },
+};
+
+const staticQaLogic: { traceLogic: TraceStep[] } = {
+    traceLogic: [], // トレース処理は不要
+};
+
+const admissionFeeLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+  traceLogic: [
+    (vars) => vars,                      // 1: ○整数型: fee(整数型: num)
+    (vars) => ({...vars, ret: null}),    // 2: 整数型: ret
+    (vars) => vars,                      // 3: if (num が 3 以下)
+    (vars) => ({...vars, ret: 100}),     // 4: ret ← 100
+    (vars) => vars,                      // 5: elseif (num が 9 以下)
+    (vars) => ({...vars, ret: 300}),     // 6: ret ← 300
+    (vars) => vars,                      // 7: else
+    (vars) => ({...vars, ret: 500}),     // 8: ret ← 500
+    (vars) => vars,                      // 9: endif
+    (vars) => vars,                      // 10: return ret
+  ],
+  calculateNextLine: (currentLine, vars) => {
+    const num = vars.num as number; // 変数名を age から num に変更
+    if (num === null) return currentLine;
+
+    // 0-indexedの行番号で分岐
+    switch (currentLine) {
+      case 2: // if (num が 3 以下)
+        return num <= 3 ? 3 : 4;
+      case 3: // ret ← 100
+        return 8;
+      case 4: // elseif (num が 9 以下)
+        return num <= 9 ? 5 : 6;
+      case 5: // ret ← 300
+        return 8;
+      case 6: // else
+        return 7;
+      case 7: // ret ← 500
+        return 8;
+      case 8: // endif
+        return 9;
+      case 9: // return ret
+        return 99; // 終了
+      default:
+        return currentLine + 1;
+    }
+  },
+};
+
+const arrayReverseLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+    traceLogic: [
+        /* 1 */ (vars) => ({ ...vars, array: [1, 2, 3, 4, 5] }),
+        /* 2 */ (vars) => ({ ...vars, right: null, left: null }),
+        /* 3 */ (vars) => ({ ...vars, tmp: null }),
+        /* 4 */ (vars) => vars, // 空行
+        /* 5 */ (vars) => { // forループ開始
+            if (vars.left === null) {
+                return { ...vars, left: 1 };
+            }
+            return vars;
+        },
+        /* 6 */ (vars) => { // a: rightの計算
+            const array = vars.array as number[];
+            const left = vars.left as number;
+            return { ...vars, right: array.length - left + 1 };
+        },
+        /* 7 */ (vars) => { // tmpへの代入
+            const array = vars.array as number[];
+            const right = vars.right as number;
+            return { ...vars, tmp: array[right - 1] }; // 1-based index to 0-based
+        },
+        /* 8 */ (vars) => { // array[right]への代入
+            const newArray = [...(vars.array as number[])];
+            const left = vars.left as number;
+            const right = vars.right as number;
+            newArray[right - 1] = newArray[left - 1];
+            return { ...vars, array: newArray };
+        },
+        /* 9 */ (vars) => { // b: array[left]への代入
+            const newArray = [...(vars.array as number[])];
+            const left = vars.left as number;
+            const tmp = vars.tmp as number;
+            newArray[left - 1] = tmp;
+            return { ...vars, array: newArray };
+        },
+        /* 10 */ (vars) => { // endfor: leftのインクリメント
+             return { ...vars, left: (vars.left as number) + 1 };
+        },
+    ],
+    calculateNextLine(currentLine, vars) {
+        // 初期化が終わるまで待機
+        if (vars.array === null) return currentLine;
+
+        const lineNum = currentLine + 1; // 1-indexedの行番号
+        const array = vars.array as number[];
+        const left = vars.left as number;
+
+        switch(lineNum) {
+            case 5: // for ループの条件判定
+                // (要素数 / 2) の商までループ
+                return left <= Math.floor(array.length / 2) ? 5 : 10; // -> 6 (本体) or 11(終了)
+            case 6: return 6; // -> 7
+            case 7: return 7; // -> 8
+            case 8: return 8; // -> 9
+            case 9: return 9; // -> 10 (endfor)
+            case 10: return 4; // -> 5 (forループの先頭へ戻る)
+            default:
+                return lineNum;
+        }
+    },
+};
+
+// =================================================================================
+// --- 【★ここから修正】問23: 単方向リストのロジックを全面的に改善 ---
+// =================================================================================
+const linkedListAppendLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+    // ★★★ traceLogicは状態を更新するだけのシンプルな関数群に戻す ★★★
+    traceLogic: [
+        /* 0: Line 1 */ (vars: VariablesState) => vars,
+        /* 1: Line 2 */ (vars: VariablesState) => vars,
+        /* 2: Line 3 */ (vars: VariablesState) => vars,
+        /* 3: Line 4 */ (vars: VariablesState) => ({ ...vars, prev: null, curr: null }),
+        /* 4: Line 5 */ (vars: VariablesState) => {
+            const newNode = { val: vars.qVal as string, next: null };
+            const newListData = [...(vars.listData as any[])];
+            const newNodeIndex = newListData.length;
+            newListData.push(newNode);
+            return { ...vars, listData: newListData, curr: newNodeIndex };
+        },
+        /* 5: Line 6 */ (vars: VariablesState) => vars,
+        /* 6: Line 7 */ (vars: VariablesState) => ({ ...vars, listHead: vars.curr }),
+        /* 7: Line 8 */ (vars: VariablesState) => vars,
+        /* 8: Line 9 */ (vars: VariablesState) => ({ ...vars, prev: vars.listHead }),
+        /* 9: Line 10 */ (vars: VariablesState) => vars,
+        /* 10: Line 11 */ (vars: VariablesState) => {
+            const listData = vars.listData as any[];
+            const prevIndex = vars.prev as number;
+            return { ...vars, prev: listData[prevIndex].next };
+        },
+        /* 11: Line 12 */ (vars: VariablesState) => vars,
+        /* 12: Line 13 */ (vars: VariablesState) => {
+            const newListData = JSON.parse(JSON.stringify(vars.listData));
+            if (vars.prev !== null) {
+                newListData[vars.prev as number].next = vars.curr;
+            }
+            return { ...vars, listData: newListData };
+        },
+        /* 13: Line 14 */ (vars: VariablesState) => vars,
+    ],
+    // ★★★ calculateNextLineは次にどの行へ進むかだけを決定する ★★★
+    calculateNextLine(currentLine: number, vars: VariablesState): number {
+        // 最初のクリック(currentLine=0)で3行目(index 2)に飛ぶ
+        if (currentLine === 0) return 2;
+
+        const executedLine = currentLine;
+        switch (executedLine) {
+            case 2: return 3;
+            case 3: return 4;
+            case 4: return 5;
+            case 5: return vars.listHead === null ? 6 : 8;
+            case 6: return 13;
+            case 8: return 9;
+            case 9:
+                const listData = vars.listData as any[];
+                const prevIndex = vars.prev as number;
+                return (vars.prev !== null && listData[prevIndex]?.next !== null) ? 10 : 11;
+            case 10: return 9;
+            case 11: return 12;
+            case 12: return 13;
+            case 13: return 99;
+            default: return 99;
+        }
+    },
+};
+
+
 // logicTypeをキーとして、対応するロジックを返すマップ
 export const problemLogicsMap = {
   'VARIABLE_SWAP': variableSwapLogic,
@@ -575,4 +960,12 @@ export const problemLogicsMap = {
   'LINKED_LIST_DELETE': linkedListDeleteLogic,
   'BIN_SORT':binSortLogic,
   'SIMILARITY_RATIO': similarityRatioLogic,
+  'BINARY_SEARCH': binarySearchLogic,
+  'FIVE_NUMBER_SUMMARY': fiveNumberSummaryLogic,
+  'MINIMAX': minimaxLogic,
+  'UTF8_ENCODE': utf8EncodeLogic,
+  'STATIC_QA': staticQaLogic,
+  'ADMISSION_FEE': admissionFeeLogic,
+  'ARRAY_REVERSE': arrayReverseLogic,
+  'LINKED_LIST_APPEND': linkedListAppendLogic,
 };
