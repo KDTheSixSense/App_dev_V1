@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,125 +10,289 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User{
-  id        Int      @id @default(autoincrement()) // ID: 整数型、主キー、自動増分
-  email     String   @unique                       // メールアドレス: 文字列型、ユニーク
-  password  String                               // パスワード: 文字列型
-  hash      String?                              // ハッシュ値: 文字列型、Null許容
-  username  String?                              // ユーザー名: 文字列型、Null許容
-  year      Int?                                 // 年: 整数型、Null許容
-  class     Int?                                 // クラス: 整数型、Null許容
-  birth     DateTime? @db.Date                    // 誕生日: 日付型、Null許容
-  resetPasswordToken         String?
-  resetPasswordTokenExpiry DateTime?
-  level     Int @default(1)                     //アカウントレベル
-  xp        Int @default(0)                     //総経験値
+// 1. Core Tables - often referenced by many others and have few dependencies
+model User {
+  id               Int      @id @default(autoincrement())
+  email            String   @unique @db.Text // メールアドレス
+  password         String   @db.Text // パスワードhash
+  username         String?  @db.Text // ユーザー名
+  schoolId         Int?     // 学校ID, relates to UserEducationTable but no direct relation specified here
+  year             Int?     // 学年
+  class            Int?     // クラス
+  date             DateTime @db.Date // 生年月日
+  level            Int?     // アカウントレベル
+  xp               Int?     // 総経験値
+  sex              String?  @db.Text // 性別
+  certificate      Boolean? // 学校の生徒認証
+  totalLogin       Int?     // 総ログイン数
+  continuousLogin  Int?     // 連続ログイン数
 
-  progresses UserSubjectProgress[] // このユーザーの科目別進捗のリスト
-  // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
-  answers   UserAnswer[]
+  userSubjectProgress UserSubjectProgress[]
+  statusKohaku        StatusKohaku?
+  groups              GroupUser[]
+  groupReaders        GroupReader[]
+  submissions         Submission[]
+  questionAUsers      QuestionAUser[]
 }
 
-/// 問題の情報をすべて格納するモデル
-model Problem {
-  id                Int      @id @default(autoincrement()) /// 問題ID: データベース内で一意の番号が自動で振られます
-
-  // --- 問題の基本情報 (日本語/英語) ---
-  title_ja          String   /// タイトル (日本語)
-  title_en          String   /// タイトル (英語)
-  description_ja    String   @db.Text /// 問題文 (日本語)。長文になる可能性があるのでText型を指定
-  description_en    String   @db.Text /// 問題文 (英語)
-
-  // --- 解答関連 ---
-  // 解答選択肢は [{label:"ア", value:"..."}, ...] のような複雑な構造のため、
-  // JSON型で柔軟に格納するのが便利です。
-  answerOptions_ja  Json
-  answerOptions_en  Json
-  correctAnswer     String   /// 正解の値 (例: "3,2", "ウ")
-
-  // --- 解説 ---
-  explanation_ja    String   @db.Text /// 解説文 (日本語)
-  explanation_en    String   @db.Text /// 解説文 (英語)
-  
-  // --- プログラムとトレース関連 ---
-  // `String[]` とすることで、文字列の配列をそのまま格納できます (PostgreSQLの機能)。
-  programLines_ja   String[] /// 擬似言語プログラムの各行 (日本語)
-  programLines_en   String[] /// 擬似言語プログラムの各行 (英語)
-
-  // トレース開始時の変数の初期状態をJSONで格納します (例: { "x": null, "y": null })
-  initialVariables  Json     
-  
-  // ★最重要★ トレースのロジックを識別するための「種類名」
-  // この名前を元に、プログラム側で対応するトレース関数を呼び出します。
-  // (例: "VARIABLE_SWAP", "FIZZ_BUZZ", "ARRAY_SUM")
-  logicType         String
-  
-  // 特定の問題で使う追加オプション (例: FizzBuzzのプリセット値)
-  // `?` をつけることで、このカラムは無くても良い（オプショナル）ことを示します。
-  options           Json?
-
-  // --- リレーション定義 ---
-  // この問題に対する全ユーザーの解答リスト。UserAnswerモデルと1対多の関係。
-  answers           UserAnswer[]
+model UserEducation {
+  id         Int    @id @default(autoincrement())
+  schoolName String @db.Text
 }
 
-
-/// ユーザーごとの問題の解答状況を記録するモデル（中間テーブル）
-/// これにより、「誰が」「どの問題を」「いつ、どう解答したか」をすべて記録できます。
-model UserAnswer {
-  id                 Int      @id @default(autoincrement()) /// 解答履歴ID
-
-  // --- どのユーザーが、どの問題を解答したか ---
-  userId             Int?      /// UserモデルのIDと紐づく外部キー
-  problemId          Int?      /// ProblemモデルのIDと紐づく外部キー
-  
-  // --- 解答の詳細 ---
-  userSelectedAnswer String   /// ユーザーが実際に選択した解答の値
-  isCorrect          Boolean  /// その解答が正解だったかどうか (true/false)
-  answeredAt         DateTime @default(now()) /// 解答した日時（自動で現在時刻が記録されます）
-
-  // --- リレーション定義 ---
-  // `@relation` は、どのカラムがどのテーブルのどのカラムと関連しているかをPrismaに教えます。
-  user               User?     @relation(fields: [userId], references: [id])
-  problem            Problem?  @relation(fields: [problemId], references: [id])
-
-  // --- 制約 ---
-  // 同じユーザーが同じ問題に複数回解答した履歴をすべて残す想定です。
-  // もし最新の解答状況だけを記録したい場合は `@@unique([userId, problemId])` を追加します。
-}
-
-//科目テーブル
 model Subject {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-
-  userProgresses UserSubjectProgress[] // この科目を学習しているユーザーの進捗リスト
+  id                  Int                 @id @default(autoincrement()) // 科目ID
+  name                String              @db.Text // 科目名
+  userSubjectProgress UserSubjectProgress[]
+  questions           QuestionA[] // Implicit relation from Question A
 }
 
-model UserSubjectProgress {
-  level Int @default(1)                     //科目ごとのレベル
-  xp    Int @default(0)                     //科目ごとの経験値
-
-// --- リレーションのためのフィールド ---
-  userId    Int
-  subjectId Int
-
-  // --- リレーション定義 ---
-  // この進捗がどのユーザーのものかを示す
-  user    User    @relation(fields: [userId], references: [id])
-  // この進捗がどの科目のものかを示す
-  subject Subject @relation(fields: [subjectId], references: [id])
-
-  // --- 複合主キー ---
-  // userIdとsubjectIdの組み合わせがユニークであることを保証する
-  // (一人のユーザーが同じ科目で複数の進捗を持つことはないため)
-  @@id([userId, subjectId])
-}
-
-// 難易度と獲得XPのマスタテーブル
 model Difficulty {
-  id   Int    @id @default(autoincrement())
-  name String @unique // 難易度名 (例: "Easy", "Normal", "Hard")
-  xp   Int    // この難易度で得られる経験値
+  id           Int      @id @default(autoincrement()) // 難易度(科目)ID
+  difficulty   String   @db.Text // 難易度(科目)
+  xp           Int?     // 経験値量
+  // The examples in "Difficulty_データ" seem to be values, not separate fields for the table.
+  // "目安解答時間" is also a value, not a field.
+
+  questionsB   QuestionB[]
+  coding       Coding[]
+  explanations Explanation[]
+}
+
+model Degree {
+  id     Int     @id @default(autoincrement())
+  degree String? @db.Text // 称号
+}
+
+model Group {
+  id         Int      @id @default(autoincrement())
+  readerId   Int      // readerid
+  serverName String   @db.Text // servername
+  body       String   @db.Text // body
+
+  groupUsers     GroupUser[]
+  groupReaders   GroupReader[]
+  assignments    Assignment[]
+}
+
+// 2. Lookup/Shared Entities - often referenced, but don't heavily depend on others
+model Genre {
+  id         Int     @id @default(autoincrement()) // autsincrymené
+  genreName  String  @db.Text // ジャンル名
+
+  questionAGenres     QuestionAGenre[]
+  questionAUserGenres QuestionAUserGenre[]
+}
+
+// 2. Lookup/Shared Entities - often referenced, but don't heavily depend on others
+model Trace {
+  id          Int      @id @default(autoincrement())
+  questionAId Int      // Question Aとリレーション
+  questionA   QuestionA @relation(fields: [questionAId], references: [id])
+  line        Int?     // プログラムの行
+  code        String?  @db.Text // その行のコード
+  content     String?  @db.Text // 内容など
+
+  questionB QuestionB[] // Relation "Traceテーブルとリレーシン" in Question B
+}
+
+model TestCase {
+  id          Int     @id @default(autoincrement())
+  questionId  Int?    // questionid
+  // ここで、questionBの反対側のリレーションをQuestionBモデルに追加する必要があります。
+  // mapは外部キーの名前ではなく、リレーション名を識別するために使われます。
+  questionB   QuestionB? @relation("QuestionBToTestCase", fields: [questionId], references: [id])
+  coding      Coding[]
+
+  // The fields difficulty, xp, and time are listed under "Difficulty_データ" in the provided source
+  // but also in "Test Case" block.
+  // Assuming these are attributes of the test case itself related to its difficulty.
+  difficultyName String? @db.Text // e.g., "やさしい", "かんたん"
+  xpAmount       Int?
+  estimatedTime  String? // e.g., "5分", "10分"
+}
+
+// 3. Models representing questions and answers (which depend on core tables and lookup tables)
+// Define QuestionA and QuestionB before AnswerA and AnswerB as answers refer to questions
+model QuestionA {
+  id          Int       @id @default(autoincrement()) @map("Question_id") // Auto-increment for Question A
+  title       String    @db.Text // 問題のタイトル
+  imagePath   String?   @db.Text // 画像のディレクトリ預定
+  releaseYear Int?      // 出 年
+  subjectId   Int?      // Implicit relation to Subject based on overall context of subjects and questions
+  subject     Subject?  @relation(fields: [subjectId], references: [id])
+
+  answersA       AnswerA[]
+  traces         Trace[]
+  genres         QuestionAGenre[]
+  questionAUsers QuestionAUser[]
+}
+
+model QuestionB {
+  id          Int         @id @default(autoincrement())
+  title       String      @db.Text // タイトル
+  questionText String     @db.Text // 問題文
+  imagePath   String?     @db.Text // 画像のディレクトリ指定
+  difficultyId Int?       // Difficulty relation
+  difficulty  Difficulty? @relation(fields: [difficultyId], references: [id])
+  trace       Trace?      @relation(fields: [traceId], references: [id]) // Traceテーブルとリレーシン
+  traceId     Int?
+
+  answersB  AnswerB[]
+  // こちら側もリレーション名を指定し、TestCaseのquestionBフィールドに対応させます。
+  // 外部キーはTestCase側にあるため、ここではfieldsとreferencesは不要です。
+  testCases TestCase[] @relation("QuestionBToTestCase")
+}
+
+model AnswerA {
+  id              Int            @id @default(autoincrement()) @map("Answer_id") // Awer A
+  questionAId     Int?           // Question A リレーション
+  questionA       QuestionA?     @relation(fields: [questionAId], references: [id])
+  questionAUserId Int?
+  questionAUser   QuestionAUser? @relation(fields: [questionAUserId], references: [id])
+  charValue       String?        @db.Text // cha (for single character/choice)
+  selectionText   String?        @db.Text // 選択 文章
+  isCorrect       Boolean?       // 正解 不正解
+  freeText        String?        @db.Text // 文章 (for free text answer)
+}
+
+model AnswerB {
+  id          Int       @id @default(autoincrement())
+  questionBId Int       // question it
+  questionB   QuestionB @relation(fields: [questionBId], references: [id])
+  symbol      String?   @db.Text // symbal
+  content     String?   @db.Text // contect (for text answers)
+  isCorrect   Boolean?  // 正解 不正解 (assuming boolean)
+}
+
+// 4. Junction Tables (Many-to-many relationships) - these typically depend on models from group 1, 2, or 3
+model UserSubjectProgress {
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id])
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  level     Int?    // 科目ごとのランク
+  xp        Int?    // 科目ごとの経験値
+
+  @@id([userId, subjectId]) // Composite primary key
+}
+
+model QuestionAGenre {
+  questionAId Int
+  questionA   QuestionA @relation(fields: [questionAId], references: [id])
+  genreId     Int
+  genre       Genre     @relation(fields: [genreId], references: [id])
+
+  @@id([questionAId, genreId])
+}
+
+model QuestionAUser {
+  id          Int       @id @default(autoincrement()) // autonoryment
+  userId      Int       // Assuming it relates to a user who answered this question
+  user        User      @relation(fields: [userId], references: [id])
+  questionAId Int       // Question A リレーション
+  questionA   QuestionA @relation(fields: [questionAId], references: [id])
+  title       String?   @db.Text // のタイトル
+  imagePath   String?   @db.Text // のディレクトリ
+  releaseTime String?   @db.Text // 出時期( )
+  release     String?   @db.Text // 出
+
+  genres  QuestionAUserGenre[]
+  answers AnswerA[] // wer カテーブルとリレーション
+}
+
+model QuestionAUserGenre {
+  questionAUserId Int
+  questionAUser   QuestionAUser @relation(fields: [questionAUserId], references: [id])
+  genreId         Int
+  genre           Genre         @relation(fields: [genreId], references: [id])
+
+  @@id([questionAUserId, genreId])
+}
+
+// 5. Other Transactional/Related Tables - these often depend on many of the above
+model StatusKohaku {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique // ユーザー名, assuming one status per user
+  user      User    @relation(fields: [userId], references: [id])
+  status    String? @db.Text // コハクの状態
+  huberLevel Int?    // コハクの空腹ゲージ
+  response  String? @db.Text // ステータスに応じた受け答え (assuming this is the field with type str)
+}
+
+model GroupUser {
+  id           Int      @id @default(autoincrement())
+  userId       Int      // userid
+  user         User     @relation(fields: [userId], references: [id])
+  groupId      Int      // groupid
+  group        Group    @relation(fields: [groupId], references: [id])
+  assiSubmission Boolean? // assi submission
+
+  @@unique([userId, groupId]) // Assuming a user can only be in a group once
+}
+
+model GroupReader {
+  id      Int   @id @default(autoincrement())
+  userId  Int   // userid
+  user    User  @relation(fields: [userId], references: [id])
+  groupId Int   // groupid
+  group   Group @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId]) // Assuming a user can only be a reader for a group once
+}
+
+model Assignment {
+  id          Int       @id @default(autoincrement())
+  groupId     Int       // groupid
+  group       Group     @relation(fields: [groupId], references: [id])
+  title       String    @db.Text // title
+  description String?   @db.Text // description
+  dueDate     DateTime  @db.Timestamp(6) // due date
+  createdAt   DateTime  @default(now()) @db.Timestamp(6) // created at
+  updatedAt   DateTime  @updatedAt @db.Timestamp(6) // updated at
+
+  submissions Submission[]
+}
+
+model Submission {
+  id           Int        @id @default(autoincrement())
+  assignmentId Int        // assignment_id
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  userId       Int        // userid
+  user         User       @relation(fields: [userId], references: [id])
+  description  String?    @db.Text // description
+  status       String?    @db.Text // status
+  codingId     Int?       // codingid, assuming relation to a Coding table, but not explicitly defined in file
+  submittedAt  DateTime   @db.Timestamp(6) // submitted at
+  createdAt    DateTime   @default(now()) @db.Timestamp(6) // created at
+  updatedAt    DateTime   @updatedAt @db.Timestamp(6) // updated at
+
+  submissionFiles SubmissionFile[]
+}
+
+model SubmissionFile {
+  id           Int      @id @default(autoincrement())
+  submissionId Int      // submissionid
+  submission   Submission @relation(fields: [submissionId], references: [id])
+  filename     String   @db.Text // filename
+  filepath     String   @db.Text // filepath
+  filesize     Int?     // filesize
+  uploadedAt   DateTime @default(now()) @db.Timestamp(6) // uploaded_at
+}
+
+model Explanation {
+  id           Int      @id @default(autoincrement())
+  difficultyId Int?     // difficulty
+  difficulty   Difficulty? @relation(fields: [difficultyId], references: [id])
+  imagePath    String?  @db.Text // 画像
+  content      String?  @db.Text // Based on context, this would be the explanation text
+}
+
+model Coding {
+  id          Int         @id @default(autoincrement()) // テストケーステーブルのd
+  testCaseId  Int?        // Test Case ID relation, but Test Case table also has difficulty and XP
+  testCase    TestCase?   @relation(fields: [testCaseId], references: [id])
+  difficultyId Int?       // difficulty
+  difficulty  Difficulty? @relation(fields: [difficultyId], references: [id])
+  // Additional fields for coding problem description, etc.
 }

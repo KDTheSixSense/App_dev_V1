@@ -21,10 +21,9 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.58.1",
-    "react-syntax-highlighter": "^15.x.x",
-    "sqlite3": "^5.x.x", // SQLiteを使う場合
-    "vm2": "^3.x.x"     // サンドボックス実行ライブラリ
-
+    "react-syntax-highlighter": "^5.8.0",
+    "sqlite3": "^5.x.x",
+    "vm2": "^3.x.x"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -34,15 +33,15 @@
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "prisma": "^6.10.1",
-    "tailwindcss": "^4",
-    "ts-node": "^10.9.2",
-    "typescript": "^5",
     "@types/react-syntax-highlighter": "^15.x.x",
     "autoprefixer": "^10.x.x",
     "eslint": "8.x.x",
     "eslint-config-next": "14.x.x",
     "postcss": "^8.x.x",
+    "prisma": "^6.10.1",
+    "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
