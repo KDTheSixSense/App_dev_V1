@@ -1,23 +1,14 @@
-// /workspaces/my-next-app/src/app/(main)/issue_list/basic_info_b_problem/data/problems.ts
 /**
- * @file このアプリケーションで扱うすべての問題データを定義するファイルです。
- * @description
- * 問題の追加や修正は、このファイル内の `problems` 配列を編集することで行います。
- * 各問題は `Problem` 型という統一された形式で定義されており、保守性を高めています。
- */
-
-
-// --- 型定義 ---
-// ここでは、問題データを構成するために必要なTypeScriptの「型」を定義しています。
-// 型を定義することで、データの構造が明確になり、予期せぬエラーを防ぐことができます。
+ * @file このアプリケーションで扱う問題関連の型定義ファイルです。
+ */
 
 /**
- * @interface AnswerOption
- * @description 解答群の一つ一つの選択肢が持つデータ構造を定義します。
- */
+ * @interface AnswerOption
+ * @description 解答群の一つ一つの選択肢が持つデータ構造を定義します。
+ */
 export interface AnswerOption {
-  label: string; // 画面に表示される選択肢の記号 (例: 'ア', 'イ')
-  value: string; // 正誤判定に使われる内部的な値 (例: '1,2', 'ウ')
+  label: string; // 画面に表示される選択肢の記号 (例: 'ア', 'イ')
+  value: string; // 正誤判定に使われる内部的な値 (例: '1,2', 'ウ')
 }
 
 /**
@@ -29,23 +20,20 @@ export interface QueueItem {
     prio: number;
 }
 
-
 /**
- * @type VariablesState
- * @description プログラムのトレース中に変化する、すべての変数の状態を保持するオブジェクトの型です。
- * `Record<string, ...>` を使うことで、どんな名前や型の変数でも柔軟に扱えます。
- * 【修正】any を使用して、ネストした配列など、あらゆるデータ型に対応できるようにします。
- */
+ * @type VariablesState
+ * @description プログラムのトレース中に変化する、すべての変数の状態を保持するオブジェクトの型です。
+ */
 export type VariablesState = Record<string, any>;
 
 
 /**
- * @type TraceStep
- * @description トレースの1ステップ（1行）で実行される処理を定義する「関数」の型です。
- * この関数は、現在の変数の状態 `vars` を受け取り、その行の処理を適用した「新しい変数の状態」を返します。
- */
+ * @type TraceStep
+ * @description トレースの1ステップ（1行）で実行される処理を定義する「関数」の型です。
+ */
 export type TraceStep = (vars: VariablesState) => VariablesState;
 
+// 注: DBから取得した静的なproblems配列とgetProblemById関数は削除します。
 /**
  * @interface Problem
  * @description 1つの問題を構成するために必要な、すべてのデータの構造を定義します。
@@ -406,7 +394,7 @@ export const problems: Problem[] = [
             en: "This program performs a 'bin sort' by placing the element with value 'n' into the nth position to sort in ascending order. In this method, the storage location is uniquely determined by the value. If there are duplicate values, they will be assigned to the same location, overwriting each other, and the elements corresponding to missing numbers will remain undefined. For example, with input {3, 1, 4, 4, 5, 2}, 4 is written to bins[4], and then overwritten by another 4. Since there is no value 6, bins[6] remains undefined.\n\nThe returned array will contain undefined elements if the input argument has duplicate values. Looking at the choices, 'B' has duplicate '4', 'C' has duplicate '2', and 'D' has duplicate '3'. Therefore, only 'A', which has no duplicate values, will result in an array with no undefined elements."
         },
         initialVariables: {
-            data: '{2, 6, 3, 1, 4, 5}', // 正解の選択肢「ア」
+            data: null, // 正解の選択肢「ア」
             n: null,
             bins: null,
             i: null,
@@ -481,7 +469,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
-    },
+    }
 ];
 
 /**

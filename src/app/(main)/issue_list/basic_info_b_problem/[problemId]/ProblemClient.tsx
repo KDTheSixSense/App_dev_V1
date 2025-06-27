@@ -223,14 +223,20 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
   };
 
   const handleNextProblem = async () => {
+    // ★ 修正点: IDを数値に変換せず、文字列のまま使用します
     const currentId = problem.id;
-    const nextProblemId = await getNextProblemId(currentId, 'basic_info_b_problem_fujita');
+
+        // ★ 修正点: 2つ目の引数としてカテゴリ名を追加します
+    const category = 'basic_info_b_problem';
+    const nextProblemId = await getNextProblemId(currentId, category);
     
     if (nextProblemId) {
-      router.push(`/issue_list/basic_info_b_problem_fujita/${nextProblemId}`);
+      // 新しいパス構造に合わせる
+      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
     } else {
       alert("最後の問題です！");
-      router.push('/issue_list');
+      // 問題一覧ページのパスに修正
+      router.push('/issue_list/basic_info_b_problem/problems');
     }
   };
 

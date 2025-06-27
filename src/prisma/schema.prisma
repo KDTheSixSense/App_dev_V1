@@ -29,7 +29,6 @@ model User{
 /// 問題の情報をすべて格納するモデル
 model Problem {
   id                Int      @id @default(autoincrement()) /// 問題ID: データベース内で一意の番号が自動で振られます
-
   // --- 問題の基本情報 (日本語/英語) ---
   title_ja          String   /// タイトル (日本語)
   title_en          String   /// タイトル (英語)
