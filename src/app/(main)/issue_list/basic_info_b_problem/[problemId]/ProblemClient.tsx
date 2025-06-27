@@ -10,9 +10,9 @@ import TraceScreen from '../components/TraceScreen';
 import VariableTraceControl from '../components/VariableTraceControl';
 import KohakuChat from '../components/KohakuChat';
 
-import { problemLogicsMap } from '../problems/problem-logics';
+import { problemLogicsMap } from '../data/problem-logics';
 import type { SerializableProblem } from '@/lib/data';
-import type { VariablesState } from '../problems/problems';
+import type { VariablesState } from '../data/problems';
 import { getNextProblemId } from '@/lib/actions';
 
 // --- 多言語対応テキストとヘルパー関数 ---
@@ -223,14 +223,20 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
   };
 
   const handleNextProblem = async () => {
-    const currentId = parseInt(problem.id, 10);
-    const nextProblemId = await getNextProblemId(currentId);
+    // ★ 修正点: IDを数値に変換せず、文字列のまま使用します
+    const currentId = problem.id;
+
+        // ★ 修正点: 2つ目の引数としてカテゴリ名を追加します
+    const category = 'basic_info_b_problem';
+    const nextProblemId = await getNextProblemId(currentId, category);
     
     if (nextProblemId) {
-      router.push(`/issue_list/basic_info_b_problem_fujita/${nextProblemId}`);
+      // 新しいパス構造に合わせる
+      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
     } else {
       alert("最後の問題です！");
-      router.push('/issue_list');
+      // 問題一覧ページのパスに修正
+      router.push('/issue_list/basic_info_b_problem/problems');
     }
   };
 
