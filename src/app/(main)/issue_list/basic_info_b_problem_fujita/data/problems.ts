@@ -413,6 +413,74 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+    },
+    // =================================================================================
+    // --- 問12: 配列の類似度計算 ---
+    // =================================================================================
+    {
+        id: '12',
+        logicType: 'SIMILARITY_RATIO',
+        title: { ja: "サンプル問題 [科目B] 問12", en: "Sample Problem [Subject B] Q12" },
+        description: {
+            ja: "次のプログラム中の□に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 simRatio は，引数として与えられた要素数1以上の二つの文字列の配列 s1 と s2 を比較し，要素数が等しい場合は，配列の並びがどの程度似ているかの指標として，(要素番号が同じ要素の文字列同士が一致する要素の組みの個数 ÷ s1の要素数)を実数型で返す。例えば，配列の全ての要素が一致する場合の戻り値は1，いずれの要素も一致しない場合の戻り値は0である。\n\nなお，二つの配列の要素数が等しくない場合は，-1を返す。関数 simRatio に与える s1，s2 及び戻り値の例を表に示す。プログラムでは，配列の領域外を参照してはならないものとする。",
+            en: "Select the correct answer for the blank in the program. Array indices start from 1. The function simRatio compares two character arrays, s1 and s2, of one or more elements. If the element counts are equal, it returns a similarity index as a real number: (number of matching character pairs at the same index) / (number of elements in s1). For example, if all elements match, the return value is 1, and if no elements match, it is 0. If the element counts are not equal, it returns -1. The table shows examples of s1, s2, and the return values. The program must not access outside the array bounds."
+        },
+        programLines: {
+            ja: [
+                ' 1: ○実数型: simRatio(文字列型の配列: s1, 文字列型の配列: s2)',
+                ' 2:   整数型: i, cnt ← 0',
+                ' 3:   if (s1の要素数 ≠ s2の要素数)',
+                ' 4:     return -1',
+                ' 5:   endif',
+                ' 6:   for (i を 1 から s1の要素数 まで 1 ずつ増やす)',
+                ' 7:     if (□)',
+                ' 8:       cnt ← cnt + 1',
+                ' 9:     endif',
+                '10:   endfor',
+                '11:   return cnt ÷ s1の要素数 /* 実数として計算する */',
+            ],
+            en: [
+                ' 1: ○function simRatio(array s1: string, array s2: string) -> real',
+                ' 2:   integer: i, cnt ← 0',
+                ' 3:   if (length of s1 ≠ length of s2)',
+                ' 4:     return -1',
+                ' 5:   endif',
+                ' 6:   for (i from 1 to length of s1)',
+                ' 7:     if ([ ])',
+                ' 8:       cnt ← cnt + 1',
+                ' 9:     endif',
+                '10:   endfor',
+                '11:   return cnt / length of s1 /* calculate as real */',
+            ]
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 's1[i] ≠ s2[cnt]' },
+                { label: 'イ', value: 's1[i] ≠ s2[i]' },
+                { label: 'ウ', value: 's1[i] = s2[cnt]' },
+                { label: 'エ', value: 's1[i] = s2[i]' },
+            ],
+            en: [
+                { label: 'A', value: 's1[i] ≠ s2[cnt]' },
+                { label: 'B', value: 's1[i] ≠ s2[i]' },
+                { label: 'C', value: 's1[i] = s2[cnt]' },
+                { label: 'D', value: 's1[i] = s2[i]' },
+            ]
+        },
+        correctAnswer: 's1[i] = s2[i]',
+        explanationText: {
+            ja: "問題文において、このプログラムの戻り値は「要素番号が同じ要素の文字列同士が一致する要素の組みの個数 ÷ s1の要素数」と説明されています。プログラムの最後で `cnt ÷ s1の要素数` を戻り値としていることから、cnt は問題文でいう「要素番号が同じ要素の文字列同士が一致する要素の組みの個数」を格納する変数であることがわかります。\n\nif文では条件式がtrueのときに cnt をインクリメント (+1) しているので、空欄には「引数 s1 と s2 の同じ位置の文字が等しい」という意味の式を入れることになります。同じ要素番号の文字を比較したいのですから、s1[i] と比較すべきは s2[i] となります。\n\nしたがって s1[i] = s2[i] の式が当てはまります。",
+            en: "The problem description states that the return value is '(number of matching character pairs at the same index) / (number of elements in s1)'. Since the program returns `cnt / length of s1`, 'cnt' must be the variable storing the count of matching pairs at the same index.\n\nThe if statement increments 'cnt' when the condition is true. Therefore, the blank should contain an expression meaning 'the characters at the same position in s1 and s2 are equal'. To compare characters at the same index, s1[i] should be compared with s2[i].\n\nThus, the expression s1[i] = s2[i] is correct."
+        },
+        initialVariables: {
+            s1: ["a", "p", "p", "l", "e"], // 表の2番目の例
+            s2: ["a", "p", "p", "r", "l"],
+            i: null,
+            cnt: null,
+            result: null,
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
     }
 ];
 
