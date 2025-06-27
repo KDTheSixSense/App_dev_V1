@@ -4,7 +4,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 // 例: import bcrypt from 'bcrypt';
 
 // ★重要★ あなたの環境の `problems.ts` ファイルへのパスが正しいか確認してください
-import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/problems/problems'; 
+import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/data/problems'; 
 
 import { addXp } from '../lib/action'; // 作成したaddXp関数をインポート
 

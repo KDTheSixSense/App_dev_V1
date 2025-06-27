@@ -1,5 +1,5 @@
-import { problemLogicsMap } from '@/app/(main)/issue_list/basic_info_b_problem/problems/problem-logics';
-import type { Problem as AppProblem, AnswerOption } from '@/app/(main)/issue_list/basic_info_b_problem/problems/problems';
+import { problemLogicsMap } from '@/app/(main)/issue_list/basic_info_b_problem/data/problem-logics';
+import type { Problem as AppProblem, AnswerOption } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
 import { prisma } from './prisma'; 
 import { Problem as DbProblem } from '@prisma/client';
 
