@@ -22,8 +22,8 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.58.1",
     "react-syntax-highlighter": "^15.x.x",
-    "sqlite3": "^5.x.x", // SQLiteを使う場合
-    "vm2": "^3.x.x"     // サンドボックス実行ライブラリ
+    "sqlite3": "^5.x.x", 
+    "vm2": "^3.x.x"     
 
   },
   "devDependencies": {
@@ -42,7 +42,7 @@
     "autoprefixer": "^10.x.x",
     "eslint": "8.x.x",
     "eslint-config-next": "14.x.x",
-    "postcss": "^8.x.x",
+    "postcss": "^8.x.x"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
