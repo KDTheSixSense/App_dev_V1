@@ -127,17 +127,62 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
+  const [isPresetSelected, setIsPresetSelected] = useState<boolean>(false);
 
   useEffect(() => {
-    setProblem(initialProblem);
+    let problemData = initialProblem;
+
+    // 問13のデータがサーバーから不完全に渡された場合に備え、クライアント側でデータを補う
+    if (initialProblem.id.toString() === '13') {
+        const initialVarsFor13 = {
+            data: null, target: null, low: null, high: null, middle: null, result: null, initialized: false,
+        };
+        const presetsFor13 = [
+            { label: 'ア: data:{10}, target:10', value: { data: [10], target: 10 } },
+            { label: 'イ: data:{10,20}, target:10', value: { data: [10, 20], target: 10 } },
+            { label: 'ウ: data:{10,20}, target:20', value: { data: [10, 20], target: 20 } },
+            { label: 'エ: data:{10,20,30,40}, target:30', value: { data: [10, 20, 30, 40], target: 30 } }
+        ];
+        problemData = {
+            ...initialProblem,
+            initialVariables: { ...initialVarsFor13, ...initialProblem.initialVariables },
+            traceOptions: {
+                ...initialProblem.traceOptions,
+                presets_array: initialProblem.traceOptions?.presets_array || presetsFor13,
+            }
+        };
+    }
+
+    // ✅【追加点】問11のデータ補完処理
+    if (initialProblem.id.toString() === '11') {
+        const initialVarsFor11 = {
+            data: null, n: null, bins: null, i: null,
+        };
+        const presetsFor11 = [
+            { label: 'ア: {2, 6, 3, 1, 4, 5}', value: { data: [2, 6, 3, 1, 4, 5] } },
+            { label: 'イ: {3, 1, 4, 4, 5, 2}', value: { data: [3, 1, 4, 4, 5, 2] } },
+            { label: 'ウ: {4, 2, 1, 5, 6, 2}', value: { data: [4, 2, 1, 5, 6, 2] } },
+            { label: 'エ: {5, 3, 4, 3, 2, 6}', value: { data: [5, 3, 4, 3, 2, 6] } },
+        ];
+        problemData = {
+            ...initialProblem,
+            initialVariables: { ...initialVarsFor11, ...initialProblem.initialVariables },
+            traceOptions: {
+                ...initialProblem.traceOptions,
+                presets_array: initialProblem.traceOptions?.presets_array || presetsFor11,
+            }
+        };
+    }
+
+    setProblem(problemData);
     setCurrentTraceLine(0);
-    setVariables(initialProblem.initialVariables);
+    setVariables(problemData.initialVariables);
     setSelectedAnswer(null);
     setIsAnswered(false);
     setChatMessages([
       { sender: 'kohaku', text: textResources[language].problemStatement.hintInit },
     ]);
-  }, [initialProblem.id, language]);
+  }, [initialProblem, language]);
 
   const t = textResources[language].problemStatement;
 
@@ -177,14 +222,30 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
       const nextVariables = traceStepFunction ? traceStepFunction(variables) : { ...variables };
 
       let nextLine;
-      if ('calculateNextLine' in logic && logic.calculateNextLine) {
+      if ('calculateNextLine' in logic && logic.calculateNextLine) {    
+        nextLine = logic.calculateNextLine(currentTraceLine, variables);
+      } else if ('calculateNextLine' in logic && typeof logic.calculateNextLine === 'function') {
+        // `calculateNextLine`には、現在の行(currentTraceLine)と現在の変数(variables)を渡す
         nextLine = logic.calculateNextLine(currentTraceLine, nextVariables);
-      } else {
+      }else{
         nextLine = currentTraceLine + 1;
       }
       
       setVariables(nextVariables);
       setCurrentTraceLine(nextLine);
+      // ✅【追加点】ミニマックス問題の場合、コハクが解説する
+    if (problem.logicType === 'MINIMAX') {
+        const hints: { [key: number]: string } = {
+            1: 'まず、Aが指す子の評価値を求めます。その子のさらに子（孫）は、評価値0の「引き分け」と評価値10の「勝ち」のノードですね。',
+            2: 'Aの子は「相手の手番」なので、孫ノードの評価値の小さい方を選びます。min(0, 10) なので、評価値は 0 と決まります。変数 a の値が更新されました！',
+            3: '次に、Bが指す子の評価値を求めましょう。孫ノードは評価値-10の「負け」と評価値0の「引き分け」です。同じように小さい方を選ぶと…？',
+            4: 'その通り！min(-10, 0) で、評価値は -10 となりますね。変数 b の値も更新されました！これで計算は完了です。',
+        };
+        const hintText = hints[nextLine];
+        if (hintText) {
+            setChatMessages(prev => [...prev, { sender: 'kohaku', text: hintText }]);
+        }
+    }
     }
   };
 
@@ -203,6 +264,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
         { sender: 'kohaku', text: t.resetTraceKohaku1 },
         { sender: 'kohaku', text: t.resetTraceKohaku2 },
       ]);
+      setIsPresetSelected(false);
     }
   };
 
@@ -220,6 +282,16 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
       const kohakuResponse = generateKohakuResponse(currentTraceLine, variables, false, null, message);
       setChatMessages((prev) => [...prev, { sender: 'kohaku', text: kohakuResponse }]);
     }, 1000);
+  };
+
+  // 【修正】より汎用的なオブジェクトを受け取れるように変更
+  const handleSetData = (dataToSet: Record<string, any>) => {
+    if (problem) {
+      // 既存の変数をリセットし、選択されたデータをマージする
+      setVariables({ ...problem.initialVariables, ...dataToSet, initialized: false });
+      setCurrentTraceLine(0);
+      setIsPresetSelected(true);
+    }
   };
 
   const handleNextProblem = async () => {
@@ -240,10 +312,18 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
     }
   };
 
+  // ✅【追加】logicTypeに応じてトレースUIの表示を切り替えるフラグ
+  const showTraceUI = problem.logicType !== 'STATIC_QA';
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start">
-        <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col">
+        <div className={
+            // ✅【修正】トレースUIがない場合は問題文エリアの幅を広げる
+            showTraceUI
+            ? "flex-1 bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col"
+            : "w-full lg:w-2/3 mx-auto bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col"
+        }>
           <ProblemStatement
             description={problem.description[language]}
             programText={problem.programLines[language].join('\n')}
@@ -258,8 +338,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
           />
         </div>
         
-        <div className="flex-1 flex flex-col gap-8">
-          <div className="bg-white p-8 rounded-lg shadow-md flex-grow overflow-hidden">
+        {showTraceUI && (
+            <>
+                <div className="flex-1 flex flex-col gap-8">
+                    <div className="bg-white p-8 rounded-lg shadow-md flex-grow overflow-hidden">
             <TraceScreen
               programLines={problem.programLines[language]}
               currentLine={currentTraceLine}
@@ -278,17 +360,20 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
               language={language}
               textResources={t}
               onSetNum={handleSetNum}
+              onSetData={handleSetData} 
+              isPresetSelected={isPresetSelected}
             />
           </div>
         </div>
-        
-        <div className="w-full lg:w-96 flex flex-col">
+        </>
+      )}
+      <div className="w-full lg:w-96 flex flex-col">
           <KohakuChat
             messages={chatMessages}
             onSendMessage={handleUserMessage}
             language={language}
             textResources={t}
-          />
+            />
         </div>
       </div>
 

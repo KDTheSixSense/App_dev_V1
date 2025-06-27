@@ -35,48 +35,50 @@ export type TraceStep = (vars: VariablesState) => VariablesState;
 
 // 注: DBから取得した静的なproblems配列とgetProblemById関数は削除します。
 /**
- * @interface Problem
- * @description 1つの問題を構成するために必要な、すべてのデータの構造を定義します。
- * 新しい問題を追加する際は、必ずこの `Problem` 型に従ってデータを作成します。
- */
+ * @interface Problem
+ * @description 1つの問題を構成するために必要な、すべてのデータの構造を定義します。
+ * 新しい問題を追加する際は、必ずこの `Problem` 型に従ってデータを作成します。
+ */
 export interface Problem {
-  id: string;                                   // 問題をURLなどで一意に識別するためのID (例: "1", "2")
-  title: { ja: string; en: string };            // 問題のタイトル (日本語/英語)
-  description: { ja: string; en: string };      // 問題文
-  programLines: { ja: string[]; en: string[] };  // 擬似言語プログラムの各行
-  answerOptions: { ja: AnswerOption[]; en: AnswerOption[] }; // 解答群の選択肢
-  correctAnswer: string;                        // この問題の正解の値
-  explanationText: { ja: string; en: string };  // 解答後に表示される解説文
-  initialVariables: VariablesState;             // トレース開始時の変数の初期状態
-  traceLogic: TraceStep[];                      // プログラムの各行に対応するトレース処理の配列
-  logicType: string;
-  
-  // --- 以下は特定の種類の問題でのみ使用するオプションのプロパティです ---
-  
-  /**
-   * @property {object} [traceOptions] - トレースの特別な設定（FizzBuzz問題などで使用）
-   * @property {number[]} presets - ユーザーが選択できるトレース開始時のプリセット値 (例: [3, 5, 15, 7])
-   */
-  traceOptions?: {
-    presets?: number[];
-  };
+  id: string;                                   // 問題をURLなどで一意に識別するためのID (例: "1", "2")
+  title: { ja: string; en: string };            // 問題のタイトル (日本語/英語)
+  description: { ja: string; en: string };      // 問題文
+  programLines: { ja: string[]; en: string[] };  // 擬似言語プログラムの各行
+  answerOptions: { ja: AnswerOption[]; en: AnswerOption[] }; // 解答群の選択肢
+  correctAnswer: string;                        // この問題の正解の値
+  explanationText: { ja: string; en: string };  // 解答後に表示される解説文
+  initialVariables: VariablesState;             // トレース開始時の変数の初期状態
+  traceLogic: TraceStep[];                      // プログラムの各行に対応するトレース処理の配列
+  logicType: string;
+  
+  // --- 以下は特定の種類の問題でのみ使用するオプションのプロパティです ---
+  
+  /**
+   * @property {object} [traceOptions] - トレースの特別な設定（FizzBuzz問題などで使用）
+   * @property {number[]} presets - ユーザーが選択できるトレース開始時のプリセット値 (例: [3, 5, 15, 7])
+   */
+  traceOptions?: {
+    presets?: number[];
+    presets_array?: { label: string; value: any }[];
+    presets_case?: { label: string; value: any }[];
+  };
 
-  /**
-   * @property {function} [calculateNextLine] - 次に実行すべき行を計算する特別なロジック（条件分岐やループ問題で使用）
-   * @param currentLine 現在の行番号
-   * @param vars 更新後の変数の状態
-   * @returns {number} 次にジャンプすべき行番号
-   */
-  calculateNextLine?: (currentLine: number, vars: VariablesState) => number;
+  /**
+   * @property {function} [calculateNextLine] - 次に実行すべき行を計算する特別なロジック（条件分岐やループ問題で使用）
+   * @param currentLine 現在の行番号
+   * @param vars 更新後の変数の状態
+   * @returns {number} 次にジャンプすべき行番号
+   */
+  calculateNextLine?: (currentLine: number, vars: VariablesState) => number;
 }
 
 
 /**
- * @constant problems
- * @description
- * この配列に、すべての問題データをオブジェクトとして格納します。
- * 新しい問題を追加する場合は、この配列の末尾に新しいオブジェクトを追加してください。
- */
+ * @constant problems
+ * @description
+ * この配列に、すべての問題データをオブジェクトとして格納します。
+ * 新しい問題を追加する場合は、この配列の末尾に新しいオブジェクトを追加してください。
+ */
 export const problems: Problem[] = [
     {
         id: '1',
@@ -394,10 +396,18 @@ export const problems: Problem[] = [
             en: "This program performs a 'bin sort' by placing the element with value 'n' into the nth position to sort in ascending order. In this method, the storage location is uniquely determined by the value. If there are duplicate values, they will be assigned to the same location, overwriting each other, and the elements corresponding to missing numbers will remain undefined. For example, with input {3, 1, 4, 4, 5, 2}, 4 is written to bins[4], and then overwritten by another 4. Since there is no value 6, bins[6] remains undefined.\n\nThe returned array will contain undefined elements if the input argument has duplicate values. Looking at the choices, 'B' has duplicate '4', 'C' has duplicate '2', and 'D' has duplicate '3'. Therefore, only 'A', which has no duplicate values, will result in an array with no undefined elements."
         },
         initialVariables: {
-            data: null, // 正解の選択肢「ア」
+            data: null,
             n: null,
             bins: null,
             i: null,
+        },
+        traceOptions: {
+            presets_array: [
+                { label: 'ア: {2, 6, 3, 1, 4, 5}', value: { data: [2, 6, 3, 1, 4, 5] } },
+                { label: 'イ: {3, 1, 4, 4, 5, 2}', value: { data: [3, 1, 4, 4, 5, 2] } },
+                { label: 'ウ: {4, 2, 1, 5, 6, 2}', value: { data: [4, 2, 1, 5, 6, 2] } },
+                { label: 'エ: {5, 3, 4, 3, 2, 6}', value: { data: [5, 3, 4, 3, 2, 6] } },
+            ]
         },
         traceLogic: [],
         calculateNextLine: undefined,
@@ -469,14 +479,616 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
-    }
+    },
+    // =================================================================================
+    // --- 問13: 2分探索法 (バグあり) ---
+    // =================================================================================
+    {
+        id: '13',
+        logicType: 'BINARY_SEARCH',
+        title: { ja: "サンプル問題 [科目B] 問13", en: "Sample Problem [Subject B] Q13" },
+        description: {
+            ja: "次の記述中の□に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 search は，引数 data で指定された配列に，引数 target で指定された値が含まれていればその要素番号を返し，含まれていなければ-1を返す。data は昇順に整列されており，値に重複はない。\n\n関数 search には不具合がある。例えば，data の□場合は，無限ループになる。",
+            en: "Select the correct answer for the blank from the answer choices. Array indices start from 1.\n\nThe function 'search' returns the index of the value specified by 'target' in the array 'data', or -1 if not found. 'data' is sorted in ascending order with no duplicate values.\n\nThere is a bug in the 'search' function. For example, in the case of [ ], the function enters an infinite loop."
+        },
+        programLines: {
+            ja: [
+                ' 1: ○整数型: search(整数型の配列: data, 整数型: target)',
+                ' 2:   整数型: low, high, middle',
+                ' 3: ',
+                ' 4:   low ← 1',
+                ' 5:   high ← dataの要素数',
+                ' 6: ',
+                ' 7:   while (low <= high)',
+                ' 8:     middle ← (low + high) ÷ 2 の商',
+                ' 9:     if (data[middle] < target)',
+                '10:       low ← middle',
+                '11:     elseif (data[middle] > target)',
+                '12:       high ← middle',
+                '13:     else',
+                '14:       return middle',
+                '15:     endif',
+                '16:   endwhile',
+                '17: ',
+                '18:   return -1',
+            ],
+            en: [
+                ' 1: ○function search(array data: integer, integer: target) -> integer',
+                ' 2:   integer: low, high, middle',
+                ' 3: ',
+                ' 4:   low ← 1',
+                ' 5:   high ← length of data',
+                ' 6: ',
+                ' 7:   while (low <= high)',
+                ' 8:     middle ← floor((low + high) / 2)',
+                ' 9:     if (data[middle] < target)',
+                '10:       low ← middle',
+                '11:     elseif (data[middle] > target)',
+                '12:       high ← middle',
+                '13:     else',
+                '14:       return middle',
+                '15:     endif',
+                '16:   endwhile',
+                '17: ',
+                '18:   return -1',
+            ]
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '要素数が1で, target がその要素の値と等しい' },
+                { label: 'イ', value: '要素数が2で, target が data の先頭要素の値と等しい' },
+                { label: 'ウ', value: '要素数が2で, target が data の末尾要素の値と等しい' },
+                { label: 'エ', value: '要素に -1が含まれている' },
+            ],
+            en: [
+                { label: 'A', value: 'Number of elements is 1, and target equals its value' },
+                { label: 'B', value: 'Number of elements is 2, and target equals the first element' },
+                { label: 'C', value: 'Number of elements is 2, and target equals the last element' },
+                { label: 'D', value: 'The element -1 is included' },
+            ]
+        },
+        correctAnswer: '要素数が2で, target が data の末尾要素の値と等しい',
+        explanationText: {
+            ja: "2分探索法は、探索範囲を半分に絞り込むことを繰り返して目的のデータを探すアルゴリズムです。正しく実装するには、`low ← middle + 1` や `high ← middle - 1` のように、探索済の中央値を除外する必要があります。\n\n本問のプログラムでは、`low ← middle` や `high ← middle` となっているため、探索範囲が狭まらないケースがあり、無限ループが発生します。\n\n「ウ」のケースを考えます。`data = {10, 20}`、`target = 20` とすると、\n1. `low=1`, `high=2` でループ開始。\n2. `middle = (1+2)÷2 = 1`。\n3. `data[1]`(10) < `target`(20) なので、`low ← middle` が実行され `low` は `1` のまま。\n\n以降、`low=1, high=2` の状態が延々と繰り返され、無限ループになります。",
+            en: "Binary search is an algorithm that repeatedly divides the search interval in half to find the target data. For correct implementation, it's necessary to exclude the checked middle value, such as `low = middle + 1` or `high = middle - 1`.\n\nIn this program, the assignments are `low = middle` and `high = middle`, which can fail to narrow the search range, causing an infinite loop.\n\nConsider case 'C'. If `data = {10, 20}` and `target = 20`:\n1. The loop starts with `low=1`, `high=2`.\n2. `middle = floor((1+2)/2) = 1`.\n3. Since `data[1]`(10) < `target`(20), `low = middle` is executed, and `low` remains `1`.\n\nThe state `low=1, high=2` repeats indefinitely, resulting in an infinite loop."
+        },
+        // ✅【修正点】ユーザーが選択するまで変数をnullに設定
+        initialVariables: {
+            data: null,
+            target: null,
+            low: null,
+            high: null,
+            middle: null,
+            result: null,
+            initialized: false, // トレースロジックで使う初期化フラグ
+        },
+        // ✅【修正点】ユーザーがトレースするデータを選択できるようにプリセットを追加
+        traceOptions: {
+            presets_array: [
+                { label: 'ア: data:{10}, target:10', value: { data: [10], target: 10 } },
+                { label: 'イ: data:{10,20}, target:10', value: { data: [10, 20], target: 10 } },
+                { label: 'ウ: data:{10,20}, target:20', value: { data: [10, 20], target: 20 } },
+                { label: 'エ: data:{10,20,30,40}, target:30', value: { data: [10, 20, 30, 40], target: 30 } }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+    },
+    // =================================================================================
+    // --- 問14: 5数要約 ---
+    // =================================================================================
+    {
+        id: '14',
+        logicType: 'FIVE_NUMBER_SUMMARY',
+        title: { ja: "サンプル問題 [科目B] 問14", en: "Sample Problem [Subject B] Q14" },
+        description: {
+            ja: "次の記述中の□に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n要素数が1以上で，昇順に整列済みの配列を基に，配列を特徴づける五つの値を返すプログラムである。\n\n関数 summarize を summarize({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1}) として呼び出すと，戻り値は□である。",
+            en: "Select the correct answer for the blank. Array indices start at 1. This program returns five characteristic values based on a sorted array with one or more elements. When summarize({0.1, 0.2, ... , 1}) is called, the return value is [ ]."
+        },
+        programLines: {
+            ja: [
+                ' 1: ○実数型: findRank(実数型の配列: sortedData, 実数型: p)',
+                ' 2:   整数型: i',
+                ' 3:   i ← (sortedDataの要素数 - 1) × p の小数点以下を切り上げた値',
+                ' 4:   return sortedData[i + 1]',
+                ' 5: ',
+                ' 6: ○実数型の配列: summarize(実数型の配列: sortedData)',
+                ' 7:   実数型の配列: rankData ← {}',
+                ' 8:   実数型の配列: p ← {0, 0.25, 0.5, 0.75, 1}',
+                ' 9:   整数型: i',
+                '10:   for (i を 1 から pの要素数 まで 1 ずつ増やす)',
+                '11:     rankDataの末尾に findRank(sortedData, p[i])の戻り値 を追加する',
+                '12:   endfor',
+                '13:   return rankData',
+            ],
+            en: [
+                ' 1: ○function findRank(array sortedData: real, p: real) -> real',
+                ' 2:   integer: i',
+                ' 3:   i ← ceil((length of sortedData - 1) * p)',
+                ' 4:   return sortedData[i + 1]',
+                ' 5: ',
+                ' 6: ○function summarize(array sortedData: real) -> array real',
+                ' 7:   array real: rankData ← {}',
+                ' 8:   array real: p ← {0, 0.25, 0.5, 0.75, 1}',
+                ' 9:   integer: i',
+                '10:   for (i from 1 to length of p)',
+                '11:     append result of findRank(sortedData, p[i]) to rankData',
+                '12:   endfor',
+                '13:   return rankData',
+            ]
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '{0.1, 0.3, 0.5, 0.7, 1}' },
+                { label: 'イ', value: '{0.1, 0.3, 0.5, 0.8, 1}' },
+                { label: 'ウ', value: '{0.1, 0.3, 0.6, 0.7, 1}' },
+                { label: 'エ', value: '{0.1, 0.3, 0.6, 0.8, 1}' },
+                { label: 'オ', value: '{0.1, 0.4, 0.5, 0.7, 1}' },
+                { label: 'カ', value: '{0.1, 0.4, 0.5, 0.8, 1}' },
+                { label: 'キ', value: '{0.1, 0.4, 0.6, 0.7, 1}' },
+                { label: 'ク', value: '{0.1, 0.4, 0.6, 0.8, 1}' },
+            ],
+            en: [ /* ... English options ... */ ]
+        },
+        correctAnswer: '{0.1, 0.4, 0.6, 0.8, 1}',
+        explanationText: {
+            ja: "関数 summarize では、for文を使って配列 p の要素ひとつずつに対して、サブルーチンである関数 findRank を呼出し、その結果を戻り値の配列である rankData に追加しています。\n\n配列 p は{0, 0.25, 0.5, 0.75, 1}なので、rankData には、以下の5つの結果が格納されることになります。ここで、sortedDataの要素数は10なので、関数 findRank 内で使われている\"sortedDataの要素数 - 1\"は9となります。\n\nfindRank(sortedData, 0)\ni ← (0 × 9) = 0 を切り上げた値 ⇒ 0\nreturn sortedData[1] = 0.1\n\nfindRank(sortedData, 0.25)\ni ← (0.25 × 9) = 2.25 を切り上げた値 ⇒ 3\nreturn sortedData[4] = 0.4\n\nfindRank(sortedData, 0.5)\ni ← (0.5 × 9) = 4.5 を切り上げた値 ⇒ 5\nreturn sortedData[6] = 0.6\n\nfindRank(sortedData, 0.75)\ni ← (0.75 × 9) = 6.75 を切り上げた値 ⇒ 7\nreturn sortedData[8] = 0.8\n\nfindRank(sortedData, 1)\ni ← (1 × 9) = 9 を切り上げた値 ⇒ 9\nreturn sortedData[10] = 1\n\n戻り値 rankData の内容は{0.1, 0.4, 0.6, 0.8, 1}になっています。したがって「ク」が正解です。",
+            en: "In the 'summarize' function, a for loop iterates through each element of the array 'p', calling the 'findRank' subroutine for each. The result is appended to the 'rankData' array.\n\nSince 'p' is {0, 0.25, 0.5, 0.75, 1}, five results are stored in 'rankData'. With 'sortedData' having 10 elements, 'length of sortedData - 1' becomes 9.\n- findRank(sortedData, 0): i ← ceil(0*9)=0. returns sortedData[1]=0.1.\n- findRank(sortedData, 0.25): i ← ceil(0.25*9)=3. returns sortedData[4]=0.4.\n- findRank(sortedData, 0.5): i ← ceil(0.5*9)=5. returns sortedData[6]=0.6.\n- findRank(sortedData, 0.75): i ← ceil(0.75*9)=7. returns sortedData[8]=0.8.\n- findRank(sortedData, 1): i ← ceil(1*9)=9. returns sortedData[10]=1.\n\nThe final 'rankData' is {0.1, 0.4, 0.6, 0.8, 1}, making 'ク' the correct answer."
+        },
+        initialVariables: {
+            sortedData: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+            rankData: [],
+            p_values: [0, 0.25, 0.5, 0.75, 1],
+            i: null, // summarize関数のループカウンタ
+            current_p: null, // findRankに渡されるpの値
+            findRank_i: null, // findRank内のi
+            callStack: [], // 呼び出しスタック
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+    },
+    // =================================================================================
+    // --- 問15: ミニマックス法 ---
+    // =================================================================================
+    {
+        id: '15',
+        logicType: 'MINIMAX',
+        title: { ja: "サンプル問題 [科目B] 問15", en: "Sample Problem [Subject B] Q15" },
+        description: {
+            ja: "次の記述中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n三目並べにおいて自分が勝利する可能性が最も高い手を決定する。次の手順で，ゲームの状態遷移を木構造として表現し，根以外の各節の評価値を求める。その結果，根の子の中で最も評価値が高い手を，最も勝利する可能性が高い手とする。自分が選択した手を〇で表し，相手が選択した手を×で表す。\n\n〔手順〕\n(1) 現在の盤面の状態を根とし，勝敗がつくか，引き分けとなるまでの考えられる全ての手を木構造で表現する。\n(2) 葉の状態を次のように評価する。\n    ① 自分が勝ちの場合は10\n    ② 自分が負けの場合は－10\n    ③ 引き分けの場合は0\n(3) 葉以外の節の評価値は，その節の全ての子の評価値を基に決定する。\n    ① 自分の手番の節である場合，子の評価値で最大の評価値を節の評価値とする。\n    ② 相手の手番の節である場合，子の評価値で最小の評価値を節の評価値とする。\n\nゲームが図の最上部にある根の状態のとき，自分が選択できる手は三つある。そのうちAが指す子の評価値は a であり，Bが指す子の評価値は b である。",
+            en: "Select the correct combination for a and b. In Tic-Tac-Toe, determine the move with the highest probability of winning. Represent the game's state transitions as a tree and find the evaluation value for each node other than the root. The move with the highest evaluation value among the children of the root is considered the best move. Your moves are O, opponent's are X. [Procedures] (1) ... (2) Leaf nodes are evaluated: win=10, lose=-10, draw=0. (3) Non-leaf nodes: For your turn, take the max of children's values. For the opponent's turn, take the min. When the game is at the root state, what are the evaluation values for the children pointed to by A (value a) and B (value b)?"
+        },
+        programLines: { // この問題にはプログラムがないため、手順を記載
+            ja: [
+                '【評価手順のトレース】',
+                '1. Aが指す子の評価値を計算する',
+                '  - さらにその子(孫)の評価値を確認 (0 と 10)',
+                '  - 「相手の手番」なので、最小値を選択 → 0',
+                '2. Bが指す子の評価値を計算する',
+                '  - さらにその子(孫)の評価値を確認 (-10 と 0)',
+                '  - 「相手の手番」なので、最小値を選択 → -10',
+                '3. 計算完了'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'a:0, b:-10' },
+                { label: 'イ', value: 'a:0, b:0' },
+                { label: 'ウ', value: 'a:10, b:-10' },
+                { label: 'エ', value: 'a:10, b:0' },
+            ],
+            en: [
+                { label: 'A', value: 'a:0, b:-10' },
+                { label: 'B', value: 'a:0, b:0' },
+                { label: 'C', value: 'a:10, b:-10' },
+                { label: 'D', value: 'a:10, b:0' },
+            ]
+        },
+        correctAnswer: 'a:0, b:-10',
+        explanationText: {
+            ja: "設問の手順に従って、葉から節に遡る形で評価値を決めていきます。\n\n【Aが指す子の評価値】\n葉の一つ上の節は、一つしか子を持たないので葉の評価値そのままが節の評価値となります(左側の節は0、右側の節は10)。その一つ上の節は、相手の手番なので、評価値0と10を比較して小さいほうの0が評価値となります。\n\n【Bが指す子の評価値】\n葉の一つ上の右側の節は、一つしか子を持たないので葉の評価値そのままが節の評価値となります(左側の節は-10、右側の節は0)。その一つ上の節は、相手の手番なので、評価値-10と0とを比較して小さいほうの-10が評価値となります。\n\nしたがって、A=0、B=-10の組合せが適切です。",
+            en: "Following the instructions, we determine the evaluation values by working up from the leaves.\n\n[Evaluation of child A]\nThe nodes directly above the leaves take on the leaf's value (0 on the left, 10 on the right). The node above them is an opponent's turn, so we take the minimum of 0 and 10, which is 0.\n\n[Evaluation of child B]\nSimilarly, the nodes above the leaves are -10 and 0. The node above them is an opponent's turn, so we take the minimum of -10 and 0, which is -10.\n\nTherefore, the correct combination is A=0, B=-10."
+        },
+        initialVariables: {
+            "a (Aの子の評価値)": null,
+            "b (Bの子の評価値)": null,
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+    },
+    // =================================================================================
+    // --- 問16: UTF-8 エンコード ---
+    // =================================================================================
+    {
+        id: '16',
+        logicType: 'UTF8_ENCODE',
+        title: { ja: "サンプル問題 [科目B] 問16", en: "Sample Problem [Subject B] Q16" },
+        description: {
+            ja: "次のプログラム中の□に入れる正しい答えを，解答群の中から選べ。二つの□には，同じ答えが入る。ここで，配列の要素番号は1から始まる。\n\nUnicodeの符号位置を，UTF-8の符号に変換するプログラムである。本問で数値の後ろに\"(16)\"と記載した場合は，その数値が16進数であることを表す。\nUnicodeの各文字には，符号位置と呼ばれる整数値が与えられている。UTF-8は，Unicodeの文字を符号化する方式の一つであり，符号位置が 800(16) 以上 FFFF(16) 以下の文字は，次のように3バイトの値に符号化する。\n3バイトの長さのビットパターンを 1110xxxx 10xxxxxx 10xxxxxx とする。ビットパターンの下線の付いた\"x\"の箇所に，符号位置を2進数で表した値を右詰めで格納し，余った\"x\"の箇所に，0を格納する。この3バイトの値がUTF-8の符号である。\n例えば，ひらがなの\"あ\"の符号位置である 3042(16) を2進数で表すと 11000001000010 である。これを，上に示したビットパターンの\"x\"の箇所に右詰めで格納すると，1110xx11 10000001 10000010 となる。余った二つの\"x\"の箇所に0を格納すると，\"あ\"のUTF-8の符号 11100011 10000001 10000010 が得られる。\n\n関数 encode は，引数で渡されたUnicodeの符号位置をUTF-8の符号に変換し，先頭から順に1バイトずつ要素に格納した整数型の配列を返す。encode には，引数として，800(16) 以上 FFFF(16) 以下の整数値だけが渡されるものとする。",
+            en: "Select the correct answer for the blanks. Both blanks take the same answer. Array indices start at 1.\n\nThis program converts a Unicode code point to its UTF-8 representation..."
+        },
+        programLines: {
+            ja: [
+                ' 1: ○整数型の配列: encode(整数型: codePoint)',
+                ' 2: /* utf8Bytesの初期値は, ビットパターンの “x” を全て0に置き換え,',
+                ' 3:    8桁ごとに区切って, それぞれを2進数とみなしたときの値 */',
+                ' 4: 整数型の配列: utf8Bytes ← {224, 128, 128}',
+                ' 5: 整数型: cp ← codePoint',
+                ' 6: 整数型: i',
+                ' 7: for (i を utf8Bytesの要素数 から 1 まで 1 ずつ減らす)',
+                ' 8:   utf8Bytes[i] ← utf8Bytes[i] + (cp ÷ □ の余り)',
+                ' 9:   cp ← cp ÷ □ の商',
+                '10: endfor',
+                '11: return utf8Bytes'
+            ],
+            en: [ /* English lines */ ]
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '((4-i) × 2)' },
+                { label: 'イ', value: '(2の (4-i)乗)' },
+                { label: 'ウ', value: '(2の i乗)' },
+                { label: 'エ', value: '(i × 2)' },
+                { label: 'オ', value: '2' },
+                { label: 'カ', value: '6' },
+                { label: 'キ', value: '16' },
+                { label: 'ク', value: '64' },
+                { label: 'ケ', value: '256' },
+            ],
+            en: [ /* English options */ ]
+        },
+        correctAnswer: '64',
+        explanationText: {
+            ja: "符号位置は800(16)以上FFFF(16)とあります。\n800(16) = 1000 0000 0000(2)\nFFFF(16) = 1111 1111 1111 1111(2)\nですから、引数 codePoint のビット長は12ビット以上16ビット以下ということになります。また、変数 utf8Bytes の値はそれぞれ\nutf8Bytes[1] = 224(10) = 11100000(2)\nutf8Bytes[2] = 128(10) = 10000000(2)\nutf8Bytes[3] = 128(10) = 10000000(2)\nとなっていて、下線の部分に codePoint から切り出したビット列をコピーすることになります。\n\nfor文ではループ変数 i をデクリメント(－1)しながら3回繰返しますが、各回で行うべき処理は以下のとおりです。\n1. 1回目 … utf8Bytes[3] に codePoint の下位6ビットをコピー\n2. 2回目 … utf8Bytes[2] に codePoint の下位7ビット目から12ビット目までの6ビットをコピー\n3. 3回目 … utf8Bytes[1] に codePoint の残りの部分をコピー\n\n変数 cp から下位6ビットを取得する方法についてですが、10進数の整数で下位3桁を取得したいときに「10³ = 1,000」で割った余りを求めるのと同じで、2進数で下位6桁を取得するときには「2⁶ = 64」で割ることになります。今回は下位6ビットを取得したいので「2⁶ = 64」を使うのが適切です。したがって「ク」が正解です。",
+            en: "The code point is between 800(16) and FFFF(16)... To get the lower 6 bits of a binary number, we need to divide by 2^6 = 64. Thus 'ク' is the correct answer."
+        },
+        initialVariables: {
+            codePoint: 64, // "あ" のコードポイント 3042(16)
+            utf8Bytes: null,
+            cp: null,
+            i: null
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+    },
+    // =================================================================================
+    // --- 問17: セキュリティ（責任分界点） ---
+    // =================================================================================
+    {
+        id: '17',
+        logicType: 'STATIC_QA', // トレース機能がないことを示す
+        title: { ja: "サンプル問題 [科目B] 問17", en: "Sample Problem [Subject B] Q17" },
+        description: {
+            ja: "製造業のA社では，ECサイト（以下，A社のECサイトをAサイトという）を使用し，個人向けの製品販売を行っている。Aサイトは，A社の製品やサービスが検索可能で，ログイン機能を有しており，あらかじめAサイトに利用登録した個人（以下，会員という）の氏名やメールアドレスといった情報（以下，会員情報という）を管理している。Aサイトは，B社のPaaSで稼働しており，PaaS上のDBMSとアプリケーションサーバを利用している。\nA社は，Aサイトの開発，運用をC社に委託している。A社とC社との間の委託契約では，Webアプリケーションプログラムの脆弱性対策は，C社が実施するとしている。\n最近，A社の同業他社が運営しているWebサイトで脆弱性が悪用され，個人情報が漏えいするという事件が発生した。そこでA社は，セキュリティ診断サービスを行っているD社に，Aサイトの脆弱性診断を依頼した。脆弱性診断の結果，対策が必要なセキュリティ上の脆弱性が複数指摘された。図1にD社からの指摘事項を示す。\n\n項番1 Aサイトで利用しているアプリケーションサーバのOSに既知の脆弱性があり，脆弱性を悪用した攻撃を受けるおそれがある。\n項番2 Aサイトにクロスサイトスクリプティングの脆弱性があり，会員情報を不正に取得されるおそれがある。\n項番3 Aサイトで利用しているDBMSに既知の脆弱性があり，脆弱性を悪用した攻撃を受けるおそれがある。\n\n【設問】図1中の各項番それぞれに対処する組織の適切な組合せを，解答群の中から選べ。",
+            en: "Company A, a manufacturer, operates an e-commerce site (Site A) for direct-to-consumer sales..."
+        },
+        programLines: { ja: [], en: [] }, // プログラムはないので空
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '項番1:A社, 項番2:A社, 項番3:A社' },
+                { label: 'イ', value: '項番1:A社, 項番2:A社, 項番3:C社' },
+                { label: 'ウ', value: '項番1:A社, 項番2:B社, 項番3:B社' },
+                { label: 'エ', value: '項番1:B社, 項番2:B社, 項番3:B社' },
+                { label: 'オ', value: '項番1:B社, 項番2:B社, 項番3:C社' },
+                { label: 'カ', value: '項番1:B社, 項番2:C社, 項番3:B社' },
+                { label: 'キ', value: '項番1:B社, 項番2:C社, 項番3:C社' },
+                { label: 'ク', value: '項番1:C社, 項番2:B社, 項番3:B社' },
+                { label: 'ケ', value: '項番1:C社, 項番2:B社, 項番3:C社' },
+                { label: 'コ', value: '項番1:C社, 項番2:C社, 項番3:B社' },
+            ],
+            en: [ /* English options */ ]
+        },
+        correctAnswer: '項番1:B社, 項番2:C社, 項番3:B社',
+        explanationText: {
+            ja: "・項番1（APサーバOSの脆弱性）: アプリケーションサーバのOSは、B社が提供するPaaSに含まれます。PaaSのサービスモデルでは、OSやミドルウェアの管理責任はサービス提供者であるB社が負います。\n\n・項番2（クロスサイトスクリプティング）: これはWebアプリケーション自体の脆弱性です。問題文に「Webアプリケーションプログラムの脆弱性対策は，C社が実施する」と明記されているため、責任はC社にあります。\n\n・項番3（DBMSの脆弱性）: DBMSもB社が提供するPaaSに含まれるミドルウェアです。したがって、管理責任はB社が負います。\n\n以上から、項番1がB社、項番2がC社、項番3がB社となる「カ」が正解です。",
+            en: "Item 1 (AP Server OS): Responsibility of PaaS provider B. Item 2 (XSS): Responsibility of application developer C as stated. Item 3 (DBMS): Responsibility of PaaS provider B. Therefore, the correct combination is B, C, B, which corresponds to 'カ'."
+        },
+        initialVariables: {}, // トレース変数は不要
+        traceLogic: [],
+    },
+    // =================================================================================
+    // --- 問18: セキュリティ（BYODのリスク） ---
+    // =================================================================================
+    {
+        id: '18',
+        logicType: 'STATIC_QA', // トレース機能がないことを示す
+        title: { ja: "サンプル問題 [科目B] 問18", en: "Sample Problem [Subject B] Q18" },
+        description: {
+            ja: "A社はIT開発を行っている従業員1,000名の企業である。総務部50名，営業部50名で，ほかは開発部に所属している。開発部員の9割は客先に常駐している。現在，A社におけるPCの利用状況は図1のとおりである。\n\n【図1 A社におけるPCの利用状況】\n1 A社のPC\n・総務部員，営業部員及びA社オフィスに勤務する開発部員には，会社が用意したPC(以下，A社PCという)を一人1台ずつ貸与している。\n・客先常駐開発部員には，A社PCを貸与していないが，代わりに客先常駐開発部員がA社オフィスに出社したときに利用するための共用PCを用意している。\n2 客先常駐開発部員の業務システム利用\n・客先常駐開発部員が休暇申請，経費精算などで業務システムを利用するためには共用PCを使う必要がある。\n3 A社のVPN利用\n・A社には，VPNサーバが設置されており，営業部員が出張時にA社PCからインターネット経由で社内ネットワークにVPN接続し，業務システムを利用できるようになっている。規則で，VPN接続にはA社PCを利用すると定められている。\n\nA社では，客先常駐開発部員が業務システムを使うためだけにA社オフィスに出社するのは非効率的であると考え，客先常駐開発部員に対して個人所有PCの業務用利用(BYOD)とVPN接続の許可を検討することにした。\n\n【設問】\n客先常駐開発部員に，個人所有PCからのVPN接続を許可した場合に，増加する又は新たに生じると考えられるリスクを二つ挙げた組合せは，次のうちどれか。解答群のうち，最も適切なものを選べ。\n\n(一) VPN接続が増加し，可用性が損なわれるリスク\n(二) 客先常駐開発部員がA社PCを紛失するリスク\n(三) 客先常駐開発部員がフィッシングメールのURLをクリックして個人PCがマルウェアに感染するリスク\n(四) 総務部員が個人所有PCをVPN接続するリスク\n(五) マルウェアに感染した個人所有PCが社内ネットワークにVPN接続され，マルウェアが社内ネットワークに拡散するリスク",
+            en: "Company A, an IT development firm with 1,000 employees, is considering allowing off-site developers to use personal PCs (BYOD) with VPN access..."
+        },
+        programLines: { ja: [], en: [] }, // プログラムはないので空
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '(一), (二)' },
+                { label: 'イ', value: '(一), (三)' },
+                { label: 'ウ', value: '(一), (四)' },
+                { label: 'エ', value: '(一), (五)' },
+                { label: 'オ', value: '(二), (三)' },
+                { label: 'カ', value: '(二), (四)' },
+                { label: 'キ', value: '(二), (五)' },
+                { label: 'ク', value: '(三), (四)' },
+                { label: 'ケ', value: '(三), (五)' },
+                { label: 'コ', value: '(四), (五)' },
+            ],
+            en: [ /* English options */ ]
+        },
+        correctAnswer: '(一), (五)',
+        explanationText: {
+            ja: "（一）VPN接続が増加し，可用性が損なわれるリスク\n正しい。最大で客先に常駐する「900人×9割＝810人」の客先常駐開発部員が個人所有PCでVPN接続をすることになるので、これまでよりA社オフィスのインターネット回線やVPN装置の負荷が増すことになります。負荷増大に伴う通信遅延や応答速度の低下によって、可用性が損なわれるリスクがあります。\n\n（二）“客先常駐開発部員がA社PCを紛失するリスク”\n誤り。客先常駐開発部員にはA社PCが貸与されないので、A社PCを紛失するリスクはありません。\n\n（三）“客先常駐開発部員がフィッシングメールのURLをクリックして個人PCがマルウェアに感染するリスク”\n誤り。フィッシングメールによる攻撃を受けるリスクは、BYOD導入前と後で変わりません。\n\n（四）“総務部員が個人所有PCをVPN接続するリスク”\n誤り。個人所有PCの業務利用は、客先常駐開発部員だけに認められます。VPN接続の際には認証が行われるので、総務部員が個人所有PCでVPN接続するリスクはありません。\n\n（五）“マルウェアに感染した個人所有PCが社内ネットワークにVPN接続され，マルウェアが社内ネットワークに拡散するリスク”\n正しい。新たに個人所有PCが社内ネットワークと通信を行うことになるので、その通信を介してマルウェアが社内ネットワークに侵入するリスクがあります。\n\nしたがって適切な組合せは「エ」です。",
+            en: "Risk (I) is valid as VPN usage will increase significantly, straining network resources. Risk (V) is also valid as personal, potentially insecure PCs will now connect to the internal network, introducing a new vector for malware propagation. The other risks are not newly introduced or increased by this change. Therefore, the correct combination is 'エ'."
+        },
+        initialVariables: {}, // トレース変数は不要
+        traceLogic: [],
+    },
+    // =================================================================================
+    // --- 問19: 職務の分離と最小権限 ---
+    // =================================================================================
+    {
+        id: '19',
+        logicType: 'STATIC_QA', // トレース機能がないことを示す
+        title: { ja: "サンプル問題 [科目B] 問19", en: "Sample Problem [Subject B] Q19" },
+        description: {
+            ja: "A社は従業員200名の通信販売業者である。一般消費者向けに生活雑貨，ギフト商品などの販売を手掛けている。取扱商品の一つである商品Zは，Z販売課が担当している。\n\n〔Z販売課の業務〕\n現在，Z販売課の要員は，商品Zについての受注管理業務及び問合せ対応業務を行っている。商品Zについての受注管理業務の手順を図1に示す。\n\n【図1 受注管理業務の手順】\n商品Zの顧客からの注文は電子メールで届く。\n(1) 入力\n    販売担当者は，届いた注文(変更，キャンセルを含む)の内容を受注管理システム1)(以下，Jシステムという)に入力し，販売責任者2)に承認を依頼する。\n(2) 承認\n    販売責任者は，注文の内容とJシステムへの入力結果を突き合わせて確認し，問題がなければ承認する。問題があれば差し戻す。\n注1) A社情報システム部が運用している。利用者は，販売責任者，販売担当者などである。\n注2) Z販売課の課長1名だけである。\n\n〔Jシステムの操作権限〕\nZ販売課では，Jシステムについて，次の利用方針を定めている。\n〔方針1〕ある利用者が入力した情報は，別の利用者が承認する。\n〔方針2〕販売責任者は，Z販売課の全業務の情報を閲覧できる。\n\nJシステムでは，業務上必要な操作権限を利用者に与える機能が実装されている。\nこの度，商品Zの受注管理業務が受注増によって増えていることから，B社に一部を委託することにした(以下，商品Zの受注管理業務の入力作業を行うB社従業員を商品ZのB社販売担当者といい，商品ZのB社販売担当者の入力結果を閲覧して，不備があればA社に口頭で差戻しを依頼するB社従業員を商品ZのB社販売責任者という)。\n\n委託に当たって，Z販売課は情報システム部にJシステムに関する次の要求事項を伝えた。\n［要求1］B社が入力した場合は，A社が承認する。\n［要求2］A社の販売担当者が入力した場合は，現状どおりにA社の販売責任者が承認する。\n\n上記を踏まえ，情報システム部は今後の各利用者に付与される操作権限を表1にまとめ，Z販売課の情報セキュリティリーダーであるCさんに確認をしてもらった。\n\n【表1 操作権限案】\n利用者 (省略)\nZ販売課の販売担当者 (省略)\na1 (空欄)\na2 (空欄)\n(注記 ○は、操作権限が付与されることを示す。)\n\n【設問】\n表1中の a1， a2 に入れる字句の適切な組合せを，aに関する解答群の中から選べ。",
+            en: "Company A, a mail-order business, has outsourced some of its order management tasks for Product Z to Company B..."
+        },
+        programLines: { ja: [], en: [] }, // プログラムはないので空
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'a1:Z販売課の販売責任者, a2:商品ZのB社販売責任者' },
+                { label: 'イ', value: 'a1:Z販売課の販売責任者, a2:商品ZのB社販売担当者' },
+                { label: 'ウ', value: 'a1:商品ZのB社販売責任者, a2:Z販売課の販売責任者' },
+                { label: 'エ', value: 'a1:商品ZのB社販売責任者, a2:商品ZのB社販売担当者' },
+                { label: 'オ', value: 'a1:商品ZのB社販売担当者, a2:Z販売課の販売責任者' },
+            ],
+            en: [ /* English options */ ]
+        },
+        correctAnswer: 'a1:商品ZのB社販売責任者, a2:商品ZのB社販売担当者',
+        explanationText: {
+            ja: "業務のロール(役割)に応じて適切な権限設定が問われています。ポイントは［方針1］ある利用者が入力した情報は別の利用者が承認する「職務の分離」と、業務上必要な操作権限を利用者に与える「最小権限の原則」を考慮することです。\n\n［要求1］の「B社が入力した場合は，A社が承認する」、［要求2］の「A社の販売担当者が入力した場合は，現状どおりにA社の販売責任者が承認する」より、承認権限が付与される（省略）のロールはZ販売課の販売責任者であることがわかります。そうなると空欄に入るのは、B社販売責任者とB社販売担当者のいずれかになります。\n\nB社販売担当者は入力作業を行うので、Jシステムに対する入力権限と閲覧権限が必要です。一方、B社販売責任者の役割は、B社販売担当者の入力結果を閲覧することなので、最小権限の原則より閲覧権限のみ与えるのが適切です。\n\nしたがって「エ」の組合せが適切です。",
+            en: "This question is about setting appropriate permissions based on job roles, considering the 'separation of duties' and the 'principle of least privilege'. Based on the requirements, the approval role is the Z Sales Section Manager. The B Company Sales Representative needs input and view permissions, while the B Company Sales Manager only needs view permissions according to the principle of least privilege. Therefore, combination 'エ' is appropriate."
+        },
+        initialVariables: {}, // トレース変数は不要
+        traceLogic: [],
+    },
+    // =================================================================================
+    // --- 問20: 情報システム運用 ---
+    // =================================================================================
+    {
+        id: '20',
+        logicType: 'STATIC_QA', // トレース機能がないことを示す
+        title: { ja: "サンプル問題 [科目B] 問20", en: "Sample Problem [Subject B] Q20" },
+        description: {
+            ja: " A社は栄養補助食品を扱う従業員500名の企業である。A社のサーバ及びファイアウォール (以下、FWという)を含む情報システムの運用は情報システム部が担当している。ある日、内部監査部の監査があり、FWの運用状況について情報システム部の日部長が図1 のとおり説明したところ、表1に示す指摘を受けた。・FWを含め、情報システムの運用は、情報システム部の運用チームに所属する6名の運用担当者が担当している。FWの運用には、FWルールの編集、操作ログの確認、並びに編集後のFWルールの確認及び操作の承認(以下、 編集後のFWルールの確認及び操作の承認を操作承認というの三つがある。 FWルールの編集は事前に作成された操作指示書に従って行う。FWの機能には、FWルールの編集、操作ログの確認、及び操作承認の三つがある。FWルールの変更には、FWルールの編集と操作承認の両方が必要である。操作承認の前に操作ログの確認を行う。FWの利用者IDは各運用担当者に個別に発行されており、利用者IDの共用はしていない。FWでは、機能を利用する権限を運用担当者の利用者のごとに付与できる。現在は、6名の運用担当者とも全権限を付与されており、運用担当者はFWのルールの編集後、編集を行った運用担当者が操作に誤りがないことを確認し、操作承認をしている。FWへのログインにはパスワードを利用している。パスワードは文字の英数字である。・FWの運用では、運用担当者の利用者ごとに、ネットワークを経由せずコンソールでログインできるかどうか、ネットワークを経由してリモートからログインできるかどうかを設定できる。・FWは、ネットワークを経由せずコンソールでログインした場合でも、ネットワークを経由してリモートからログインした場合でも、同一の機能を利用できる。FWはサーバパレームに設置されており、サーバルームにはほかに数種類のサーバも設置されている。運用担当者だけがサーバルームへの入退室を許可されている。FWの運用の作業の中で、職務が適切に分離されていない。B部長は表1の指摘に対する改善策を検討することにした。設問表1中の指摘1について、FWルールの誤った変更を防ぐための改善策はどれか。解答群のうち、最も適切なものを選べ。",
+            en: "Company A, a mail-order business, has outsourced some of its order management tasks for Product Z to Company B..."
+        },
+        programLines: { ja: [], en: [] }, // プログラムはないので空
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'Endpoint Detection and Response (EDR) をコンソールに導入し、監視を強化する。' },
+                { label: 'イ', value: 'FWでの適用担当者のログインにはパスワード認証の代わりに多要素認証を導入する。' },
+                { label: 'ウ', value: 'FWのアクセス制御機能を使って、運用担当者をコンソールからログインできる者。 リモートからログインできる者に分ける。' },
+                { label: 'エ', value: 'FWの運用担当者を1人に限定する。' },
+                { label: 'オ', value: '運用担当者の一部を操作ログの確認だけをする者とし、それらの者には操作ログの確認権限だけを付与する。' },
+                { label: 'カ', value: '運用担当者を,FWルールの編集を行う者、操作ログを確認し、操作承認をする者に分け、それぞれに必要最小限の権限を付与する。' },
+                { label: 'キ', value: '作業を行う運用担当者を、曜日ごとに割り当てる。' },
+            ],
+            en: [ /* English options */ ]
+        },
+        correctAnswer: '運用担当者を,FWルールの編集を行う者、操作ログを確認し、操作承認をする者に分け、それぞれに必要最小限の権限を付与する。',
+        explanationText: {
+            ja: "業務のロール(役割)に応じて適切な権限設定が問われています。ポイントは［方針1］ある利用者が入力した情報は別の利用者が承認する「職務の分離」と、業務上必要な操作権限を利用者に与える「最小権限の原則」を考慮することです。\n\n［要求1］の「B社が入力した場合は，A社が承認する」、［要求2］の「A社の販売担当者が入力した場合は，現状どおりにA社の販売責任者が承認する」より、承認権限が付与される（省略）のロールはZ販売課の販売責任者であることがわかります。そうなると空欄に入るのは、B社販売責任者とB社販売担当者のいずれかになります。\n\nB社販売担当者は入力作業を行うので、Jシステムに対する入力権限と閲覧権限が必要です。一方、B社販売責任者の役割は、B社販売担当者の入力結果を閲覧することなので、最小権限の原則より閲覧権限のみ与えるのが適切です。\n\nしたがって「エ」の組合せが適切です。",
+            en: "This question is about setting appropriate permissions based on job roles, considering the 'separation of duties' and the 'principle of least privilege'. Based on the requirements, the approval role is the Z Sales Section Manager. The B Company Sales Representative needs input and view permissions, while the B Company Sales Manager only needs view permissions according to the principle of least privilege. Therefore, combination 'エ' is appropriate."
+        },
+        initialVariables: {}, // トレース変数は不要
+        traceLogic: [],
+    },
+    // =================================================================================
+    // --- 問21: プログラムの条件分岐 ---
+    // =================================================================================
+    {
+        id: '21',
+        logicType: 'ADMISSION_FEE',
+        title: { ja: "基本情報技術者試験 科目B 問21", en: "Fundamental Information Technology Engineer Examination, Subject B, Question 21" },
+        description: {
+            ja: "次のプログラム中の□に入れる正しい答えを、解答群の中から選べ。\n\nある施設の入場料は、0歳から3歳までは100円、4歳から9歳までは300円、10歳以上は500円である。関数 fee は、年齢を表す0以上の整数(num)を引数として受け取り、入場料を返す。",
+            en: "Select the correct answer for the blank in the following program from the answer choices.\n\nThe admission fee for a certain facility is 100 yen for ages 0 to 3, 300 yen for ages 4 to 9, and 500 yen for ages 10 and over. The function 'fee' takes a non-negative integer representing age(num) as an argument and returns the admission fee."
+        },
+        programLines: {
+            ja: [
+                ' 1: ○整数型: fee(整数型: num)',
+                ' 2:   整数型: ret',
+                ' 3:   if (num が 3 以下)',
+                ' 4:     ret ← 100',
+                ' 5:   elseif (            )',
+                ' 6:     ret ← 300',
+                ' 7:   else',
+                ' 8:     ret ← 500',
+                ' 9:   endif',
+                '10:   return ret',
+            ],
+            en: [
+                ' 1: ○function fee(integer: num) -> integer',
+                ' 2:   integer: ret',
+                ' 3:   if (num <= 3)',
+                ' 4:     ret ← 100',
+                ' 5:   elseif (            )',
+                ' 6:     ret ← 300',
+                ' 7:   else',
+                ' 8:     ret ← 500',
+                ' 9:   endif',
+                '10:   return ret',
+            ]
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '(numが4以上) and (numが9より小さい)' },
+                { label: 'イ', value: '(numが4と等しい) or (numが9と等しい)' },
+                { label: 'ウ', value: '(numが4より大きい) and (numが9以下)' },
+                { label: 'エ', value: 'numが4以上' },
+                { label: 'オ', value: 'numが4より大きい' },
+                { label: 'カ', value: 'numが9以下' },
+                { label: 'キ', value: 'numが9より小さい' },
+            ],
+            en: [
+                { label: 'A', value: '(num >= 4) and (num < 9)' },
+                { label: 'B', value: '(num == 4) or (num == 9)' },
+                { label: 'C', value: '(num > 4) and (num <= 9)' },
+                { label: 'D', value: 'num >= 4' },
+                { label: 'E', value: 'num > 4' },
+                { label: 'F', value: 'num <= 9' },
+                { label: 'G', value: 'num < 9' },
+            ]
+        },
+        correctAnswer: 'numが9以下',
+        explanationText: {
+            ja: "設問のプログラムの分岐処理は、if-elseif-else構文で構成されています。この構文では、条件は上から順に評価され、最初に真(true)になったブロックだけが実行されます。\n\n1. `if (num が 3 以下)`: まず、年齢(num)が3歳以下かどうかを判定します。真の場合、料金は100円となり、処理は終了します。\n2. `elseif (num が 9 以下)`: 上の条件が偽の場合（つまり、年齢(num)が4歳以上の場合）に、この条件が評価されます。ここで料金を300円に設定したい対象は4歳から9歳です。年齢(num)が既に4歳以上であることは確定しているため、「9歳以下である」という条件だけで十分です。\n3. `else`: 上の`elseif`の条件も偽の場合（つまり、10歳以上の場合）に、このブロックが実行され、料金は500円となります。\n\nしたがって、空欄には「カ」の `numが9以下` を入れるのが最も適切です。",
+            en: "The program's branching logic uses an if-elseif-else structure. Conditions are evaluated from top to bottom, and only the block of the first true condition is executed.\n\n1. `if (num <= 3)`: First, it checks if the age(num) is 3 or less. If true, the fee is 100, and the process ends.\n2. `elseif (num <= 9)`: This condition is evaluated if the above is false (i.e., the age(num) is 4 or greater). The target for the 300 yen fee is ages 4 to 9. Since it's already established that the age(num) is 4 or greater, the condition 'is 9 or less' is sufficient.\n3. `else`: If the `elseif` condition is also false (i.e., the age(num) is 10 or greater), this block is executed, and the fee becomes 500.\n\nTherefore, the most appropriate choice for the blank is 'F', `num <= 9`."
+        },
+        initialVariables: { num: null, ret: null },
+        traceOptions: {
+            presets: [2, 4, 9, 11]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+    },
+    // =================================================================================
+    // --- 【★ここから追加】問22: 配列の要素の逆順化 ---
+    // =================================================================================
+    {
+        id: '22',
+        logicType: 'ARRAY_REVERSE',
+        title: { ja: "基本情報技術者試験 科目B 問22", en: "Subject B Sample Problem Q22" },
+        description: {
+            ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n次のプログラムは，整数型の配列 array の要素の並びを逆順にする。",
+            en: "Select the correct combination for a and b in the following program from the answer choices. Here, array indices start from 1.\n\nThe following program reverses the order of elements in an integer array 'array'."
+        },
+        programLines: {
+            ja: [
+                '1: 整数型の配列: array ← {1, 2, 3, 4, 5}',
+                '2: 整数型: right, left',
+                '3: 整数型: tmp',
+                '4: ',
+                '5: for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)',
+                '6:   right ← [      a      ]',
+                '7:   tmp ← array[right]',
+                '8:   array[right] ← array[left]',
+                '9:   [      b      ] ← tmp',
+                '10: endfor',
+            ],
+            en: [ /* ... */ ]
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'a: arrayの要素数 - left, b: array[left]' },
+                { label: 'イ', value: 'a: arrayの要素数 - left, b: array[right]' },
+                { label: 'ウ', value: 'a: arrayの要素数 - left + 1, b: array[left]' },
+                { label: 'エ', value: 'a: arrayの要素数 - left + 1, b: array[right]' },
+            ],
+            en: [ /* ... */ ]
+        },
+        correctAnswer: 'a: arrayの要素数 - left + 1, b: array[left]',
+        explanationText: {
+            ja: "このプログラムは、配列の先頭 (`left`) と末尾 (`right`) の要素を順番に入れ替えていくことで、配列全体を逆順にします。`for`ループは配列の中央まで実行されます。\n\n`left`が1のとき、`right`は末尾の要素番号である5を指す必要があります。同様に`left`が2のときは`right`は4を指す必要があります。この関係は `right = (配列の要素数) - left + 1` と表せます。これにより、`a`には `arrayの要素数 - left + 1` が入ります。\n\n次に、要素の交換処理を見てみましょう。\n`tmp ← array[right]` で末尾の値を一時的に保存します。\n`array[right] ← array[left]` で先頭の値を末尾に代入します。\n最後に、一時的に保存した元の末尾の値を、先頭に代入する必要があります。したがって、`b` には `array[left]` が入り、`array[left] ← tmp` となります。\n\nよって、正しい組み合わせは「ウ」です。",
+            en: "This program reverses an array by swapping elements from the beginning (`left`) and the end (`right`), moving towards the center. The `for` loop runs up to the middle of the array..."
+        },
+        initialVariables: {
+            array: null,
+            left: null,
+            right: null,
+            tmp: null,
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+    },
+    // =================================================================================
+    // --- 問23: 単方向リストへの要素追加 ---
+    // =================================================================================
+    {
+        id: '23',
+        logicType: 'LINKED_LIST_APPEND',
+        title: { ja: "科目B サンプル問題 問23", en: "Subject B Sample Problem Q23" },
+        description: {
+            ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n手続 append は，引数で与えられた文字を単方向リストに追加する手続である。...",
+            en: "Select the correct combination for a and b from the answer choices. The procedure 'append' adds a character given as an argument to a singly linked list..."
+        },
+        programLines: {
+            ja: [
+                ' 1: 大域: ListElement: listHead ← 未定義の値',
+                ' 2: ',
+                ' 3: ○append(文字列型: qVal)',
+                ' 4:   ListElement: prev, curr',
+                ' 5:   curr ← ListElement(qVal)',
+                ' 6:   if (listHead が 未定義)',
+                ' 7:     listHead ← curr',
+                ' 8:   else',
+                ' 9:     prev ← listHead',
+                '10:     while (prev.next が 未定義でない)',
+                '11:       prev ← prev.next',
+                '12:     endwhile',
+                '13:     prev.next ← curr',
+                '14:   endif',
+            ],
+            en: [ /* ... */ ]
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'a: 未定義, b: curr' },
+                { label: 'イ', value: 'a: 未定義, b: curr.next' },
+                { label: 'ウ', value: 'a: 未定義, b: listHead' },
+                { label: 'エ', value: 'a: 未定義でない, b: curr' },
+                { label: 'オ', value: 'a: 未定義でない, b: curr.next' },
+                { label: 'カ', value: 'a: 未定義でない, b: listHead' },
+            ],
+            en: [ /* ... */ ]
+        },
+        correctAnswer: 'a: 未定義, b: curr',
+        explanationText: {
+            ja: "【aについて】\nこのif文は、リストが空かどうかを判断し、処理を分岐させるためのものです。問題文に「リストが空のときは，listHead は未定義である」とあるため、`listHead`が「未定義」かどうかで判定するのが適切です。`listHead`が未定義の場合、新しく作成した要素`curr`をリストの先頭`listHead`に設定します。\n\n【bについて】\nelse節は、リストに1つ以上の要素が既に存在する場合の処理です。`while`ループでリストの末尾の要素までたどり、ループを抜けた時点で変数`prev`が末尾の要素を指しています。この末尾要素の`next`参照（`prev.next`）に、新しく追加する要素`curr`を設定することで、リストの末尾に新しい要素を連結できます。\n\nしたがって、正しい組み合わせは「ア」です。",
+            en: "Regarding 'a': This if statement checks if the list is empty..."
+        },
+        initialVariables: {
+            listData: null,
+            listHead: null,
+            qVal: null,
+            prev: null,
+            curr: null,
+        },
+        traceOptions: {
+            presets_array: [
+                {
+                    label: 'Case1: 空のリストに "A" を追加',
+                    value: {
+                        listData: [],
+                        listHead: null,
+                        qVal: 'A',
+                        prev: null,
+                        curr: null,
+                    }
+                },
+                {
+                    label: 'Case2: 既存リストに "D" を追加',
+                    value: {
+                        listData: [{val: 'A', next: 1}, {val: 'B', next: 2}, {val: 'C', next: null}],
+                        listHead: 0,
+                        qVal: 'D',
+                        prev: null,
+                        curr: null,
+                    }
+                },
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+    },
 ];
 
 /**
- * IDを指定して問題データを取得するヘルパー関数
- * @param id 取得したい問題のID文字列
- * @returns {Problem | undefined} 対応する問題オブジェクト、または見つからない場合はundefined
- */
+ * IDを指定して問題データを取得するヘルパー関数
+ * @param id 取得したい問題のID文字列
+ * @returns {Problem | undefined} 対応する問題オブジェクト、または見つからない場合はundefined
+ */
 export const getProblemById = (id: string): Problem | undefined => {
-  return problems.find(p => p.id === id);
+  return problems.find(p => p.id === id);
 }
