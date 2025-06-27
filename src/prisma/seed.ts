@@ -4,11 +4,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 // 例: import bcrypt from 'bcrypt';
 
 // ★重要★ あなたの環境の `problems.ts` ファイルへのパスが正しいか確認してください
-<<<<<<< HEAD
 import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/problems/problems'; 
-=======
-import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem_fujita/data/problems'; 
->>>>>>> cde4e7f9e74611b53d5f11f7f7e596bd9f2f07f1
 
 import { addXp } from '../lib/action'; // 作成したaddXp関数をインポート
 
@@ -48,6 +44,14 @@ async function main() {
       year: 2020,
       class: 3,
       birth: new Date('2002-11-05'),
+    },
+    {
+      id: 9999, // 特別なユーザーIDを設定
+      email: 'GodOfGod@example.com',
+      password: 'godisgod', // ⚠️ 実際にはハッシュ化する
+      username: 'God',
+      level: 9999, // 特別なユーザーとしてレベルを設定
+      xp: 9998999, // 特別なユーザーとしてXPを設定
     },
   ];
 
@@ -165,7 +169,7 @@ async function main() {
   console.log('Seeding users...');
   // ... (ユーザー作成のコードは変更なし) ...
   const alice = await prisma.user.upsert({
-    where: { email: 'bob@example.com' }, update: {}, create: { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', birth: new Date('2002-04-15') },
+    where: { email: 'alice@example.com' }, update: {}, create: { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', birth: new Date('2002-04-15') },
   });
   console.log('✅ Users seeded.');
   
