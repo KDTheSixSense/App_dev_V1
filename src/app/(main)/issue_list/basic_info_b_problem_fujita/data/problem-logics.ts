@@ -513,6 +513,54 @@ const binSortLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: 
     },
 };
 
+const similarityRatioLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+    traceLogic: Array(11).fill((vars: VariablesState) => vars), // traceLogicは使いません
+    calculateNextLine(currentLine, vars) {
+        // トレースの最初のステップで変数を初期化
+        if (!vars.initialized) {
+            vars.i = 1;
+            vars.cnt = 0;
+            vars.result = null;
+            vars.initialized = true;
+        }
+
+        const lineNum = currentLine + 1;
+        const s1 = vars.s1 as string[];
+        const s2 = vars.s2 as string[];
+        let i = vars.i as number;
+        let cnt = vars.cnt as number;
+
+        switch (lineNum) {
+            case 2: // cnt ← 0 (初期化ステップで実行済み)
+                return 2; // -> 3行目へ
+            case 3: // if (s1の要素数 ≠ s2の要素数)
+                return s1.length !== s2.length ? 3 : 5; // -> 4行目 or 6行目
+            case 4: // return -1
+                vars.result = -1;
+                return 99; // トレース終了
+            case 6: // for (i を 1 から s1の要素数 まで)
+                return i <= s1.length ? 6 : 10; // -> 7行目 or 11行目
+            case 7: // if (s1[i] = s2[i])
+                if (s1[i - 1] === s2[i - 1]) {
+                    return 7; // -> 8行目
+                } else {
+                    return 8; // -> 9行目
+                }
+            case 8: // cnt ← cnt + 1
+                vars.cnt = cnt + 1;
+                return 8; // -> 9行目
+            case 9: // endif
+                vars.i = i + 1; // forループのインクリメント
+                return 5; // forループの条件判定(6行目)に戻る
+            case 11: // return cnt ÷ s1の要素数
+                vars.result = cnt / s1.length;
+                return 99; // トレース終了
+            default:
+                return currentLine + 1;
+        }
+    },
+};
+
 // logicTypeをキーとして、対応するロジックを返すマップ
 export const problemLogicsMap = {
   'VARIABLE_SWAP': variableSwapLogic,
@@ -526,4 +574,5 @@ export const problemLogicsMap = {
   'BINARY_TREE_TRAVERSAL': binaryTreeTraversalLogic,
   'LINKED_LIST_DELETE': linkedListDeleteLogic,
   'BIN_SORT':binSortLogic,
+  'SIMILARITY_RATIO': similarityRatioLogic,
 };
