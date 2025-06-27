@@ -1,48 +1,34 @@
 {
-    "name": "Node.js & Next.js & Prisma Development (with Docker Compose)", // 名前の更新 (任意)
-    // "build": { // ★ 削除: Docker Composeを使う場合、buildはdocker-compose.ymlに移動
-    //     "dockerfile": "Dockerfile",
-    //     "context": ".."
-    // },
-    "dockerComposeFile": [ // ★ 追加: docker-compose.ymlのパス
-        "../docker-compose.yml"
-    ],
-    "service": "app", // ★ 追加: docker-compose.ymlでDev Containerとして使うサービスの名前
-    "workspaceFolder": "/workspaces/my-next-app", // ★ 更新: ワークスペースのパス (docker-compose.ymlのvolumesと合わせる)
+  "name": "Next.js & PostgreSQL Dev Container",
+  "dockerComposeFile": "docker-compose.yml",
 
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "dbaeumer.vscode-eslint",
-                "esbenp.prettier-vscode",
-                "bradlc.vscode-tailwindcss",
-                "yoavbls.pretty-ts-errors",
-                "ms-vscode.vscode-typescript-next",
-                "prisma.prisma"
-            ],
-            "settings": {
-                "editor.formatOnSave": true,
-                "eslint.alwaysShowStatus": true,
-                "eslint.validate": [
-                    "javascript",
-                    "javascriptreact",
-                    "typescript",
-                    "typescriptreact"
-                ],
-                "typescript.tsdk": "node_modules/typescript/lib"
-            }
-        }
-    },
-    "remoteUser": "node",
-    "features": {
-        "ghcr.io/devcontainers/features/node:1": {
-            "version": "20"
-        }
-        // PostgreSQLクライアントが必要な場合
-        // "ghcr.io/devcontainers/features/postgresql-client:1": {
-        //     "version": "latest"
-        // }
-    },
-    "postCreateCommand": "npm install && npm install prisma @prisma/client",
-    "forwardPorts": [3000]
+  // docker-compose.ymlで定義したサービスのうち、VS Codeが接続するサービス
+  "service": "app",
+
+  // VS Codeで開くコンテナ内の作業ディレクトリ
+  "workspaceFolder": "/workspaces/my-next-app/src",
+
+  // コンテナ内でVS Codeを実行するユーザー
+  "remoteUser": "node",
+
+  // コンテナ作成後に一度だけ実行されるコマンド (依存パッケージのインストール)
+  "postCreateCommand": "npm install",
+
+  // "postStartCommand": "npm run dev & npx prisma studio --browser none &",
+
+  // VS Codeのカスタマイズ
+  "customizations": {
+    "vscode": {
+      // コンテナ内で有効化する推奨拡張機能
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "Prisma.prisma",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+
+  // ポートフォワーディングの設定
+  "forwardPorts": [3000, 5432, 5556]
 }

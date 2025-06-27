@@ -1,13 +1,11 @@
-# ベースイメージとしてNode.jsの公式イメージを使用
+# ベースイメージとしてNode.js 20がプリインストールされたイメージを使用
 FROM mcr.microsoft.com/devcontainers/javascript-node:20-bookworm
 
-# Prismaが依存する可能性のあるシステムパッケージ（例: PostgreSQLクライアント、または特定の環境でのOpenSSLライブラリ）
-# これはデータベースの種類やOSイメージによって異なります。
-# 例: PostgreSQLと関連するライブラリをインストールする場合
-# RUN apt-get update && apt-get install -y libpq-dev
+# rootユーザーでPostgreSQLクライアントをインストール (psqlコマンドやPrismaでの接続に便利)
+USER root
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends postgresql-client \
+    && npm install -g npm@11.4.2
 
-# 作業ディレクトリを設定
-WORKDIR /workspaces/my-next-app
-
-# ユーザーをnodeに設定 (devcontainer.jsonのremoteUserと合わせる)
+# ユーザーをnodeに戻す (devcontainer.jsonのremoteUserと合わせる)
 USER node

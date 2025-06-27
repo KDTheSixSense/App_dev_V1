@@ -1,35 +1,30 @@
-version: '3.8'
-
 services:
   app:
     build:
-      context: .devcontainer
-      dockerfile: Dockerfile
+      context: .
+    tty: true
     volumes:
-      - ..:/workspaces:cached # ホストのプロジェクトをコンテナにマウント
-    command: sleep infinity # コンテナを起動し続けるためのダミーコマンド
+      - ./src:/app
     environment:
-      # Next.jsアプリケーションからデータベースに接続するための環境変数
-      # PrismaのDATABASE_URLもここで設定
-      DATABASE_URL: postgresql://user:password@db:5432/mydatabase?schema=public
-      NODE_ENV: development
-    depends_on:
-      - db
-    ports:
-      - "3000:3000" # Next.jsのポートを転送
+      - WATCHPACK_POLLING=true
 
+    env_file:
+      - .env.local
+
+    command: sh -c "npm run dev"
+    ports:
+      - "3000:3000"
+      - "5555:5555"
   db:
-    image: postgres:16-alpine # PostgreSQLの公式イメージ
-    volumes:
-      - db_data:/var/lib/postgresql/data # データベース永続化用のボリューム
+    image: postgres:latest
     environment:
-      POSTGRES_DB: mydatabase
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      # POSTGRES_PORT: 5432 # デフォルトは5432
+      POSTGRES_DB: mydatabase
+    volumes:
+      - db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432" # オプション: ローカルからDBに直接アクセスしたい場合
-    restart: unless-stopped # コンテナが停止しても再起動する
-
+      - "5432:5432"
+      
 volumes:
-  db_data: # データベース永続化用の名前付きボリューム
+  db_data:
