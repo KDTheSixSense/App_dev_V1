@@ -72,8 +72,7 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
                         key={preset.label} 
                         onClick={() => onSetData(preset.value)}
                         className={`px-3 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 ${
-                            // JSON比較で選択状態を判定
-                            JSON.stringify(variables.data) === JSON.stringify(preset.value.data) && variables.target === preset.value.target
+                            isPresetSelected && JSON.stringify(variables) === JSON.stringify({...problem.initialVariables, ...preset.value})
                                 ? 'bg-emerald-500 ring-2 ring-emerald-300'
                                 : 'bg-indigo-500 hover:bg-indigo-600'
                         }`}
@@ -128,10 +127,21 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
                     const queueItems = value as QueueItem[];
                     displayValue = `[${queueItems.map(item => `"${item.value}"(${item.prio})`).join(', ')}]`;
                 }
-                else if (name === 'callStack' && typeof value[0] === 'object' && value[0] !== null) {
-                    const stackFrames = value as {n: number, pc: number}[];
-                    displayValue = `[${stackFrames.map(f => `order(${f.n}, pc:${f.pc})`).join(', ')}]`;
+                else if (name === 'callStack' && Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+              const stackFrames = value as any[];
+              // callStackのフレーム形式を判定して表示を切り替える
+              displayValue = `[${stackFrames.map(f => {
+                if ('func' in f && 'returnTo' in f) {
+                  const returnLineDisplay = f.returnTo === 99 ? 'End' : `L${f.returnTo + 1}`;
+                  return `${f.func}(ret: ${returnLineDisplay})`;
                 }
+                // 後方互換性のため、他の問題の形式も残す
+                if ('n' in f && 'pc' in f) {
+                  return `order(${f.n}, pc:${f.pc})`;
+                }
+                return JSON.stringify(f); // 想定外の形式はそのまま表示
+              }).join(', ')}]`;
+            }
                 else {
                     displayValue = JSON.stringify(value, null, 0).replace(/"/g, '');
                 }
