@@ -179,6 +179,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
     setVariables(problemData.initialVariables);
     setSelectedAnswer(null);
     setIsAnswered(false);
+    setIsPresetSelected(false);
     setChatMessages([
       { sender: 'kohaku', text: textResources[language].problemStatement.hintInit },
     ]);
@@ -220,6 +221,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
 
       const traceStepFunction = logic.traceLogic[currentTraceLine];
       const nextVariables = traceStepFunction ? traceStepFunction(variables) : { ...variables };
+      const newVariables = traceStepFunction ? traceStepFunction(variables) : { ...variables };
 
       let nextLine;
       if ('calculateNextLine' in logic && logic.calculateNextLine) {    
@@ -227,7 +229,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
       } else if ('calculateNextLine' in logic && typeof logic.calculateNextLine === 'function') {
         // `calculateNextLine`には、現在の行(currentTraceLine)と現在の変数(variables)を渡す
         nextLine = logic.calculateNextLine(currentTraceLine, nextVariables);
-      }else{
+      }else {
         nextLine = currentTraceLine + 1;
       }
       
