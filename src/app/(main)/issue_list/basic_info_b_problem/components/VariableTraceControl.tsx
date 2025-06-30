@@ -29,6 +29,8 @@ interface VariableTraceControlProps {
   language: 'ja' | 'en';
   textResources: any;
   onSetNum: (num: number) => void;
+  onSetData: (data: Record<string, any>) => void;
+  isPresetSelected: boolean;
 }
 
 /**
@@ -44,14 +46,44 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
   language,
   textResources: t,
   onSetNum,
+  onSetData,
+  isPresetSelected,
 }) => {
   
   const showPresets = problem.traceOptions?.presets;
+  const showArrayPresets = problem.traceOptions?.presets_array;
+  
+  // プリセットが選択されたかを判定するフラグ
   const isNumSet = variables?.num !== null;
+  const isDataSet = variables.data !== null && variables.target !== null;
+  // ★★★ disabledのロジックを汎用化 ★★★
+  const isNextButtonDisabled = isTraceFinished || ((showPresets || showArrayPresets) && !isPresetSelected);
 
   return (
     <div className="p-4 flex flex-col items-center">
       <h3 className="text-xl font-bold mb-4 text-gray-800">{t.variableSectionTitle}</h3>
+
+      {showArrayPresets && (
+        <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
+            <p className="text-center font-semibold mb-3 text-gray-700">1. 入力データを選択してトレース</p>
+            <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
+                {(showArrayPresets as {label: string, value: any}[]).map((preset) => (
+                    <button 
+                        key={preset.label} 
+                        onClick={() => onSetData(preset.value)}
+                        className={`px-3 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 ${
+                            isPresetSelected && JSON.stringify(variables) === JSON.stringify({...problem.initialVariables, ...preset.value})
+                                ? 'bg-emerald-500 ring-2 ring-emerald-300'
+                                : 'bg-indigo-500 hover:bg-indigo-600'
+                        }`}
+                    >
+                       {preset.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+      )}
+
       {showPresets && (
         <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
           <p className="text-center font-semibold mb-3 text-gray-700">
@@ -79,8 +111,10 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
       <div className="w-full mb-6">
         <p className="text-center font-semibold mb-3 text-gray-700">2. 変数の状態</p>
         <div className="grid grid-cols-1 gap-2 max-w-xs mx-auto">
-          {/* 修正: 様々な型の変数を表示できるようにロジックを更新 */}
           {Object.entries(variables).map(([name, value]) => {
+            // initialized フラグはUIに表示しない
+            if (name === 'initialized') return null;
+
             let displayValue: string;
             
             if (value === null || typeof value === 'undefined') {
@@ -93,13 +127,22 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
                     const queueItems = value as QueueItem[];
                     displayValue = `[${queueItems.map(item => `"${item.value}"(${item.prio})`).join(', ')}]`;
                 }
-                // 【追加】callStackを分かりやすく表示するロジック
-                else if (name === 'callStack' && typeof value[0] === 'object' && value[0] !== null) {
-                    const stackFrames = value as {n: number, pc: number}[];
-                    displayValue = `[${stackFrames.map(f => `order(${f.n}, pc:${f.pc})`).join(', ')}]`;
+                else if (name === 'callStack' && Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+              const stackFrames = value as any[];
+              // callStackのフレーム形式を判定して表示を切り替える
+              displayValue = `[${stackFrames.map(f => {
+                if ('func' in f && 'returnTo' in f) {
+                  const returnLineDisplay = f.returnTo === 99 ? 'End' : `L${f.returnTo + 1}`;
+                  return `${f.func}(ret: ${returnLineDisplay})`;
                 }
+                // 後方互換性のため、他の問題の形式も残す
+                if ('n' in f && 'pc' in f) {
+                  return `order(${f.n}, pc:${f.pc})`;
+                }
+                return JSON.stringify(f); // 想定外の形式はそのまま表示
+              }).join(', ')}]`;
+            }
                 else {
-                    // ネストした配列も考慮して再帰的に文字列化
                     displayValue = JSON.stringify(value, null, 0).replace(/"/g, '');
                 }
             } else {
@@ -130,9 +173,15 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
           </button>
           <button
             onClick={onNextTrace}
-            disabled={showPresets ? (!isNumSet || isTraceFinished) : isTraceFinished}
+            // ✅【修正点】disabledの条件を、配列プリセットの場合も考慮するように変更
+            disabled={
+              isTraceFinished ||
+              (showPresets && !isNumSet) ||
+              (showArrayPresets && !isDataSet)
+            }
             className={`flex-1 py-3 px-6 text-xl font-semibold text-white rounded-lg shadow-sm transition-colors
-              ${ (showPresets ? (!isNumSet || isTraceFinished) : isTraceFinished)
+              ${ // ✅【修正点】classNameの条件もdisabledと同期させる
+                (isTraceFinished || (showPresets && !isNumSet) || (showArrayPresets && !isDataSet))
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-500 hover:bg-blue-600'
               }`}
