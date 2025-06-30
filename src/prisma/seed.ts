@@ -7,7 +7,10 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/data/problems'; 
 
 import { addXp } from '../lib/action'; // 作成したaddXp関数をインポート
-
+import { promises as fs } from 'fs'; // ★ ファイル読み込みのためにfsをインポート
+import { parse } from 'csv-parse/sync'; // ★ CSVパーサーをインポート
+import path from 'path'; // ★ ファイルパスを解決するためにpathをインポート
+import * as XLSX from 'xlsx';
 
 // PrismaClientを初期化
 const prisma = new PrismaClient();
@@ -110,6 +113,61 @@ async function main() {
     console.log(`✅ Created problem: "${problem.title_ja}" (ID: ${problem.id})`);
   }
 
+  // --- Excelファイルからのデータ登録 ---
+  console.log(`\n🌱 Seeding problems from Excel file...`);
+  
+  // 次に登録すべき問題IDを計算（ローカル問題の最後のID + 1）
+  let nextProblemId = localProblems.length + 1;
+  console.log(`   Starting Excel problems from ID: ${nextProblemId}`);
+  
+  const excelFileName = 'PBL2 科目B問題.xlsx';
+  const sheetConfigs = [
+    { name: '基本情報科目B基礎', range: 'B2:G16' },
+    { name: '基本情報科目B応用', range: 'B2:G8' }
+  ];
+  const headers = [
+    'title_ja', 'description_ja', 'programLines_ja', 'answerOptions_ja', 'correctAnswer', 'explanation_ja'
+  ];
+
+  const filePath = path.join(__dirname, '..', 'app', '(main)', 'issue_list', 'basic_info_b_problem', 'data', excelFileName);
+  console.log(`  - Reading Excel file: ${filePath}`);
+
+    try {
+      const workbook = XLSX.readFile(filePath);
+    
+      for (const config of sheetConfigs) {
+          console.log(`  - Processing sheet: "${config.name}"`);
+          const sheet = workbook.Sheets[config.name];
+          if (!sheet) {
+              console.warn(`  ⚠️ Sheet "${config.name}" not found in the Excel file. Skipping.`);
+              continue;
+          }
+        
+          // 指定した範囲とヘッダーでデータを抽出
+          const records = XLSX.utils.sheet_to_json(sheet, {
+            range: config.range,
+            header: headers
+        });
+        
+          // 各行をデータベースに登録
+          for (const record of records) {
+              const problemData = transformRowToProblem(record);
+              
+              // IDを明示的に指定して登録
+              await prisma.problem.create({
+                  data: {
+                    id: nextProblemId, // ★カウンターからIDを指定
+                    ...problemData
+                },
+              });
+              console.log(`  ✅ Created problem from Excel: "${problemData.title_ja}" (ID: ${nextProblemId})`);
+              nextProblemId++; // ★次の問題のためにIDをインクリメント
+          }
+      }
+    } catch (error) {
+      console.error(`❌ Failed to read or process ${excelFileName}:`, error);
+    }
+
   console.log(`\n🎉 Seeding finished successfully.`);
 
   // =================================================================
@@ -177,7 +235,48 @@ async function main() {
   
   console.log('🎉 Seeding and testing finished successfully.');
 
+}
 
+function transformRowToProblem(row: any): Omit<Prisma.ProblemCreateInput, 'id'> {
+    // programLinesやanswerOptionsなどを適切にパースする
+    // 例： "['line1', 'line2']" という文字列を実際の配列に変換
+    const parseJsonArray = (str: string) => {
+        try {
+            // シングルクォートをダブルクォートに置換してJSONとしてパース
+            return JSON.parse(str.replace(/'/g, '"'));
+        } catch (e) {
+            console.error(`Error parsing JSON string: ${str}`, e);
+            return []; // エラー時は空配列を返す
+        }
+    };
+    
+    // initialVariablesをJSONオブジェクトに変換
+    const parseJsonObject = (str: string) => {
+        try {
+            if (!str || str.trim() === '{}' || str.trim() === '') return {};
+            return JSON.parse(str.replace(/'/g, '"'));
+        } catch(e) {
+            console.error(`Error parsing JSON object: ${str}`, e);
+            return {};
+        }
+    };
+
+    return {
+        title_ja: row.title_ja || '',
+        title_en: row.title_en || '',
+        description_ja: row.description_ja || '',
+        description_en: row.description_en || '',
+        answerOptions_ja: parseJsonArray(row.answerOptions_ja || '[]'),
+        answerOptions_en: parseJsonArray(row.answerOptions_en || '[]'),
+        correctAnswer: row.correctAnswer || '',
+        explanation_ja: row.explanation_ja || '',
+        explanation_en: row.explanation_en || '',
+        programLines_ja: parseJsonArray(row.programLines_ja || '[]'),
+        programLines_en: parseJsonArray(row.programLines_en || '[]'),
+        initialVariables: parseJsonObject(row.initialVariables || '{}'),
+        logicType: row.logicType || 'STATIC_QA',
+        options: parseJsonObject(row.options || '{}'),
+    };
 }
 
 // スクリプトの実行と終了処理
