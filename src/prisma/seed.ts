@@ -51,7 +51,7 @@ async function main() {
       password: 'godisgod', // ⚠️ 実際にはハッシュ化する
       username: 'God',
       level: 9999, // 特別なユーザーとしてレベルを設定
-      xp: 9998999, // 特別なユーザーとしてXPを設定
+      xp: 9999999, // 特別なユーザーとしてXPを設定
     },
   ];
 
@@ -125,16 +125,16 @@ async function main() {
   // =================================================================
   console.log('Seeding difficulties...');
   const difficultiesToSeed = [
-    { name: 'やさしい',   xp: 200 },
-    { name: 'かんたん', xp: 400 },
-    { name: 'ふつう',   xp: 800 },
-    { name: 'むずかしい',   xp: 1200 },
-    { name: '鬼むず',   xp: 2000 },
-    { name: '基本資格A問題',   xp: 40 },
-    { name: '基本資格B問題(かんたん)',   xp: 120 },
-    { name: '基本資格B問題(かんたん)',   xp: 280 },
-    { name: '応用資格午前問題',   xp: 60 },
-    { name: '応用資格午後問題',   xp: 1200 },
+    { id: 1,name: 'やさしい',   xp: 200 },
+    { id: 2,name: 'かんたん', xp: 400 },
+    { id: 3,name: 'ふつう',   xp: 800 },
+    { id: 4,name: 'むずかしい',   xp: 1200 },
+    { id: 5,name: '鬼むず',   xp: 2000 },
+    { id: 6,name: '基本資格A問題',   xp: 40 },
+    { id: 7,name: '基本資格B問題(かんたん)',   xp: 120 },
+    { id: 8,name: '基本資格B問題(かんたん)',   xp: 280 },
+    { id: 9,name: '応用資格午前問題',   xp: 60 },
+    { id: 10,name: '応用資格午後問題',   xp: 1200 },
   ];
 
   for (const d of difficultiesToSeed) {
@@ -176,15 +176,38 @@ async function main() {
   // =================================================================
   // Step 4: addXpのテストを、難易度名を使って行うように変更
   // =================================================================
-  console.log('Testing addXp function with difficulty...');
   if (alice) {
-    // Aliceさんに「プログラミング(subjectId: 1)」を「むずかしい」難易度でクリアしたとしてXPを加算
-    // addXp関数側で 'むずかしい' に対応するXP(1200)を調べて加算してくれる
+
     await addXp(alice.id, 1, 'むずかしい'); 
   }
   
-  console.log('🎉 Seeding and testing finished successfully.');
+    console.log('神の生成...');
 
+  // --- GodユーザーのUserSubjectProgressを作成 ---
+
+  // 1. 定数を定義
+  const godUserId = 9999;
+  const specialLevel = 9999;
+  const specialXp = 99999999; // 指示通りの値
+  const subjectIds = Array.from({ length: 3 }, (_, i) => i + 1); // [1, 2, ..., 10]
+
+  // 2. 投入するデータを配列として準備
+  const progressData = subjectIds.map((subjectId) => ({
+    userId: godUserId,
+    subjectId: subjectId,
+    level: specialLevel,
+    xp: specialXp,
+  }));
+
+  // 3. createMany を使ってデータを一括で作成
+  // skipDuplicates: true は、もし同じ主キー(userId, subjectId)のデータが既に存在する場合にエラーを出さずスキップするオプションです。
+  // これにより、シードスクリプトを何回実行しても安全になります。
+  await prisma.userSubjectProgress.createMany({
+    data: progressData,
+    skipDuplicates: true,
+  });
+
+  console.log(`神の誕生に成功しました。`);
 
 }
 
