@@ -7,7 +7,10 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/data/problems'; 
 
 import { addXp } from '../lib/action'; // 作成したaddXp関数をインポート
-
+import { promises as fs } from 'fs'; // ★ ファイル読み込みのためにfsをインポート
+import { parse } from 'csv-parse/sync'; // ★ CSVパーサーをインポート
+import path from 'path'; // ★ ファイルパスを解決するためにpathをインポート
+import * as XLSX from 'xlsx';
 
 // PrismaClientを初期化
 const prisma = new PrismaClient();
@@ -118,6 +121,61 @@ async function main() {
     console.log(`✅ Created problem: "${problem.title_ja}" (ID: ${problem.id})`);
   }
 
+  // --- Excelファイルからのデータ登録 ---
+  console.log(`\n🌱 Seeding problems from Excel file...`);
+  
+  // 次に登録すべき問題IDを計算（ローカル問題の最後のID + 1）
+  let nextProblemId = localProblems.length + 1;
+  console.log(`   Starting Excel problems from ID: ${nextProblemId}`);
+  
+  const excelFileName = 'PBL2 科目B問題.xlsx';
+  const sheetConfigs = [
+    { name: '基本情報科目B基礎', range: 'B2:G16' },
+    { name: '基本情報科目B応用', range: 'B2:G16' }
+  ];
+  const headers = [
+    'title_ja', 'description_ja', 'programLines_ja', 'answerOptions_ja', 'correctAnswer', 'explanation_ja'
+  ];
+
+  const filePath = path.join(__dirname, '..', 'app', '(main)', 'issue_list', 'basic_info_b_problem', 'data', excelFileName);
+  console.log(`  - Reading Excel file: ${filePath}`);
+
+    try {
+      const workbook = XLSX.readFile(filePath);
+    
+      for (const config of sheetConfigs) {
+          console.log(`  - Processing sheet: "${config.name}"`);
+          const sheet = workbook.Sheets[config.name];
+          if (!sheet) {
+              console.warn(`  ⚠️ Sheet "${config.name}" not found in the Excel file. Skipping.`);
+              continue;
+          }
+        
+          // 指定した範囲とヘッダーでデータを抽出
+          const records = XLSX.utils.sheet_to_json(sheet, {
+            range: config.range,
+            header: headers
+        });
+        
+          // 各行をデータベースに登録
+          for (const record of records) {
+              const problemData = transformRowToProblem(record);
+              
+              // IDを明示的に指定して登録
+              await prisma.problem.create({
+                  data: {
+                    id: nextProblemId, // ★カウンターからIDを指定
+                    ...problemData
+                },
+              });
+              console.log(`  ✅ Created problem from Excel: "${problemData.title_ja}" (ID: ${nextProblemId})`);
+              nextProblemId++; // ★次の問題のためにIDをインクリメント
+          }
+      }
+    } catch (error) {
+      console.error(`❌ Failed to read or process ${excelFileName}:`, error);
+    }
+
   console.log(`\n🎉 Seeding finished successfully.`);
 
   // =================================================================
@@ -185,7 +243,88 @@ async function main() {
   
   console.log('🎉 Seeding and testing finished successfully.');
 
+}
 
+function transformRowToProblem(row: any): Omit<Prisma.ProblemCreateInput, 'id'> {
+    /**
+     * プログラムコード（複数行の文字列）を改行で分割して文字列の配列に変換するヘルパー関数
+     * @param str Excelから読み込んだプログラムの文字列
+     * @returns Prismaの programLines_ja にセットするための文字列配列 (例: ["part1", "part2"])
+     */
+    const parseProgramLines = (str: string | undefined): string[] => {
+        if (!str) return [];
+        // 文字列を改行文字で分割する
+        return str.split(/\r?\n/).filter(part => part.trim() !== '');
+    };
+
+    /**
+     * 選択肢（複数行の文字列）を "ラベル" と "値" のオブジェクト配列に変換するヘルパー関数
+     * @param str Excelから読み込んだ選択肢の文字列 (例: "ア. Option A\nイ. Option B")
+     * @returns Prismaの answerOptions_ja にセットするためのJSONオブジェクト配列 (例: [{label: "ア", value: "Option A"},...])
+     */
+    const parseAnswerOptions = (str: string | undefined): Prisma.JsonArray => {
+        if (!str) return [];
+        const options: { label: string; value: string }[] = [];
+        let parts = str.split(/　+(?=[ア-ン])/).filter(part => part.trim() !== '');
+
+        // 1. 入力文字列に改行文字が含まれているかチェック
+        if (str.includes('\n')) {
+            // 【応用形式の処理】改行で分割する
+            parts = str.split(/\r?\n/);
+        } else {
+            // 【基礎形式の処理】「全角スペース＋カタカナ」で分割する
+            parts = str.split(/　+(?=[ア-ン])/);
+        }
+
+        parts.forEach(part => {
+            // "ア." や "ア " のような形式からラベルと選択肢本文を抽出する正規表現
+            const match = part.match(/^([ア-ン])[\s．.](.*)$/);
+            if (match) {
+                options.push({
+                    label: match[1].trim(), // 例: "ア"
+                    value: match[2].trim()  // 例: "Option A"
+                });
+            } else if (part.trim()) {
+                // 正規表現にマッチしないが、空行でもない場合（単純な選択肢など）
+                 // 暫定的にlabelを空、valueをその行のテキストとして追加するなど、仕様に応じて調整
+                 // ここでは、ラベルがないものは無視する実装とします。
+            }
+        });
+        return options as unknown as Prisma.JsonArray;
+    };
+ 
+    // initialVariablesをJSONオブジェクトに変換
+    // こちらは既存のままで問題ない可能性が高いですが、念のため堅牢化します。
+    const parseJsonObject = (str: string) => {
+        try {
+            if (!str || str.trim() === '{}' || str.trim() === '') return {};
+            // シングルクォートをダブルクォートに置換してJSONとしてパース
+            return JSON.parse(str.replace(/'/g, '"'));
+        } catch(e) {
+            // JSONパースに失敗した場合は空のオブジェクトを返す
+            // console.error(`Could not parse JSON object: ${str}`, e);
+            return {};
+        }
+    };
+
+    return {
+        title_ja: row.title_ja || '',
+        title_en: row.title_en || '',
+        description_ja: row.description_ja || '',
+        description_en: row.description_en || '',
+        // ★修正点: 新しいヘルパー関数を使って変換する
+        answerOptions_ja: parseAnswerOptions(row.answerOptions_ja),
+        answerOptions_en: parseAnswerOptions(row.answerOptions_en), // 英語も同様に
+        correctAnswer: String(row.correctAnswer || ''), // 念のため文字列に変換
+        explanation_ja: row.explanation_ja || '',
+        explanation_en: row.explanation_en || '',
+        // ★修正点: 新しいヘルパー関数を使って変換する
+        programLines_ja: parseProgramLines(row.programLines_ja),
+        programLines_en: parseProgramLines(row.programLines_en), // 英語も同様に
+        initialVariables: parseJsonObject(row.initialVariables || '{}'),
+        logicType: row.logicType || 'STATIC_QA', // デフォルト値を設定
+        options: parseJsonObject(row.options || '{}'),
+    };
 }
 
 // スクリプトの実行と終了処理
