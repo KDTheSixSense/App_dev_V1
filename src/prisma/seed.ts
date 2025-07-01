@@ -48,6 +48,14 @@ async function main() {
       class: 3,
       birth: new Date('2002-11-05'),
     },
+    {
+      id: 9999, // 特別なユーザーIDを設定
+      email: 'GodOfGod@example.com',
+      password: 'godisgod', // ⚠️ 実際にはハッシュ化する
+      username: 'God',
+      level: 9999, // 特別なユーザーとしてレベルを設定
+      xp: 9998999, // 特別なユーザーとしてXPを設定
+    },
   ];
 
   // 各ユーザーデータをデータベースに挿入または更新
@@ -219,7 +227,7 @@ async function main() {
   console.log('Seeding users...');
   // ... (ユーザー作成のコードは変更なし) ...
   const alice = await prisma.user.upsert({
-    where: { email: 'bob@example.com' }, update: {}, create: { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', birth: new Date('2002-04-15') },
+    where: { email: 'alice@example.com' }, update: {}, create: { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', birth: new Date('2002-04-15') },
   });
   console.log('✅ Users seeded.');
   
