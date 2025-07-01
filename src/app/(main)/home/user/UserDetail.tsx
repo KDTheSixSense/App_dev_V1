@@ -3,8 +3,12 @@ import { prisma } from '@/lib/prisma';
 
 export default async function UserDetail() {
 
-    const user = await prisma.user.findFirst();
-
+    const user = await prisma.user.findUnique({
+        where: {
+            id: 9999, // IDが1のユーザーを検索
+        },
+    });
+   
     let progressPercentage = 0;
     let currentXpInLevel = 0;
     const requiredXpForLevelUp = 1000;
