@@ -24,9 +24,9 @@ model User {
   answers                    UserAnswer[] // このユーザーの解答履歴のリスト
 }
 
-/// 問題の言語依存情報（設問、選択肢、解説など）を格納するモデル
-model Language {
-  id               Int      @id @default(autoincrement())
+/// 問題の情報をすべて格納するモデル
+model Problem {
+  id                Int      @id @default(autoincrement()) /// 問題ID: データベース内で一意の番号が自動で振られます
   // --- 問題の基本情報 (日本語/英語) ---
   title_ja         String
   title_en         String
