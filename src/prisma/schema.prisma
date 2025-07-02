@@ -36,7 +36,7 @@ model UserAnswer{
 
   // --- リレーション定義 ---
   user    User    @relation(fields: [userId], references: [id])
-  question Question @relation(fields: [questionId], references: [id])
+  question Questions @relation(fields: [questionId], references: [id])
 }
 
 
@@ -85,8 +85,10 @@ model Questions_Algorithm {
   options                 Json
   answers                 UserAnswer[]
   image                   String?
-  difficultyid            Int
-  
+  subjectId               Int
+  difficultyId            Int
+  answerId                Int
+
   // --- リレーション定義 ---
   subject    Subject   @relation(fields: [subjectId], references: [id])
   difficulty Difficulty @relation(fields: [difficultyId], references: [id])
