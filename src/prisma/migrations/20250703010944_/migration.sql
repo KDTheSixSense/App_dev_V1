@@ -12,6 +12,7 @@ CREATE TABLE "User" (
     "resetPasswordTokenExpiry" TIMESTAMP(3),
     "level" INTEGER NOT NULL DEFAULT 1,
     "xp" INTEGER NOT NULL DEFAULT 0,
+    "icon" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );

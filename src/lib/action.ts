@@ -7,18 +7,18 @@ import { calculateLevelFromXp } from './leveling';
  * @param subjectId - 対象の科目ID
  * @param difficultyName - 難易度の名前 (例: "Easy", "上級")
  */
-export async function addXp(userId: number, subjectId: number, difficultyName: string) {
+export async function addXp(userId: number, subjectId: number, difficultyId: number) {
 
   // 1. 難易度名から獲得XP量を取得
   const difficulty = await prisma.difficulty.findUnique({
-    where: { name: difficultyName },
+    where: { id: difficultyId },
   });
 
   if (!difficulty) {
-    throw new Error(`'${difficultyName}' が見つかりません。`);
+    throw new Error(`'${difficultyId}' が見つかりません。`);
   }
   const xpAmount = difficulty.xp;
-  console.log(`${difficultyName}: ${xpAmount}xp`);
+  console.log(`${difficultyId}: ${xpAmount}xp`);
   
   // 2. トランザクションでXPを加算・レベルアップ処理
   const result = await prisma.$transaction(async (tx) => {
