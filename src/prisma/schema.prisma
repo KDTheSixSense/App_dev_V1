@@ -7,27 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User{
-  id        Int      @id @default(autoincrement()) // ID: 整数型、主キー、自動増分
-  email     String   @unique                       // メールアドレス: 文字列型、ユニーク
-  password  String                               // パスワード: 文字列型
-  hash      String?                              // ハッシュ値: 文字列型、Null許容
-  username  String?                              // ユーザー名: 文字列型、Null許容
-  year      Int?                                 // 年: 整数型、Null許容
-  class     Int?                                 // クラス: 整数型、Null許容
-  birth     DateTime? @db.Date                    // 誕生日: 日付型、Null許容
-  resetPasswordToken         String?
+model User {
+  id                       Int                   @id @default(autoincrement()) // ID: 整数型、主キー、自動増分
+  email                    String                @unique // メールアドレス: 文字列型、ユニーク
+  password                 String // パスワード: 文字列型
+  hash                     String? // ハッシュ値: 文字列型、Null許容
+  username                 String? // ユーザー名: 文字列型、Null許容
+  year                     Int? // 年: 整数型、Null許容
+  class                    Int? // クラス: 整数型、Null許容
+  birth                    DateTime?             @db.Date // 誕生日: 日付型、Null許容
+  resetPasswordToken       String?
   resetPasswordTokenExpiry DateTime?
-  level     Int @default(1)                     //アカウントレベル
-  xp        Int @default(0)                     //総経験値
-  icon      String?                 //アイコン
-  progresses UserSubjectProgress[] // このユーザーの科目別進捗のリスト
+  level                    Int                   @default(1) //アカウントレベル
+  xp                       Int                   @default(0) //総経験値
+  icon                     String? //アイコン
+  progresses               UserSubjectProgress[] // このユーザーの科目別進捗のリスト
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
-  answers   UserAnswer[]
+  answers                  UserAnswer[]
+  Answer_Algorithm         Answer_Algorithm[]
+  Answerd_Genre_Table      Answerd_Genre_Table[]
+  Groups_User              Groups_User[]
+  Status_Kohaku            Status_Kohaku[]
 }
 
-model UserAnswer{
-  id          Int      @id @default(autoincrement())
+model UserAnswer {
+  id         Int      @id @default(autoincrement())
   userId     Int
   questionId Int
   answer     String
@@ -35,22 +39,22 @@ model UserAnswer{
   answeredAt DateTime @default(now())
 
   // --- リレーション定義 ---
-  user    User    @relation(fields: [userId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
   question Questions @relation(fields: [questionId], references: [id])
 }
 
-
 //科目テーブル
 model Subject {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
   description String?
 
-  userProgresses UserSubjectProgress[] // この科目を学習しているユーザーの進捗リスト
+  userProgresses      UserSubjectProgress[] // この科目を学習しているユーザーの進捗リスト
+  Questions_Algorithm Questions_Algorithm[]
 }
 
-model Language{
-  id          Int      @id @default(autoincrement())
+model Language {
+  id                  Int                   @id @default(autoincrement())
   title_ja            String?
   title_en            String?
   description_ja      String?
@@ -60,85 +64,87 @@ model Language{
   correctAnswer       String?
   explanation_ja      String?
   explanation_en      String?
-  programLines_ja    String?
-  programLines_en    String?
+  programLines_ja     String?
+  programLines_en     String?
+  Questions_Algorithm Questions_Algorithm[]
+  Questions           Questions[]
 }
 
-model Answer_Algorithm{
-  id          Int      @id @default(autoincrement())
-  questionId  Int
+model Answer_Algorithm {
+  id         Int     @id @default(autoincrement())
+  questionId Int
   userId     Int
   symbol     String
   isCorrect  Boolean
-  text      String? @db.Text
+  text       String? @db.Text
 
   // --- リレーション定義 ---
-  user    User    @relation(fields: [userId], references: [id])
+  user     User                @relation(fields: [userId], references: [id])
   question Questions_Algorithm @relation(fields: [questionId], references: [id])
 }
 
 model Questions_Algorithm {
-  id                      Int      @id @default(autoincrement())
-  language_id             Int
-  initialVariable         Json
-  logictype               String
-  options                 Json
-  answers                 UserAnswer[]
-  image                   String?
-  subjectId               Int
-  difficultyId            Int
-  answerId                Int
+  id              Int                @id @default(autoincrement())
+  language_id     Int
+  initialVariable Json
+  logictype       String
+  options         Json
+  image           String?
+  subjectId       Int
+  difficultyId    Int
+  answers         Answer_Algorithm[]
 
   // --- リレーション定義 ---
-  subject    Subject   @relation(fields: [subjectId], references: [id])
+  subject    Subject    @relation(fields: [subjectId], references: [id])
   difficulty Difficulty @relation(fields: [difficultyId], references: [id])
   language   Language   @relation(fields: [language_id], references: [id])
-  answer     UserAnswer @relation(fields: [answerId], references: [id])
 }
- model Questions {
-  id                      Int      @id @default(autoincrement())
-  language_id             Int
-  genre_id                Int
-  title                   String
-  genreid                 Int
-  question                String
-  answerid                Int
-  term                    String
-  year                    DateTime?
-  explain                 String?
-  image                   String?
-  difficultyid            Int
 
-    // --- リレーション定義 ---
-  genre      Genre      @relation(fields: [genre_id], references: [id])
-  difficulty Difficulty @relation(fields: [difficultyid], references: [id])
-  language   Language   @relation(fields: [language_id], references: [id])
-  answer     UserAnswer @relation(fields: [answerid], references: [id])
- }
+model Questions {
+  id           Int       @id @default(autoincrement())
+  language_id  Int
+  genre_id     Int
+  title        String
+  genreid      Int
+  question     String
+  answerid     Int
+  term         String
+  year         DateTime?
+  explain      String?
+  image        String?
+  difficultyid Int
 
- model Genre{
-  id  Int @id @default(autoincrement())
-  genre String @unique
- }
+  // --- リレーション定義 ---
+  genre      Genre        @relation(fields: [genre_id], references: [id])
+  difficulty Difficulty   @relation(fields: [difficultyid], references: [id])
+  language   Language     @relation(fields: [language_id], references: [id])
+  answer     UserAnswer[]
+  Answers    Answers[]
+}
 
- model Answerd_Genre_Table{
-  id  Int @id @default(autoincrement())
-  user_id Int
-  Answer_IT Int
-  Answer_Basic_A Int
-  Answer_Basic_B Int
+model Genre {
+  id        Int         @id @default(autoincrement())
+  genre     String      @unique
+  Questions Questions[]
+}
+
+model Answerd_Genre_Table {
+  id                Int @id @default(autoincrement())
+  user_id           Int
+  Answer_IT         Int
+  Answer_Basic_A    Int
+  Answer_Basic_B    Int
   Answer_Applied_Am Int
   Answer_Applied_Pm Int
-  Answer_Info_Test Int
-  Answer_Python Int
-  Answer_Java Int
+  Answer_Info_Test  Int
+  Answer_Python     Int
+  Answer_Java       Int
 
-  user  User @relation(fields: [user_id], references: [id])
+  user User @relation(fields: [user_id], references: [id])
+}
 
- }
-
- model Coding{
-  id          Int      @id @default(autoincrement())
+model Coding {
+  id          Int    @id @default(autoincrement())
   title       String
   question    String
   answer      String
@@ -147,42 +153,41 @@ model Questions_Algorithm {
   image       String
   explain     String
   difficulty  String
-  xpid       Int
- }
+  xpid        Int
+}
 
- model Test_Case{
-  id          Int      @id @default(autoincrement())
-  testcase    String
- }
+model Test_Case {
+  id       Int    @id @default(autoincrement())
+  testcase String
+}
 
- model Answers{
-  id          Int      @id @default(autoincrement())
+model Answers {
+  id          Int     @id @default(autoincrement())
   question_id Int
   answer      String
   isCorrect   Boolean
 
   // --- リレーション定義 ---
-  question  Questions  @relation(fields: [question_id], references: [id])
- }
+  question Questions @relation(fields: [question_id], references: [id])
+}
 
- model User_Answer_History{
-  id  Int @id @default(autoincrement())
-  user_id Int
-  answerd_genre_id Int
+model User_Answer_History {
+  id                  Int      @id @default(autoincrement())
+  user_id             Int
+  answerd_genre_id    Int
   user_selectedanswer String
-  isCorrect Boolean
-  term String
-  year DateTime
-  Answer_Timestamp DateTime
- }
+  isCorrect           Boolean
+  term                String
+  year                DateTime
+  Answer_Timestamp    DateTime
+}
 
- 
 model UserSubjectProgress {
-  level Int @default(1)                     //科目ごとのレベル
-  xp    Int @default(0)                     //科目ごとの経験値
+  level Int @default(1) //科目ごとのレベル
+  xp    Int @default(0) //科目ごとの経験値
 
-// --- リレーションのためのフィールド ---
-  user_id Int
+  // --- リレーションのためのフィールド ---
+  user_id    Int
   subject_id Int
 
   // --- リレーション定義 ---
@@ -199,39 +204,43 @@ model UserSubjectProgress {
 
 // 難易度と獲得XPのマスタテーブル
 model Difficulty {
-  id   Int    @id @default(autoincrement())
-  name String @unique // 難易度名 (例: "Easy", "Normal", "Hard")
-  xp   Int    // この難易度で得られる経験値
+  id                  Int                   @id @default(autoincrement())
+  name                String                @unique // 難易度名 (例: "Easy", "Normal", "Hard")
+  xp                  Int // この難易度で得られる経験値
+  Questions_Algorithm Questions_Algorithm[]
+  Questions           Questions[]
 }
 
-model Groups{
-  id       Int    @id @default(autoincrement())
-  groupname String @unique
-  body     String @db.Text
+model Groups {
+  id          Int           @id @default(autoincrement())
+  groupname   String        @unique
+  body        String        @db.Text
+  Groups_User Groups_User[]
+  Assignment  Assignment[]
 }
 
-model Groups_User{
-  id       Int    @id @default(autoincrement())
-  user_id  Int
-  group_id Int
+model Groups_User {
+  id        Int     @id @default(autoincrement())
+  user_id   Int
+  group_id  Int
   admin_flg Boolean
   // --- リレーション定義 ---
-  user  User  @relation(fields: [user_id], references: [id])
-  group Groups @relation(fields: [group_id], references: [id])
+  user      User    @relation(fields: [user_id], references: [id])
+  group     Groups  @relation(fields: [group_id], references: [id])
 }
 
-model Submission_Files_Table{
-id           Int      @id @default(autoincrement())
-submissionid Int
-filename     String
-filepath     String
-filesize     Int
-uploaded_at  DateTime @default(now())
+model Submission_Files_Table {
+  id           Int      @id @default(autoincrement())
+  submissionid Int
+  filename     String
+  filepath     String
+  filesize     Int
+  uploaded_at  DateTime @default(now())
 }
 
 model Assignment {
   id          Int      @id @default(autoincrement())
-  groupid    Int
+  groupid     Int
   title       String
   description String
   due_date    DateTime
@@ -239,33 +248,34 @@ model Assignment {
   updated_at  DateTime @updatedAt
 
   // --- リレーション定義 ---
-  group  Groups @relation(fields: [groupid], references: [id])
+  group       Groups        @relation(fields: [groupid], references: [id])
+  Submissions Submissions[]
 }
 
-model Submissions{
-id            Int
-assignment_id Int
-userid        Int
-description   String
-status        String
-codingid      Int
-submitted_at  DateTime @default(now())
-created_at    DateTime @default(now())
-updated_at    DateTime @updatedAt
+model Submissions {
+  id            Int      @id @default(autoincrement())
+  assignment_id Int
+  userid        Int
+  description   String
+  status        String
+  codingid      Int
+  submitted_at  DateTime @default(now())
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
-assignment   Assignment @relation(fields: [assignment_id], references: [id])
+  assignment Assignment @relation(fields: [assignment_id], references: [id])
 }
 
-model Status_Kohaku{
-  id          Int
+model Status_Kohaku {
+  id          Int    @id @default(autoincrement())
   user_id     Int
   status      String
   hungerlevel Int
 
-  user        User @relation(fields: [user_id], references: [id])
+  user User @relation(fields: [user_id], references: [id])
 }
 
-model Degree{
-  id      Int    @id @default(autoincrement())
-  degree  String @unique
+model Degree {
+  id     Int    @id @default(autoincrement())
+  degree String @unique
 }
