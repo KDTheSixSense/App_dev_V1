@@ -12,7 +12,7 @@ import KohakuChat from '../components/KohakuChat';
 
 import { problemLogicsMap } from '../problems/problem-logics';
 import type { SerializableProblem } from '@/lib/data';
-import type { VariablesState } from '../problems/problems';
+import type { VariablesState } from '@/lib/types';
 import { getNextProblemId } from '@/lib/actions';
 
 // --- 多言語対応テキストとヘルパー関数 ---
@@ -224,7 +224,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
 
   const handleNextProblem = async () => {
     const currentId = parseInt(problem.id, 10);
-    const nextProblemId = await getNextProblemId(currentId);
+    const nextProblemId = await getNextProblemId(currentId.toString(), 'applied_info_afternoon_problem');
     
     if (nextProblemId) {
       router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);

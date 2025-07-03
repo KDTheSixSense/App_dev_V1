@@ -1,26 +1,20 @@
-import Header from '@/components/Header'; // Headerコンポーネントをインポート
-import { prisma } from '@/lib/prisma';   // Prisma Clientをインポート
+
+import Header from '@/components/Header';
 import React from 'react';
 
-// MainPagesLayoutを async 関数に変更
-export default async function MainPagesLayout({
+// レイアウトコンポーネントを通常の同期関数に戻します
+export default function MainPagesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
-  // --- ここでID=1のユーザーデータを取得 ---
-  // (将来的には、ここで認証情報からログインユーザーを取得する形になる予定)
-  const user = await prisma.user.findUnique({
-    where: {
-      id: 9999, // 特別なユーザーIDを指定
-    },
-  });
+  // 非同期のデータ取得処理を削除します
+  // const user = await prisma.user.findUnique(...);
 
   return (
     <>
-      {/* 取得したuserオブジェクトをHeaderコンポーネントにpropsとして渡す */}
-      <Header user={user} />
+      {/* user propには一旦nullを渡します */}
+      <Header user={null} />
       <main>{children}</main>
     </>
   );
