@@ -18,11 +18,12 @@ model User {
   birth                    DateTime?             @db.Date // 誕生日: 日付型、Null許容
   resetPasswordToken       String?
   resetPasswordTokenExpiry DateTime?
-  level     Int @default(1)                     //アカウントレベル
-  xp        Int @default(0)                     //総経験値
-  icon      String?                             // アイコンURL: 文字列型、Null許容
-
-  progresses UserSubjectProgress[] // このユーザーの科目別進捗のリスト
+  level                    Int                   @default(1) //アカウントレベル
+  xp                       Int                   @default(0) //総経験値
+  icon                     String? //アイコン
+  progresses               UserSubjectProgress[] // このユーザーの科目別進捗のリスト
+  continuouslogin          Int?
+  lastlogin                DateTime
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
   answers                  UserAnswer[]
   Answer_Algorithm         Answer_Algorithm[]
