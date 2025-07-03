@@ -17,7 +17,7 @@ export default function Header({user}: HeaderProps) {
   return (
     <header className="bg-[#fff] text-white border-b border-gray-200 flex w-full">
       <div className="flex items-center w-50 h-20 mx-4">
-        <Link href={"/"} className="text-2xl font-bold transition-colors">
+        <Link href={"/home"} className="text-2xl font-bold transition-colors">
           <Image
             src="/images/infopia_logo.png"
             alt='Infopia'
