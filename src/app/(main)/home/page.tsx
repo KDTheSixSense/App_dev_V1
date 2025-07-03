@@ -1,5 +1,4 @@
 import React from "react";
-import Image from 'next/image';
 import UserDetail from "./user/UserDetail";
 import RankingPage from "./ranking/page"; // 正しいパスに注意
 import Pet from "./Pet/PetStatus";      // 正しいパスに注意

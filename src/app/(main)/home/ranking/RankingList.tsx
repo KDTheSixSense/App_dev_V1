@@ -5,7 +5,7 @@ type UserForRanking = {
   id: number;
   rank: number;
   name: string;
-  avatarUrl: string;
+  iconUrl: string;
   score: number;
 };
 

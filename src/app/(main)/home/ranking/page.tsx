@@ -1,75 +1,56 @@
-import RankingList from "./RankingList";
-import RankingTabs from "./RankingTab"; // 作成したTabsコンポーネントをインポート
 import { prisma } from "@/lib/prisma";
+import RankingContainer from "@/components/RankingContainer"; // すぐ下に作成します
 
-// サーバーコンポーネントは、propsとしてsearchParamsを受け取ることができる
-export default async function RankingPage({
-  searchParams,
-}: {
-  searchParams: { subject?: string };
-}) {
+export default async function RankingPage({ searchParams}: { searchParams: { subject?: string } }) {
 
-  // URLのクエリパラメータから選択された科目名を取得。なければ'総合'
-  const selectedSubject = searchParams.subject || '総合';
-
-  let rankedUsers: any[] = []; // ランキングデータを格納する配列
-
-  const tabs = await prisma.subject.findMany({
-    select: { name: true },
+  // --- 1. 総合ランキングのデータを取得 ---
+  const topUsersOverall = await prisma.user.findMany({
+    orderBy: { xp: 'desc' },
+    take: 10,
   });
-  const allTabs = [{ name: '総合' }, ...tabs];
+  const overallRanking = topUsersOverall.map((user, index) => ({
+    id: user.id,
+    rank: index + 1,
+    name: user.username || '名無しさん',
+    iconUrl: user.icon || '/images/test_icon.webp',
+    score: user.level,
+  }));
 
-  // --- データベースクエリの分岐 ---
-  if (selectedSubject === '総合') {
-    // "総合"タブの場合：Userテーブルを総XPでソート
-    const topUsers = await prisma.user.findMany({
+  // --- 2. 全ての科目のランキングデータを取得 ---
+  const subjects = await prisma.subject.findMany();
+  const subjectRankings: { [key: string]: any[] } = {};
+
+  for (const subject of subjects) {
+    const progress = await prisma.userSubjectProgress.findMany({
+      where: { subjectId: subject.id },
       orderBy: { xp: 'desc' },
       take: 10,
+      include: { user: true },
     });
-    rankedUsers = topUsers.map((user, index) => ({
-      id: user.id,
+    subjectRankings[subject.name] = progress.map((p, index) => ({
+      id: p.user.id,
       rank: index + 1,
-      name: user.username || '名無しさん',
-      avatarUrl: '/images/test_icon.webp',
-      score: user.level,
-    }));
-
-  } else {
-    // 科目タブの場合：UserSubjectProgressテーブルをソート
-    const subjectProgress = await prisma.userSubjectProgress.findMany({
-      where: {
-        subject: {
-          name: selectedSubject, // 科目名で絞り込み
-        },
-      },
-      orderBy: {
-        xp: 'desc', // 科目XPでソート
-      },
-      take: 10,
-      include: {
-        user: true, // ユーザー情報も一緒に取得
-        subject: true, // 科目情報も一緒に取得
-      },
-    });
-    rankedUsers = subjectProgress.map((progress, index) => ({
-      id: progress.user.id,
-      rank: index + 1,
-      name: progress.user.username || '名無しさん',
-      avatarUrl: '/images/test_icon.webp',
-      score: progress.level, // スコアとして科目レベルを表示
+      name: p.user.username || '名無しさん',
+      iconUrl: p.user.icon || '/images/test_icon.webp',
+      score: p.level,
     }));
   }
 
+  // --- 3. 全てのデータをまとめる ---
+  const allRankings = {
+    '総合': overallRanking,
+    ...subjectRankings,
+  };
+  
+  const tabs = [{ name: '総合' }, ...subjects.map(s => ({ name: s.name }))];
+
   return (
-    <div >
+    <div className="bg-slate-50 min-h-150">
       <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6">
         <h1 className="text-2xl font-bold text-slate-800">ランキング</h1>
         
-        {/* インタラクティブなタブ部分をコンポーネントとして呼び出す */}
-        <RankingTabs tabs={allTabs} />
-
-        {/* 取得したランキングデータをリストに渡す */}
-        <RankingList users={rankedUsers} />
+        {/* 全てのデータをクライアントコンポーネントに渡す */}
+        <RankingContainer tabs={tabs} allRankings={allRankings} />
       </div>
     </div>
   );
