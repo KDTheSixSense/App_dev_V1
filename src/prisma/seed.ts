@@ -190,7 +190,7 @@ async function main() {
     { id: 5,name: '鬼むず',   xp: 2000 },
     { id: 6,name: '基本資格A問題',   xp: 40 },
     { id: 7,name: '基本資格B問題(かんたん)',   xp: 120 },
-    { id: 8,name: '基本資格B問題(かんたん)',   xp: 280 },
+    { id: 8,name: '基本資格B問題(むずかしい)',   xp: 280 },
     { id: 9,name: '応用資格午前問題',   xp: 60 },
     { id: 10,name: '応用資格午後問題',   xp: 1200 },
   ];
@@ -227,7 +227,7 @@ async function main() {
   console.log('Seeding users...');
   // ... (ユーザー作成のコードは変更なし) ...
   const alice = await prisma.user.upsert({
-    where: { email: 'alice@example.com' }, update: {}, create: { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', birth: new Date('2002-04-15') },
+    where: { email: 'bob@example.com' }, update: {}, create: { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', birth: new Date('2002-04-15') },
   });
   console.log('✅ Users seeded.');
   
@@ -236,7 +236,7 @@ async function main() {
   // =================================================================
   if (alice) {
 
-    await addXp(alice.id, 1, 'むずかしい'); 
+    await addXp(alice.id, 1, 1); 
   }
   
     console.log('神の生成...');
