@@ -15,6 +15,7 @@ import type { SerializableProblem } from '@/lib/data';
 import type { VariablesState } from '../data/problems';
 import { getNextProblemId } from '@/lib/actions';
 
+
 // --- 多言語対応テキストとヘルパー関数 ---
 
 const textResources = {

@@ -1758,7 +1758,7 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
         // --- 実行ロジック ---
         switch (pc) {
             case 'start': // Line 5, 7: allItems, otherItems の準備
-                const all = [...new Set(orders.flat())].sort();
+                const all = Array.from(new Set(orders.flat())).sort();
                 vars.allItems = all;
                 vars.otherItems = all.filter(it => it !== item);
                 otherItems = vars.otherItems as string[];

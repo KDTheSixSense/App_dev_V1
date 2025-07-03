@@ -25,6 +25,7 @@
     "react-syntax-highlighter": "^15.x.x",
     "sqlite3": "^5.x.x",
     "vm2": "^3.x.x",
+    "web-vitals": "^5.0.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

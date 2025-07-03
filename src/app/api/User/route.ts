@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
     data: {
       password: data.password,
       email: data.email,
-      birth: data.birth
+      birth: data.birth,
+      totallogin: 0
     },
   });
   return NextResponse.json(newUser);

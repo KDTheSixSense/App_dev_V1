@@ -1,7 +1,6 @@
 import { problemLogicsMap } from '@/app/(main)/issue_list/basic_info_b_problem/data/problem-logics';
 import type { Problem as AppProblem, AnswerOption } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
 import { prisma } from './prisma'; 
-import { Problem as DbProblem } from '@prisma/client';
 
 export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'>;
 
@@ -15,7 +14,7 @@ export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNext
  * @param dbProblem Prismaから取得したProblemオブジェクト
  * @returns フロントエンドコンポーネントに渡せるシリアライズ可能なProblemオブジェクト
  */
-function transformProblemToSerializable(dbProblem: DbProblem): SerializableProblem | null {
+function transformProblemToSerializable(dbProblem: any): SerializableProblem | null {
   // logicTypeに対応するロジック定義の存在チェックだけ行う
   if (!problemLogicsMap[dbProblem.logicType as keyof typeof problemLogicsMap]) {
     console.error(`Logic for type "${dbProblem.logicType}" not found.`);
@@ -50,7 +49,7 @@ function transformProblemToSerializable(dbProblem: DbProblem): SerializableProbl
  * @param id 取得する問題のID（数値）
  */
 export async function getProblemForClient(id: number): Promise<SerializableProblem | null> {  try {
-    const problemFromDb = await prisma.problem.findUnique({
+    const problemFromDb = await prisma.questions.findUnique({
       where: { id: id },
     });
 
@@ -72,10 +71,20 @@ export async function getProblemForClient(id: number): Promise<SerializableProbl
  * @returns 次の問題が存在すればそのID、なければnull
  */
 export async function getNextProblemId(currentId: number): Promise<number | null> {
-    const nextProblem = await prisma.problem.findFirst({
-        where: { id: { gt: currentId } }, // 現在のIDより大きい最初の問題
-        orderBy: { id: 'asc' },
-        select: { id: true }
+    const nextProblem = await prisma.questions.findFirst({
+        where: {
+            id: {
+                gt: currentId, // gt は "greater than" の略
+            },
+            // もし将来的にカテゴリで問題を絞り込む場合は、以下のように条件を追加します
+            // logicType: { contains: category } // 例
+        },
+        orderBy: {
+            id: 'asc', // IDの昇順で並べ替え
+        },
+        select: {
+            id: true, // idフィールドだけ取得すれば十分です
+        },
     });
     return nextProblem ? nextProblem.id : null;
 }

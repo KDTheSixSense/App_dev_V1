@@ -1,10 +1,22 @@
 import React from 'react';
 // ✅ 【修正点】インポート元を、Prismaが自動生成する最新の型定義に変更します
-import type { Problem } from '@prisma/client';
+// import type { AlgorithmProblem, TraceStep } from '@prisma/client';
+// import type { TraceStep } from '@prisma/client';
+// Define TraceStep type locally if needed
+// export interface TraceStep { /* define fields here */ }
+
+// Define AlgorithmProblem type locally if not available from Prisma
+export interface AlgorithmProblem {
+  id: string;
+  title: string;
+  description: string;
+  options: any;
+  // Add other fields as needed to match your data structure
+}
 import type { VariablesState } from '../data/problems';
 
 interface VariableTraceControlProps {
-  problem: Problem; // 型がPrismaのものに更新されます
+  problem: AlgorithmProblem; // 型がPrismaのものに更新されます
   variables: VariablesState;
   onNextTrace: () => void;
   isTraceFinished: boolean;

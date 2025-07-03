@@ -25,15 +25,20 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => 
 // ページコンポーネントを非同期関数に変更
 const BasicInfoBProblemsListPage = async () => {
   // データベースから問題一覧を取得
-  const problems = await prisma.problem.findMany({
+  const problems = await prisma.questions.findMany({
     // 必要に応じてカテゴリなどで絞り込む
-    // where: { category: 'basic_info_b' },
+    // ここでは、科目Bに関連する問題を想定して絞り込みます。
+    // 例: genre_id や difficultyid で絞り込む
+    where: {
+      // 仮のジャンルID。実際の科目BのジャンルIDに合わせてください。
+      // genre_id: 1, 
+    },
     orderBy: {
       id: 'asc',
     },
     select: {
       id: true,
-      title_ja: true,
+      title: true, // Questionsモデルにはtitleフィールドがあります
     }
   });
 
@@ -49,7 +54,7 @@ const BasicInfoBProblemsListPage = async () => {
               <ProblemListRow
                 key={problem.id}
                 problemId={problem.id.toString()}
-                title={problem.title_ja} // 日本語タイトルを表示
+                title={problem.title} // titleフィールドを使用
               />
             ))}
           </ul>

@@ -25,14 +25,14 @@ export async function addXp(userId: number, subjectId: number, difficultyName: s
     
     // === 2a. 科目レベルの更新処理 ===
     const updatedProgress = await tx.userSubjectProgress.upsert({
-      where: { userId_subjectId: { userId, subjectId } },
-      create: { userId, subjectId, xp: xpAmount, level: 1 },
+      where: { user_id_subject_id: { user_id: userId, subject_id: subjectId } },
+      create: { user_id: userId, subject_id: subjectId, xp: xpAmount, level: 1 },
       update: { xp: { increment: xpAmount } },
     });
     const newSubjectLevel = calculateLevelFromXp(updatedProgress.xp);
     if (newSubjectLevel > updatedProgress.level) {
       await tx.userSubjectProgress.update({
-        where: { userId_subjectId: { userId, subjectId } },
+        where: { user_id_subject_id: { user_id: userId, subject_id: subjectId } },
         data: { level: newSubjectLevel },
       });
       console.log(`[科目レベルアップ!] subjectId:${subjectId} がレベル ${newSubjectLevel} に！`);
