@@ -5,12 +5,13 @@ import ProblemClient from './ProblemClient';
 import { getProblemForClient } from '@/lib/data';
 
 type PageProps = {
-  params: {
+  params: Promise<{
     problemId: string;
-  };
+  }>;
 };
 
-const BasicInfoBProblemPage = async ({ params }: PageProps) => {
+const BasicInfoBProblemPage = async (props: PageProps) => {
+  const params = await props.params;
   const problemId = parseInt(params.problemId, 10);
 
   if (isNaN(problemId)) {
