@@ -4,7 +4,7 @@ import RankingContainer from "@/components/RankingContainer"; // すぐ下に作
 export default async function RankingPage({ searchParams}: { searchParams: { subject?: string } }) {
 
   // --- 1. 総合ランキングのデータを取得 ---
-  const topUsersOverall = await prisma.User.findMany({
+  const topUsersOverall = await prisma.user.findMany({
     orderBy: { xp: 'desc' },
     take: 10,
   });
@@ -17,11 +17,11 @@ export default async function RankingPage({ searchParams}: { searchParams: { sub
   }));
 
   // --- 2. 全ての科目のランキングデータを取得 ---
-  const subjects = await prisma.Subject.findMany();
+  const subjects = await prisma.subject.findMany();
   const subjectRankings: { [key: string]: any[] } = {};
 
   for (const subject of subjects) {
-    const progress = await prisma.UserSubjectProgress.findMany({
+    const progress = await prisma.userSubjectProgress.findMany({
       where: { subject_id: subject.id },
       orderBy: { xp: 'desc' },
       take: 10,
