@@ -6,7 +6,7 @@ import Image from 'next/image'; // Imageコンポーネントをインポート
 
  export default async function Account() {
 
-      const user = await prisma.user.findUnique({
+      const user = await prisma.User.findUnique({
         where: {
             id: 9999, // IDが40のユーザーを検索
         },
