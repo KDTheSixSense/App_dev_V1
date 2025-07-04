@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export default async function UserDetail() {
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.User.findUnique({
         where: {
             id: 9999, // IDが1のユーザーを検索
         },
