@@ -44,10 +44,10 @@ async function main() {
   // 3. Userデータのシーディング
   console.log('🌱 Seeding users...');
   const usersToSeed = [
-    { id: 1, email: 'alice@example.com', password: 'password123', username: 'Alice Smith', year: 2020, class: 1, birth: new Date('2002-04-15') },
-    { id: 2, email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', year: 2021, class: 2, birth: new Date('2003-08-20') },
-    { id: 3, email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', year: 2020, class: 3, birth: new Date('2002-11-05') },
-    { id: 4, email: 'GodOfGod@example.com', password: 'godisgod', username: 'God', level: 9999, xp: 9999999, totallogin: 999 ,continuouslogin: 99},
+    {email: 'alice@example.com', password: 'password123', username: 'Alice Smith', year: 2020, class: 1, birth: new Date('2002-04-15') },
+    {email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', year: 2021, class: 2, birth: new Date('2003-08-20') },
+    {email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', year: 2020, class: 3, birth: new Date('2002-11-05') },
+    {email: 'GodOfGod@example.com', password: 'godisgod', username: 'God', level: 9999, xp: 9999999, totallogin: 999 ,continuouslogin: 99},
   ];
   for (const userData of usersToSeed) { await prisma.user.upsert({ where: { id: userData.id }, update: {}, create: userData }); console.log(`✅ Upserted user with ID: ${userData.id}`); }
   console.log('✅ Users seeded.');
