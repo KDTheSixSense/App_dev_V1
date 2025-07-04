@@ -5,7 +5,7 @@ export default async function UserDetail() {
 
     const user = await prisma.user.findUnique({
         where: {
-            id: 9999, // IDが1のユーザーを検索
+            id: 9999, // 神のIDを検索
         },
     });
    
@@ -55,11 +55,11 @@ export default async function UserDetail() {
                 <div className="inline-flex bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                     <div className="flex flex-col justify-center items-center px-4 py-2 border-r border-gray-300 w-35 h-25 gap-2">
                         <span className="text-sm text-gray-600">連続ログイン</span>
-                        <span className="text-2xl font-bold text-gray-800">99日</span>
+                        <span className="text-2xl font-bold text-gray-800">{user?.continuouslogin ?? 1}日</span>
                     </div>
                     <div className="flex flex-col justify-center items-center px-4 py-2 border-r border-gray-300 w-35 h-25 gap-2">
                         <span className="text-sm text-gray-600">総ログイン日数</span>
-                        <span className="text-2xl font-bold text-gray-800">999日</span>
+                        <span className="text-2xl font-bold text-gray-800">{user?.totallogin ?? 1}日</span>
                     </div>
                     <div className="flex flex-col justify-center items-center px-4 py-2 w-30 h-25 gap-2">
                         <span className="text-sm text-gray-600">残課題</span>
