@@ -25,7 +25,7 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => 
 // ページコンポーネントを非同期関数に変更
 const BasicInfoBProblemsListPage = async () => {
   // データベースから問題一覧を取得
-  const problems = await prisma.problem.findMany({
+  const problems = await prisma.Questions_Algorithm.findMany({
     // 必要に応じてカテゴリなどで絞り込む
     // where: { category: 'basic_info_b' },
     orderBy: {

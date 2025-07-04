@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const { email } = await req.json();
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.User.findUnique({ where: { email } });
 
     if (user) {
       // --- トークン生成ロジック ---
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       const hashedToken = createHash('sha256').update(rawToken).digest('hex');
       const expires = new Date(Date.now() + 3600000); // 1時間後
 
-      await prisma.user.update({
+      await prisma.User.update({
         where: { email },
         data: {
           resetPasswordToken: hashedToken,

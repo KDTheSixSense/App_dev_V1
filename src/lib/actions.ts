@@ -49,7 +49,7 @@ export async function getNextProblemId(currentId: string, category: string): Pro
     try {
         // Prismaを使って、現在のID(currentIdNum)より大きいIDを持つ
         // 最初の問題をデータベースから検索します。
-        const nextProblem = await prisma.problem.findFirst({
+        const nextProblem = await prisma.Questions_Algorithm.findFirst({
             where: {
                 id: {
                     gt: currentIdNum, // gt は "greater than" の略

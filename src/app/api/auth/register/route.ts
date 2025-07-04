@@ -14,14 +14,14 @@ export async function POST(req: NextRequest) {
 
     const birthDate = new Date(birth);
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.User.findUnique({ where: { email } });
     if (existingUser) {
       return NextResponse.json({ message: 'このメールはすでに登録されています' }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
+    const user = await prisma.User.create({
       data: {
         email,
         password: hashedPassword,
