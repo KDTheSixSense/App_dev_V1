@@ -6,7 +6,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 // ★重要★ あなたの環境の `problems.ts` ファイルへのパスが正しいか確認してください
 import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/data/problems'; 
 
-import { addXp } from '../lib/action'; // 作成したaddXp関数をインポート
+import { addXp } from '../lib/actions'; // 作成したaddXp関数をインポート
 import { promises as fs } from 'fs'; // ★ ファイル読み込みのためにfsをインポート
 import { parse } from 'csv-parse/sync'; // ★ CSVパーサーをインポート
 import path from 'path'; // ★ ファイルパスを解決するためにpathをインポート
