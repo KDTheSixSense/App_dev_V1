@@ -11,9 +11,9 @@ export default async function MainPagesLayout({
 
   // --- ここでID=1のユーザーデータを取得 ---
   // (将来的には、ここで認証情報からログインユーザーを取得する形になる予定)
-  const user = await prisma.User.findUnique({
+  const user = await prisma.user.findUnique({
     where: {
-      id: 9999, // 特別なユーザーIDを指定
+      id: 4, // 特別なユーザーIDを指定
     },
   });
 

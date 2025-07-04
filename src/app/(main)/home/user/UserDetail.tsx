@@ -5,7 +5,7 @@ export default async function UserDetail() {
 
     const user = await prisma.user.findUnique({
         where: {
-            id: 9999, // 神のIDを検索
+            id: 4, // 神のIDを検索
         },
     });
    
