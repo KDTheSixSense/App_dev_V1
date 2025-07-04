@@ -5,7 +5,7 @@ name: Next.js CI/CD - Build and Deploy
 # ワークフローが実行されるタイミング
 on:
   push:
-    branches: [ main ] # ★ mainブランチにプッシュされた時に実行
+    branches: [ pre ] # ★ preブランチにプッシュされた時に実行
 
 # ワークフロー全体で使う環境変数
 env:
