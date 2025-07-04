@@ -6,7 +6,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 // ★重要★ あなたの環境の `problems.ts` ファイルへのパスが正しいか確認してください
 import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/data/problems'; 
 
-import { addXp } from '../lib/action'; // 作成したaddXp関数をインポート
+import { addXp } from '../lib/actions'; // 作成したaddXp関数をインポート
 import { promises as fs } from 'fs'; // ★ ファイル読み込みのためにfsをインポート
 import { parse } from 'csv-parse/sync'; // ★ CSVパーサーをインポート
 import path from 'path'; // ★ ファイルパスを解決するためにpathをインポート
@@ -82,8 +82,8 @@ async function main() {
     await prisma.userAnswer.deleteMany();
     console.log("🗑️ Cleared existing user answer data.");
   }
-  if (await prisma.problem.count() > 0) {
-    await prisma.problem.deleteMany();
+  if (await prisma.questions.count() > 0) {
+    await prisma.questions.deleteMany();
     console.log("🗑️ Cleared existing problem data.");
   }
 
@@ -115,7 +115,7 @@ async function main() {
     };
 
     // 変換したデータを使って、データベースに新しい問題を作成します
-    const problem = await prisma.problem.create({
+    const problem = await prisma.questions.create({
       data: problemDataForDB,
     });
     console.log(`✅ Created problem: "${problem.title_ja}" (ID: ${problem.id})`);
@@ -162,7 +162,7 @@ async function main() {
               const problemData = transformRowToProblem(record);
               
               // IDを明示的に指定して登録
-              await prisma.problem.create({
+              await prisma.questions.create({
                   data: {
                     id: nextProblemId, // ★カウンターからIDを指定
                     ...problemData
@@ -236,7 +236,7 @@ async function main() {
   // =================================================================
   if (alice) {
 
-    await addXp(alice.id, 1, 1); 
+    await addXp(alice.id, 1, 5); 
   }
   
     console.log('神の生成...');
@@ -244,15 +244,15 @@ async function main() {
   // --- GodユーザーのUserSubjectProgressを作成 ---
 
   // 1. 定数を定義
-  const godUserId = 9999;
+  const godUser_id = 9999;
   const specialLevel = 9999;
   const specialXp = 99999999; // 指示通りの値
   const subjectIds = Array.from({ length: 3 }, (_, i) => i + 1); // [1, 2, ..., 10]
 
   // 2. 投入するデータを配列として準備
-  const progressData = subjectIds.map((subjectId) => ({
-    userId: godUserId,
-    subjectId: subjectId,
+  const progressData = subjectIds.map((subject_id) => ({
+    user_id: godUser_id,
+    subject_id: subject_id,
     level: specialLevel,
     xp: specialXp,
   }));
@@ -268,7 +268,7 @@ async function main() {
   console.log(`神の誕生に成功しました。`);
 }
 
-function transformRowToProblem(row: any): Omit<Prisma.ProblemCreateInput, 'id'> {
+function transformRowToProblem(row: any): Omit<Prisma.QuestionsCreateInput, 'id'> {
     /**
      * プログラムコード（複数行の文字列）を改行で分割して文字列の配列に変換するヘルパー関数
      * @param str Excelから読み込んだプログラムの文字列
