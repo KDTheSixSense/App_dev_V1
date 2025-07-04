@@ -1,10 +1,24 @@
-
 import { problemLogicsMap } from '@/app/(main)/issue_list/basic_info_b_problem/data/problem-logics';
-import type { Problem as AppProblem, AnswerOption } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
+import type { Problem as AppProblem, AnswerOption, VariablesState } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
 import { prisma } from './prisma';
 import { Questions_Algorithm as DbProblem } from '@prisma/client';
 
-export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'>;
+// Define SerializableProblem to explicitly match the output structure
+export type SerializableProblem = {
+  id: string;
+  title: { ja: string; en: string };
+  description: { ja: string; en: string };
+  programLines: { ja: string[]; en: string[] };
+  answerOptions: { ja: AnswerOption[]; en: AnswerOption[] };
+  correctAnswer: string;
+  explanationText: { ja: string; en: string };
+  initialVariables: VariablesState;
+  logicType: string; // Mapped from dbProblem.logictype
+  traceOptions?: AppProblem['traceOptions']; // Optional, from AppProblem
+  difficulty: number; // From dbProblem.difficultyId
+  genre: number; // From dbProblem.subjectId
+  language: number; // From dbProblem.language_id
+};
 
 function transformProblemToSerializable(dbProblem: DbProblem): SerializableProblem | null {
   if (!problemLogicsMap[dbProblem.logictype as keyof typeof problemLogicsMap]) {
@@ -12,27 +26,87 @@ function transformProblemToSerializable(dbProblem: DbProblem): SerializableProbl
     return null;
   }
 
-  const answerOptions_ja = dbProblem.answerOptions_ja as unknown as AnswerOption[];
-  const answerOptions_en = dbProblem.answerOptions_en as unknown as AnswerOption[];
-  const traceOptions = dbProblem.options as { presets?: number[] } | null;
+  let answerOptions: { ja: AnswerOption[]; en: AnswerOption[] } = { ja: [], en: [] };
+  if (dbProblem.answerOptions) {
+    try {
+      const parsed = JSON.parse(dbProblem.answerOptions);
+      if (parsed && typeof parsed === 'object' && 'ja' in parsed && 'en' in parsed) {
+        answerOptions = parsed;
+      } else {
+        console.warn('Parsed answerOptions is not in expected format, defaulting to empty arrays.', parsed);
+      }
+    } catch (e) {
+      console.error('Failed to parse answerOptions, defaulting to empty arrays:', e);
+    }
+  }
+
+  let traceOptions: AppProblem['traceOptions'] = undefined;
+  if (dbProblem.options) {
+    try {
+      const parsed = typeof dbProblem.options === 'string' ? JSON.parse(dbProblem.options) : dbProblem.options;
+      if (parsed && typeof parsed === 'object') {
+        traceOptions = parsed;
+      } else {
+        console.warn('Parsed traceOptions is not in expected format, defaulting to undefined.', parsed);
+      }
+    } catch (e) {
+      console.error('Failed to parse traceOptions/options, defaulting to undefined:', e);
+    }
+  }
+
+  let programLines: { ja: string[]; en: string[] } = { ja: [], en: [] };
+  if (dbProblem.programLines) {
+    try {
+      const parsed = JSON.parse(dbProblem.programLines);
+      if (parsed && typeof parsed === 'object' && 'ja' in parsed && 'en' in parsed) {
+        programLines = parsed;
+      } else {
+        console.warn('Parsed programLines is not in expected format, defaulting to empty arrays.', parsed);
+      }
+    } catch (e) {
+      console.error('Failed to parse programLines, defaulting to empty arrays:', e);
+    }
+  }
+
+  let initialVariables: VariablesState = {};
+  if (dbProblem.initialVariable) {
+    try {
+      const parsed = typeof dbProblem.initialVariable === 'string' ? JSON.parse(dbProblem.initialVariable) : dbProblem.initialVariable;
+      if (parsed && typeof parsed === 'object') {
+        initialVariables = parsed;
+      } else {
+        console.warn('Parsed initialVariables is not in expected format, defaulting to empty object.', parsed);
+      }
+    } catch (e) {
+      console.error('Failed to parse initialVariable, defaulting to empty object:', e);
+    }
+  }
+
+  let explanationText: { ja: string; en: string } = { ja: '', en: '' };
+  if (dbProblem.explanation) {
+    explanationText = { ja: dbProblem.explanation, en: dbProblem.explanation };
+  }
 
   return {
-    id: dbProblem.id.toString(),
-    title: { ja: dbProblem.title_ja, en: dbProblem.title_en },
-    description: { ja: dbProblem.description_ja, en: dbProblem.description_en },
-    programLines: { ja: dbProblem.programLines_ja, en: dbProblem.programLines_en },
-    answerOptions: { ja: answerOptions_ja, en: answerOptions_en },
-    correctAnswer: dbProblem.correctAnswer,
-    explanationText: { ja: dbProblem.explanation_ja, en: dbProblem.explanation_en },
-    initialVariables: dbProblem.initialVariable as AppProblem['initialVariables'],
-    traceOptions: (traceOptions && traceOptions.presets) ? { presets: traceOptions.presets } : undefined,
-    logicType: dbProblem.logictype,
+    id: String(dbProblem.id),
+    title: { ja: dbProblem.title, en: dbProblem.title },
+    description: { ja: dbProblem.description ?? '', en: dbProblem.description ?? '' },
+    programLines: programLines,
+    answerOptions: answerOptions,
+    correctAnswer: dbProblem.correctAnswer ?? '',
+    explanationText: explanationText,
+    initialVariables: initialVariables,
+    logicType: dbProblem.logictype, // Explicitly map logictype to logicType
+    traceOptions: traceOptions,
+    difficulty: dbProblem.difficultyId,
+    genre: dbProblem.subjectId,
+    language: dbProblem.language_id,
   };
 }
 
 export async function getProblemForClient(id: number): Promise<SerializableProblem | null> {
   try {
-    const problemFromDb = await prisma.Questions_Algorithm.findUnique({
+    const problemFromDb = await prisma.questions_Algorithm.findUnique({
       where: { id: id },
     });
 
@@ -49,7 +123,7 @@ export async function getProblemForClient(id: number): Promise<SerializableProbl
 }
 
 export async function getNextProblemId(currentId: number): Promise<number | null> {
-    const nextProblem = await prisma.Questions_Algorithm.findFirst({
+    const nextProblem = await prisma.questions_Algorithm.findFirst({
         where: { id: { gt: currentId } },
         orderBy: { id: 'asc' },
         select: { id: true }
@@ -58,7 +132,7 @@ export async function getNextProblemId(currentId: number): Promise<number | null
 }
 
 export async function getPreviousProblemId(currentId: number): Promise<number | null> {
-    const previousProblem = await prisma.Questions_Algorithm.findFirst({
+    const previousProblem = await prisma.questions_Algorithm.findFirst({
         where: { id: { lt: currentId } },
         orderBy: { id: 'desc' },
         select: { id: true }
@@ -67,7 +141,7 @@ export async function getPreviousProblemId(currentId: number): Promise<number | 
 }
 
 export async function getUserProgress(userId: number): Promise<number[]> {
-    const userAnswers = await prisma.UserAnswer.findMany({
+    const userAnswers = await prisma.userAnswer.findMany({
         where: {
             userId: userId,
             isCorrect: true,
@@ -76,11 +150,11 @@ export async function getUserProgress(userId: number): Promise<number[]> {
             questionId: true,
         },
     });
-    return userAnswers.map(answer => answer.questionId);
+    return userAnswers.map((answer: { questionId: number }) => answer.questionId);
 }
 
 export async function saveUserAnswer(userId: number, questionId: number, answer: string, isCorrect: boolean) {
-    await prisma.UserAnswer.create({
+    await prisma.userAnswer.create({
         data: {
             userId: userId,
             questionId: questionId,
@@ -96,14 +170,16 @@ export async function getProblemsByIds(ids: number[]): Promise<SerializableProbl
   }
 
   try {
-    const problemsFromDb = await prisma.Questions_Algorithm.findMany({
+    const problemsFromDb = await prisma.questions_Algorithm.findMany({
       where: {
         id: {
           in: ids,
         },
       },
     });
-    return problemsFromDb.map(transformProblemToSerializable).filter((p): p is SerializableProblem => p !== null);
+    return problemsFromDb
+      .map((p: DbProblem) => transformProblemToSerializable(p))
+      .filter((p): p is SerializableProblem => p !== null);
   } catch (error) {
     console.error("Failed to fetch problems by IDs:", error);
     return [];
@@ -112,20 +188,16 @@ export async function getProblemsByIds(ids: number[]): Promise<SerializableProbl
 
 export async function getAllProblemIdsAndTitles() {
   try {
-    const problems = await prisma.Questions_Algorithm.findMany({
+    const problems = await prisma.questions_Algorithm.findMany({
       select: {
         id: true,
-        language: {
-            select: {
-                title_ja: true,
-            }
-        }
+        title: true,
       },
       orderBy: {
         id: 'asc',
       },
     });
-    return problems.map(p => ({ id: p.id, title: p.language.title_ja }));
+    return problems.map((p: { id: number; title: string }) => ({ id: p.id, title: p.title }));
   } catch (error) {
     console.error("Failed to fetch all problem IDs and titles:", error);
     return [];
@@ -133,7 +205,7 @@ export async function getAllProblemIdsAndTitles() {
 }
 
 export async function getAnswerHistory(userId: number) {
-    const answerHistory = await prisma.UserAnswer.findMany({
+    const answerHistory = await prisma.userAnswer.findMany({
         where: { userId: userId },
         include: {
             question: true,
@@ -146,7 +218,7 @@ export async function getAnswerHistory(userId: number) {
 }
 
 export async function getSubjectProgress(userId: number) {
-    const subjectProgress = await prisma.UserSubjectProgress.findMany({
+    const subjectProgress = await prisma.userSubjectProgress.findMany({
         where: { user_id: userId },
         include: {
             subject: true,
@@ -156,7 +228,7 @@ export async function getSubjectProgress(userId: number) {
 }
 
 export async function getRanking() {
-    const users = await prisma.User.findMany({
+    const users = await prisma.user.findMany({
         orderBy: {
             xp: 'desc',
         },
@@ -166,14 +238,14 @@ export async function getRanking() {
 }
 
 export async function getUser(userId: number) {
-    const user = await prisma.User.findUnique({
+    const user = await prisma.user.findUnique({
         where: { id: userId },
     });
     return user;
 }
 
 export async function updateUser(userId: number, data: any) {
-    const user = await prisma.User.update({
+    const user = await prisma.user.update({
         where: { id: userId },
         data: data,
     });
@@ -181,37 +253,37 @@ export async function updateUser(userId: number, data: any) {
 }
 
 export async function deleteUser(userId: number) {
-    await prisma.User.delete({
+    await prisma.user.delete({
         where: { id: userId },
     });
 }
 
 export async function createUser(data: any) {
-    const user = await prisma.User.create({
+    const user = await prisma.user.create({
         data: data,
     });
     return user;
 }
 
 export async function getAllUsers() {
-    const users = await prisma.User.findMany();
+    const users = await prisma.user.findMany();
     return users;
 }
 
 export async function getAllProblems() {
-    const problems = await prisma.Questions.findMany();
+    const problems = await prisma.questions_Algorithm.findMany();
     return problems;
 }
 
 export async function createProblem(data: any) {
-    const problem = await prisma.Questions.create({
+    const problem = await prisma.questions_Algorithm.create({
         data: data,
     });
     return problem;
 }
 
 export async function updateProblem(problemId: number, data: any) {
-    const problem = await prisma.Questions.update({
+    const problem = await prisma.questions_Algorithm.update({
         where: { id: problemId },
         data: data,
     });
@@ -219,25 +291,25 @@ export async function updateProblem(problemId: number, data: any) {
 }
 
 export async function deleteProblem(problemId: number) {
-    await prisma.Questions.delete({
+    await prisma.questions_Algorithm.delete({
         where: { id: problemId },
     });
 }
 
 export async function getAllAnswers() {
-    const answers = await prisma.UserAnswer.findMany();
+    const answers = await prisma.userAnswer.findMany();
     return answers;
 }
 
 export async function createAnswer(data: any) {
-    const answer = await prisma.UserAnswer.create({
+    const answer = await prisma.userAnswer.create({
         data: data,
     });
     return answer;
 }
 
 export async function updateAnswer(answerId: number, data: any) {
-    const answer = await prisma.UserAnswer.update({
+    const answer = await prisma.userAnswer.update({
         where: { id: answerId },
         data: data,
     });
@@ -245,25 +317,25 @@ export async function updateAnswer(answerId: number, data: any) {
 }
 
 export async function deleteAnswer(answerId: number) {
-    await prisma.UserAnswer.delete({
+    await prisma.userAnswer.delete({
         where: { id: answerId },
     });
 }
 
 export async function getAllSubjects() {
-    const subjects = await prisma.Subject.findMany();
+    const subjects = await prisma.subject.findMany();
     return subjects;
 }
 
 export async function createSubject(data: any) {
-    const subject = await prisma.Subject.create({
+    const subject = await prisma.subject.create({
         data: data,
     });
     return subject;
 }
 
 export async function updateSubject(subjectId: number, data: any) {
-    const subject = await prisma.Subject.update({
+    const subject = await prisma.subject.update({
         where: { id: subjectId },
         data: data,
     });
@@ -271,25 +343,25 @@ export async function updateSubject(subjectId: number, data: any) {
 }
 
 export async function deleteSubject(subjectId: number) {
-    await prisma.Subject.delete({
+    await prisma.subject.delete({
         where: { id: subjectId },
     });
 }
 
 export async function getAllDifficulties() {
-    const difficulties = await prisma.Difficulty.findMany();
+    const difficulties = await prisma.difficulty.findMany();
     return difficulties;
 }
 
 export async function createDifficulty(data: any) {
-    const difficulty = await prisma.Difficulty.create({
+    const difficulty = await prisma.difficulty.create({
         data: data,
     });
     return difficulty;
 }
 
 export async function updateDifficulty(difficultyId: number, data: any) {
-    const difficulty = await prisma.Difficulty.update({
+    const difficulty = await prisma.difficulty.update({
         where: { id: difficultyId },
         data: data,
     });
@@ -297,25 +369,25 @@ export async function updateDifficulty(difficultyId: number, data: any) {
 }
 
 export async function deleteDifficulty(difficultyId: number) {
-    await prisma.Difficulty.delete({
+    await prisma.difficulty.delete({
         where: { id: difficultyId },
     });
 }
 
 export async function getAllUserProgress() {
-    const userProgress = await prisma.UserSubjectProgress.findMany();
+    const userProgress = await prisma.userSubjectProgress.findMany();
     return userProgress;
 }
 
 export async function createUserProgress(data: any) {
-    const userProgress = await prisma.UserSubjectProgress.create({
+    const userProgress = await prisma.userSubjectProgress.create({
         data: data,
     });
     return userProgress;
 }
 
 export async function updateUserProgress(userId: number, subjectId: number, data: any) {
-    const userProgress = await prisma.UserSubjectProgress.update({
+    const userProgress = await prisma.userSubjectProgress.update({
         where: {
             user_id_subject_id: {
                 user_id: userId,
@@ -328,7 +400,7 @@ export async function updateUserProgress(userId: number, subjectId: number, data
 }
 
 export async function deleteUserProgress(userId: number, subjectId: number) {
-    await prisma.UserSubjectProgress.delete({
+    await prisma.userSubjectProgress.delete({
         where: {
             user_id_subject_id: {
                 user_id: userId,
@@ -339,19 +411,19 @@ export async function deleteUserProgress(userId: number, subjectId: number) {
 }
 
 export async function getAllGroups() {
-    const groups = await prisma.Groups.findMany();
+    const groups = await prisma.groups.findMany();
     return groups;
 }
 
 export async function createGroup(data: any) {
-    const group = await prisma.Groups.create({
+    const group = await prisma.groups.create({
         data: data,
     });
     return group;
 }
 
 export async function updateGroup(groupId: number, data: any) {
-    const group = await prisma.Groups.update({
+    const group = await prisma.groups.update({
         where: { id: groupId },
         data: data,
     });
@@ -359,25 +431,25 @@ export async function updateGroup(groupId: number, data: any) {
 }
 
 export async function deleteGroup(groupId: number) {
-    await prisma.Groups.delete({
+    await prisma.groups.delete({
         where: { id: groupId },
     });
 }
 
 export async function getAllGroupMembers() {
-    const groupMembers = await prisma.Groups_User.findMany();
+    const groupMembers = await prisma.groups_User.findMany();
     return groupMembers;
 }
 
 export async function createGroupMember(data: any) {
-    const groupMember = await prisma.Groups_User.create({
+    const groupMember = await prisma.groups_User.create({
         data: data,
     });
     return groupMember;
 }
 
 export async function updateGroupMember(groupMemberId: number, data: any) {
-    const groupMember = await prisma.Groups_User.update({
+    const groupMember = await prisma.groups_User.update({
         where: { id: groupMemberId },
         data: data,
     });
@@ -385,25 +457,25 @@ export async function updateGroupMember(groupMemberId: number, data: any) {
 }
 
 export async function deleteGroupMember(groupMemberId: number) {
-    await prisma.Groups_User.delete({
+    await prisma.groups_User.delete({
         where: { id: groupMemberId },
     });
 }
 
 export async function getAllSubmissions() {
-    const submissions = await prisma.Submissions.findMany();
+    const submissions = await prisma.submissions.findMany();
     return submissions;
 }
 
 export async function createSubmission(data: any) {
-    const submission = await prisma.Submissions.create({
+    const submission = await prisma.submissions.create({
         data: data,
     });
     return submission;
 }
 
 export async function updateSubmission(submissionId: number, data: any) {
-    const submission = await prisma.Submissions.update({
+    const submission = await prisma.submissions.update({
         where: { id: submissionId },
         data: data,
     });
@@ -411,25 +483,25 @@ export async function updateSubmission(submissionId: number, data: any) {
 }
 
 export async function deleteSubmission(submissionId: number) {
-    await prisma.Submissions.delete({
+    await prisma.submissions.delete({
         where: { id: submissionId },
     });
 }
 
 export async function getAllAssignments() {
-    const assignments = await prisma.Assignment.findMany();
+    const assignments = await prisma.assignment.findMany();
     return assignments;
 }
 
 export async function createAssignment(data: any) {
-    const assignment = await prisma.Assignment.create({
+    const assignment = await prisma.assignment.create({
         data: data,
     });
     return assignment;
 }
 
 export async function updateAssignment(assignmentId: number, data: any) {
-    const assignment = await prisma.Assignment.update({
+    const assignment = await prisma.assignment.update({
         where: { id: assignmentId },
         data: data,
     });
@@ -437,25 +509,25 @@ export async function updateAssignment(assignmentId: number, data: any) {
 }
 
 export async function deleteAssignment(assignmentId: number) {
-    await prisma.Assignment.delete({
+    await prisma.assignment.delete({
         where: { id: assignmentId },
     });
 }
 
 export async function getAllSubmissionFiles() {
-    const submissionFiles = await prisma.Submission_Files_Table.findMany();
+    const submissionFiles = await prisma.submission_Files_Table.findMany();
     return submissionFiles;
 }
 
 export async function createSubmissionFile(data: any) {
-    const submissionFile = await prisma.Submission_Files_Table.create({
+    const submissionFile = await prisma.submission_Files_Table.create({
         data: data,
     });
     return submissionFile;
 }
 
 export async function updateSubmissionFile(submissionFileId: number, data: any) {
-    const submissionFile = await prisma.Submission_Files_Table.update({
+    const submissionFile = await prisma.submission_Files_Table.update({
         where: { id: submissionFileId },
         data: data,
     });
@@ -463,25 +535,25 @@ export async function updateSubmissionFile(submissionFileId: number, data: any) 
 }
 
 export async function deleteSubmissionFile(submissionFileId: number) {
-    await prisma.Submission_Files_Table.delete({
+    await prisma.submission_Files_Table.delete({
         where: { id: submissionFileId },
     });
 }
 
 export async function getAllDegrees() {
-    const degrees = await prisma.Degree.findMany();
+    const degrees = await prisma.degree.findMany();
     return degrees;
 }
 
 export async function createDegree(data: any) {
-    const degree = await prisma.Degree.create({
+    const degree = await prisma.degree.create({
         data: data,
     });
     return degree;
 }
 
 export async function updateDegree(degreeId: number, data: any) {
-    const degree = await prisma.Degree.update({
+    const degree = await prisma.degree.update({
         where: { id: degreeId },
         data: data,
     });
@@ -489,25 +561,25 @@ export async function updateDegree(degreeId: number, data: any) {
 }
 
 export async function deleteDegree(degreeId: number) {
-    await prisma.Degree.delete({
+    await prisma.degree.delete({
         where: { id: degreeId },
     });
 }
 
 export async function getAllKohakuStatuses() {
-    const kohakuStatuses = await prisma.Status_Kohaku.findMany();
+    const kohakuStatuses = await prisma.status_Kohaku.findMany();
     return kohakuStatuses;
 }
 
 export async function createKohakuStatus(data: any) {
-    const kohakuStatus = await prisma.Status_Kohaku.create({
+    const kohakuStatus = await prisma.status_Kohaku.create({
         data: data,
     });
     return kohakuStatus;
 }
 
 export async function updateKohakuStatus(kohakuStatusId: number, data: any) {
-    const kohakuStatus = await prisma.Status_Kohaku.update({
+    const kohakuStatus = await prisma.status_Kohaku.update({
         where: { id: kohakuStatusId },
         data: data,
     });
@@ -515,25 +587,25 @@ export async function updateKohakuStatus(kohakuStatusId: number, data: any) {
 }
 
 export async function deleteKohakuStatus(kohakuStatusId: number) {
-    await prisma.Status_Kohaku.delete({
+    await prisma.status_Kohaku.delete({
         where: { id: kohakuStatusId },
     });
 }
 
 export async function getAllCodings() {
-    const codings = await prisma.Coding.findMany();
+    const codings = await prisma.coding.findMany();
     return codings;
 }
 
 export async function createCoding(data: any) {
-    const coding = await prisma.Coding.create({
+    const coding = await prisma.coding.create({
         data: data,
     });
     return coding;
 }
 
 export async function updateCoding(codingId: number, data: any) {
-    const coding = await prisma.Coding.update({
+    const coding = await prisma.coding.update({
         where: { id: codingId },
         data: data,
     });
@@ -541,25 +613,25 @@ export async function updateCoding(codingId: number, data: any) {
 }
 
 export async function deleteCoding(codingId: number) {
-    await prisma.Coding.delete({
+    await prisma.coding.delete({
         where: { id: codingId },
     });
 }
 
 export async function getAllTestCases() {
-    const testCases = await prisma.Test_Case.findMany();
+    const testCases = await prisma.test_Case.findMany();
     return testCases;
 }
 
 export async function createTestCase(data: any) {
-    const testCase = await prisma.Test_Case.create({
+    const testCase = await prisma.test_Case.create({
         data: data,
     });
     return testCase;
 }
 
 export async function updateTestCase(testCaseId: number, data: any) {
-    const testCase = await prisma.Test_Case.update({
+    const testCase = await prisma.test_Case.update({
         where: { id: testCaseId },
         data: data,
     });
@@ -567,25 +639,25 @@ export async function updateTestCase(testCaseId: number, data: any) {
 }
 
 export async function deleteTestCase(testCaseId: number) {
-    await prisma.Test_Case.delete({
+    await prisma.test_Case.delete({
         where: { id: testCaseId },
     });
 }
 
 export async function getAllAnswers2() {
-    const answers = await prisma.Answers.findMany();
+    const answers = await prisma.answers.findMany();
     return answers;
 }
 
 export async function createAnswer2(data: any) {
-    const answer = await prisma.Answers.create({
+    const answer = await prisma.answers.create({
         data: data,
     });
     return answer;
 }
 
 export async function updateAnswer2(answerId: number, data: any) {
-    const answer = await prisma.Answers.update({
+    const answer = await prisma.answers.update({
         where: { id: answerId },
         data: data,
     });
@@ -593,25 +665,25 @@ export async function updateAnswer2(answerId: number, data: any) {
 }
 
 export async function deleteAnswer2(answerId: number) {
-    await prisma.Answers.delete({
+    await prisma.answers.delete({
         where: { id: answerId },
     });
 }
 
 export async function getAllUserAnswerHistories() {
-    const userAnswerHistories = await prisma.User_Answer_History.findMany();
+    const userAnswerHistories = await prisma.user_Answer_History.findMany();
     return userAnswerHistories;
 }
 
 export async function createUserAnswerHistory(data: any) {
-    const userAnswerHistory = await prisma.User_Answer_History.create({
+    const userAnswerHistory = await prisma.user_Answer_History.create({
         data: data,
     });
     return userAnswerHistory;
 }
 
 export async function updateUserAnswerHistory(userAnswerHistoryId: number, data: any) {
-    const userAnswerHistory = await prisma.User_Answer_History.update({
+    const userAnswerHistory = await prisma.user_Answer_History.update({
         where: { id: userAnswerHistoryId },
         data: data,
     });
@@ -619,25 +691,25 @@ export async function updateUserAnswerHistory(userAnswerHistoryId: number, data:
 }
 
 export async function deleteUserAnswerHistory(userAnswerHistoryId: number) {
-    await prisma.User_Answer_History.delete({
+    await prisma.user_Answer_History.delete({
         where: { id: userAnswerHistoryId },
     });
 }
 
 export async function getAllAnswerdGenreTables() {
-    const answerdGenreTables = await prisma.Answerd_Genre_Table.findMany();
+    const answerdGenreTables = await prisma.answerd_Genre_Table.findMany();
     return answerdGenreTables;
 }
 
 export async function createAnswerdGenreTable(data: any) {
-    const answerdGenreTable = await prisma.Answerd_Genre_Table.create({
+    const answerdGenreTable = await prisma.answerd_Genre_Table.create({
         data: data,
     });
     return answerdGenreTable;
 }
 
 export async function updateAnswerdGenreTable(answerdGenreTableId: number, data: any) {
-    const answerdGenreTable = await prisma.Answerd_Genre_Table.update({
+    const answerdGenreTable = await prisma.answerd_Genre_Table.update({
         where: { id: answerdGenreTableId },
         data: data,
     });
@@ -645,25 +717,25 @@ export async function updateAnswerdGenreTable(answerdGenreTableId: number, data:
 }
 
 export async function deleteAnswerdGenreTable(answerdGenreTableId: number) {
-    await prisma.Answerd_Genre_Table.delete({
+    await prisma.answerd_Genre_Table.delete({
         where: { id: answerdGenreTableId },
     });
 }
 
 export async function getAllAnswerAlgorithms() {
-    const answerAlgorithms = await prisma.Answer_Algorithm.findMany();
+    const answerAlgorithms = await prisma.answer_Algorithm.findMany();
     return answerAlgorithms;
 }
 
 export async function createAnswerAlgorithm(data: any) {
-    const answerAlgorithm = await prisma.Answer_Algorithm.create({
+    const answerAlgorithm = await prisma.answer_Algorithm.create({
         data: data,
     });
     return answerAlgorithm;
 }
 
 export async function updateAnswerAlgorithm(answerAlgorithmId: number, data: any) {
-    const answerAlgorithm = await prisma.Answer_Algorithm.update({
+    const answerAlgorithm = await prisma.answer_Algorithm.update({
         where: { id: answerAlgorithmId },
         data: data,
     });
@@ -671,25 +743,25 @@ export async function updateAnswerAlgorithm(answerAlgorithmId: number, data: any
 }
 
 export async function deleteAnswerAlgorithm(answerAlgorithmId: number) {
-    await prisma.Answer_Algorithm.delete({
+    await prisma.answer_Algorithm.delete({
         where: { id: answerAlgorithmId },
     });
 }
 
 export async function getAllQuestionsAlgorithms() {
-    const questionsAlgorithms = await prisma.Questions_Algorithm.findMany();
+    const questionsAlgorithms = await prisma.questions_Algorithm.findMany();
     return questionsAlgorithms;
 }
 
 export async function createQuestionsAlgorithm(data: any) {
-    const questionsAlgorithm = await prisma.Questions_Algorithm.create({
+    const questionsAlgorithm = await prisma.questions_Algorithm.create({
         data: data,
     });
     return questionsAlgorithm;
 }
 
 export async function updateQuestionsAlgorithm(questionsAlgorithmId: number, data: any) {
-    const questionsAlgorithm = await prisma.Questions_Algorithm.update({
+    const questionsAlgorithm = await prisma.questions_Algorithm.update({
         where: { id: questionsAlgorithmId },
         data: data,
     });
@@ -697,25 +769,25 @@ export async function updateQuestionsAlgorithm(questionsAlgorithmId: number, dat
 }
 
 export async function deleteQuestionsAlgorithm(questionsAlgorithmId: number) {
-    await prisma.Questions_Algorithm.delete({
+    await prisma.questions_Algorithm.delete({
         where: { id: questionsAlgorithmId },
     });
 }
 
 export async function getAllLanguages() {
-    const languages = await prisma.Language.findMany();
+    const languages = await prisma.language.findMany();
     return languages;
 }
 
 export async function createLanguage(data: any) {
-    const language = await prisma.Language.create({
+    const language = await prisma.language.create({
         data: data,
     });
     return language;
 }
 
 export async function updateLanguage(languageId: number, data: any) {
-    const language = await prisma.Language.update({
+    const language = await prisma.language.update({
         where: { id: languageId },
         data: data,
     });
@@ -723,25 +795,25 @@ export async function updateLanguage(languageId: number, data: any) {
 }
 
 export async function deleteLanguage(languageId: number) {
-    await prisma.Language.delete({
+    await prisma.language.delete({
         where: { id: languageId },
     });
 }
 
 export async function getAllGenres() {
-    const genres = await prisma.Genre.findMany();
+    const genres = await prisma.genre.findMany();
     return genres;
 }
 
 export async function createGenre(data: any) {
-    const genre = await prisma.Genre.create({
+    const genre = await prisma.genre.create({
         data: data,
     });
     return genre;
 }
 
 export async function updateGenre(genreId: number, data: any) {
-    const genre = await prisma.Genre.update({
+    const genre = await prisma.genre.update({
         where: { id: genreId },
         data: data,
     });
@@ -749,25 +821,25 @@ export async function updateGenre(genreId: number, data: any) {
 }
 
 export async function deleteGenre(genreId: number) {
-    await prisma.Genre.delete({
+    await prisma.genre.delete({
         where: { id: genreId },
     });
 }
 
 export async function getAllQuestions() {
-    const questions = await prisma.Questions.findMany();
+    const questions = await prisma.questions_Algorithm.findMany();
     return questions;
 }
 
 export async function createQuestion(data: any) {
-    const question = await prisma.Questions.create({
+    const question = await prisma.questions_Algorithm.create({
         data: data,
     });
     return question;
 }
 
 export async function updateQuestion(questionId: number, data: any) {
-    const question = await prisma.Questions.update({
+    const question = await prisma.questions_Algorithm.update({
         where: { id: questionId },
         data: data,
     });
@@ -775,7 +847,7 @@ export async function updateQuestion(questionId: number, data: any) {
 }
 
 export async function deleteQuestion(questionId: number) {
-    await prisma.Questions.delete({
+    await prisma.questions_Algorithm.delete({
         where: { id: questionId },
     });
 }
