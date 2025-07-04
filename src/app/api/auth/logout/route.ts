@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getAppSession } from '@/lib/auth'; // ★ 作成した関数をインポート
+import { getAppSession } from '@/lib/auth'; 
 
 export async function POST() {
   try {
     // 専用関数でセッションを取得
     const session = await getAppSession();
 
-    // セッションを破棄します（これが最も安全なログアウト方法です）
+    // セッションを破棄します
     session.destroy();
 
     return NextResponse.json({ message: 'ログアウトしました' });

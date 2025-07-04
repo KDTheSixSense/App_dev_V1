@@ -4,7 +4,7 @@ import { SessionOptions } from 'iron-session';
 
 export const sessionOptions: SessionOptions = {
   // .env.localファイルで設定したパスワード
-  password: process.env.IRON_SESSION_PASSWORD as string,
+  password: process.env.SECRET_COOKIE_PASSWORD, 
   // アプリケーション固有のクッキー名
   cookieName: 'session-infopia', 
   cookieOptions: {
