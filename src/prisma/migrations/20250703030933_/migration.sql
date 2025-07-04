@@ -13,6 +13,9 @@ CREATE TABLE "User" (
     "level" INTEGER NOT NULL DEFAULT 1,
     "xp" INTEGER NOT NULL DEFAULT 0,
     "icon" TEXT,
+    "continuouslogin" INTEGER,
+    "totallogin" TIMESTAMP(3),
+    "lastlogin" TIMESTAMP(3),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
