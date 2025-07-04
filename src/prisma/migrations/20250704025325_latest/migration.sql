@@ -14,7 +14,7 @@ CREATE TABLE "User" (
     "xp" INTEGER NOT NULL DEFAULT 0,
     "icon" TEXT,
     "continuouslogin" INTEGER,
-    "totallogin" TIMESTAMP(3),
+    "totallogin" INTEGER DEFAULT 0,
     "lastlogin" TIMESTAMP(3),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -44,17 +44,7 @@ CREATE TABLE "Subject" (
 -- CreateTable
 CREATE TABLE "Language" (
     "id" SERIAL NOT NULL,
-    "title_ja" TEXT,
-    "title_en" TEXT,
-    "description_ja" TEXT,
-    "description_en" TEXT,
-    "answerOptions_ja" TEXT,
-    "answerOptions_en" TEXT,
-    "correctAnswer" TEXT,
-    "explanation_ja" TEXT,
-    "explanation_en" TEXT,
-    "programLines_ja" TEXT,
-    "programLines_en" TEXT,
+    "name" TEXT NOT NULL,
 
     CONSTRAINT "Language_pkey" PRIMARY KEY ("id")
 );
@@ -74,6 +64,12 @@ CREATE TABLE "Answer_Algorithm" (
 -- CreateTable
 CREATE TABLE "Questions_Algorithm" (
     "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "explanation" TEXT,
+    "programLines" TEXT,
+    "answerOptions" TEXT,
+    "correctAnswer" TEXT,
     "language_id" INTEGER NOT NULL,
     "initialVariable" JSONB NOT NULL,
     "logictype" TEXT NOT NULL,
@@ -276,6 +272,9 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Subject_name_key" ON "Subject"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Language_name_key" ON "Language"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Genre_genre_key" ON "Genre"("genre");
