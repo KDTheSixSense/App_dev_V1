@@ -41,7 +41,7 @@
     "eslint": "8.x.x",
     "eslint-config-next": "14.x.x",
     "postcss": "^8.x.x",
-    "prisma": "^6.10.1",
+    "prisma": "^6.11.1",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"
@@ -50,3 +50,4 @@
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   }
 }
+
