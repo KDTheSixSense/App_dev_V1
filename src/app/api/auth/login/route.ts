@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const session = await getAppSession();
 
     session.user = {
-      id: user.id,
+      id: String(user.id),
       email: user.email,
     };
     await session.save();
