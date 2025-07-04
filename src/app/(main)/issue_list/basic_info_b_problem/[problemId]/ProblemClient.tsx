@@ -1,5 +1,3 @@
-// /workspaces/my-next-app/src/app/(main)/issue_list/basic_info_b_problem/[problemId]/ProblemClient.tsx
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -11,9 +9,10 @@ import VariableTraceControl from '../components/VariableTraceControl';
 import KohakuChat from '../components/KohakuChat';
 
 import { problemLogicsMap } from '../data/problem-logics';
+// ▼▼▼【修正】インポート元を lib/data から lib/actions に変更 ▼▼▼
+import { getNextProblemId } from '@/lib/actions'; 
 import type { SerializableProblem } from '@/lib/data';
 import type { VariablesState } from '../data/problems';
-import { getNextProblemId } from '@/lib/actions';
 
 // --- 多言語対応テキストとヘルパー関数 ---
 
@@ -114,13 +113,13 @@ type TextResources = typeof textResources['ja']['problemStatement'];
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 
 interface ProblemClientProps {
-  initialProblem: SerializableProblem;
+  initialProblem: SerializableProblem;
 }
 
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
-  const router = useRouter();
+  const router = useRouter();
 
-  const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
+  const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
   const [currentTraceLine, setCurrentTraceLine] = useState(0);
   const [variables, setVariables] = useState<VariablesState>(initialProblem.initialVariables);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -297,22 +296,17 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
   };
 
   const handleNextProblem = async () => {
-    // ★ 修正点: IDを数値に変換せず、文字列のまま使用します
-    const currentId = problem.id;
-
-        // ★ 修正点: 2つ目の引数としてカテゴリ名を追加します
-    const category = 'basic_info_b_problem';
-    const nextProblemId = await getNextProblemId(currentId, category);
-    
-    if (nextProblemId) {
-      // 新しいパス構造に合わせる
-      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
-    } else {
-      alert("最後の問題です！");
-      // 問題一覧ページのパスに修正
-      router.push('/issue_list/basic_info_b_problem/problems');
-    }
-  };
+    const currentId = parseInt(problem.id, 10);
+    // この呼び出しは、lib/actions.ts のサーバーアクションを指すようになります
+    const nextProblemId = await getNextProblemId(currentId);
+    
+    if (nextProblemId) {
+      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
+    } else {
+      alert("最後の問題です！");
+      router.push('/issue_list/basic_info_b_problem/problems');
+    }
+  };
 
   // ✅【追加】logicTypeに応じてトレースUIの表示を切り替えるフラグ
   const showTraceUI = problem.logicType !== 'STATIC_QA';
