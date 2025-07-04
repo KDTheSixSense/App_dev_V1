@@ -1,9 +1,26 @@
 import { problemLogicsMap } from '@/app/(main)/issue_list/basic_info_b_problem/data/problem-logics';
+
 import { problems as localProblems, Problem as AppProblem, AnswerOption } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
+
 import { prisma } from './prisma';
 import type { Questions as DbStaticProblem, Questions_Algorithm as DbAlgoProblem } from '@prisma/client';
 
-export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'>;
+// Define SerializableProblem to explicitly match the output structure
+export type SerializableProblem = {
+  id: string;
+  title: { ja: string; en: string };
+  description: { ja: string; en: string };
+  programLines: { ja: string[]; en: string[] };
+  answerOptions: { ja: AnswerOption[]; en: AnswerOption[] };
+  correctAnswer: string;
+  explanationText: { ja: string; en: string };
+  initialVariables: VariablesState;
+  logicType: string; // Mapped from dbProblem.logictype
+  traceOptions?: AppProblem['traceOptions']; // Optional, from AppProblem
+  difficulty: number; // From dbProblem.difficultyId
+  genre: number; // From dbProblem.subjectId
+  language: number; // From dbProblem.language_id
+};
 
 function transformStaticProblem(dbProblem: DbStaticProblem): SerializableProblem | null {
   const fullProblemData = localProblems.find(p => p.id === dbProblem.id.toString());
@@ -45,6 +62,7 @@ function transformAlgoProblem(dbProblem: DbAlgoProblem): SerializableProblem {
     initialVariables: dbProblem.initialVariable as AppProblem['initialVariables'] ?? {},
     logicType: dbProblem.logictype,
     traceOptions: parseJSON(dbProblem.options as string | null, undefined),
+
   };
 }
 
@@ -82,4 +100,3 @@ export async function getNextProblemId(currentId: number): Promise<number | null
     return null; // 見つからないか、最後の問題
   }
   return sortedUniqueIds[currentIndex + 1];
-}
