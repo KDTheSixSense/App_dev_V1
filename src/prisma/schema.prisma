@@ -23,7 +23,7 @@ model User {
   icon                     String? //アイコン
   progresses               UserSubjectProgress[] // このユーザーの科目別進捗のリスト
   continuouslogin          Int?
-　totallogin               DateTime?
+  totallogin               Int?
   lastlogin                DateTime?
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
   answers                  UserAnswer[]
