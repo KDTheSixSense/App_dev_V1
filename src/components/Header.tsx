@@ -27,7 +27,7 @@ export default function Header({user}: HeaderProps) {
       }
       
       // API呼び出しが成功したら、ログインページに遷移する
-      router.push('/');
+      router.push('/auth/login');
 
     } catch (error) {
       console.error(error);
@@ -47,6 +47,8 @@ export default function Header({user}: HeaderProps) {
           />
         </Link>
       </div>
+
+
       <div className='flex items-center'>
         <nav>
           <ul className="flex space-x-6">
@@ -130,6 +132,8 @@ export default function Header({user}: HeaderProps) {
                 <span className='text-gray-800'>ログアウト</span>
               </button>
             </div>
+
+
           </ul>
         </nav>
       </div>
