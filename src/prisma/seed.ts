@@ -259,8 +259,8 @@ main()
     await prisma.$disconnect();
     console.log(`\n🔌 Disconnected from database.`);
   });
-answer_Algorithm.deleteMany({});
-    await prisma.questions.deleteMany({});
+await prisma.answer_Algorithm.deleteMany({});
+await prisma.questions.deleteMany({});
     await prisma.questions_Algorithm.deleteMany({});
     await prisma.language.deleteMany({}); // Language is now part of the problem data
     console.log('✅ Old data cleared.');
@@ -384,7 +384,6 @@ answer_Algorithm.deleteMany({});
         skipDuplicates: true,
     });
     console.log(`✅ God Mode progress created.`);
-}
 
 main()
     .catch(e => {
@@ -396,4 +395,3 @@ main()
         console.log(`
 🔌 Disconnected from database.`);
     });
-
