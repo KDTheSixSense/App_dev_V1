@@ -23,7 +23,7 @@ model User {
   icon                     String? //アイコン
   progresses               UserSubjectProgress[] // このユーザーの科目別進捗のリスト
   continuouslogin          Int?
-　totallogin               DateTime?
+　totallogin               Int? @default(0)
   lastlogin                DateTime?
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
   answers                  UserAnswer[]
@@ -58,17 +58,7 @@ model Subject {
 
 model Language {
   id                  Int                   @id @default(autoincrement())
-  title_ja            String?
-  title_en            String?
-  description_ja      String?
-  description_en      String?
-  answerOptions_ja    String?
-  answerOptions_en    String?
-  correctAnswer       String?
-  explanation_ja      String?
-  explanation_en      String?
-  programLines_ja     String?
-  programLines_en     String?
+  name                String                @unique
   Questions_Algorithm Questions_Algorithm[]
   Questions           Questions[]
 }
@@ -88,6 +78,12 @@ model Answer_Algorithm {
 
 model Questions_Algorithm {
   id              Int                @id @default(autoincrement())
+  title             String
+  description       String?
+  explanation       String?
+  programLines      String?
+  answerOptions     String?
+  correctAnswer     String?
   language_id     Int
   initialVariable Json
   logictype       String
