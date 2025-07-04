@@ -3,6 +3,11 @@
 # --------------------------------------------------------------------
 FROM node:20-alpine AS builder
 
+ARG DATABASE_URL
+# その引数の値を環境変数として設定
+ENV DATABASE_URL=$DATABASE_URL
+
+
 # Next.jsプロジェクトのルートを作業ディレクトリにする
 WORKDIR /app
 

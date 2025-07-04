@@ -14,33 +14,30 @@ export async function addXp(userId: number, subjectId: number, difficultyId: num
     where: { id: difficultyId },
   });
 
-  if (!difficulty) {
-    throw new Error(`Difficulty with ID '${difficultyId}' not found.`);
-  }
-  const xpAmount = difficulty.xp;
-  console.log(`Difficulty ID ${difficultyId}: ${xpAmount}xp`);
-  
-  // 2. トランザクションでXPを加算・レベルアップ処理
-  const result = await prisma.$transaction(async (tx) => {
-    
-    // === 2a. 科目レベルの更新処理 ===
-    const updatedProgress = await tx.userSubjectProgress.upsert({
-      where: {
-        user_id_subject_id: { // ⬅️ 修正: 複合キーの指定方法
-          user_id: userId,
-          subject_id: subjectId,
-        },
-      },
-      create: { // ⬅️ 修正: フィールド名をスキーマに合わせる
-        user_id: userId,
-        subject_id: subjectId,
-        xp: xpAmount,
-        level: 1 
-      },
-      update: { 
-        xp: { increment: xpAmount } 
-      },
-    });
+  if (!difficulty) {
+    throw new Error(`'${difficultyId}' が見つかりません。`);
+  }
+  const xpAmount = difficulty.xp;
+  console.log(`${difficultyId}: ${xpAmount}xp`);
+  
+  // 2. トランザクションでXPを加算・レベルアップ処理
+  const result = await prisma.$transaction(async (tx) => {
+    
+    // === 2a. 科目レベルの更新処理 ===
+    const updatedProgress = await tx.userSubjectProgress.upsert({
+      where: { user_id_subject_id: { user_id: userId, subject_id: subjectId } },
+      create: { user_id: userId, subject_id: subjectId, xp: xpAmount, level: 1 },
+      update: { xp: { increment: xpAmount } },
+    });
+    const newSubjectLevel = calculateLevelFromXp(updatedProgress.xp);
+    if (newSubjectLevel > updatedProgress.level) {
+      await tx.userSubjectProgress.update({
+        where: { user_id_subject_id: { user_id: userId, subject_id: subjectId } },
+        data: { level: newSubjectLevel },
+      });
+      console.log(`[科目レベルアップ!] subjectId:${subjectId} がレベル ${newSubjectLevel} に！`);
+    }
+
 
     const newSubjectLevel = calculateLevelFromXp(updatedProgress.xp);
     if (newSubjectLevel > updatedProgress.level) {

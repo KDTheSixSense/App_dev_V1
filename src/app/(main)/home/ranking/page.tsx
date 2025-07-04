@@ -22,7 +22,7 @@ export default async function RankingPage({ searchParams}: { searchParams: { sub
 
   for (const subject of subjects) {
     const progress = await prisma.userSubjectProgress.findMany({
-      where: { subjectId: subject.id },
+      where: { subject_id: subject.id },
       orderBy: { xp: 'desc' },
       take: 10,
       include: { user: true },
