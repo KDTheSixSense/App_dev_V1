@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const hashedToken = createHash('sha256').update(token).digest('hex');
 
     // 2. ハッシュ化されたトークンをDBで検索し、有効期限もチェック
-    const user = await prisma.user.findFirst({
+    const user = await prisma.User.findFirst({
       where: {
         resetPasswordToken: hashedToken,
         resetPasswordTokenExpiry: {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // 4. ユーザーのパスワードを更新し、使用済みのリセットトークンを無効化（削除）
-    await prisma.user.update({
+    await prisma.User.update({
       where: { id: user.id },
       data: {
         password: hashedPassword, // 'password' カラムを更新

@@ -3,18 +3,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  const users = await prisma.user.findMany();
+  const users = await prisma.User.findMany();
   return NextResponse.json(users);
 }
 
 export async function POST(req: NextRequest) {
   const data = await req.json();
-  const newUser = await prisma.user.create({
+  const newUser = await prisma.User.create({
     data: {
       password: data.password,
       email: data.email,
-      birth: data.birth,
-      totallogin: 0
+      birth: data.birth
     },
   });
   return NextResponse.json(newUser);

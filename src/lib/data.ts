@@ -1,90 +1,91 @@
 import { problemLogicsMap } from '@/app/(main)/issue_list/basic_info_b_problem/data/problem-logics';
-import type { Problem as AppProblem, AnswerOption } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
-import { prisma } from './prisma'; 
+// ▼▼▼【修正】VariablesStateもインポートする▼▼▼
+import { problems as localProblems, Problem as AppProblem, AnswerOption, VariablesState } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
+import { prisma } from './prisma';
+import type { Questions as DbStaticProblem, Questions_Algorithm as DbAlgoProblem } from '@prisma/client';
 
+// ▼▼▼【修正】型定義から不要なフィールドを一旦削除し、エラーを解消します▼▼▼
+// 将来的にdifficultyなどを使いたい場合は、再度追加し、変換関数も修正する必要があります。
 export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'>;
 
-/**
- * DBから取得したデータを、アプリケーションで使う形式に変換・整形します。
- * @param dbProblem Prismaから取得したProblemオブジェクト
- * @returns フロントエンドコンポーネントが期待する形式のProblemオブジェクト
- */
-/**
- * DBから取得したデータを、シリアライズ可能な形式に変換・整形します。
- * @param dbProblem Prismaから取得したProblemオブジェクト
- * @returns フロントエンドコンポーネントに渡せるシリアライズ可能なProblemオブジェクト
- */
-function transformProblemToSerializable(dbProblem: any): SerializableProblem | null {
-  // logicTypeに対応するロジック定義の存在チェックだけ行う
-  if (!problemLogicsMap[dbProblem.logicType as keyof typeof problemLogicsMap]) {
-    console.error(`Logic for type "${dbProblem.logicType}" not found.`);
-    return null;
-  }
-  
-  // JSON型を適切にキャスト
-  const answerOptions_ja = dbProblem.answerOptions_ja as unknown as AnswerOption[];
-  const answerOptions_en = dbProblem.answerOptions_en as unknown as AnswerOption[];
-  const traceOptions = dbProblem.options as { presets?: number[] } | null;
 
-  // フロントエンドで使うAppProblemの形式に整形
-  return {
-    id: dbProblem.id.toString(),
-    title: { ja: dbProblem.title_ja, en: dbProblem.title_en },
-    description: { ja: dbProblem.description_ja, en: dbProblem.description_en },
-    programLines: { ja: dbProblem.programLines_ja, en: dbProblem.programLines_en },
-    answerOptions: { ja: answerOptions_ja, en: answerOptions_en },
-    correctAnswer: dbProblem.correctAnswer,
-    explanationText: { ja: dbProblem.explanation_ja, en: dbProblem.explanation_en },
-    initialVariables: dbProblem.initialVariables as AppProblem['initialVariables'],
-    traceOptions: (traceOptions && traceOptions.presets) ? { presets: traceOptions.presets } : undefined,
-    // logicTypeは、クライアント側でロジックを特定するために必要なので、含めます。
-    // あれ、AppProblemにlogicTypeがない？追加しましょう。
-    logicType: dbProblem.logicType, 
-  };
+function transformStaticProblem(dbProblem: DbStaticProblem): SerializableProblem | null {
+  const fullProblemData = localProblems.find(p => p.id === dbProblem.id.toString());
+  if (!fullProblemData) {
+    console.error(`Local problem definition for ID ${dbProblem.id} not found.`);
+    // 最低限の情報を返す場合でも、型が一致するようにします
+    return {
+      id: dbProblem.id.toString(),
+      title: { ja: dbProblem.title, en: dbProblem.title },
+      description: { ja: dbProblem.question, en: dbProblem.question },
+      explanationText: { ja: dbProblem.explain ?? '', en: dbProblem.explain ?? '' },
+      programLines: { ja: [], en: [] },
+      answerOptions: { ja: [], en: [] },
+      correctAnswer: '',
+      initialVariables: {},
+      logicType: 'STATIC_QA',
+    };
+  }
+  // fullProblemDataから不要な関数を除外して返す
+  const { traceLogic, calculateNextLine, ...serializableData } = fullProblemData;
+  return serializableData;
 }
 
+function transformAlgoProblem(dbProblem: DbAlgoProblem): SerializableProblem {
+  const parseJSON = (str: string | null, fallback: any) => {
+    if (!str) return fallback;
+    try { return JSON.parse(str); } catch { return fallback; }
+  };
+  const programLinesArray = (dbProblem.programLines ?? '').split('\n');
+  return {
+    id: dbProblem.id.toString(),
+    title: { ja: dbProblem.title, en: dbProblem.title },
+    description: { ja: dbProblem.description ?? '', en: dbProblem.description ?? '' },
+    explanationText: { ja: dbProblem.explanation ?? '', en: dbProblem.explanation ?? '' },
+    programLines: { ja: programLinesArray, en: programLinesArray },
+    answerOptions: { 
+      ja: parseJSON(dbProblem.answerOptions, []), 
+      en: parseJSON(dbProblem.answerOptions, []) 
+    },
+    correctAnswer: dbProblem.correctAnswer ?? '',
+    initialVariables: dbProblem.initialVariable as AppProblem['initialVariables'] ?? {},
+    logicType: dbProblem.logictype,
+    traceOptions: parseJSON(dbProblem.options as string | null, undefined),
+  };
+}
 
-/**
- * IDを指定して、単一の問題データをデータベースから取得し、整形して返します。
- * @param id 取得する問題のID（数値）
- */
-export async function getProblemForClient(id: number): Promise<SerializableProblem | null> {  try {
-    const problemFromDb = await prisma.questions.findUnique({
-      where: { id: id },
-    });
-
-    if (!problemFromDb) {
-      return null;
-    }
-    
-    return transformProblemToSerializable(problemFromDb);
-
-  } catch (error) {
-    console.error("Failed to fetch problem:", error);
-    return null;
-  }
+export async function getProblemForClient(id: number): Promise<SerializableProblem | null> {
+  try {
+    const staticProblem = await prisma.questions.findUnique({ where: { id } });
+    if (staticProblem) {
+      return transformStaticProblem(staticProblem);
+    }
+    const algoProblem = await prisma.questions_Algorithm.findUnique({ where: { id } });
+    if (algoProblem) {
+      return transformAlgoProblem(algoProblem);
+    }
+    return null;
+  } catch (error) {
+    console.error("Failed to fetch problem:", error);
+    return null;
+  }
 }
 
 /**
  * 次の問題のIDを取得します。
- * @param currentId 現在の問題ID
- * @returns 次の問題が存在すればそのID、なければnull
  */
 export async function getNextProblemId(currentId: number): Promise<number | null> {
-    const nextProblem = await prisma.questions.findFirst({
-        where: {
-            id: {
-                gt: currentId, // gt は "greater than" の略
-            },
-            // もし将来的にカテゴリで問題を絞り込む場合は、以下のように条件を追加します
-            // logicType: { contains: category } // 例
-        },
-        orderBy: {
-            id: 'asc', // IDの昇順で並べ替え
-        },
-        select: {
-            id: true, // idフィールドだけ取得すれば十分です
-        },
-    });
-    return nextProblem ? nextProblem.id : null;
+  const [staticIds, algoIds] = await Promise.all([
+    prisma.questions.findMany({ select: { id: true } }),
+    prisma.questions_Algorithm.findMany({ select: { id: true } })
+  ]);
+
+  const allIds = [...staticIds.map(p => p.id), ...algoIds.map(p => p.id)];
+  const sortedUniqueIds = [...new Set(allIds)].sort((a, b) => a - b);
+
+  const currentIndex = sortedUniqueIds.indexOf(currentId);
+  if (currentIndex === -1 || currentIndex === sortedUniqueIds.length - 1) {
+    return null; // 見つからないか、最後の問題
+  }
+  return sortedUniqueIds[currentIndex + 1];
 }

@@ -8,8 +8,14 @@ export default function MainPagesLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // 非同期のデータ取得処理を削除します
-  // const user = await prisma.user.findUnique(...);
+
+  // --- ここでID=1のユーザーデータを取得 ---
+  // (将来的には、ここで認証情報からログインユーザーを取得する形になる予定)
+  const user = await prisma.user.findUnique({
+    where: {
+      id: 4, // 特別なユーザーIDを指定
+    },
+  });
 
   return (
     <>

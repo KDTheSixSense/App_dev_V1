@@ -195,7 +195,3 @@ export const basicInfoBProblems: Problem[] = [
 export const getBasicInfoBProblemsById = (id: string): Problem | undefined => {
   return basicInfoBProblems.find(p => p.id === id);
 };
-
-export const getAllProblemIds = () => {
-  return basicInfoBProblems.map(p => ({ problemId: p.id }));
-};
