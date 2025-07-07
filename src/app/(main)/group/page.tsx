@@ -29,9 +29,31 @@ interface FormatState {
     strikethrough: boolean;
 }
 
+// ★ 追加：通知設定の型定義
+interface NotificationSettings {
+    email: boolean;
+    commentsOnMyPosts: boolean;
+    commentsThatMentionMe: boolean;
+    privateCommentsOnWork: boolean;
+    submittedLate: boolean;
+    resubmitted: boolean;
+    invitationsToCoTeach: boolean;
+    postedToClasses: boolean;
+    classReminders: boolean;
+}
+
+// ★ 追加：トグルスイッチコンポーネントのプロパティ型定義
+interface ToggleSwitchProps {
+    id: string;
+    checked: boolean;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    label: string;
+    description?: string;
+}
+
 const ClassroomApp: React.FC = () => {
     // 状態管理
-    const [currentView, setCurrentView] = useState<'empty' | 'groups' | 'detail'>('empty');
+    const [currentView, setCurrentView] = useState<'empty' | 'groups' | 'detail' | 'settings'>('empty');
     const [groups, setGroups] = useState<Group[]>([]);
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
     const [activeTab, setActiveTab] = useState<'お知らせ' | '課題' | 'メンバー'>('お知らせ');
@@ -61,10 +83,24 @@ const ClassroomApp: React.FC = () => {
 
     const [classCode, setClassCode] = useState('');
 
+    // ★ 追加：設定ページ用の状態管理
+    const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+        email: true,
+        commentsOnMyPosts: true,
+        commentsThatMentionMe: true,
+        privateCommentsOnWork: true,
+        submittedLate: true,
+        resubmitted: true,
+        invitationsToCoTeach: true,
+        postedToClasses: true,
+        classReminders: true,
+    });
+    const [classNotificationSettings, setClassNotificationSettings] = useState<{ [key: number]: boolean }>({});
+
     // エディターのref
     const editorRef = useRef<HTMLDivElement>(null);
 
-    // --- ★ 修正: APIからグループ一覧を取得する関数を定義 ---
+    // APIからグループ一覧を取得する関数
     const fetchGroups = async () => {
         try {
             const response = await fetch('/api/groups');
@@ -73,18 +109,20 @@ const ClassroomApp: React.FC = () => {
                 throw new Error(errorData.message || 'グループの読み込みに失敗しました');
             }
             const data = await response.json();
-            // APIからのデータ形式をフロントエンドのGroup型に合わせる
             const formattedGroups: Group[] = data.map((group: any) => ({
                 id: group.id,
                 name: group.groupname,
                 description: group.body,
-                color: '#00bcd4', // 色は仮設定
-                teacher: '管理者', // 作成者名は別途取得が必要なため仮設定
+                color: '#00bcd4',
+                teacher: '管理者',
                 memberCount: group._count?.Groups_User || 0,
             }));
             setGroups(formattedGroups);
             if (formattedGroups.length > 0) {
-                setCurrentView('groups');
+                // ★ 修正：設定画面から戻ってきた場合を考慮
+                if (currentView !== 'settings') {
+                    setCurrentView('groups');
+                }
             } else {
                 setCurrentView('empty');
             }
@@ -99,6 +137,32 @@ const ClassroomApp: React.FC = () => {
         fetchGroups();
     }, []);
 
+    // ★ 追加：グループデータが更新されたら、クラスごとの通知設定を初期化
+    useEffect(() => {
+        const initialSettings = groups.reduce((acc, group) => {
+            acc[group.id] = classNotificationSettings[group.id] ?? true; // 既存の設定を維持し、なければtrue
+            return acc;
+        }, {} as { [key: number]: boolean });
+        setClassNotificationSettings(initialSettings);
+    }, [groups]);
+
+    // ★ 追加：設定ページ用のイベントハンドラ
+    const handleNotificationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, checked } = e.target;
+        setNotificationSettings(prev => ({ ...prev, [name]: checked }));
+    };
+
+    const handleClassNotificationChange = (groupId: number, checked: boolean) => {
+        setClassNotificationSettings(prev => ({ ...prev, [groupId]: checked }));
+    };
+
+    // ★ 追加：設定ページに遷移するハンドラ
+    const handleSettingsClick = () => {
+        setCurrentView('settings');
+        setSelectedGroup(null);
+        setActiveDropdown(null);
+    };
+
     // サイドバーの開閉
     const toggleSidebar = () => {
         setSidebarCollapsed(!sidebarCollapsed);
@@ -106,7 +170,12 @@ const ClassroomApp: React.FC = () => {
 
     // ホームボタンのクリック処理
     const handleHomeClick = () => {
-        setCurrentView('empty');
+        // ★ 修正：グループがあればgroupsへ、なければemptyへ
+        if (groups.length > 0) {
+            setCurrentView('groups');
+        } else {
+            setCurrentView('empty');
+        }
         setSelectedGroup(null);
         setActiveDropdown(null);
     };
@@ -340,6 +409,31 @@ const ClassroomApp: React.FC = () => {
         return members;
     };
 
+    // ★ 追加：再利用可能なトグルスイッチコンポーネント
+    const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ id, checked, onChange, label, description }) => (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0' }}>
+            <label htmlFor={id} style={{ flex: 1, cursor: 'pointer' }}>
+                <span style={{ fontSize: '14px', color: '#3c4043' }}>{label}</span>
+                {description && <p style={{ fontSize: '12px', color: '#5f6368', margin: '4px 0 0 0', lineHeight: 1.4 }}>{description}</p>}
+            </label>
+            <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px' }}>
+                <input id={id} type="checkbox" name={id} checked={checked} onChange={onChange} style={{ opacity: 0, width: 0, height: 0 }} />
+                <span style={{
+                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: checked ? '#a5d6a7' : '#bdbdbd',
+                    transition: '.3s', borderRadius: '20px'
+                }}></span>
+                <span style={{
+                    position: 'absolute', content: '""', height: '14px', width: '14px',
+                    left: checked ? '22px' : '3px', bottom: '3px',
+                    backgroundColor: checked ? '#388e3c' : '#f5f5f5',
+                    transition: '.3s', borderRadius: '50%',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                }}></span>
+            </label>
+        </div>
+    );
+
     return (
         <div style={{
             fontFamily: "'Hiragino Sans', 'ヒラギノ角ゴシック', 'Yu Gothic', 'メイリオ', sans-serif",
@@ -397,18 +491,13 @@ const ClassroomApp: React.FC = () => {
                     <div
                         onClick={handleHomeClick}
                         style={{
-                            backgroundColor: '#e3f2fd',
-                            borderRadius: sidebarCollapsed ? '50%' : '24px',
-                            padding: sidebarCollapsed ? '12px' : '12px 16px',
-                            marginBottom: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            cursor: 'pointer',
-                            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                            transition: 'all 0.2s'
+                            backgroundColor: currentView !== 'settings' ? '#e3f2fd' : 'transparent', // ★ 修正
+                            borderRadius: sidebarCollapsed ? '50%' : '24px', padding: sidebarCollapsed ? '12px' : '12px 16px',
+                            marginBottom: '8px', display: 'flex', alignItems: 'center', cursor: 'pointer',
+                            justifyContent: sidebarCollapsed ? 'center' : 'flex-start', transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#bbdefb'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#e3f2fd'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = currentView !== 'settings' ? '#e3f2fd' : 'transparent'}
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="#1976d2">
                             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
@@ -418,7 +507,7 @@ const ClassroomApp: React.FC = () => {
                                 marginLeft: '12px',
                                 fontSize: '14px',
                                 fontWeight: '500',
-                                color: '#1976d2'
+                                color: currentView !== 'settings' ? '#1976d2' : '#5f6368'
                             }}>
                                 ホーム
                             </span>
@@ -427,28 +516,23 @@ const ClassroomApp: React.FC = () => {
 
                     {/* 設定ボタン */}
                     <div
+                        onClick={handleSettingsClick} // ★ 修正：onClickイベントを追加
                         style={{
-                            padding: sidebarCollapsed ? '12px' : '12px 16px',
-                            marginBottom: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            cursor: 'pointer',
-                            borderRadius: sidebarCollapsed ? '50%' : '24px',
-                            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                            transition: 'all 0.2s'
+                            padding: sidebarCollapsed ? '12px' : '12px 16px', marginBottom: '8px', display: 'flex',
+                            alignItems: 'center', cursor: 'pointer', borderRadius: sidebarCollapsed ? '50%' : '24px',
+                            justifyContent: sidebarCollapsed ? 'center' : 'flex-start', transition: 'all 0.2s',
+                            backgroundColor: currentView === 'settings' ? '#e8eaf6' : 'transparent' // ★ 修正
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = currentView === 'settings' ? '#e8eaf6' : 'transparent'} // ★ 修正
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#5f6368">
-                            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={currentView === 'settings' ? '#3f51b5' : '#5f6368'}>
+                            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
                         </svg>
                         {!sidebarCollapsed && (
                             <span style={{
-                                marginLeft: '12px',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                color: '#5f6368'
+                                marginLeft: '12px', fontSize: '14px', fontWeight: '500',
+                                color: currentView === 'settings' ? '#3f51b5' : '#5f6368' // ★ 修正
                             }}>
                                 設定
                             </span>
@@ -460,7 +544,7 @@ const ClassroomApp: React.FC = () => {
                 <main style={{
                     flex: 1,
                     marginLeft: sidebarCollapsed ? '60px' : '240px',
-                    padding: '24px',
+                    padding: '24px 48px',
                     transition: 'margin-left 0.3s ease',
                     backgroundColor: '#ffffff',
                     minHeight: 'calc(100vh - 80px)',
@@ -1237,9 +1321,80 @@ const ClassroomApp: React.FC = () => {
                             </div>
                         </div>
                     )}
+                    {/* 設定ページ表示 */}
+                    {currentView === 'settings' && (
+                        <div style={{ maxWidth: '1024px', margin: '0 auto' }}> {/* ★ デザイン改善: 横幅を広げる */}
+                            <h1 style={{ 
+                                fontSize: '28px', // ★ デザイン改善
+                                color: '#2d3748', // ★ デザイン改善: 濃いグレー
+                                borderBottom: '1px solid #e2e8f0', // ★ デザイン改善: 薄いボーダー
+                                paddingBottom: '16px', 
+                                marginBottom: '32px', // ★ デザイン改善
+                                fontWeight: 700, // ★ デザイン改善
+                            }}>設定</h1>
+
+                            {/* 通知セクション */}
+                            <div style={{ marginBottom: '40px' }}>
+                                <h2 style={{ fontSize: '20px', color: '#2d3748', marginBottom: '16px', fontWeight: 600 }}>通知</h2>
+                                <div style={{ 
+                                    backgroundColor: '#ffffff', // ★ デザイン改善
+                                    borderRadius: '12px', // ★ デザイン改善
+                                    padding: '8px 32px', // ★ デザイン改善
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' // ★ デザイン改善
+                                }}>
+                                    <ToggleSwitch
+                                        id="email"
+                                        label="メール通知を許可"
+                                        checked={notificationSettings.email}
+                                        onChange={handleNotificationChange}
+                                        // description="これらの設定はメールで受信する通知に適用されます"
+                                    />
+                                    <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: 0 }} />
+                                    <div style={{ padding: '8px 0' }}>
+                                        <h3 style={{ fontSize: '16px', color: '#4a5568', margin: '16px 0', fontWeight: 600 }}>コメント</h3>
+                                        <ToggleSwitch id="commentsOnMyPosts" label="自分の投稿へのコメント" checked={notificationSettings.commentsOnMyPosts} onChange={handleNotificationChange} />
+                                        <ToggleSwitch id="commentsThatMentionMe" label="自分の名前がリンク付きのコメント" checked={notificationSettings.commentsThatMentionMe} onChange={handleNotificationChange} />
+                                        <ToggleSwitch id="privateCommentsOnWork" label="課題に関する限定公開のコメント" checked={notificationSettings.privateCommentsOnWork} onChange={handleNotificationChange} />
+                                    </div>
+                                    <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: 0 }} />
+                                    <div style={{ padding: '8px 0 16px' }}>
+                                        <h3 style={{ fontSize: '16px', color: '#4a5568', margin: '16px 0', fontWeight: 600 }}>登録したクラス</h3>
+                                        <ToggleSwitch id="submittedLate" label="教師からの課題やその他の投稿" checked={notificationSettings.submittedLate} onChange={handleNotificationChange} />
+                                        <ToggleSwitch id="resubmitted" label="教師から返却された課題と成績" checked={notificationSettings.resubmitted} onChange={handleNotificationChange} />
+                                        <ToggleSwitch id="invitationsToCoTeach" label="生徒としてクラスへ招待" checked={notificationSettings.invitationsToCoTeach} onChange={handleNotificationChange} />
+                                        {/* <ToggleSwitch id="classReminders" label="提出期限に関するリマインダー" checked={notificationSettings.classReminders} onChange={handleNotificationChange} /> */}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* クラス通知セクション */}
+                            <div>
+                                <h2 style={{ fontSize: '18px', color: '#3c4043', marginBottom: '16px' }}>クラス通知</h2>
+                                {/* <p style={{ fontSize: '13px', color: '#5f6368', marginBottom: '16px' }}>これらの設定は、各クラスのメール通知とデバイス通知の両方に適用されます</p> */}
+                                <div style={{ border: '1px solid #e0e0e0', borderRadius: '8px', padding: '0 24px' }}>
+                                    {groups.length > 0 ? (
+                                        groups.map((group, index) => (
+                                            <React.Fragment key={group.id}>
+                                                <ToggleSwitch
+                                                    id={`class-${group.id}`}
+                                                    label={group.name}
+                                                    checked={classNotificationSettings[group.id] ?? true}
+                                                    onChange={(e) => handleClassNotificationChange(group.id, e.target.checked)}
+                                                />
+                                                {index < groups.length - 1 && <hr style={{ border: 'none', borderTop: '1px solid #e0e0e0', margin: 0 }} />}
+                                            </React.Fragment>
+                                        ))
+                                    ) : (
+                                        <p style={{ color: '#5f6368', fontSize: '14px', padding: '16px 0' }}>
+                                            通知設定を行うクラスがありません。
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </main>
             </div>
-
             {/* カスタムクラス作成モーダル */}
             {showCreateModal && (
                 <div style={{
