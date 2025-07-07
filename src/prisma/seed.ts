@@ -73,25 +73,20 @@ console.log('✅ Users seeded.');
   // 4. 問題データのシーディング (`localProblems` から)
   console.log('🌱 Seeding questions from local data...');
   for (const p of localProblems) {
-    const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, difficultyid: 1, genreid: 1, answerid: 1, term: "不明" };
+    const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, genreid: 1, difficultyId: 1, answerid: 1, term: "不明" };
     await prisma.questions.create({ data: questionDataForDB });
     console.log(`✅ Created question from local data: "${questionDataForDB.title}" (ID: ${questionDataForDB.id})`);
   }
 
   // 5. 問題データのシーディング (Excel から)
-  console.log(`\n🌱 Seeding problems from Excel file...`);
+  console.log(`
+🌱 Seeding problems from Excel file...`);
   const excelFileName = 'PBL2 科目B問題.xlsx';
   const filePath = path.join(__dirname, '..', 'app', '(main)', 'issue_list', 'basic_info_b_problem', 'data', excelFileName);
   const defaultSubjectId = 3; 
   const defaultDifficultyB_Easy_Id = 7;
   const defaultDifficultyB_Hard_Id = 8;
   const pseudoLanguageId = 2;
-
-  // ▼▼▼【ここから修正】次のIDを動的に計算するロジックを追加 ▼▼▼
-  const lastLocalQuestion = await prisma.questions.findFirst({ orderBy: { id: 'desc' } });
-  let nextId = (lastLocalQuestion?.id || 0) + 1;
-  console.log(`   Starting Excel questions from ID: ${nextId}`);
-  // ▲▲▲【ここまで修正】▲▲▲
 
   try {
     const workbook = XLSX.readFile(filePath);
@@ -108,7 +103,6 @@ console.log('✅ Users seeded.');
         
         const questionAlgoEntry = await prisma.questions_Algorithm.create({
           data: {
-            id: nextId, // ▼▼▼【修正】手動でIDを割り当てる
             title: record.title_ja,
             description: record.description_ja,
             explanation: record.explanation_ja,
@@ -124,7 +118,6 @@ console.log('✅ Users seeded.');
           }
         });
         console.log(`  ✅ Created algorithm question from Excel: "${questionAlgoEntry.title}" (ID: ${questionAlgoEntry.id})`);
-        nextId++; // ▼▼▼【修正】次のIDのためにインクリメント
       }
     }
   } catch (error) { console.error(`❌ Failed to read or process ${excelFileName}:`, error); }
