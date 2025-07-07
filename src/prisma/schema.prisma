@@ -317,6 +317,7 @@ model Difficulty {
 
 model Groups {
   id          Int           @id @default(autoincrement())
+  hashedId    String        @unique @default(cuid())
   groupname   String        @unique
   body        String        @db.Text
   Groups_User Groups_User[]

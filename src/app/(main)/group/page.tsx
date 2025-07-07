@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation'
 
 // グループデータの型定義
 interface Group {
     id: number;
+    hashedId: string;
     name: string;
     description: string;
     section?: string;
@@ -61,6 +63,7 @@ const ClassroomApp: React.FC = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
+    const router = useRouter();
 
     // リッチエディター関連の状態
     const [isEditorExpanded, setIsEditorExpanded] = useState(false);
@@ -111,6 +114,7 @@ const ClassroomApp: React.FC = () => {
             const data = await response.json();
             const formattedGroups: Group[] = data.map((group: any) => ({
                 id: group.id,
+                hashedId: group.hashedId,
                 name: group.groupname,
                 description: group.body,
                 color: '#00bcd4',
@@ -336,9 +340,7 @@ const ClassroomApp: React.FC = () => {
 
     // グループクリック処理
     const handleGroupClick = (group: Group) => {
-        setSelectedGroup(group);
-        setCurrentView('detail');
-        setActiveDropdown(null);
+        router.push(`/group/${group.hashedId}`);
     };
 
     // 3点メニューの表示切り替え
