@@ -45,5 +45,8 @@ const isProtectedRoute = config.protectedRoutes.some(path =>
 }
 
 export const configMatcher = {
-  matcher: '/:path*',
+  matcher: [
+    '/:path*',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
