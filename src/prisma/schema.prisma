@@ -31,6 +31,23 @@ model User {
   Answerd_Genre_Table      Answerd_Genre_Table[]
   Groups_User              Groups_User[]
   Status_Kohaku            Status_Kohaku[]
+  createdProblems          ProgrammingProblem[] @relation("ProblemCreator")
+  posts Post[]
+}
+
+// グループ内の投稿・お知らせを保存するモデル
+model Post {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- リレーション ---
+  groupId   Int    // どのグループへの投稿か
+  group     Groups @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  authorId  Int    // 誰が投稿したか
+  author    User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model UserAnswer {
@@ -119,6 +136,94 @@ model Questions {
   language   Language     @relation(fields: [language_id], references: [id])
   answer     UserAnswer[]
   Answers    Answers[]
+}
+
+/// プログラミング問題の情報を格納するモデル 
+model ProgrammingProblem {
+  id                Int      @id @default(autoincrement())
+  
+  // --- 基本情報 ---
+  title             String                                 // タイトル
+  problemType       String   @default("コーディング問題")    // 問題タイプ
+  difficulty        Int      @default(4)                   // 難易度 (1-10)
+  timeLimit         Int      @default(10)                  // 制限時間 (分)
+  category          String   @default("プログラミング基礎")   // カテゴリ
+  topic             String   @default("標準入力")           // トピック
+  tags              String   @default("[]")                // タグ (JSON文字列)
+  
+  // --- 問題内容 ---
+  description       String   @db.Text                      // 問題文
+  codeTemplate      String   @db.Text @default("")         // コードテンプレート
+  
+  // --- 公開設定 ---
+  isPublic          Boolean  @default(false)               // 公開フラグ
+  allowTestCaseView Boolean  @default(false)               // テストケース表示許可
+  isDraft           Boolean  @default(true)                // 下書きフラグ
+  isPublished       Boolean  @default(false)               // 公開済みフラグ
+  
+  // --- 作成者情報 ---
+  createdBy         Int?                                   // 作成者ID
+  creator           User?    @relation("ProblemCreator", fields: [createdBy], references: [id])
+  
+  // --- タイムスタンプ ---
+  createdAt         DateTime @default(now())               // 作成日時
+  updatedAt         DateTime @updatedAt                    // 更新日時
+  
+  // --- リレーション ---
+  sampleCases       SampleCase[]                           // サンプルケース
+  testCases         TestCase[]                             // テストケース
+  files             ProblemFile[]                          // 添付ファイル
+}
+
+/// サンプルケースモデル
+model SampleCase {
+  id                Int      @id @default(autoincrement())
+  problemId         Int                                    // 問題ID
+  input             String   @db.Text                      // 入力
+  expectedOutput    String   @db.Text                      // 期待される出力
+  description       String   @db.Text @default("")         // 説明
+  order             Int      @default(0)                   // 表示順序
+  
+  // --- リレーション ---
+  problem           ProgrammingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  
+  // --- インデックス ---
+  @@index([problemId])
+}
+
+/// テストケースモデル
+model TestCase {
+  id                Int      @id @default(autoincrement())
+  problemId         Int                                    // 問題ID
+  name              String   @default("ケース1")            // テストケース名
+  input             String   @db.Text                      // 入力
+  expectedOutput    String   @db.Text                      // 期待される出力
+  description       String   @db.Text @default("")         // 説明
+  order             Int      @default(0)                   // 表示順序
+  
+  // --- リレーション ---
+  problem           ProgrammingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  
+  // --- インデックス ---
+  @@index([problemId])
+}
+
+/// 問題添付ファイルモデル
+model ProblemFile {
+  id                Int      @id @default(autoincrement())
+  problemId         Int                                    // 問題ID
+  fileName          String                                 // ファイル名
+  originalName      String                                 // 元のファイル名
+  filePath          String                                 // ファイルパス
+  fileSize          Int                                    // ファイルサイズ (bytes)
+  mimeType          String                                 // MIMEタイプ
+  uploadedAt        DateTime @default(now())               // アップロード日時
+  
+  // --- リレーション ---
+  problem           ProgrammingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  
+  // --- インデックス ---
+  @@index([problemId])
 }
 
 model Genre {
@@ -216,6 +321,7 @@ model Groups {
   body        String        @db.Text
   Groups_User Groups_User[]
   Assignment  Assignment[]
+  posts Post[]
 }
 
 model Groups_User {
