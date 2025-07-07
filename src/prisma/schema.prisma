@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id                       Int                   @id @default(autoincrement()) // ID: 整数型、主キー、自動増分
+  id                       Int                   @id    @default(autoincrement()) // ID: 整数型、主キー、自動増分
   email                    String                @unique // メールアドレス: 文字列型、ユニーク
   password                 String // パスワード: 文字列型
   hash                     String? // ハッシュ値: 文字列型、Null許容
