@@ -4,11 +4,9 @@ import { SessionOptions } from 'iron-session';
 
 export const sessionOptions: SessionOptions = {
   // .env.localファイルで設定したパスワード
-  password: process.env.SECRET_COOKIE_PASSWORD, 
-  // アプリケーション固有のクッキー名
-  cookieName: 'session-infopia', 
+  password: process.env.SECRET_COOKIE_PASSWORD!, 
+  cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
-    // 本番環境(HTTPS)でのみCookieを保護する設定
     secure: process.env.NODE_ENV === 'production',
   },
 };
