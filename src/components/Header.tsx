@@ -12,6 +12,8 @@ type HeaderProps = {
 
 export default function Header({user}: HeaderProps) {
 
+  console.log("User icon path:", user?.icon); // 追加
+
   const router = useRouter();
 
   // ログアウト処理を行う非同期関数
@@ -169,6 +171,7 @@ export default function Header({user}: HeaderProps) {
               width={60}
               height={60}
               className="rounded-full"
+              objectFit="cover"
             />
           </Link>
         </div>
