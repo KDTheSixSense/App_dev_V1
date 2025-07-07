@@ -21,6 +21,18 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
+CREATE TABLE "Post" (
+    "id" SERIAL NOT NULL,
+    "content" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "groupId" INTEGER NOT NULL,
+    "authorId" INTEGER NOT NULL,
+
+    CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "UserAnswer" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
@@ -94,9 +106,71 @@ CREATE TABLE "Questions" (
     "year" TIMESTAMP(3),
     "explain" TEXT,
     "image" TEXT,
-    "difficultyid" INTEGER NOT NULL,
+    "difficultyId" INTEGER NOT NULL,
 
     CONSTRAINT "Questions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProgrammingProblem" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "problemType" TEXT NOT NULL DEFAULT 'コーディング問題',
+    "difficulty" INTEGER NOT NULL DEFAULT 4,
+    "timeLimit" INTEGER NOT NULL DEFAULT 10,
+    "category" TEXT NOT NULL DEFAULT 'プログラミング基礎',
+    "topic" TEXT NOT NULL DEFAULT '標準入力',
+    "tags" TEXT NOT NULL DEFAULT '[]',
+    "description" TEXT NOT NULL,
+    "codeTemplate" TEXT NOT NULL DEFAULT '',
+    "isPublic" BOOLEAN NOT NULL DEFAULT false,
+    "allowTestCaseView" BOOLEAN NOT NULL DEFAULT false,
+    "isDraft" BOOLEAN NOT NULL DEFAULT true,
+    "isPublished" BOOLEAN NOT NULL DEFAULT false,
+    "createdBy" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProgrammingProblem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SampleCase" (
+    "id" SERIAL NOT NULL,
+    "problemId" INTEGER NOT NULL,
+    "input" TEXT NOT NULL,
+    "expectedOutput" TEXT NOT NULL,
+    "description" TEXT NOT NULL DEFAULT '',
+    "order" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "SampleCase_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TestCase" (
+    "id" SERIAL NOT NULL,
+    "problemId" INTEGER NOT NULL,
+    "name" TEXT NOT NULL DEFAULT 'ケース1',
+    "input" TEXT NOT NULL,
+    "expectedOutput" TEXT NOT NULL,
+    "description" TEXT NOT NULL DEFAULT '',
+    "order" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "TestCase_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProblemFile" (
+    "id" SERIAL NOT NULL,
+    "problemId" INTEGER NOT NULL,
+    "fileName" TEXT NOT NULL,
+    "originalName" TEXT NOT NULL,
+    "filePath" TEXT NOT NULL,
+    "fileSize" INTEGER NOT NULL,
+    "mimeType" TEXT NOT NULL,
+    "uploadedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ProblemFile_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -277,6 +351,15 @@ CREATE UNIQUE INDEX "Subject_name_key" ON "Subject"("name");
 CREATE UNIQUE INDEX "Language_name_key" ON "Language"("name");
 
 -- CreateIndex
+CREATE INDEX "SampleCase_problemId_idx" ON "SampleCase"("problemId");
+
+-- CreateIndex
+CREATE INDEX "TestCase_problemId_idx" ON "TestCase"("problemId");
+
+-- CreateIndex
+CREATE INDEX "ProblemFile_problemId_idx" ON "ProblemFile"("problemId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Genre_genre_key" ON "Genre"("genre");
 
 -- CreateIndex
@@ -287,6 +370,12 @@ CREATE UNIQUE INDEX "Groups_groupname_key" ON "Groups"("groupname");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Degree_degree_key" ON "Degree"("degree");
+
+-- AddForeignKey
+ALTER TABLE "Post" ADD CONSTRAINT "Post_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Groups"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -313,10 +402,22 @@ ALTER TABLE "Questions_Algorithm" ADD CONSTRAINT "Questions_Algorithm_language_i
 ALTER TABLE "Questions" ADD CONSTRAINT "Questions_genre_id_fkey" FOREIGN KEY ("genre_id") REFERENCES "Genre"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Questions" ADD CONSTRAINT "Questions_difficultyid_fkey" FOREIGN KEY ("difficultyid") REFERENCES "Difficulty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Questions" ADD CONSTRAINT "Questions_difficultyId_fkey" FOREIGN KEY ("difficultyId") REFERENCES "Difficulty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Questions" ADD CONSTRAINT "Questions_language_id_fkey" FOREIGN KEY ("language_id") REFERENCES "Language"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProgrammingProblem" ADD CONSTRAINT "ProgrammingProblem_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SampleCase" ADD CONSTRAINT "SampleCase_problemId_fkey" FOREIGN KEY ("problemId") REFERENCES "ProgrammingProblem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestCase" ADD CONSTRAINT "TestCase_problemId_fkey" FOREIGN KEY ("problemId") REFERENCES "ProgrammingProblem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProblemFile" ADD CONSTRAINT "ProblemFile_problemId_fkey" FOREIGN KEY ("problemId") REFERENCES "ProgrammingProblem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Answerd_Genre_Table" ADD CONSTRAINT "Answerd_Genre_Table_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
