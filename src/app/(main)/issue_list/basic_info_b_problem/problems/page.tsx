@@ -24,20 +24,23 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => 
 
 // ページコンポーネントを非同期関数に変更
 const BasicInfoBProblemsListPage = async () => {
-  // データベースから問題一覧を取得
-  
-  // const problems = await prisma.questions.findMany(
-  const problems = await prisma.Questions_Algorithm.findMany({
-    // 必要に応じてカテゴリなどで絞り込む
-    // where: { category: 'basic_info_b' },
-    orderBy: {
-      id: 'asc',
-    },
-    select: {
-      id: true,
-      title: true,
-    }
-  });
+  // 1. 両方のテーブルからデータを同時に取得します
+  const [staticProblems, algoProblems] = await Promise.all([
+    prisma.questions.findMany({
+      orderBy: { id: 'asc' },
+      select: { id: true, title: true }
+    }),
+    prisma.questions_Algorithm.findMany({
+      orderBy: { id: 'asc' },
+      select: { id: true, title: true }
+    })
+  ]);
+
+  // 2. 取得した2つの配列を1つに結合します
+  const allProblems = [...staticProblems, ...algoProblems];
+
+  // 3. ID順に並び替えます
+  allProblems.sort((a, b) => a.id - b.id);
 
   return (
     <div className="min-h-screen bg-gray-100 py-10">
@@ -47,7 +50,7 @@ const BasicInfoBProblemsListPage = async () => {
         </h1>
         <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-2xl mx-auto">
           <ul>
-            {problems.map((problem) => (
+            {allProblems.map((problem) => (
               <ProblemListRow
                 key={problem.id}
                 problemId={problem.id.toString()}
