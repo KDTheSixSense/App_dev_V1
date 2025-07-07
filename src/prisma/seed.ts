@@ -1,6 +1,7 @@
 // prisma/seed.ts
 import { Prisma, PrismaClient } from '@prisma/client';
 import { addXp } from '../lib/actions';
+import { updateUserLoginStats } from '../lib/actions';
 import path from 'path';
 import * as XLSX from 'xlsx';
 import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/data/problems';
@@ -133,6 +134,8 @@ console.log('✅ Users seeded.');
   if (alice) {
     console.log('🧪 Testing addXp function...');
     await addXp(alice.id, 1, 1);
+    console.log(`✅ Alice's XP updated.`);
+    await updateUserLoginStats(alice.id);
   }
 
   console.log('👼 Creating God Mode progress...');
