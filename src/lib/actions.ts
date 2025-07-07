@@ -141,6 +141,17 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
 
 
 //ログイン日数計算
+const RESET_HOUR = 6; // 日付のリセット時刻を朝6時に設定
+/**
+ * 指定された日時から6時間引いて、「アプリ内での日付」を返すヘルパー関数
+ * @param date - 判定したい日時オブジェクト
+ * @returns 6時間引いた後の日時オブジェクト
+ */
+function getAppDate(date: Date): Date {
+  const newDate = new Date(date);
+  newDate.setHours(newDate.getHours() - RESET_HOUR);
+  return newDate;
+}
 export async function updateUserLoginStats(userId: number) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -150,48 +161,49 @@ export async function updateUserLoginStats(userId: number) {
     throw new Error('User not found');
   }
 
-  const today = new Date();
-  const todayDateString = today.toDateString();
+  const now = new Date(); // 実際の現在時刻
+  const lastLoginDate = user.lastlogin; // DBに保存されている実際の最終ログイン時刻
+
+// 「アプリ内での今日」の日付文字列を取得
+  const todayAppDateString = getAppDate(now).toDateString();
+
+  // 最後にログインした「アプリ内での日付」の文字列を取得
+  const lastLoginAppDateString = lastLoginDate ? getAppDate(lastLoginDate).toDateString() : null;
+
+  // アプリ内での日付が同じなら、すでにログイン済み
+  // if (lastLoginAppDateString && lastLoginAppDateString === todayAppDateString) {
+  //   console.log('本日（アプリ内日付）は既にログイン済みです。');
+  //   return;
+  // }
+
+  // --- 日数計算 ---
   
-  // スキーマ定義通りの `lastlogin` (DateTime?) を参照
-  const lastLoginDate = user.lastlogin;
+  // 「アプリ内での昨日」の日付文字列を取得
+  const yesterdayAppDate = getAppDate(now);
+  yesterdayAppDate.setDate(yesterdayAppDate.getDate() - 1);
+  const yesterdayAppDateString = yesterdayAppDate.toDateString();
 
-  if (lastLoginDate && lastLoginDate.toDateString() === todayDateString) {
-    console.log('本日既にログイン済みです。');
-    return;
-  }
+  let newConsecutiveDays = user.continuouslogin ?? 0;
+  let newTotalDays = user.totallogin ?? 0;
 
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-  const yesterdayDateString = yesterday.toDateString();
-
-  // --- ▼▼▼ ここが最も重要な修正箇所 ▼▼▼ ---
-
-  // スキーマ定義通りの `continuouslogin` (Int?) を参照し、型をnumberに確定
-  let newConsecutiveDays: number = user.continuouslogin ?? 0;
-  // スキーマ定義通りの `totallogin` (Int?) を参照し、型をnumberに確定
-  let newTotalDays: number = user.totallogin ?? 0;
-  
-  // --- ▲▲▲ 修正箇所ここまで ▲▲▲ ---
-
-
-  if (lastLoginDate && lastLoginDate.toDateString() === yesterdayDateString) {
+  // if (lastLoginAppDateString && lastLoginAppDateString === yesterdayAppDateString) {
+    // ケースA: 最後のログインが「アプリ内での昨日」 -> 連続ログイン
     newConsecutiveDays += 1;
-  } else {
-    newConsecutiveDays = 1;
-  }
+  // } else {
+    // ケースB: 連続ログインが途切れた -> リセット
+    // newConsecutiveDays = 1;
+  // }
   
   newTotalDays += 1;
 
+  // データベースを更新
   await prisma.user.update({
     where: { id: userId },
     data: {
-      // DBに書き込む際も、スキーマ通りのフィールド名を使う
       totallogin: newTotalDays,
       continuouslogin: newConsecutiveDays,
-      lastlogin: today,
+      // DBに保存するのは、実際のログイン時刻
+      lastlogin: now,
     },
   });
-
-  console.log(`ログイン情報を更新しました: 総${newTotalDays}日, 連続${newConsecutiveDays}日`);
 }
