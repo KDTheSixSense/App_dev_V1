@@ -137,7 +137,7 @@ export default function Header({user}: HeaderProps) {
           </ul>
         </nav>
       </div>
-      <div className='flex items-center ml-auto mr-2 w-40 h-20'>
+      <div className='flex items-center ml-auto mr-2 w-40 h-20 gap-2'>
         <div className='flex flex-col items-center justify-center w-25 h-20'>
           <div className='flex w-full h-8 justify-center items-center'>
             <Image
@@ -152,13 +152,18 @@ export default function Header({user}: HeaderProps) {
               <span className='text-[#5FE943] text-[24px] font-bold ml-2'>1</span>
             )}
           </div>
-          <div className='flex w-full h-8 justify-center'>
+          <div className='flex w-full h-8 items-center pl-2'>
             <Image
-              src="/images/test_login.png"
+              src="/images/login_icon.png"
               alt="連続ログイン日数"
-              width={60}
+              width={30}
               height={30}
             />
+            {user ? (
+              <span className="text-[#feb75c] text-[24px] font-bold ml-2">{user.continuouslogin}</span>
+            ):(
+              <span className='text-[#feb75c] text-[24px] font-bold ml-2'>1</span>
+            )}            
           </div>
         </div>
         <div className='flex items-center justify-end rounded-full h-15 w-15 bg-white'>
