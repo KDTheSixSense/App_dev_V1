@@ -128,11 +128,11 @@ model Questions {
   year         DateTime?
   explain      String?
   image        String?
-  difficultyid Int
+  difficultyId Int
 
   // --- リレーション定義 ---
   genre      Genre        @relation(fields: [genre_id], references: [id])
-  difficulty Difficulty   @relation(fields: [difficultyid], references: [id])
+  difficulty Difficulty   @relation(fields: [difficultyId], references: [id])
   language   Language     @relation(fields: [language_id], references: [id])
   answer     UserAnswer[]
   Answers    Answers[]
