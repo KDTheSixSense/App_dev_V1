@@ -1,15 +1,26 @@
 // /app/api/groups/[hashedId]/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// GETハンドラの第二引数に正しい型を定義
 export async function GET(
-  request: Request,
-  { params }: any
+  request: NextRequest,
 ) {
   try {
+    // contextオブジェクトから安全にhashedIdを取得
+    const hashedId = request.nextUrl.pathname.split('/').pop();
+
+    // パラメータの存在をチェック
+    if (!hashedId) {
+      return NextResponse.json(
+        { message: 'IDが指定されていません' },
+        { status: 400 }
+      );
+    }
+
     const group = await prisma.groups.findUnique({
-      where: { 
-        hashedId: params.hashedId 
+      where: {
+        hashedId: hashedId,
       },
       include: {
         _count: {
@@ -19,21 +30,27 @@ export async function GET(
     });
 
     if (!group) {
-      return NextResponse.json({ message: 'グループが見つかりません' }, { status: 404 });
+      return NextResponse.json(
+        { message: 'グループが見つかりません' },
+        { status: 404 }
+      );
     }
 
     // フロントエンドで使いやすいように整形
     const response = {
-        id: group.id,
-        hashedId: group.hashedId,
-        name: group.groupname,
-        description: group.body,
-        memberCount: group._count?.Groups_User || 0,
+      id: group.id,
+      hashedId: group.hashedId,
+      name: group.groupname,
+      description: group.body,
+      memberCount: group._count?.Groups_User || 0,
     };
 
     return NextResponse.json(response);
   } catch (error) {
     console.error('❌ グループ詳細取得エラー:', error);
-    return NextResponse.json({ message: 'グループの取得に失敗しました' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'サーバーエラーが発生しました' },
+      { status: 500 }
+    );
   }
 }
