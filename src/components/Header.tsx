@@ -4,7 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { useRouter } from 'next/navigation'; // next/navigationからインポート
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
+
 
 type HeaderProps = {
   user: User | null; // ユーザー情報を受け取る
@@ -138,19 +139,21 @@ export default function Header({user}: HeaderProps) {
         </nav>
       </div>
       <div className='flex items-center ml-auto mr-2 w-40 h-20 gap-2'>
-        <div className='flex flex-col items-center justify-center w-25 h-20'>
-          <div className='flex w-full h-8 justify-center items-center'>
+        <div className='flex flex-col items-center justify-center w-30 h-20'>
+          <div className='flex w-full h-8 items-center'>
             <Image
               src="/images/Rank.png"
               alt="ランク"
               width={40}
               height={20}
             />
-            {user ? (
-              <span className="text-[#5FE943] text-[24px] font-bold ml-2">{user.level}</span>
-            ):(
-              <span className='text-[#5FE943] text-[24px] font-bold ml-2'>1</span>
-            )}
+            <div className='flex items-center justify-end'>
+              {user ? (
+                <p className="text-[#5FE943] text-[24px] font-bold ml-2">{user.level}</p>
+              ):(
+                <p className='text-[#5FE943] text-[24px] font-bold ml-2'>1</p>
+              )}
+            </div>
           </div>
           <div className='flex w-full h-8 items-center pl-2'>
             <Image
@@ -159,11 +162,13 @@ export default function Header({user}: HeaderProps) {
               width={30}
               height={30}
             />
-            {user ? (
-              <span className="text-[#feb75c] text-[24px] font-bold ml-2">{user.continuouslogin}</span>
-            ):(
-              <span className='text-[#feb75c] text-[24px] font-bold ml-2'>1</span>
-            )}            
+            <div className='flex items-center justify-end'>
+              {user ? (
+                <p className="text-[#feb75c] text-[24px] font-bold ml-2">{user.continuouslogin}</p>
+              ):(
+                <p className='text-[#feb75c] text-[24px] font-bold ml-2'>1</p>
+              )}
+            </div>   
           </div>
         </div>
         <div className='flex items-center justify-end rounded-full h-15 w-15 bg-white'>
