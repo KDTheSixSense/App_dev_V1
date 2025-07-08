@@ -267,6 +267,7 @@ CREATE TABLE "Difficulty" (
 -- CreateTable
 CREATE TABLE "Groups" (
     "id" SERIAL NOT NULL,
+    "hashedId" TEXT NOT NULL,
     "groupname" TEXT NOT NULL,
     "body" TEXT NOT NULL,
 
@@ -364,6 +365,9 @@ CREATE UNIQUE INDEX "Genre_genre_key" ON "Genre"("genre");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Difficulty_name_key" ON "Difficulty"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Groups_hashedId_key" ON "Groups"("hashedId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Groups_groupname_key" ON "Groups"("groupname");
