@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
-  username?: string;
+  username?: string | null;
   birth?: string | null;
   icon?: string | null; // Add icon field
 }
@@ -123,7 +123,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             id="username"
             name="username"
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            value={formData.username}
+            value={formData.username || ''}
             onChange={handleChange}
             readOnly={!isEditing}
             placeholder="テキスト"

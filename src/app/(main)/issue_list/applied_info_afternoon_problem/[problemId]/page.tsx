@@ -166,7 +166,7 @@ const ProblemDetailPage = () => {
     }
 
     // 次の問題を取得するために 'basic_info_b_problem' カテゴリを指定
-    const nextProblemId = await getNextProblemId(currentProblemId, 'basic_info_b_problem'); 
+    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'applied_info_afternoon_problem'); 
 
     if (nextProblemId) {
       router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);

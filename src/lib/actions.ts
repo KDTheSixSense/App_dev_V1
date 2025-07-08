@@ -8,16 +8,32 @@ import { calculateLevelFromXp } from './leveling';
  * @param currentId 現在の問題ID
  * @returns 次の問題が存在すればそのID、なければnull
  */
-export async function getNextProblemId(currentId: number): Promise<number | null> {
+export async function getNextProblemId(currentId: number, category: string): Promise<number | null> {
   try {
     // 両方のテーブルからIDを取得
-    const [staticIds, algoIds] = await Promise.all([
-      prisma.questions.findMany({ select: { id: true } }),
-      prisma.questions_Algorithm.findMany({ select: { id: true } })
-    ]);
+    let problems;
+    if (category === 'basic_info_b_problem') {
+      // 'basic_info_b_problem' カテゴリの場合は 'Questions_Algorithm' テーブルから
+      // Subject名が '基本情報B問題' のものを検索する
+      problems = await prisma.questions_Algorithm.findMany({
+        where: { subject: { name: '基本情報B問題' } },
+        select: { id: true },
+      });
+    } else if (category === 'questions_Algorithm') {
+      problems = await prisma.questions_Algorithm.findMany({
+        where: { subject: { name: category } }, // カテゴリでフィルタリング
+        select: { id: true },
+      });
+    } else {
+      // その他のカテゴリの場合、またはカテゴリが指定されていない場合のデフォルトの動作
+      const [staticIds, algoIds] = await Promise.all([
+        prisma.questions.findMany({ select: { id: true } }),
+        prisma.questions_Algorithm.findMany({ select: { id: true } })
+      ]);
+      problems = [...staticIds, ...algoIds];
+    }
 
-    // IDを一つの配列にまとめ、ソートし、重複を除外
-    const allIds = [...staticIds.map(p => p.id), ...algoIds.map(p => p.id)];
+    const allIds = problems.map(p => p.id);
     const sortedUniqueIds = [...new Set(allIds)].sort((a, b) => a - b);
 
     // 現在のIDの次のIDを探す

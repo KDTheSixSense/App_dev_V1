@@ -166,7 +166,7 @@ const ProblemDetailPage = () => {
     }
 
     // C++問題用のカテゴリを渡す
-    const nextProblemId = await getNextProblemId(currentProblemId, 'Cplus_problem'); 
+    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'Cplus_problem'); 
 
     if (nextProblemId) {
       router.push(`/issue_list/Cplus_problem/${nextProblemId}`);

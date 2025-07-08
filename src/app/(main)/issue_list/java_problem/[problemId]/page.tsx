@@ -172,7 +172,7 @@ const ProblemDetailPage = () => {
     }
 
     // `C#_problem` 用のカテゴリを渡す
-    const nextProblemId = await getNextProblemId(currentProblemId, 'java_problem'); 
+    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'java_problem'); 
 
     if (nextProblemId) {
       router.push(`/issue_list/java_problem/${nextProblemId}`);

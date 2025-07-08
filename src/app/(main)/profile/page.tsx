@@ -6,11 +6,7 @@ import { getAppSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: { subject?: string };
-}) {
+export default async function HomePage({ searchParams }: any) {
   const session = await getAppSession();
   if (!session || !session.user) {
     redirect("/auth/login");
@@ -21,12 +17,18 @@ export default async function HomePage({
       id: parseInt(session.user.id, 10),
     },
   });
+
+  // birthプロパティを文字列に変換
+  const serializedUser = user ? {
+    ...user,
+    birth: user.birth ? user.birth.toISOString() : null,
+  } : null;
   
   return (
     <div className='bg-white'>
       <main className="flex w-full min-h-screen text-center pt-6 ml-20 mr-20 gap-10">
         <div className="flex flex-col w-full max-w-lg gap-8">
-          <ProfileForm user={user} />
+          <ProfileForm user={serializedUser} />
         </div>
         <div className="flex flex-col w-full max-w-lg">
           <Pet />

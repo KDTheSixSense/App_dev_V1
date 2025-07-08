@@ -163,7 +163,7 @@ const ProblemDetailPage = () => {
       return;
     }
 
-    const nextProblemId = await getNextProblemId(currentProblemId, 'applied_info_morning_problem'); 
+    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'applied_info_morning_problem'); 
 
     if (nextProblemId) {
       router.push(`/issue_list/applied_info_morning_problem/${nextProblemId}`);

@@ -18,7 +18,7 @@ interface PageProps {
  * 問題ページのサーバーコンポーネント。
  * データ取得と、クライアントコンポーネントへのデータ受け渡しを担当します。
  */
-const BasicInfoBProblemPage = async ({ params }: PageProps) => {
+const BasicInfoBProblemPage = async ({ params }: any) => {
   const problemId = parseInt(params.problemId, 10);
 
   if (isNaN(problemId)) {
