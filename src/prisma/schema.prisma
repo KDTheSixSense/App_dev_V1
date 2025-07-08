@@ -21,6 +21,7 @@ model User {
   level                    Int                   @default(1) //アカウントレベル
   xp                       Int                   @default(0) //総経験値
   icon                     String? //アイコン
+  title                    String? //称号
   progresses               UserSubjectProgress[] // このユーザーの科目別進捗のリスト
   continuouslogin          Int?
 　totallogin               Int? @default(0)

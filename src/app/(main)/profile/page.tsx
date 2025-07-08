@@ -2,6 +2,7 @@ import React from "react";
 import ProfileForm from "./ProfileForm/ProfileForm";
 import Pet from "./Pet/PetStatus";
 import Advice from "./Advice/Advice";
+import Chart from "./Chart/Chart";
 import { getAppSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -36,6 +37,8 @@ export default async function ProfilePage({
           {/* プロフィール編集フォームコンポーネント */}
           <ProfileForm user={user} />
         </div>
+          {/* 自己分析チャートコンポーネント */}
+          <Chart />
         <div className="flex flex-col w-full max-w-lg">
           {/* ペットのステータス表示コンポーネント */}
           <Pet />

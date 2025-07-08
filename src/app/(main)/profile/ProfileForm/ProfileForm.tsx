@@ -10,6 +10,7 @@ interface User {
   username?: string;
   birth?: string | null;
   icon?: string | null; // ユーザーアイコンのURL
+  title?: string | null; // 称号
 }
 
 /**
@@ -21,20 +22,34 @@ interface ProfileFormProps {
 
 /**
  * プロフィール編集フォームコンポーネント
- * ユーザーのニックネーム、生年月日、アイコンの表示と編集機能を提供します。
+ * ユーザーのニックネーム、生年月日、アイコン、称号、パスワードの表示と編集機能を提供します。
  */
 export default function ProfileForm({ user }: ProfileFormProps) {
   const router = useRouter();
   // 編集モードかどうかの状態を管理
   const [isEditing, setIsEditing] = useState(false);
+  // パスワード変更フォームの表示状態
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
   // フォームの入力データを管理
   const [formData, setFormData] = useState<User>({
     username: user?.username || '',
     birth: user?.birth ? new Date(user.birth).toISOString().split('T')[0] : '',
     icon: user?.icon || null,
+    title: user?.title || '称号なし',
   });
   // フォームの初期データを保持し、キャンセル時に戻せるようにする
   const [initialData, setInitialData] = useState(formData);
+  // パスワード関連のstate
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  // モーダルの表示状態
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  // 仮の称号リスト
+  const titles = ['称号なし', '駆け出しエンジニア', 'ベテランエンジニア', 'コードマスター'];
 
   // userプロップが変更されたときにフォームデータを更新
   useEffect(() => {
@@ -42,6 +57,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       username: user?.username || '',
       birth: user?.birth ? new Date(user.birth).toISOString().split('T')[0] : '',
       icon: user?.icon || null,
+      title: user?.title || '称号なし',
     };
     setFormData(initial);
     setInitialData(initial);
@@ -49,7 +65,6 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
   /**
    * 編集ボタンクリック時のハンドラ
-   * フォームを編集モードに切り替えます。
    */
   const handleEdit = () => {
     setIsEditing(true);
@@ -57,16 +72,16 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
   /**
    * キャンセルボタンクリック時のハンドラ
-   * フォームを閲覧モードに戻し、データを初期状態に戻します。
    */
   const handleCancel = () => {
     setIsEditing(false);
+    setShowPasswordChange(false);
     setFormData(initialData);
+    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
   };
 
   /**
    * 入力フィールドの変更ハンドラ
-   * フォームデータを更新します。
    */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -74,8 +89,15 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   };
 
   /**
+   * パスワード入力フィールドの変更ハンドラ
+   */
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  /**
    * アイコン変更時のハンドラ
-   * 新しいアイコン画像をサーバーにアップロードし、成功したらフォームデータを更新します。
    */
   const handleIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) {
@@ -95,7 +117,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       if (response.ok) {
         const result = await response.json();
         setFormData((prev) => ({ ...prev, icon: result.iconPath }));
-        router.refresh(); // ページをリフレッシュして最新のアイコンを表示
+        router.refresh();
       } else {
         console.error('Failed to upload icon');
       }
@@ -106,52 +128,103 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
   /**
    * フォーム送信時のハンドラ
-   * ユーザーのプロフィール情報をサーバーに送信し、更新します。
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isEditing) return; // 編集モードでない場合は何もしない
+    if (!isEditing) return;
 
     try {
-      const response = await fetch('/api/user', {
+      // プロフィール情報の更新
+      const profileResponse = await fetch('/api/user', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
-      if (response.ok) {
-        setIsEditing(false);
-        router.refresh(); // ページをリフレッシュして更新されたデータを表示
-      } else {
+      if (!profileResponse.ok) {
         console.error('Failed to update profile');
-        // エラーメッセージをユーザーに表示することも検討
+        return;
       }
+
+      // パスワードの更新（必要な場合）
+      if (showPasswordChange && passwordData.newPassword) {
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+          alert('新しいパスワードが一致しません。');
+          return;
+        }
+        const passwordResponse = await fetch('/api/auth/password-change', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword,
+          }),
+        });
+
+        if (!passwordResponse.ok) {
+          console.error('Failed to update password');
+          // エラーメッセージをユーザーに表示
+          const errorData = await passwordResponse.json();
+          alert(errorData.message || 'パスワードの更新に失敗しました。');
+          return;
+        }
+      }
+
+      setIsEditing(false);
+      setShowPasswordChange(false);
+      router.refresh();
     } catch (error) {
       console.error('An error occurred:', error);
     }
   };
 
+  /**
+   * 称号選択ハンドラ
+   */
+  const handleTitleSelect = (title: string) => {
+    setFormData((prev) => ({ ...prev, title }));
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="flex flex-col bg-gray-100 p-6 rounded-lg shadow-lg border-white-200">
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800">基本情報</h2>
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800">プロフィール</h2>
       <form className="space-y-6" onSubmit={handleSubmit}>
-        {/* アイコン表示と変更ボタン */}
-        <div className="flex flex-col items-center mb-4">
-          {formData.icon ? (
-            <img src={formData.icon} alt="User Icon" className="w-24 h-24 rounded-full object-cover mb-2" />
-          ) : (
-            <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-4xl mb-2">
-              ?
+        <div className="flex items-center mb-4">
+          {/* アイコン表示 */}
+          <div className="w-24 h-24 mr-6">
+            {formData.icon ? (
+              <img src={formData.icon} alt="User Icon" className="w-full h-full rounded-full object-cover" />
+            ) : (
+              <div className="w-full h-full rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-4xl">
+                ?
+              </div>
+            )}
+          </div>
+          {/* 称号表示とアイコン変更ボタン */}
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <span className={`text-xl font-semibold text-gray-800 ${isEditing ? 'opacity-50' : ''}`}>{formData.title}</span>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  className="ml-4 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded-full"
+                >
+                  称号を切り替え
+                </button>
+              )}
             </div>
-          )}
-          {isEditing && (
-            <label className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded-full">
-              アイコンを変更
-              <input type="file" className="hidden" onChange={handleIconChange} accept="image/*" />
-            </label>
-          )}
+            {isEditing && (
+              <label className="mt-2 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded-full self-start">
+                アイコンを変更
+                <input type="file" className="hidden" onChange={handleIconChange} accept="image/*" />
+              </label>
+            )}
+          </div>
         </div>
-        {/* ニックネーム入力フィールド */}
+
+        {/* ニックネーム入力 */}
         <div>
           <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">ニックネーム</label>
           <input
@@ -162,10 +235,10 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             value={formData.username}
             onChange={handleChange}
             readOnly={!isEditing}
-            placeholder="テキスト"
           />
         </div>
-        {/* 生年月日入力フィールド */}
+
+        {/* 生年月日入力 */}
         <div>
           <label htmlFor="birth" className="block text-sm font-medium text-gray-700 mb-1">生年月日</label>
           <input
@@ -176,38 +249,106 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             value={formData.birth || ''}
             onChange={handleChange}
             readOnly={!isEditing}
-            placeholder="テキスト"
           />
         </div>
-        {/* 編集/更新/キャンセルボタン */}
+
+        {/* パスワード変更セクション */}
+        {isEditing && (
+          <div>
+            {!showPasswordChange ? (
+              <button
+                type="button"
+                onClick={() => setShowPasswordChange(true)}
+                className="text-blue-500 hover:underline"
+              >
+                パスワードを変更する
+              </button>
+            ) : (
+              <div className="space-y-4 p-4 border-t border-gray-200">
+                <h3 className="font-semibold">パスワード変更</h3>
+                <div>
+                  <label htmlFor="currentPassword">現在のパスワード</label>
+                  <input
+                    type="password"
+                    id="currentPassword"
+                    name="currentPassword"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="newPassword">新しいパスワード</label>
+                  <input
+                    type="password"
+                    id="newPassword"
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="confirmPassword">新しいパスワード（確認）</label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ボタン */}
         <div className="flex justify-center mt-8">
           {isEditing ? (
             <div className="flex gap-4">
-              <button
-                type="submit"
-                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-8 rounded-full transition duration-300"
-              >
+              <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-8 rounded-full">
                 更新
               </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-8 rounded-full transition duration-300"
-              >
+              <button type="button" onClick={handleCancel} className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-8 rounded-full">
                 キャンセル
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={handleEdit}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-8 rounded-full transition duration-300"
-            >
+            <button type="button" onClick={handleEdit} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-8 rounded-full">
               編集
             </button>
           )}
         </div>
       </form>
+
+      {/* 称号選択モーダル */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl">
+            <h3 className="text-lg font-semibold mb-4">称号を選択</h3>
+            <ul className="space-y-2">
+              {titles.map((title) => (
+                <li key={title}>
+                  <button
+                    onClick={() => handleTitleSelect(title)}
+                    className="w-full text-left p-2 hover:bg-gray-100 rounded"
+                  >
+                    {title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
