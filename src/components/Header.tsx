@@ -4,15 +4,14 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { useRouter } from 'next/navigation'; // next/navigationからインポート
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
+
 
 type HeaderProps = {
   user: User | null; // ユーザー情報を受け取る
 };
 
 export default function Header({user}: HeaderProps) {
-
-  console.log("User icon path:", user?.icon); // 追加
 
   const router = useRouter();
 
@@ -38,7 +37,7 @@ export default function Header({user}: HeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#fff] text-white border-b border-gray-200 flex z-50">
+    <header className="bg-[#fff] text-white border-b border-gray-200 flex w-full">
       <div className="flex items-center w-50 h-20 mx-4">
         <Link href={"/"} className="text-2xl font-bold transition-colors">
           <Image
@@ -139,38 +138,47 @@ export default function Header({user}: HeaderProps) {
           </ul>
         </nav>
       </div>
-      <div className='flex items-center ml-auto mr-2 w-40 h-20'>
-        <div className='flex flex-col items-center justify-center w-25 h-20'>
-          <div className='flex w-full h-8 justify-center items-center'>
+      <div className='flex items-center ml-auto mr-2 w-40 h-20 gap-2'>
+        <div className='flex flex-col items-center justify-center w-30 h-20'>
+          <div className='flex w-full h-8 items-center'>
             <Image
               src="/images/Rank.png"
               alt="ランク"
               width={40}
               height={20}
             />
-            {user ? (
-              <span className="text-[#5FE943] text-[24px] font-bold ml-2">{user.level}</span>
-            ):(
-              <span className='text-[#5FE943] text-[24px] font-bold ml-2'>1</span>
-            )}
+            <div className='flex items-center justify-end'>
+              {user ? (
+                <p className="text-[#5FE943] text-[24px] font-bold ml-2">{user.level}</p>
+              ):(
+                <p className='text-[#5FE943] text-[24px] font-bold ml-2'>1</p>
+              )}
+            </div>
           </div>
-          <div className='flex w-full h-8 justify-center'>
+          <div className='flex w-full h-8 items-center pl-2'>
             <Image
-              src="/images/test_login.png"
+              src="/images/login_icon.png"
               alt="連続ログイン日数"
-              width={60}
+              width={30}
               height={30}
             />
+            <div className='flex items-center justify-end'>
+              {user ? (
+                <p className="text-[#feb75c] text-[24px] font-bold ml-2">{user.continuouslogin}</p>
+              ):(
+                <p className='text-[#feb75c] text-[24px] font-bold ml-2'>1</p>
+              )}
+            </div>   
           </div>
         </div>
         <div className='flex items-center justify-end rounded-full h-15 w-15 bg-white overflow-hidden'>
-          <Link href="/profile" className="w-full h-full flex items-center justify-center">
+          <Link href="/" className="">
             <Image
-              src={user?.icon || "/images/test_icon.webp"}
+              src="/images/test_icon.webp"
               alt="ユーザーアイコン"
               width={60}
               height={60}
-              className="rounded-full object-cover w-full h-full"
+              className="rounded-full"
             />
           </Link>
         </div>
