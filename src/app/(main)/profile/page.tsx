@@ -6,16 +6,23 @@ import { getAppSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
-export default async function HomePage({
+/**
+ * プロフィールページコンポーネント
+ * ユーザーのプロフィール情報表示、編集、ペットのステータス、AIアドバイスを表示します。
+ */
+export default async function ProfilePage({
   searchParams,
 }: {
   searchParams: { subject?: string };
 }) {
+  // ユーザーセッションの取得と認証チェック
+  // セッションがない、またはユーザー情報がない場合はログインページにリダイレクト
   const session = await getAppSession();
   if (!session || !session.user) {
     redirect("/auth/login");
   }
 
+  // データベースからユーザー情報を取得
   const user = await prisma.user.findUnique({
     where: {
       id: parseInt(session.user.id, 10),
@@ -26,10 +33,13 @@ export default async function HomePage({
     <div className='bg-white'>
       <main className="flex w-full min-h-screen text-center pt-6 ml-20 mr-20 gap-10">
         <div className="flex flex-col w-full max-w-lg gap-8">
+          {/* プロフィール編集フォームコンポーネント */}
           <ProfileForm user={user} />
         </div>
         <div className="flex flex-col w-full max-w-lg">
+          {/* ペットのステータス表示コンポーネント */}
           <Pet />
+          {/* AIからのアドバイス表示コンポーネント */}
           <Advice />
         </div>
       </main>
