@@ -213,7 +213,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   };
 
   return (
-    <div className={`flex flex-col bg-gray-100 p-6 rounded-lg shadow-lg ${isEditing ? 'border-white' : 'border-white-200'}`}>
+    <div className={`flex flex-col p-6 rounded-lg shadow-lg ${isEditing ? 'bg-white border-blue-500 border-2' : 'bg-gray-100 border-white-200'}`}>
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">プロフィール</h2>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="flex items-center mb-4">
