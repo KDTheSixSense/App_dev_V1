@@ -20,6 +20,20 @@ interface ProfileFormProps {
   user: User | null;
 }
 
+// プリセットアイコンの定義
+const presetIcons = {
+  male: [
+    '/images/DefaultIcons/male1.jpg',
+    '/images/DefaultIcons/male2.jpg',
+    '/images/DefaultIcons/male3.jpg',
+  ],
+  female: [
+    '/images/DefaultIcons/female1.jpg',
+    '/images/DefaultIcons/female2.jpg',
+    '/images/DefaultIcons/female3.jpg',
+  ],
+};
+
 /**
  * プロフィール編集フォームコンポーネント
  * ユーザーのニックネーム、生年月日、アイコン、称号、パスワードの表示と編集機能を提供します。
@@ -46,8 +60,11 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     confirmPassword: '',
   });
 
-  // モーダルの表示状態
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // 称号モーダルの表示状態
+  const [isTitleModalOpen, setIsTitleModalOpen] = useState(false);
+  // アイコン選択モーダルの表示状態
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+
   // 仮の称号リスト
   const titles = ['称号なし', '駆け出しエンジニア', 'ベテランエンジニア', 'コードマスター'];
 
@@ -97,7 +114,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   };
 
   /**
-   * アイコン変更時のハンドラ
+   * アイコン変更時のハンドラ (ファイルアップロード)
    */
   const handleIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) {
@@ -124,6 +141,15 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     } catch (error) {
       console.error('An error occurred during icon upload:', error);
     }
+    setIsIconModalOpen(false); // アップロード後モーダルを閉じる
+  };
+
+  /**
+   * プリセットアイコン選択時のハンドラ
+   */
+  const handlePresetIconSelect = (iconPath: string) => {
+    setFormData((prev) => ({ ...prev, icon: iconPath }));
+    setIsIconModalOpen(false);
   };
 
   /**
@@ -183,7 +209,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
    */
   const handleTitleSelect = (title: string) => {
     setFormData((prev) => ({ ...prev, title }));
-    setIsModalOpen(false);
+    setIsTitleModalOpen(false);
   };
 
   return (
@@ -192,13 +218,23 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="flex items-center mb-4">
           {/* アイコン表示 */}
-          <div className="w-24 h-24 mr-6">
+          <div className="w-24 h-24 mr-6 relative">
             {formData.icon ? (
               <img src={formData.icon} alt="User Icon" className="w-full h-full rounded-full object-cover" />
             ) : (
               <div className="w-full h-full rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-4xl">
                 ?
               </div>
+            )}
+            {isEditing && (
+              <button
+                type="button"
+                onClick={() => setIsIconModalOpen(true)}
+                className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 text-xs"
+                title="アイコンを変更"
+              >
+                変更
+              </button>
             )}
           </div>
           {/* 称号表示とアイコン変更ボタン */}
@@ -208,19 +244,13 @@ export default function ProfileForm({ user }: ProfileFormProps) {
               {isEditing && (
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => setIsTitleModalOpen(true)}
                   className="ml-4 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded-full"
                 >
                   称号を切り替え
                 </button>
               )}
             </div>
-            {isEditing && (
-              <label className="mt-2 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded-full self-start">
-                アイコンを変更
-                <input type="file" className="hidden" onChange={handleIconChange} accept="image/*" />
-              </label>
-            )}
           </div>
         </div>
 
@@ -324,7 +354,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       </form>
 
       {/* 称号選択モーダル */}
-      {isModalOpen && (
+      {isTitleModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl">
             <h3 className="text-lg font-semibold mb-4">称号を選択</h3>
@@ -341,8 +371,56 @@ export default function ProfileForm({ user }: ProfileFormProps) {
               ))}
             </ul>
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => setIsTitleModalOpen(false)}
               className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* アイコン選択モーダル */}
+      {isIconModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md">
+            <h3 className="text-lg font-semibold mb-4">アイコンを選択</h3>
+            <div className="mb-4">
+              <h4 className="font-medium mb-2">プリセットアイコン (男性)</h4>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                {presetIcons.male.map((iconPath) => (
+                  <img
+                    key={iconPath}
+                    src={iconPath}
+                    alt="Preset Male Icon"
+                    className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500"
+                    onClick={() => handlePresetIconSelect(iconPath)}
+                  />
+                ))}
+              </div>
+              <h4 className="font-medium mb-2">プリセットアイコン (女性)</h4>
+              <div className="grid grid-cols-3 gap-4">
+                {presetIcons.female.map((iconPath) => (
+                  <img
+                    key={iconPath}
+                    src={iconPath}
+                    alt="Preset Female Icon"
+                    className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500"
+                    onClick={() => handlePresetIconSelect(iconPath)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-medium mb-2">画像をアップロード</h4>
+              <label className="cursor-pointer bg-green-500 hover:bg-green-600 text-white text-sm py-2 px-4 rounded-full block text-center">
+                ファイルを選択
+                <input type="file" className="hidden" onChange={handleIconChange} accept="image/*" />
+              </label>
+            </div>
+            <button
+              onClick={() => setIsIconModalOpen(false)}
+              className="mt-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded"
             >
               閉じる
             </button>
