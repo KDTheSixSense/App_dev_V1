@@ -153,4 +153,3 @@ main().catch(e => {
 }).finally(async () => {
   await prisma.$disconnect();
   console.log(`\n🔌 Disconnected from database.`);
-});

@@ -21,6 +21,7 @@ model User {
   level                    Int                   @default(1) //アカウントレベル
   xp                       Int                   @default(0) //総経験値
   icon                     String? //アイコン
+  title                    String? //称号
   progresses               UserSubjectProgress[] // このユーザーの科目別進捗のリスト
   continuouslogin          Int?
 　totallogin               Int? @default(0)
@@ -128,11 +129,11 @@ model Questions {
   year         DateTime?
   explain      String?
   image        String?
-  difficultyid Int
+  difficultyId Int
 
   // --- リレーション定義 ---
   genre      Genre        @relation(fields: [genre_id], references: [id])
-  difficulty Difficulty   @relation(fields: [difficultyid], references: [id])
+  difficulty Difficulty   @relation(fields: [difficultyId], references: [id])
   language   Language     @relation(fields: [language_id], references: [id])
   answer     UserAnswer[]
   Answers    Answers[]
@@ -317,6 +318,7 @@ model Difficulty {
 
 model Groups {
   id          Int           @id @default(autoincrement())
+  hashedId    String        @unique @default(cuid())
   groupname   String        @unique
   body        String        @db.Text
   Groups_User Groups_User[]
