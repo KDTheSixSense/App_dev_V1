@@ -10,7 +10,7 @@ const getUploadDir = () => {
   return path.join(process.cwd(), 'public', 'uploads');
 };
 
-export async function POST(request: Request, { params }: { params: { problemId: string } }) {
+export async function POST(request: Request, { params }: any) {
   const problemId = parseInt(params.problemId);
 
   if (isNaN(problemId)) {

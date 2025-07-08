@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: Request,
-  { params }: { params: { hashedId: string } }
+  { params }: any
 ) {
   try {
     const group = await prisma.groups.findUnique({

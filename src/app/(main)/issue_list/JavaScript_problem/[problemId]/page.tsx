@@ -166,7 +166,7 @@ const ProblemDetailPage = () => {
     }
 
     // JavaScript問題用のカテゴリを渡すように修正
-    const nextProblemId = await getNextProblemId(currentProblemId, 'JavaScript_problem'); 
+    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'JavaScript_problem'); 
 
     if (nextProblemId) {
       router.push(`/issue_list/JavaScript_problem/${nextProblemId}`);

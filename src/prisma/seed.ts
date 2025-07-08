@@ -88,6 +88,10 @@ console.log('✅ Users seeded.');
   const defaultDifficultyB_Hard_Id = 8;
   const pseudoLanguageId = 2;
 
+  const lastLocalQuestion = await prisma.questions.findFirst({ orderBy: { id: 'desc' } });
+  let nextId = (lastLocalQuestion?.id || 0) + 1;
+  console.log(`   Starting Excel questions from ID: ${nextId}`);
+
   try {
     const workbook = XLSX.readFile(filePath);
     const sheetConfigs = [ { name: '基本情報科目B基礎', difficultyId: defaultDifficultyB_Easy_Id, range: 'B2:G16' }, { name: '基本情報科目B応用', difficultyId: defaultDifficultyB_Hard_Id, range: 'B2:G16' } ];
@@ -103,6 +107,7 @@ console.log('✅ Users seeded.');
         
         const questionAlgoEntry = await prisma.questions_Algorithm.create({
           data: {
+            id: nextId,
             title: record.title_ja,
             description: record.description_ja,
             explanation: record.explanation_ja,
@@ -118,6 +123,7 @@ console.log('✅ Users seeded.');
           }
         });
         console.log(`  ✅ Created algorithm question from Excel: "${questionAlgoEntry.title}" (ID: ${questionAlgoEntry.id})`);
+        nextId++;
       }
     }
   } catch (error) { console.error(`❌ Failed to read or process ${excelFileName}:`, error); }
