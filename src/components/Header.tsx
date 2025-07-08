@@ -171,7 +171,7 @@ export default function Header({user}: HeaderProps) {
             </div>   
           </div>
         </div>
-        <div className='flex items-center justify-end rounded-full h-15 w-15 bg-white'>
+        <div className='flex items-center justify-end rounded-full h-15 w-15 bg-white overflow-hidden'>
           <Link href="/" className="">
             <Image
               src="/images/test_icon.webp"
