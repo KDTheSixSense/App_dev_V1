@@ -3,26 +3,40 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+/**
+ * ユーザー情報を表すインターフェース
+ */
 interface User {
   username?: string | null;
   birth?: string | null;
-  icon?: string | null; // Add icon field
+  icon?: string | null; // ユーザーアイコンのURL
 }
 
+/**
+ * ProfileFormコンポーネントのプロパティ
+ */
 interface ProfileFormProps {
   user: User | null;
 }
 
+/**
+ * プロフィール編集フォームコンポーネント
+ * ユーザーのニックネーム、生年月日、アイコンの表示と編集機能を提供します。
+ */
 export default function ProfileForm({ user }: ProfileFormProps) {
   const router = useRouter();
+  // 編集モードかどうかの状態を管理
   const [isEditing, setIsEditing] = useState(false);
+  // フォームの入力データを管理
   const [formData, setFormData] = useState<User>({
     username: user?.username || '',
     birth: user?.birth ? new Date(user.birth).toISOString().split('T')[0] : '',
     icon: user?.icon || null,
   });
+  // フォームの初期データを保持し、キャンセル時に戻せるようにする
   const [initialData, setInitialData] = useState(formData);
 
+  // userプロップが変更されたときにフォームデータを更新
   useEffect(() => {
     const initial = {
       username: user?.username || '',
@@ -33,20 +47,36 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     setInitialData(initial);
   }, [user]);
 
+  /**
+   * 編集ボタンクリック時のハンドラ
+   * フォームを編集モードに切り替えます。
+   */
   const handleEdit = () => {
     setIsEditing(true);
   };
 
+  /**
+   * キャンセルボタンクリック時のハンドラ
+   * フォームを閲覧モードに戻し、データを初期状態に戻します。
+   */
   const handleCancel = () => {
     setIsEditing(false);
     setFormData(initialData);
   };
 
+  /**
+   * 入力フィールドの変更ハンドラ
+   * フォームデータを更新します。
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * アイコン変更時のハンドラ
+   * 新しいアイコン画像をサーバーにアップロードし、成功したらフォームデータを更新します。
+   */
   const handleIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) {
       return;
@@ -65,7 +95,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       if (response.ok) {
         const result = await response.json();
         setFormData((prev) => ({ ...prev, icon: result.iconPath }));
-        router.refresh();
+        router.refresh(); // ページをリフレッシュして最新のアイコンを表示
       } else {
         console.error('Failed to upload icon');
       }
@@ -74,9 +104,13 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     }
   };
 
+  /**
+   * フォーム送信時のハンドラ
+   * ユーザーのプロフィール情報をサーバーに送信し、更新します。
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isEditing) return;
+    if (!isEditing) return; // 編集モードでない場合は何もしない
 
     try {
       const response = await fetch('/api/user', {
@@ -87,10 +121,10 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
       if (response.ok) {
         setIsEditing(false);
-        router.refresh(); // Refresh the page to show the updated data
+        router.refresh(); // ページをリフレッシュして更新されたデータを表示
       } else {
         console.error('Failed to update profile');
-        // You might want to show an error message to the user
+        // エラーメッセージをユーザーに表示することも検討
       }
     } catch (error) {
       console.error('An error occurred:', error);
@@ -101,6 +135,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     <div className="flex flex-col bg-gray-100 p-6 rounded-lg shadow-lg border-white-200">
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">基本情報</h2>
       <form className="space-y-6" onSubmit={handleSubmit}>
+        {/* アイコン表示と変更ボタン */}
         <div className="flex flex-col items-center mb-4">
           {formData.icon ? (
             <img src={formData.icon} alt="User Icon" className="w-24 h-24 rounded-full object-cover mb-2" />
@@ -116,6 +151,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             </label>
           )}
         </div>
+        {/* ニックネーム入力フィールド */}
         <div>
           <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">ニックネーム</label>
           <input
@@ -129,6 +165,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             placeholder="テキスト"
           />
         </div>
+        {/* 生年月日入力フィールド */}
         <div>
           <label htmlFor="birth" className="block text-sm font-medium text-gray-700 mb-1">生年月日</label>
           <input
@@ -142,6 +179,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             placeholder="テキスト"
           />
         </div>
+        {/* 編集/更新/キャンセルボタン */}
         <div className="flex justify-center mt-8">
           {isEditing ? (
             <div className="flex gap-4">
