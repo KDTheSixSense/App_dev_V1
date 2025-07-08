@@ -44,6 +44,7 @@ export async function PATCH(req: NextRequest) {
         birth: data.birth ? new Date(data.birth) : null,
         // gender is not in the schema, so we ignore it.
         icon: data.icon,
+        title: data.title, // Add this line
         // Add other fields like 'year' or 'class' if they are editable
       },
     });
