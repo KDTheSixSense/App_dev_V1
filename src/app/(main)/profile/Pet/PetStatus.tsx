@@ -1,5 +1,9 @@
 import Image from 'next/image';
 
+/**
+ * PetStatusコンポーネント
+ * ユーザーのペット（コハク）のステータス（満腹度など）を表示します。
+ */
 export default function PetStatus() {
   // 満腹度をパーセンテージで管理（デザイン固定のため今回は66%に設定）
   // 動的にする場合は、useStateやpropsでこの値を受け取る
