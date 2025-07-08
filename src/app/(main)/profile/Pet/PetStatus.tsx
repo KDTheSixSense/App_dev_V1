@@ -1,4 +1,7 @@
+'use client';
+
 import Image from 'next/image';
+import React, { useState } from 'react';
 
 /**
  * PetStatusコンポーネント
@@ -9,12 +12,37 @@ export default function PetStatus() {
   // 動的にする場合は、useStateやpropsでこの値を受け取る
   const fullnessPercentage = 66;
 
+  // 吹き出しの表示状態とメッセージ
+  const [showSpeechBubble, setShowSpeechBubble] = useState(false);
+  const [speechBubbleMessage, setSpeechBubbleMessage] = useState('');
+
+  // 吹き出しのメッセージリスト
+  const messages = [
+    'ちょっと何！？',
+    'あまり撫でないで禿げるって…！！',
+    'ちょっと…くすぐったいって………！！',
+    '今日も一日頑張るワン！',
+    'zzz...',
+  ];
+
+  // ペットクリック時のハンドラ
+  const handlePetClick = () => {
+    const randomIndex = Math.floor(Math.random() * messages.length);
+    setSpeechBubbleMessage(messages[randomIndex]);
+    setShowSpeechBubble(true);
+
+    // 3秒後に吹き出しを非表示にする
+    setTimeout(() => {
+      setShowSpeechBubble(false);
+    }, 10000);
+  };
+
   return (
     // 全体を囲むコンテナ
-    <div className="flex flex-col items-center gap-6 p-8 bg-white max-w-300 rounded-2xl shadow-lg">
+    <div className="flex flex-col items-center gap-6 p-8 bg-white max-w-300 rounded-2xl shadow-lg relative">
 
       {/* 1. キャラクター画像 */}
-      <div>
+      <div onClick={handlePetClick} className="cursor-pointer relative">
         <Image
           src="/images/kohaku.png" 
           alt="コハク"
@@ -22,6 +50,11 @@ export default function PetStatus() {
           height={200}
           className="object-contain"
         />
+        {showSpeechBubble && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-blue-500 text-white text-sm rounded-lg shadow-md whitespace-nowrap before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-x-transparent before:border-b-transparent before:border-t-blue-500">
+            {speechBubbleMessage}
+          </div>
+        )}
       </div>
 
       {/* 2. ラベルテキスト */}
