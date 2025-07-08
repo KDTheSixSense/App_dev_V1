@@ -10,7 +10,7 @@ import KohakuChat from '../components/KohakuChat';
 
 import { problemLogicsMap } from '../data/problem-logics';
 // ▼▼▼【修正】インポート元を lib/data から lib/actions に変更 ▼▼▼
-import { getNextProblemId } from '@/lib/actions'; 
+import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
 import type { SerializableProblem } from '@/lib/data';
 import type { VariablesState } from '../data/problems';
 
@@ -269,10 +269,26 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
     }
   };
 
-  const handleSelectAnswer = (selectedValue: string) => {
+  const handleSelectAnswer = async (selectedValue: string) => {
     if (isAnswered || !problem) return;
     setSelectedAnswer(selectedValue);
     setIsAnswered(true);
+    const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
+
+    // ▼▼▼【ここから修正・追加】▼▼▼
+    if (correct) {
+      try {
+        // 正解した場合、サーバーアクションを呼び出す
+        const problemId = parseInt(problem.id, 10);
+        const result = await awardXpForCorrectAnswer(problemId);
+        console.log(result.message); // "経験値を獲得しました！" or "既に正解済みです。"
+        // ここで成功時のUIフィードバック（例: トースト通知）を表示することも可能
+      } catch (error) {
+        console.error("XPの付与に失敗しました:", error);
+        // エラーハンドリング（例: ユーザーにエラーメッセージを表示）
+        alert('経験値の付与に失敗しました。再度ログインしてお試しください。');
+      }
+    }
     const hint = generateKohakuResponse(currentTraceLine, variables, true, selectedValue);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
   };
