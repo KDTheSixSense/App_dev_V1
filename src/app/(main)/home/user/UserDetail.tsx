@@ -60,7 +60,7 @@ export default async function UserDetail() {
                         <p className="text-2xl font-bold">ゲスト</p>
                     )
                     }
-                    <p className="text-lg">称号</p>
+                    <p className="text-lg">{user?.title || '称号なし'}</p>
                 </div>
             </div>
             <div className="flex flex-col w-full h-20 mt-2 px-6">
