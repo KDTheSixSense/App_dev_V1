@@ -1,7 +1,7 @@
 import React from 'react';
 // ✅ 【修正点】インポート元を、Prismaが自動生成する最新の型定義に変更します
-import type { Problem } from '@prisma/client';
-import type { VariablesState } from '../problems/problems';
+import type { Problem } from '@/lib/types';
+import type { VariablesState } from '@/lib/types';
 
 interface VariableTraceControlProps {
   problem: Problem; // 型がPrismaのものに更新されます
@@ -27,7 +27,7 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
 }) => {
   
   // ✅ 【修正点】データベースの新しいデータの形に合わせて、データの参照方法を変更します
-  const showPresets = (problem.options as { presets?: number[] })?.presets;
+  const showPresets = (problem.traceOptions as { presets?: number[] })?.presets;
   const isNumSet = variables.num !== null;
 
   return (

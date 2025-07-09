@@ -30,7 +30,6 @@ if (!fullProblemData) {
 const { traceLogic, calculateNextLine, ...serializableData } = fullProblemData;
 return serializableData;
 }
-}
 
 /**
  * 次の問題のIDを取得します。
