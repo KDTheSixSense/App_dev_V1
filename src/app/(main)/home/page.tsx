@@ -1,15 +1,11 @@
 import React from "react";
 import UserDetail from "./user/UserDetail";
-import RankingPage from "./ranking/page"; // 正しいパスに注意
+import RankingComponent from "./ranking/RankingComponent";
 import Pet from "./Pet/PetStatus";      // 正しいパスに注意
 
 // 1. page.tsxのコンポーネントが props として searchParams を受け取るようにする
 //    また、子コンポーネントがasyncなので、このコンポーネントもasyncにする
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: { subject?: string };
-}) {
+export default async function HomePage({ searchParams }: any) {
   
   return (
     <div className='bg-white'>
@@ -17,7 +13,7 @@ export default async function HomePage({
         <div className="flex flex-col w-full max-w-lg gap-8"> {/* max-w-150は存在しないためlgに変更 */}
           <UserDetail />
           {/* 2. 受け取ったsearchParamsをRankingPageコンポーネントにそのまま渡す */}
-          <RankingPage searchParams={searchParams} />
+          <RankingComponent searchParams={searchParams} />
         </div>
         <div className="flex flex-col w-full max-w-lg"> {/* max-w-150は存在しないためlgに変更 */}
           <Pet />

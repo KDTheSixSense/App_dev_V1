@@ -7,17 +7,8 @@ import { getAppSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
-/**
- * プロフィールページコンポーネント
- * ユーザーのプロフィール情報表示、編集、ペットのステータス、AIアドバイスを表示します。
- */
-export default async function ProfilePage({
-  searchParams,
-}: {
-  searchParams: { subject?: string };
-}) {
-  // ユーザーセッションの取得と認証チェック
-  // セッションがない、またはユーザー情報がない場合はログインページにリダイレクト
+
+export default async function HomePage({ searchParams }: any) {
   const session = await getAppSession();
   if (!session || !session.user) {
     redirect("/auth/login");
@@ -29,13 +20,18 @@ export default async function ProfilePage({
       id: parseInt(session.user.id, 10),
     },
   });
+
+  // birthプロパティを文字列に変換
+  const serializedUser = user ? {
+    ...user,
+    birth: user.birth ? user.birth.toISOString() : null,
+  } : null;
   
   return (
     <div className='bg-white'>
       <main className="flex w-full min-h-screen text-center pt-6 ml-20 mr-20 gap-10">
         <div className="flex flex-col w-full max-w-lg gap-8">
-          {/* プロフィール編集フォームコンポーネント */}
-          <ProfileForm user={user} />
+          <ProfileForm user={serializedUser} />
         </div>
           {/* 自己分析チャートコンポーネント */}
           <Chart />

@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     // 問題から使用されているカテゴリを取得
-    const categories = await prisma.problem.groupBy({
+    const categories = await prisma.programmingProblem.groupBy({
       by: ['category'],
       _count: {
         category: true

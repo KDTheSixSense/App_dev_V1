@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // --- GET関数 (問題データを取得するため) ---
-export async function GET(request: Request, { params }: { params: { problemId: string } }) {
+export async function GET(request: Request, { params }: any) {
   const problemId = parseInt(params.problemId);
 
   if (isNaN(problemId)) {
@@ -37,7 +37,7 @@ export async function GET(request: Request, { params }: { params: { problemId: s
 }
 
 // --- PUT関数 (問題データを更新するため) ---
-export async function PUT(request: Request, { params }: { params: { problemId: string } }) {
+export async function PUT(request: Request, { params }: any) {
   const problemId = parseInt(params.problemId);
 
   if (isNaN(problemId)) {
