@@ -24,7 +24,7 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.58.1",
     "react-syntax-highlighter": "^15.x.x",
-    "recharts": "^3.0.2",
+    "recharts": "^3.1.0",
     "sqlite3": "^5.x.x",
     "vm2": "^3.x.x",
     "xlsx": "^0.18.5"

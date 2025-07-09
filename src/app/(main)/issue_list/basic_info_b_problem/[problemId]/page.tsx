@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 // クライアントコンポーネントをインポート
 import ProblemClient from './ProblemClient';
 // サーバーサイドでデータを取得する関数をインポート
-import { getProblemForClient } from '@/lib/data'; // 仮のパス。実際のパスに修正してください。
+import { getProblemForClient } from '@/lib/data';
 
 // --- Propsの型定義 ---
 interface PageProps {
