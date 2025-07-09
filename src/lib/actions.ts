@@ -219,7 +219,13 @@ export async function updateUserLoginStats(userId: number) {
   let newConsecutiveDays = user.continuouslogin ?? 0;
   let newTotalDays = user.totallogin ?? 0;
 
-  newConsecutiveDays += 1;
+  // if (lastLoginAppDateString && lastLoginAppDateString === yesterdayAppDateString) {
+    // ケースA: 最後のログインが「アプリ内での昨日」 -> 連続ログイン
+    newConsecutiveDays += 1;
+  // } else {
+    // ケースB: 連続ログインが途切れた -> リセット
+    // newConsecutiveDays = 1;
+  // }
   newTotalDays += 1;
 
   await prisma.user.update({
