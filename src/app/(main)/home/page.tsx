@@ -9,7 +9,7 @@ export default async function HomePage({ searchParams }: any) {
   
   return (
     <div className='bg-white'>
-      <main className="flex w-full min-h-screen text-center pt-6 ml-20 mr-20 gap-10">
+      <main className="flex justify-center w-full min-h-screen text-center pt-10 pl-20 pr-20 gap-15">
         <div className="flex flex-col w-full max-w-lg gap-8"> {/* max-w-150は存在しないためlgに変更 */}
           <UserDetail />
           {/* 2. 受け取ったsearchParamsをRankingPageコンポーネントにそのまま渡す */}
