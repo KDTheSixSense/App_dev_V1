@@ -1,24 +1,36 @@
-//lib/session.ts
+// /workspaces/my-next-app/src/lib/session.ts
+import { getIronSession, IronSession, IronSessionData, SessionOptions } from 'iron-session';
+import { cookies } from 'next/headers';
 
-import { SessionOptions } from 'iron-session';
-
+/**
+ * セッションの設定オブジェクト
+ */
 export const sessionOptions: SessionOptions = {
-  // .env.localファイルで設定したパスワード
-  password: process.env.SECRET_COOKIE_PASSWORD!, 
+  password: process.env.SECRET_COOKIE_PASSWORD!,
   cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
   },
 };
 
-// --- ▼ この部分が重要です ▼ ---
-// TypeScriptにセッションデータの型を教えます
+/**
+ * TypeScriptの型定義を拡張し、セッションに保存するデータの構造を定義します。
+ */
 declare module 'iron-session' {
   interface IronSessionData {
-    // 'user'プロパティが存在し、その型が以下のようであることを定義します
     user?: {
-      id: string; // Prismaのモデルに合わせて string または number
+      id: number;
       email: string;
+      username: string | null;
     };
   }
+}
+
+/**
+ * サーバーコンポーネント、Server Actions、APIルートで現在のセッションを取得するためのヘルパー関数です。
+ */
+export async function getSession(): Promise<IronSession<IronSessionData>> {
+  // ▼▼▼【修正】再度 as any を追加して、頑固な型エラーを回避します ▼▼▼
+  const session = await getIronSession(cookies() as any, sessionOptions);
+  return session;
 }

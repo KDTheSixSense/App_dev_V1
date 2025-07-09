@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
  * ユーザー情報を表すインターフェース
  */
 interface User {
-  username?: string;
+  username?: string | null;
   birth?: string | null;
   icon?: string | null; // ユーザーアイコンのURL
   title?: string | null; // 称号
@@ -262,7 +262,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             id="username"
             name="username"
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            value={formData.username}
+            value={formData.username || ''}
             onChange={handleChange}
             readOnly={!isEditing}
           />
