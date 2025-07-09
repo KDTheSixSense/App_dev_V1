@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
  * ユーザー情報を表すインターフェース
  */
 interface User {
-  username?: string;
+  username?: string | null;
   birth?: string | null;
   icon?: string | null; // ユーザーアイコンのURL
   title?: string | null; // 称号
@@ -66,7 +66,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
 
   // 仮の称号リスト
-  const titles = ['称号なし', '駆け出しエンジニア', 'ベテランエンジニア', 'コードマスター'];
+  const titles = ['称号なし', '駆け出しエンジニア', 'ベテランエンジニア', 'コードマスター','創世の神', '神', '檀黎斗神', '新檀黎斗神', '檀黎斗王', '宝生永夢ゥ','コソ泥ネコ','パクリネタでパクリディスはだめよ','ウルトラソウル','だけど僕は','猟奇的なキスを私にして'];
 
   // userプロップが変更されたときにフォームデータを更新
   useEffect(() => {
@@ -213,7 +213,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   };
 
   return (
-    <div className={`flex flex-col p-6 rounded-lg shadow-lg ${isEditing ? 'bg-white border-blue-500 border-2' : 'bg-gray-100 border-white-200'}`}>
+    <div className={`flex flex-col p-6 rounded-lg shadow-lg transition-all duration-300 ease-in-out ${isEditing ? 'bg-white border-blue-500 border-2' : 'bg-gray-100 border-gray-200 border'}`}>
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">プロフィール</h2>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="flex items-center mb-4">
@@ -262,7 +262,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             id="username"
             name="username"
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            value={formData.username}
+            value={formData.username || ''}
             onChange={handleChange}
             readOnly={!isEditing}
           />
@@ -355,8 +355,8 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
       {/* 称号選択モーダル */}
       {isTitleModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out opacity-100">
+          <div className="bg-white p-6 rounded-lg shadow-xl transform transition-all duration-300 ease-in-out scale-100 opacity-100">
             <h3 className="text-lg font-semibold mb-4">称号を選択</h3>
             <ul className="space-y-2">
               {titles.map((title) => (
@@ -382,8 +382,8 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
       {/* アイコン選択モーダル */}
       {isIconModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out opacity-100">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md transform transition-all duration-300 ease-in-out scale-100 opacity-100">
             <h3 className="text-lg font-semibold mb-4">アイコンを選択</h3>
             <div className="mb-4">
               <h4 className="font-medium mb-2">プリセットアイコン (男性)</h4>
