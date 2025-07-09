@@ -149,7 +149,7 @@ export default function Header({user}: HeaderProps) {
             />
             <div className='flex items-center justify-end'>
               {user ? (
-                <p className="text-[#5FE943] text-[24px] font-bold ml-2">{user.level}</p>
+                <p className="text-[#5FE943] text-[24px] font-bold ml-2">{user?.level ?? 1}</p>
               ):(
                 <p className='text-[#5FE943] text-[24px] font-bold ml-2'>1</p>
               )}
@@ -164,7 +164,7 @@ export default function Header({user}: HeaderProps) {
             />
             <div className='flex items-center justify-end'>
               {user ? (
-                <p className="text-[#feb75c] text-[24px] font-bold ml-2">{user.continuouslogin}</p>
+                <p className="text-[#feb75c] text-[24px] font-bold ml-2">{user?.continuouslogin ?? 1}</p>
               ):(
                 <p className='text-[#feb75c] text-[24px] font-bold ml-2'>1</p>
               )}
