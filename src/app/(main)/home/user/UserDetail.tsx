@@ -67,7 +67,7 @@ export default async function UserDetail() {
                 <div className="flex items-center h-16">
                     <p className="text-xl">ランク：</p>
                     {user ? (
-                        <p className="text-2xl font-bold ml-2">{user.level}</p>
+                        <p className="text-2xl font-bold ml-2">{user?.level ?? 1}</p>
                     ):(
                         <p className="text-2xl font-bold ml-2">1</p>
                     )}
