@@ -166,7 +166,7 @@ const ProblemDetailPage = () => {
     }
 
     // C#問題用のカテゴリを渡す
-    const nextProblemId = await getNextProblemId(currentProblemId, 'Csya_problem'); 
+    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'Csya_problem'); 
 
     if (nextProblemId) {
       router.push(`/issue_list/Csya_problem/${nextProblemId}`);

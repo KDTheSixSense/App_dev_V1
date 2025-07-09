@@ -167,7 +167,7 @@ const ProblemDetailPage = () => {
     }
 
     // Python問題用のカテゴリを渡すように修正
-    const nextProblemId = await getNextProblemId(currentProblemId, 'python_problem'); 
+    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'python_problem'); 
 
     if (nextProblemId) {
       router.push(`/issue_list/python_problem/${nextProblemId}`);

@@ -348,7 +348,7 @@ const ProblemDetailPage = () => {
 
     // ここで 'basic_info_b_problem' を第二引数として明示的に指定します
 
-    const nextProblemId = await getNextProblemId(currentProblemId, 'basic_info_b_problem');
+    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'basic_info_a_problem');
 
 
 
