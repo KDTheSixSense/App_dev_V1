@@ -176,26 +176,27 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
       });
       console.log(`[科目レベルアップ!] subjectId:${subject_id} がレベル ${newSubjectLevel} に！`);
 
-      // 称号付与ロジック (科目)
-      if (newSubjectLevel >= 10) {
-        const title = await tx.title.findFirst({
-          where: {
-            type: 'SUBJECT_LEVEL',
-            requiredLevel: 10,
-            requiredSubjectId: subject_id,
-          },
+      }
+
+    // 称号付与ロジック (科目)
+    if (newSubjectLevel >= 10) {
+      const title = await tx.title.findFirst({
+        where: {
+          type: 'SUBJECT_LEVEL',
+          requiredLevel: 10,
+          requiredSubjectId: subject_id,
+        },
+      });
+      if (title) {
+        const existingUnlock = await tx.userUnlockedTitle.findUnique({
+          where: { userId_titleId: { userId: user_id, titleId: title.id } },
         });
-        if (title) {
-          const existingUnlock = await tx.userUnlockedTitle.findUnique({
-            where: { userId_titleId: { userId: user_id, titleId: title.id } },
+        if (!existingUnlock) {
+          await tx.userUnlockedTitle.create({
+            data: { userId: user_id, titleId: title.id },
           });
-          if (!existingUnlock) {
-            await tx.userUnlockedTitle.create({
-              data: { userId: user_id, titleId: title.id },
-            });
-            unlockedTitle = { name: title.name };
-            console.log(`[称号獲得!] ${title.name} を獲得しました！`);
-          }
+          unlockedTitle = { name: title.name };
+          console.log(`[称号獲得!] ${title.name} を獲得しました！`);
         }
       }
     }
