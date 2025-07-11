@@ -7,10 +7,19 @@ import { useRouter } from 'next/navigation';
  * ユーザー情報を表すインターフェース
  */
 interface User {
+  id: number;
   username?: string | null;
   birth?: string | null;
-  icon?: string | null; // ユーザーアイコンのURL
-  title?: string | null; // 称号
+  icon?: string | null;
+  selectedTitleId?: number | null;
+  unlockedTitles: {
+    title: {
+      id: number;
+      name: string;
+      description: string;
+    };
+  }[];
+  selectedTitle?: { name: string } | null;
 }
 
 /**
@@ -45,11 +54,11 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   // パスワード変更フォームの表示状態
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   // フォームの入力データを管理
-  const [formData, setFormData] = useState<User>({
+  const [formData, setFormData] = useState({
     username: user?.username || '',
     birth: user?.birth ? new Date(user.birth).toISOString().split('T')[0] : '',
     icon: user?.icon || null,
-    title: user?.title || '称号なし',
+    selectedTitleId: user?.selectedTitleId || null,
   });
   // フォームの初期データを保持し、キャンセル時に戻せるようにする
   const [initialData, setInitialData] = useState(formData);
@@ -65,16 +74,13 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   // アイコン選択モーダルの表示状態
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
 
-  // 仮の称号リスト
-  const titles = ['称号なし', '駆け出しエンジニア', 'ベテランエンジニア', 'コードマスター','創世の神', '神', '檀黎斗神', '新檀黎斗神', '檀黎斗王', '宝生永夢ゥ','コソ泥ネコ','パクリネタでパクリディスはだめよ','ウルトラソウル','だけど僕は','猟奇的なキスを私にして'];
-
   // userプロップが変更されたときにフォームデータを更新
   useEffect(() => {
     const initial = {
       username: user?.username || '',
       birth: user?.birth ? new Date(user.birth).toISOString().split('T')[0] : '',
       icon: user?.icon || null,
-      title: user?.title || '称号なし',
+      selectedTitleId: user?.selectedTitleId || null,
     };
     setFormData(initial);
     setInitialData(initial);
@@ -207,10 +213,14 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   /**
    * 称号選択ハンドラ
    */
-  const handleTitleSelect = (title: string) => {
-    setFormData((prev) => ({ ...prev, title }));
+  const handleTitleSelect = (titleId: number | null) => {
+    setFormData((prev) => ({ ...prev, selectedTitleId: titleId }));
     setIsTitleModalOpen(false);
   };
+
+  const displayedTitleName = isEditing
+    ? user?.unlockedTitles.find(ut => ut.title.id === formData.selectedTitleId)?.title.name || '称号なし'
+    : user?.selectedTitle?.name || '称号なし';
 
   return (
     <div className={`flex flex-col p-6 rounded-lg shadow-lg transition-all duration-300 ease-in-out ${isEditing ? 'bg-white border-blue-500 border-2' : 'bg-gray-100 border-gray-200 border'}`}>
@@ -240,7 +250,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           {/* 称号表示とアイコン変更ボタン */}
           <div className="flex flex-col">
             <div className="flex items-center">
-              <span className={`text-xl font-semibold text-gray-800 ${isEditing ? 'opacity-50' : ''}`}>{formData.title}</span>
+              <span className={`text-xl font-semibold text-gray-800 ${isEditing ? 'opacity-50' : ''}`}>{displayedTitleName}</span>
               {isEditing && (
                 <button
                   type="button"
@@ -359,13 +369,21 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           <div className="bg-white p-6 rounded-lg shadow-xl transform transition-all duration-300 ease-in-out scale-100 opacity-100">
             <h3 className="text-lg font-semibold mb-4">称号を選択</h3>
             <ul className="space-y-2">
-              {titles.map((title) => (
-                <li key={title}>
+              <li>
+                <button
+                  onClick={() => handleTitleSelect(null)}
+                  className="w-full text-left p-2 hover:bg-gray-100 rounded"
+                >
+                  称号なし
+                </button>
+              </li>
+              {user?.unlockedTitles.map((unlockedTitle) => (
+                <li key={unlockedTitle.title.id}>
                   <button
-                    onClick={() => handleTitleSelect(title)}
+                    onClick={() => handleTitleSelect(unlockedTitle.title.id)}
                     className="w-full text-left p-2 hover:bg-gray-100 rounded"
                   >
-                    {title}
+                    {unlockedTitle.title.name}
                   </button>
                 </li>
               ))}

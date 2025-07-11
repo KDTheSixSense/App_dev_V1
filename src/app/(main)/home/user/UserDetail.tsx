@@ -28,6 +28,9 @@ export default async function UserDetail() {
   // 4. DBからユーザー情報を取得します。型は PrismaのUser型またはnullになります
   const user: User | null = await prisma.user.findUnique({
     where: { id: Number(session.user.id) },
+    include: {
+      selectedTitle: true,
+    },
   });
 
   // 5. DBから取得したユーザーが見つからない場合も、ここで処理を中断します
@@ -60,7 +63,7 @@ export default async function UserDetail() {
                         <p className="text-2xl font-bold">ゲスト</p>
                     )
                     }
-                    <p className="text-lg">称号</p>
+                    <p className="text-lg">{user.selectedTitle?.name || '称号なし'}</p>
                 </div>
             </div>
             <div className="flex flex-col w-full h-20 mt-2 px-6">

@@ -1,5 +1,5 @@
 // prisma/seed.ts
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, TitleType } from '@prisma/client';
 import { addXp } from '../lib/actions';
 import { updateUserLoginStats } from '../lib/actions';
 import path from 'path';
@@ -34,6 +34,16 @@ async function main() {
   const languagesToSeed = [ { id: 1, name: '日本語' }, { id: 2, name: '擬似言語' } ];
   for (const l of languagesToSeed) { await prisma.language.upsert({ where: { id: l.id }, update: {}, create: l }); }
   console.log('✅ Languages seeded.');
+
+  console.log('Seeding titles...');
+  const titlesToSeed = [
+    { id: 1, name: '駆け出し冒険者', description: 'ユーザーレベル10に到達した証。', type: TitleType.USER_LEVEL, requiredLevel: 10 },
+    { id: 2, name: '見習いプログラマー', description: 'プログラミングレベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 1 },
+    { id: 3, name: 'A問題の新人', description: '基本情報A問題レベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 2 },
+    { id: 4, name: 'B問題の新人', description: '基本情報B問題レベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 3 },
+  ];
+  for (const t of titlesToSeed) { await prisma.title.upsert({ where: { id: t.id }, update: {}, create: t }); }
+  console.log('✅ Titles seeded.');
 
   // 2. 既存データのクリア
   console.log('🗑️ Clearing old data...');
@@ -134,6 +144,18 @@ console.log('✅ Users seeded.');
     console.log('🧪 Testing addXp function...');
     await addXp(alice.id, 1, 1);
     console.log(`✅ Alice's XP updated.`);
+
+    // Increment XP for basic_info_a (subjectId: 2) to reach level 10
+    for (let i = 0; i < 40; i++) { // 40 calls * 280 XP/call = 11200 XP
+      await addXp(alice.id, 2, 8);
+    }
+    console.log(`✅ Alice's Basic Info A XP updated.`);
+
+    // Increment XP for basic_info_b (subjectId: 3) to reach level 10
+    for (let i = 0; i < 40; i++) { // 40 calls * 280 XP/call = 11200 XP
+      await addXp(alice.id, 3, 8);
+    }
+    console.log(`✅ Alice's Basic Info B XP updated.`)
     await updateUserLoginStats(alice.id);
   }
 
