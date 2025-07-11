@@ -45,7 +45,7 @@ export default async function MainPagesLayout({
     <>
       {/* 取得したuserオブジェクトをHeaderコンポーネントにpropsとして渡す */}
       <Header user={user} />
-      <main>{children}</main>
+      <main className="pt-20 flex-grow">{children}</main>
     </>
   );
 }

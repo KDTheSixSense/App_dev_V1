@@ -166,6 +166,72 @@ console.log('✅ Users seeded.');
     await prisma.userSubjectProgress.createMany({ data: progressData, skipDuplicates: true });
     console.log(`✅ God Mode progress created.`);
   }
+  
+  console.log('Creating sample proggramings...');
+
+  // 既存のデータを削除（冪等性を保つため）
+  await prisma.sampleCase.deleteMany({});
+  await prisma.programmingProblem.deleteMany({});
+  
+  // サンプル問題データ
+  const problems = [
+    {
+      id: 1,
+      title: 'はじめてのプログラミング：Hello World',
+      description: '標準出力に "Hello, World!" と表示するプログラムを作成してください。',
+      difficulty: 1,
+      category: 'プログラミング基礎',
+      topic: '標準入出力',
+      isPublic: true,
+      isPublished: true,
+      sampleCases: {
+        create: [
+          { input: '(なし)', expectedOutput: 'Hello, World!', description: '最も基本的な出力です。', order: 1 },
+        ],
+      },
+    },
+    {
+      id: 2,
+      title: '変数の計算：2つの数の和',
+      description: '整数 `a` と `b` の和を計算し、結果を標準出力に出力するプログラムを作成してください。\n`a = 10`, `b = 25` とします。',
+      difficulty: 2,
+      category: 'プログラミング基礎',
+      topic: '変数と型',
+      isPublic: true,
+      isPublished: true,
+      sampleCases: {
+        create: [
+          { input: 'a = 10\nb = 25', expectedOutput: '35', description: 'aとbの和を正しく計算します。', order: 1 },
+        ],
+      },
+    },
+    {
+      id: 3,
+      title: '条件分岐：偶数か奇数か',
+      description: '与えられた整数 `n` が偶数であれば "even"、奇数であれば "odd" と出力するプログラムを作成してください。\n`n = 7` とします。',
+      difficulty: 3,
+      category: '制御構造',
+      topic: '条件分岐 (if文)',
+      isPublic: true,
+      isPublished: true,
+      sampleCases: {
+        create: [
+          { input: 'n = 7', expectedOutput: 'odd', description: '7は奇数なのでoddと出力されます。', order: 1 },
+          { input: 'n = 12', expectedOutput: 'even', description: '12は偶数なのでevenと出力されます。', order: 2 },
+        ],
+      },
+    },
+  ];
+
+  // データベースに問題を作成
+  for (const p of problems) {
+    const problem = await prisma.programmingProblem.create({
+      data: p,
+    });
+    console.log(`Created problem with id: ${problem.id}`);
+  }
+
+  console.log('✅ Seeding finished.');
 }
 
 main().catch(e => {
