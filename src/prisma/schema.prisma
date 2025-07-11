@@ -21,8 +21,10 @@ model User {
   level                    Int                   @default(1) //アカウントレベル
   xp                       Int                   @default(0) //総経験値
   icon                     String? //アイコン
-  title                    String? //称号
+  selectedTitleId          Int?                  @unique
+  selectedTitle            Title?                @relation(fields: [selectedTitleId], references: [id])
   progresses               UserSubjectProgress[] // このユーザーの科目別進捗のリスト
+  unlockedTitles           UserUnlockedTitle[]
   continuouslogin          Int?
 　totallogin               Int? @default(0)
   lastlogin                DateTime?
@@ -385,4 +387,34 @@ model Status_Kohaku {
 model Degree {
   id     Int    @id @default(autoincrement())
   degree String @unique
+}
+
+model Title {
+  id                Int      @id @default(autoincrement())
+  name              String   @unique
+  description       String
+  type              TitleType // 'USER_LEVEL' or 'SUBJECT_LEVEL'
+  requiredLevel     Int
+  requiredSubjectId Int?     // SUBJECT_LEVELの場合のみ
+
+  // --- リレーション ---
+  unlockedByUsers UserUnlockedTitle[]
+  selectedByUsers User[]
+}
+
+model UserUnlockedTitle {
+  userId    Int
+  titleId   Int
+  unlockedAt DateTime @default(now())
+
+  // --- リレーション ---
+  user  User  @relation(fields: [userId], references: [id])
+  title Title @relation(fields: [titleId], references: [id])
+
+  @@id([userId, titleId])
+}
+
+enum TitleType {
+  USER_LEVEL
+  SUBJECT_LEVEL
 }
