@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation'
+import FloatingActionButton from './button/FloatingActionButton'; 
 
 // グループデータの型定義
 interface Group {
@@ -871,6 +872,10 @@ const ClassroomApp: React.FC = () => {
                                     </div>
                                 </div>
                             ))}
+                            <FloatingActionButton
+                            onCreateClick={() => setShowCreateModal(true)}
+                            onJoinClick={() => setShowJoinModal(true)}
+                            />
                         </div>
                     )}
 
