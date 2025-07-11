@@ -130,7 +130,7 @@ export async function awardXpForCorrectAnswer(problemId: number) {
   }
 
   // 5. 経験値を付与
-  await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
+  const { unlockedTitle } = await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
 
   // 6. 解答履歴を正しいテーブルに保存
   if (problemDetails.type === 'ALGO') {
@@ -145,7 +145,7 @@ export async function awardXpForCorrectAnswer(problemId: number) {
 
   console.log(`ユーザーID:${userId} が問題ID:${problemId} に正解し、XPを獲得しました。`);
 
-  return { message: '経験値を獲得しました！' };
+  return { message: '経験値を獲得しました！', unlockedTitle };
 }
 
 // ... addXp, updateUserLoginStats 関数 (変更なし) ...
@@ -166,6 +166,8 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
       create: { user_id, subject_id, xp: xpAmount, level: 1 },
       update: { xp: { increment: xpAmount } },
     });
+    let unlockedTitle: { name: string } | null = null;
+
     const newSubjectLevel = calculateLevelFromXp(updatedProgress.xp);
     if (newSubjectLevel > updatedProgress.level) {
       await tx.userSubjectProgress.update({
@@ -173,6 +175,29 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
         data: { level: newSubjectLevel },
       });
       console.log(`[科目レベルアップ!] subjectId:${subject_id} がレベル ${newSubjectLevel} に！`);
+
+      // 称号付与ロジック (科目)
+      if (newSubjectLevel >= 10) {
+        const title = await tx.title.findFirst({
+          where: {
+            type: 'SUBJECT_LEVEL',
+            requiredLevel: 10,
+            requiredSubjectId: subject_id,
+          },
+        });
+        if (title) {
+          const existingUnlock = await tx.userUnlockedTitle.findUnique({
+            where: { userId_titleId: { userId: user_id, titleId: title.id } },
+          });
+          if (!existingUnlock) {
+            await tx.userUnlockedTitle.create({
+              data: { userId: user_id, titleId: title.id },
+            });
+            unlockedTitle = { name: title.name };
+            console.log(`[称号獲得!] ${title.name} を獲得しました！`);
+          }
+        }
+      }
     }
 
     let user = await tx.user.update({
@@ -186,9 +211,31 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
         data: { level: newAccountLevel },
       });
       console.log(`[アカウントレベルアップ!] ${user.username} がアカウントレベル ${newAccountLevel} に！`);
+
+      // 称号付与ロジック (ユーザー)
+      if (newAccountLevel >= 10) {
+        const title = await tx.title.findFirst({
+          where: {
+            type: 'USER_LEVEL',
+            requiredLevel: 10,
+          },
+        });
+        if (title) {
+          const existingUnlock = await tx.userUnlockedTitle.findUnique({
+            where: { userId_titleId: { userId: user_id, titleId: title.id } },
+          });
+          if (!existingUnlock) {
+            await tx.userUnlockedTitle.create({
+              data: { userId: user_id, titleId: title.id },
+            });
+            unlockedTitle = { name: title.name };
+            console.log(`[称号獲得!] ${title.name} を獲得しました！`);
+          }
+        }
+      }
     }
 
-    return { updatedUser: user, updatedProgress };
+    return { updatedUser: user, updatedProgress, unlockedTitle };
   });
 
   console.log('XP加算処理が完了しました。');
