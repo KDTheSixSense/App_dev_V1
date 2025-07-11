@@ -1,5 +1,5 @@
 // prisma/seed.ts
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, TitleType } from '@prisma/client';
 import { addXp } from '../lib/actions';
 import { updateUserLoginStats } from '../lib/actions';
 import path from 'path';
@@ -34,6 +34,16 @@ async function main() {
   const languagesToSeed = [ { id: 1, name: '日本語' }, { id: 2, name: '擬似言語' } ];
   for (const l of languagesToSeed) { await prisma.language.upsert({ where: { id: l.id }, update: {}, create: l }); }
   console.log('✅ Languages seeded.');
+
+  console.log('Seeding titles...');
+  const titlesToSeed = [
+    { id: 1, name: '駆け出し冒険者', description: 'ユーザーレベル10に到達した証。', type: TitleType.USER_LEVEL, requiredLevel: 10 },
+    { id: 2, name: '見習いプログラマー', description: 'プログラミングレベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 1 },
+    { id: 3, name: 'A問題の新人', description: '基本情報A問題レベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 2 },
+    { id: 4, name: 'B問題の新人', description: '基本情報B問題レベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 3 },
+  ];
+  for (const t of titlesToSeed) { await prisma.title.upsert({ where: { id: t.id }, update: {}, create: t }); }
+  console.log('✅ Titles seeded.');
 
   // 2. 既存データのクリア
   console.log('🗑️ Clearing old data...');
@@ -134,6 +144,18 @@ console.log('✅ Users seeded.');
     console.log('🧪 Testing addXp function...');
     await addXp(alice.id, 1, 1);
     console.log(`✅ Alice's XP updated.`);
+
+    // Increment XP for basic_info_a (subjectId: 2) to reach level 10
+    for (let i = 0; i < 40; i++) { // 40 calls * 280 XP/call = 11200 XP
+      await addXp(alice.id, 2, 8);
+    }
+    console.log(`✅ Alice's Basic Info A XP updated.`);
+
+    // Increment XP for basic_info_b (subjectId: 3) to reach level 10
+    for (let i = 0; i < 40; i++) { // 40 calls * 280 XP/call = 11200 XP
+      await addXp(alice.id, 3, 8);
+    }
+    console.log(`✅ Alice's Basic Info B XP updated.`)
     await updateUserLoginStats(alice.id);
   }
 
@@ -144,6 +166,72 @@ console.log('✅ Users seeded.');
     await prisma.userSubjectProgress.createMany({ data: progressData, skipDuplicates: true });
     console.log(`✅ God Mode progress created.`);
   }
+  
+  console.log('Creating sample proggramings...');
+
+  // 既存のデータを削除（冪等性を保つため）
+  await prisma.sampleCase.deleteMany({});
+  await prisma.programmingProblem.deleteMany({});
+  
+  // サンプル問題データ
+  const problems = [
+    {
+      id: 1,
+      title: 'はじめてのプログラミング：Hello World',
+      description: '標準出力に "Hello, World!" と表示するプログラムを作成してください。',
+      difficulty: 1,
+      category: 'プログラミング基礎',
+      topic: '標準入出力',
+      isPublic: true,
+      isPublished: true,
+      sampleCases: {
+        create: [
+          { input: '(なし)', expectedOutput: 'Hello, World!', description: '最も基本的な出力です。', order: 1 },
+        ],
+      },
+    },
+    {
+      id: 2,
+      title: '変数の計算：2つの数の和',
+      description: '整数 `a` と `b` の和を計算し、結果を標準出力に出力するプログラムを作成してください。\n`a = 10`, `b = 25` とします。',
+      difficulty: 2,
+      category: 'プログラミング基礎',
+      topic: '変数と型',
+      isPublic: true,
+      isPublished: true,
+      sampleCases: {
+        create: [
+          { input: 'a = 10\nb = 25', expectedOutput: '35', description: 'aとbの和を正しく計算します。', order: 1 },
+        ],
+      },
+    },
+    {
+      id: 3,
+      title: '条件分岐：偶数か奇数か',
+      description: '与えられた整数 `n` が偶数であれば "even"、奇数であれば "odd" と出力するプログラムを作成してください。\n`n = 7` とします。',
+      difficulty: 3,
+      category: '制御構造',
+      topic: '条件分岐 (if文)',
+      isPublic: true,
+      isPublished: true,
+      sampleCases: {
+        create: [
+          { input: 'n = 7', expectedOutput: 'odd', description: '7は奇数なのでoddと出力されます。', order: 1 },
+          { input: 'n = 12', expectedOutput: 'even', description: '12は偶数なのでevenと出力されます。', order: 2 },
+        ],
+      },
+    },
+  ];
+
+  // データベースに問題を作成
+  for (const p of problems) {
+    const problem = await prisma.programmingProblem.create({
+      data: p,
+    });
+    console.log(`Created problem with id: ${problem.id}`);
+  }
+
+  console.log('✅ Seeding finished.');
 }
 
 main().catch(e => {

@@ -23,6 +23,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.58.1",
+    "react-resizable-panels": "^3.0.3",
     "react-syntax-highlighter": "^15.x.x",
     "recharts": "^3.1.0",
     "sqlite3": "^5.x.x",

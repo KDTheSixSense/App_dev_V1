@@ -103,6 +103,42 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '難易度または制限時間が無効な数値です' }, { status: 400 });
     }
 
+    // データベースに渡すデータオブジェクトを明示的に作成します。
+    // これにより、フロントから予期せぬ `id` が送られてきても無視され、
+    // データベースが自動で新しいIDを割り振るようになります。
+    const dataToCreate: Prisma.ProgrammingProblemCreateInput = {
+        title,
+        problemType,
+        difficulty: difficultyNum,
+        timeLimit: timeLimitNum,
+        category,
+        topic,
+        tags,
+        description,
+        codeTemplate,
+        isPublic: Boolean(isPublic),
+        allowTestCaseView: Boolean(allowTestCaseView),
+        isDraft: Boolean(isDraft),
+        isPublished: !Boolean(isDraft),
+        sampleCases: {
+            create: sampleCases.map((sc: any, index: number) => ({
+                input: sc.input,
+                expectedOutput: sc.expectedOutput,
+                description: sc.description || '',
+                order: index
+            }))
+        },
+        testCases: {
+            create: testCases.map((tc: any, index: number) => ({
+                name: tc.name || `ケース${index + 1}`,
+                input: tc.input,
+                expectedOutput: tc.expectedOutput,
+                description: tc.description || '',
+                order: index
+            }))
+        }
+    };
+
     // --- データベースへの書き込み ---
     const problem = await prisma.programmingProblem.create({
       data: {

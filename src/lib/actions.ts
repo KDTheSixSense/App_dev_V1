@@ -5,6 +5,7 @@ import { prisma } from './prisma';
 import { calculateLevelFromXp } from './leveling';
 import { getSession } from './session';
 import { revalidatePath } from 'next/cache';
+import type { Problem as SerializableProblem } from '@/lib/types';
 
 /**
  * 次の問題のIDを取得するサーバーアクション
@@ -130,7 +131,7 @@ export async function awardXpForCorrectAnswer(problemId: number) {
   }
 
   // 5. 経験値を付与
-  await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
+  const { unlockedTitle } = await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
 
   // 6. 解答履歴を正しいテーブルに保存
   if (problemDetails.type === 'ALGO') {
@@ -145,7 +146,7 @@ export async function awardXpForCorrectAnswer(problemId: number) {
 
   console.log(`ユーザーID:${userId} が問題ID:${problemId} に正解し、XPを獲得しました。`);
 
-  return { message: '経験値を獲得しました！' };
+  return { message: '経験値を獲得しました！', unlockedTitle };
 }
 
 // ... addXp, updateUserLoginStats 関数 (変更なし) ...
@@ -166,6 +167,8 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
       create: { user_id, subject_id, xp: xpAmount, level: 1 },
       update: { xp: { increment: xpAmount } },
     });
+    let unlockedTitle: { name: string } | null = null;
+
     const newSubjectLevel = calculateLevelFromXp(updatedProgress.xp);
     if (newSubjectLevel > updatedProgress.level) {
       await tx.userSubjectProgress.update({
@@ -173,6 +176,30 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
         data: { level: newSubjectLevel },
       });
       console.log(`[科目レベルアップ!] subjectId:${subject_id} がレベル ${newSubjectLevel} に！`);
+
+      }
+
+    // 称号付与ロジック (科目)
+    if (newSubjectLevel >= 10) {
+      const title = await tx.title.findFirst({
+        where: {
+          type: 'SUBJECT_LEVEL',
+          requiredLevel: 10,
+          requiredSubjectId: subject_id,
+        },
+      });
+      if (title) {
+        const existingUnlock = await tx.userUnlockedTitle.findUnique({
+          where: { userId_titleId: { userId: user_id, titleId: title.id } },
+        });
+        if (!existingUnlock) {
+          await tx.userUnlockedTitle.create({
+            data: { userId: user_id, titleId: title.id },
+          });
+          unlockedTitle = { name: title.name };
+          console.log(`[称号獲得!] ${title.name} を獲得しました！`);
+        }
+      }
     }
 
     let user = await tx.user.update({
@@ -186,9 +213,31 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
         data: { level: newAccountLevel },
       });
       console.log(`[アカウントレベルアップ!] ${user.username} がアカウントレベル ${newAccountLevel} に！`);
+
+      // 称号付与ロジック (ユーザー)
+      if (newAccountLevel >= 10) {
+        const title = await tx.title.findFirst({
+          where: {
+            type: 'USER_LEVEL',
+            requiredLevel: 10,
+          },
+        });
+        if (title) {
+          const existingUnlock = await tx.userUnlockedTitle.findUnique({
+            where: { userId_titleId: { userId: user_id, titleId: title.id } },
+          });
+          if (!existingUnlock) {
+            await tx.userUnlockedTitle.create({
+              data: { userId: user_id, titleId: title.id },
+            });
+            unlockedTitle = { name: title.name };
+            console.log(`[称号獲得!] ${title.name} を獲得しました！`);
+          }
+        }
+      }
     }
 
-    return { updatedUser: user, updatedProgress };
+    return { updatedUser: user, updatedProgress, unlockedTitle };
   });
 
   console.log('XP加算処理が完了しました。');
@@ -236,4 +285,89 @@ export async function updateUserLoginStats(userId: number) {
       lastlogin: now,
     },
   });
+}
+
+// Prismaのデータモデルを、フロントエンドで利用している `SerializableProblem` 型に変換するヘルパー関数
+const convertToSerializableProblem = (dbProblem: any): SerializableProblem | undefined => {
+  if (!dbProblem) {
+    return undefined;
+  }
+  return {
+    id: String(dbProblem.id),
+    logicType: 'CODING_PROBLEM',
+    title: { ja: dbProblem.title, en: dbProblem.title },
+    description: { ja: dbProblem.description, en: dbProblem.description },
+    programLines: {
+      ja: (dbProblem.codeTemplate || '').split('\n'),
+      en: (dbProblem.codeTemplate || '').split('\n'),
+    },
+    answerOptions: { ja: [], en: [] },
+    // ▼▼▼【ここを修正】▼▼▼
+    // testCasesではなく、データが存在するsampleCasesから正解を取得します。
+    // これで「NONE」になる問題が解決します。
+    correctAnswer: dbProblem.sampleCases?.[0]?.expectedOutput || '',
+    // ▲▲▲【修正ここまで】▲▲▲
+    explanationText: {
+      ja: dbProblem.sampleCases?.[0]?.description || '解説は準備中です。',
+      en: dbProblem.sampleCases?.[0]?.description || 'Explanation is not ready yet.',
+    },
+    sampleCases: dbProblem.sampleCases || [],
+    initialVariables: {},
+    traceLogic: [],
+  };
+};
+
+/**
+ * IDに基づいて単一のプログラミング問題を取得する Server Action
+ * @param problemId 問題のID
+ * @returns 問題データ、または見つからない場合は undefined
+ */
+export async function getProblemByIdAction(problemId: string): Promise<SerializableProblem | undefined> {
+  const id = parseInt(problemId, 10);
+  if (isNaN(id)) {
+    console.error('Invalid problem ID:', problemId);
+    return undefined;
+  }
+
+  try {
+    const problemFromDb = await prisma.programmingProblem.findUnique({
+      where: { id },
+      include: {
+        sampleCases: { orderBy: { order: 'asc' } },
+        testCases: { orderBy: { order: 'asc' } },
+      },
+    });
+
+    return convertToSerializableProblem(problemFromDb);
+
+  } catch (error) {
+    console.error(`Failed to fetch problem ${id}:`, error);
+    return undefined;
+  }
+}
+
+/**
+ * 次のプログラミング問題のIDを取得する Server Action
+ */
+export async function getNextProgrammingProblemId(currentId: number): Promise<string | null> {
+    try {
+        const nextProblem = await prisma.programmingProblem.findFirst({
+            where: {
+                id: {
+                    gt: currentId
+                },
+                isPublished: true,
+            },
+            orderBy: {
+                id: 'asc'
+            },
+            select: {
+                id: true
+            }
+        });
+        return nextProblem ? String(nextProblem.id) : null;
+    } catch (error) {
+        console.error("Failed to get next programming problem ID:", error);
+        return null;
+    }
 }
