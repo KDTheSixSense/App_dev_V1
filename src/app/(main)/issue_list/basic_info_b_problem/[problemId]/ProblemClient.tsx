@@ -282,6 +282,9 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
         const problemId = parseInt(problem.id, 10);
         const result = await awardXpForCorrectAnswer(problemId);
         console.log(result.message); // "経験値を獲得しました！" or "既に正解済みです。"
+        if (result.unlockedTitle) {
+          alert(`称号【${result.unlockedTitle.name}】を獲得しました！`);
+        }
         // ここで成功時のUIフィードバック（例: トースト通知）を表示することも可能
       } catch (error) {
         console.error("XPの付与に失敗しました:", error);
