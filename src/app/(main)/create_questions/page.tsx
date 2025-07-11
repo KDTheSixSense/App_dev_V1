@@ -61,9 +61,12 @@ class Program {
   const languages = [
     { value: 'python', label: 'Python' },
     { value: 'javascript', label: 'JavaScript' },
+    { value: 'typescript', label: 'TypeScript' },
     { value: 'java', label: 'Java' },
+    { value: 'c', label: 'C' },
     { value: 'cpp', label: 'C++' },
-    { value: 'csharp', label: 'C#' }
+    { value: 'csharp', label: 'C#' },
+    { value: 'php', label: 'PHP' }
   ];
 
   useEffect(() => {
