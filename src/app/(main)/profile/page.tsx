@@ -15,17 +15,33 @@ export default async function HomePage({ searchParams }: any) {
   }
 
   // データベースからユーザー情報を取得
-  const user = await prisma.user.findUnique({
+  const userWithDetails = await prisma.user.findUnique({
     where: {
       id: parseInt(session.user.id, 10),
     },
+    include: {
+      unlockedTitles: {
+        include: {
+          title: true,
+        },
+      },
+      selectedTitle: true,
+    },
   });
 
+  if (!userWithDetails) {
+    redirect("/auth/login");
+  }
+
   // birthプロパティを文字列に変換
-  const serializedUser = user ? {
-    ...user,
-    birth: user.birth ? user.birth.toISOString() : null,
-  } : null;
+  const serializedUser = {
+    ...userWithDetails,
+    birth: userWithDetails.birth ? userWithDetails.birth.toISOString() : null,
+    unlockedTitles: userWithDetails.unlockedTitles.map(ut => ({
+      ...ut,
+      unlockedAt: ut.unlockedAt.toISOString(),
+    })),
+  };
   
   return (
     <div className='bg-white'>

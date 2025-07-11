@@ -35,6 +35,25 @@ export async function PATCH(req: NextRequest) {
     delete data.password;
     delete data.hash;
 
+    // If a title is being selected, verify the user has unlocked it
+    if (data.selectedTitleId) {
+      const userId = parseInt(session.user.id, 10);
+      const titleId = parseInt(data.selectedTitleId, 10);
+
+      const unlockedTitle = await prisma.userUnlockedTitle.findUnique({
+        where: {
+          userId_titleId: {
+            userId: userId,
+            titleId: titleId,
+          },
+        },
+      });
+
+      if (!unlockedTitle) {
+        return NextResponse.json({ error: 'Cannot select a title that has not been unlocked.' }, { status: 403 });
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: {
         id: parseInt(session.user.id, 10),
@@ -42,10 +61,8 @@ export async function PATCH(req: NextRequest) {
       data: {
         username: data.username,
         birth: data.birth ? new Date(data.birth) : null,
-        // gender is not in the schema, so we ignore it.
         icon: data.icon,
-        title: data.title, // Add this line
-        // Add other fields like 'year' or 'class' if they are editable
+        selectedTitleId: data.selectedTitleId ? parseInt(data.selectedTitleId, 10) : null,
       },
     });
 
