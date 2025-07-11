@@ -144,6 +144,18 @@ console.log('✅ Users seeded.');
     console.log('🧪 Testing addXp function...');
     await addXp(alice.id, 1, 1);
     console.log(`✅ Alice's XP updated.`);
+
+    // Increment XP for basic_info_a (subjectId: 2) to reach level 10
+    for (let i = 0; i < 40; i++) { // 40 calls * 280 XP/call = 11200 XP
+      await addXp(alice.id, 2, 8);
+    }
+    console.log(`✅ Alice's Basic Info A XP updated.`);
+
+    // Increment XP for basic_info_b (subjectId: 3) to reach level 10
+    for (let i = 0; i < 40; i++) { // 40 calls * 280 XP/call = 11200 XP
+      await addXp(alice.id, 3, 8);
+    }
+    console.log(`✅ Alice's Basic Info B XP updated.`)
     await updateUserLoginStats(alice.id);
   }
 
