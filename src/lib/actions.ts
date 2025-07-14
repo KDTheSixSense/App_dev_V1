@@ -132,6 +132,8 @@ export async function awardXpForCorrectAnswer(problemId: number) {
 
   // 5. 経験値を付与
   const { unlockedTitle } = await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
+  // ログイン統計を更新
+  await updateUserLoginStats(userId);
 
   // 6. 解答履歴を正しいテーブルに保存
   if (problemDetails.type === 'ALGO') {

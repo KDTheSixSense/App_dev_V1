@@ -156,7 +156,6 @@ console.log('✅ Users seeded.');
       await addXp(alice.id, 3, 8);
     }
     console.log(`✅ Alice's Basic Info B XP updated.`)
-    await updateUserLoginStats(alice.id);
   }
 
   console.log('👼 Creating God Mode progress...');
