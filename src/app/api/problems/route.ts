@@ -41,6 +41,13 @@ export async function GET(request: NextRequest) {
             orderBy: { order: 'asc' }
           },
           files: true,
+          // ★ 3. 問題取得時に、関連する作成者のユーザー名も取得する
+          creator: {
+            select: {
+              id: true,
+              username: true,
+            }
+          }
         // userAnswersリレーションはProgrammingProblemモデルに存在しないためコメントアウト
           // _count: {
           //   select: {
@@ -74,6 +81,16 @@ export async function GET(request: NextRequest) {
 
 // 問題作成 (POST) - 改善版
 export async function POST(request: NextRequest) {
+    // ★ 2. APIの最初にセッション情報を取得
+  // @ts-ignore
+  const session = await getServerSession(authOptions);
+
+  // ログインしていない、またはユーザーIDが取得できない場合はエラーを返す
+  if (!session || !session.user || !(session.user as any).id) {
+    return NextResponse.json({ error: '認証が必要です。ログインしてください。' }, { status: 401 });
+  }
+  const userId = (session.user as any).id; // ログインユーザーのIDを取得
+
   try {
     const body = await request.json();
     const {
@@ -120,6 +137,11 @@ export async function POST(request: NextRequest) {
         allowTestCaseView: Boolean(allowTestCaseView),
         isDraft: Boolean(isDraft),
         isPublished: !Boolean(isDraft),
+        creator: {
+            connect: {
+                id: userId,
+            }
+        },
         sampleCases: {
             create: sampleCases.map((sc: any, index: number) => ({
                 input: sc.input,
@@ -175,9 +197,14 @@ export async function POST(request: NextRequest) {
         }
       },
       include: {
-        sampleCases: true,
-        testCases: true,
-      }
+        sampleCases: true,
+        testCases: true,
+        creator: { // 作成したユーザー情報も返す
+          select: {
+            username: true,
+          }
+        }
+      }
     });
 
     return NextResponse.json(problem, { status: 201 });

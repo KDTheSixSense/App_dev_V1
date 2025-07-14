@@ -47,7 +47,7 @@ const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ p
     </div>
 );
 
-// 右上パネル: コードエディタ
+// 中央パネル: コードエディタ
 const CodeEditorPanel: React.FC<{
     userCode: string; setUserCode: (code: string) => void;
     stdin: string; setStdin: (stdin: string) => void;
@@ -79,17 +79,21 @@ const CodeEditorPanel: React.FC<{
                 <pre ref={lineNumbersRef} className="bg-gray-100 p-3 text-right font-mono text-sm text-gray-500 select-none border-r overflow-y-hidden">{lineNumbers}</pre>
                 <textarea ref={textareaRef} onScroll={syncScroll} value={props.userCode} onChange={(e) => props.setUserCode(e.target.value)} className="w-full h-full p-3 text-sm font-mono border-0 focus:outline-none resize-none" style={{ lineHeight: '1.5rem' }} spellCheck="false" />
             </div>
+            {/* ▼▼▼【ここから修正】▼▼▼ */}
             <div className="p-4 border-t flex-shrink-0">
-                <div className="flex justify-between items-center mb-2">
-                    <div className="flex gap-2">
-                        <button onClick={props.onExecute} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Play className="h-4 w-4" /> 実行</button>
-                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '提出中...' : '提出'}</button>
-                    </div>
+                <div className="flex justify-between items-center mb-3">
+                    {/* タブを左側に配置 */}
                     <div className="flex border border-gray-300 rounded-md p-0.5">
                         <button onClick={() => setActiveTab('input')} className={`px-3 py-1 text-sm rounded-md ${activeTab === 'input' ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}>標準入力</button>
                         <button onClick={() => setActiveTab('output')} className={`px-3 py-1 text-sm rounded-md ${activeTab === 'output' ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}>実行結果</button>
                     </div>
+                    {/* 実行・提出ボタンを右側に配置 */}
+                    <div className="flex gap-2">
+                        <button onClick={props.onExecute} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Play className="h-4 w-4" /> 実行</button>
+                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '提出中...' : '提出'}</button>
+                    </div>
                 </div>
+                {/* 境界線はそのままに、上の要素の `mb-3` でスペースを調整 */}
                 <div className="h-32 overflow-y-auto border rounded-md p-2">
                     {activeTab === 'input' && (<textarea value={props.stdin} onChange={(e) => props.setStdin(e.target.value)} className="w-full h-full p-1 text-sm font-mono border-0 rounded-md resize-none focus:outline-none" placeholder="コードへの入力値..."></textarea>)}
                     {activeTab === 'output' && (
@@ -100,11 +104,12 @@ const CodeEditorPanel: React.FC<{
                     )}
                 </div>
             </div>
+            {/* ▲▲▲【修正ここまで】▲▲▲ */}
         </div>
     );
 };
 
-// 右下パネル: AIチャット
+// 右パネル: AIチャット
 const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: string) => void; }> = ({ messages, onSendMessage }) => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -145,16 +150,7 @@ const ProblemSolverPage = () => {
     const [alertMessage, setAlertMessage] = useState('');
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
-    const languages = [
-        { value: 'python', label: 'Python' },
-        { value: 'javascript', label: 'JavaScript' },
-        { value: 'typescript', label: 'TypeScript' },
-        { value: 'java', label: 'Java' },
-        { value: 'c', label: 'C' },
-        { value: 'cpp', label: 'C++' },
-        { value: 'csharp', label: 'C#' },
-        { value: 'php', label: 'PHP' }
-    ];
+    const languages = [ { value: 'python', label: 'Python' }, { value: 'javascript', label: 'JavaScript' }, { value: 'java', label: 'Java' }, { value: 'cpp', label: 'C++' }, { value: 'csharp', label: 'C#' }, ];
 
     useEffect(() => {
         if (!problemId) return;
@@ -223,31 +219,27 @@ const ProblemSolverPage = () => {
         <div className="h-screen bg-gray-100 p-4 overflow-hidden">
             {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
             <PanelGroup direction="horizontal">
-                <Panel defaultSize={40} minSize={20}>
+                <Panel defaultSize={35} minSize={20}>
                     <ProblemDescriptionPanel problem={problem} />
                 </Panel>
                 <PanelResizeHandle className="w-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
                     <GripVertical className="h-4 w-4 text-gray-600" />
                 </PanelResizeHandle>
-                <Panel minSize={30}>
-                    <PanelGroup direction="vertical">
-                        <Panel defaultSize={70} minSize={25}>
-                            <CodeEditorPanel
-                                userCode={userCode} setUserCode={setUserCode}
-                                stdin={stdin} setStdin={setStdin}
-                                selectedLanguage={selectedLanguage} languages={languages}
-                                onLanguageSelect={setSelectedLanguage}
-                                onExecute={handleExecute} onSubmit={handleSubmit}
-                                isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
-                            />
-                        </Panel>
-                        <PanelResizeHandle className="h-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
-                             <div className="w-8 h-1 bg-gray-400 rounded-full" />
-                        </PanelResizeHandle>
-                        <Panel defaultSize={30} minSize={15}>
-                             <AiChatPanel messages={chatMessages} onSendMessage={handleUserMessage} />
-                        </Panel>
-                    </PanelGroup>
+                <Panel defaultSize={40} minSize={30}>
+                    <CodeEditorPanel
+                        userCode={userCode} setUserCode={setUserCode}
+                        stdin={stdin} setStdin={setStdin}
+                        selectedLanguage={selectedLanguage} languages={languages}
+                        onLanguageSelect={setSelectedLanguage}
+                        onExecute={handleExecute} onSubmit={handleSubmit}
+                        isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
+                    />
+                </Panel>
+                <PanelResizeHandle className="w-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
+                    <GripVertical className="h-4 w-4 text-gray-600" />
+                </PanelResizeHandle>
+                <Panel defaultSize={25} minSize={20}>
+                     <AiChatPanel messages={chatMessages} onSendMessage={handleUserMessage} />
                 </Panel>
             </PanelGroup>
              {submitResult?.success && (
