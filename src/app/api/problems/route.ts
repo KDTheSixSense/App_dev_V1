@@ -90,6 +90,10 @@ export async function POST(request: NextRequest) {
     // --- 手順2: リクエストのbodyを取得 ---
     const body = await request.json();
 
+    if (body.id) {
+      delete body.id;
+    }
+
     // --- 手順3: バリデーション ---
     if (!body.title || !body.description) {
       return NextResponse.json({ error: 'タイトルと問題文は必須です' }, { status: 400 });
