@@ -1,6 +1,7 @@
 // /app/api/problems/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient, Prisma } from '@prisma/client'
+import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { getAppSession } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
@@ -10,213 +11,157 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-// 問題一覧取得
+/**
+ * 問題一覧を取得するAPI (GET)
+ */
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const category = searchParams.get('category')
-    const isPublic = searchParams.get('isPublic')
-    const isDraft = searchParams.get('isDraft')
+  try {
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const category = searchParams.get('category')
+    const isPublic = searchParams.get('isPublic')
+    const isDraft = searchParams.get('isDraft')
 
-    const skip = (page - 1) * limit
+    const skip = (page - 1) * limit
 
-    const where: any = {}
-    if (category) where.category = category
-    if (isPublic !== null) where.isPublic = isPublic === 'true'
-    if (isDraft !== null) where.isDraft = isDraft === 'true'
+    const where: any = {}
+    if (category) where.category = category
+    if (isPublic !== null) where.isPublic = isPublic === 'true'
+    if (isDraft !== null) where.isDraft = isDraft === 'true'
 
-    const [problems, total] = await Promise.all([
-      // ★ 修正: prisma.problem -> prisma.programmingProblem
-      prisma.programmingProblem.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          sampleCases: {
-            orderBy: { order: 'asc' }
-          },
-          testCases: {
-            orderBy: { order: 'asc' }
-          },
-          files: true,
-          // ★ 3. 問題取得時に、関連する作成者のユーザー名も取得する
+    const [problems, total] = await Promise.all([
+      prisma.programmingProblem.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          sampleCases: {
+            orderBy: { order: 'asc' }
+          },
+          testCases: {
+            orderBy: { order: 'asc' }
+          },
+          files: true,
           creator: {
             select: {
               id: true,
               username: true,
             }
           }
-        // userAnswersリレーションはProgrammingProblemモデルに存在しないためコメントアウト
-          // _count: {
-          //   select: {
-          //     userAnswers: true
-          //   }
-          // }
-        },
-        orderBy: { createdAt: 'desc' }
-      }),
-      // ★ 修正: prisma.problem -> prisma.programmingProblem
-      prisma.programmingProblem.count({ where })
-    ])
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.programmingProblem.count({ where })
+    ])
 
-    return NextResponse.json({
-      problems,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    })
-  } catch (error) {
-    console.error('Error fetching problems:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch problems' },
-      { status: 500 }
-    )
-  }
+    return NextResponse.json({
+      problems,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching problems:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch problems' },
+      { status: 500 }
+    )
+  }
 }
 
-// 問題作成 (POST) - 改善版
+
+/**
+ * 新しい問題を作成するAPI (POST)
+ */
 export async function POST(request: NextRequest) {
-    // ★ 2. APIの最初にセッション情報を取得
-  // @ts-ignore
-  const session = await getServerSession(authOptions);
+  try {
+    // --- 手順1: セッションを取得し、認証を行う ---
+    const session = await getAppSession();
+    const userId = session.user?.id;
 
-  // ログインしていない、またはユーザーIDが取得できない場合はエラーを返す
-  if (!session || !session.user || !(session.user as any).id) {
-    return NextResponse.json({ error: '認証が必要です。ログインしてください。' }, { status: 401 });
-  }
-  const userId = (session.user as any).id; // ログインユーザーのIDを取得
-
-  try {
-    const body = await request.json();
-    const {
-      title,
-      problemType,
-      difficulty,
-      timeLimit,
-      category,
-      topic,
-      tags, // JSON文字列として受け取る
-      description,
-      codeTemplate,
-      isPublic,
-      allowTestCaseView,
-      isDraft = false,
-      sampleCases = [],
-      testCases = []
-    } = body;
-
-    // --- バリデーションを強化 ---
-    if (!title || !description) {
-      return NextResponse.json({ error: 'タイトルと問題文は必須です' }, { status: 400 });
-    }
-    const difficultyNum = parseInt(difficulty, 10);
-    const timeLimitNum = parseInt(timeLimit, 10);
-    if (isNaN(difficultyNum) || isNaN(timeLimitNum)) {
-        return NextResponse.json({ error: '難易度または制限時間が無効な数値です' }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ error: '認証情報が見つかりません。再度ログインしてください。' }, { status: 401 });
     }
 
-    // データベースに渡すデータオブジェクトを明示的に作成します。
-    // これにより、フロントから予期せぬ `id` が送られてきても無視され、
-    // データベースが自動で新しいIDを割り振るようになります。
-    const dataToCreate: Prisma.ProgrammingProblemCreateInput = {
-        title,
-        problemType,
-        difficulty: difficultyNum,
-        timeLimit: timeLimitNum,
-        category,
-        topic,
-        tags,
-        description,
-        codeTemplate,
-        isPublic: Boolean(isPublic),
-        allowTestCaseView: Boolean(allowTestCaseView),
-        isDraft: Boolean(isDraft),
-        isPublished: !Boolean(isDraft),
-        creator: {
-            connect: {
-                id: userId,
-            }
+    // --- 手順2: リクエストのbodyを取得 ---
+    const body = await request.json();
+
+    // --- 手順3: バリデーション ---
+    if (!body.title || !body.description) {
+      return NextResponse.json({ error: 'タイトルと問題文は必須です' }, { status: 400 });
+    }
+    const difficultyNum = parseInt(body.difficulty, 10);
+    const timeLimitNum = parseInt(body.timeLimit, 10);
+    if (isNaN(difficultyNum) || isNaN(timeLimitNum)) {
+      return NextResponse.json({ error: '難易度または制限時間が無効な数値です' }, { status: 400 });
+    }
+
+    // ★★★ 修正の核心: データベースに渡すデータを明示的に構築（ホワイトリスト方式） ★★★
+    const dataToCreate: Prisma.ProgrammingProblemCreateInput = {
+      title: body.title,
+      problemType: body.problemType,
+      difficulty: difficultyNum,
+      timeLimit: timeLimitNum,
+      category: body.category,
+      topic: body.topic,
+      tags: body.tags,
+      description: body.description,
+      codeTemplate: body.codeTemplate,
+      isPublic: Boolean(body.isPublic),
+      allowTestCaseView: Boolean(body.allowTestCaseView),
+      isDraft: Boolean(body.isDraft),
+      isPublished: !Boolean(body.isDraft),
+      creator: {
+        connect: {
+          id: Number(userId),
         },
-        sampleCases: {
-            create: sampleCases.map((sc: any, index: number) => ({
-                input: sc.input,
-                expectedOutput: sc.expectedOutput,
-                description: sc.description || '',
-                order: index
-            }))
-        },
-        testCases: {
-            create: testCases.map((tc: any, index: number) => ({
-                name: tc.name || `ケース${index + 1}`,
-                input: tc.input,
-                expectedOutput: tc.expectedOutput,
-                description: tc.description || '',
-                order: index
-            }))
-        }
+      },
+      // ネストされたデータも、必要なプロパティだけを選んで新しいオブジェクトを作成
+      sampleCases: {
+        create: (body.sampleCases || []).map((sc: any) => ({
+          input: sc.input,
+          expectedOutput: sc.expectedOutput,
+          description: sc.description || '',
+          order: sc.order,
+        }))
+      },
+      testCases: {
+        create: (body.testCases || []).map((tc: any) => ({
+          name: tc.name || 'ケース',
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          description: tc.description || '',
+          order: tc.order,
+        }))
+      }
     };
 
-    // --- データベースへの書き込み ---
-    const problem = await prisma.programmingProblem.create({
-      data: {
-        title,
-        problemType,
-        difficulty: difficultyNum,
-        timeLimit: timeLimitNum,
-        category,
-        topic,
-        tags, // フロントでstringify済みなのでそのまま保存
-        description,
-        codeTemplate,
-        isPublic: Boolean(isPublic),
-        allowTestCaseView: Boolean(allowTestCaseView),
-        isDraft: Boolean(isDraft),
-        isPublished: !Boolean(isDraft),
-        // 関連データのネストした作成
-        sampleCases: {
-          create: sampleCases.map((sc: any, index: number) => ({
-            input: sc.input,
-            expectedOutput: sc.expectedOutput,
-            description: sc.description || '',
-            order: index
-          }))
-        },
-        testCases: {
-          create: testCases.map((tc: any, index: number) => ({
-            name: tc.name || `ケース${index + 1}`,
-            input: tc.input,
-            expectedOutput: tc.expectedOutput,
-            description: tc.description || '',
-            order: index
-          }))
-        }
-      },
-      include: {
+    // --- 手順4: データベースに問題を保存 ---
+    const problem = await prisma.programmingProblem.create({
+      data: dataToCreate, // 安全に構築したデータのみを渡す
+      include: {
         sampleCases: true,
         testCases: true,
-        creator: { // 作成したユーザー情報も返す
-          select: {
-            username: true,
-          }
-        }
+        creator: true,
       }
-    });
+    });
 
-    return NextResponse.json(problem, { status: 201 });
+    return NextResponse.json(problem, { status: 201 });
 
-  } catch (error: unknown) {
-    // --- エラーハンドリングを強化 ---
-    console.error('❌ [API] Error creating problem:', error);
+  } catch (error: unknown) {
+    console.error('❌ [API] Error creating problem:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // Prismaが返す既知のエラー（制約違反など）
-        console.error('Prisma Error Code:', error.code);
-        return NextResponse.json({ error: `データベースエラー: ${error.code}` }, { status: 400 });
+      console.error('Prisma Error Code:', error.code);
+      if (error.code === 'P2002') {
+        const target = (error.meta as any)?.target;
+        return NextResponse.json({ error: `ユニーク制約違反です。対象: ${target}` }, { status: 400 });
+      }
+      return NextResponse.json({ error: `データベースエラー: ${error.code}` }, { status: 400 });
     }
-    return NextResponse.json({ error: 'サーバー内部で問題の作成に失敗しました' }, { status: 500 });
-  }
+    return NextResponse.json({ error: 'サーバー内部で問題の作成に失敗しました' }, { status: 500 });
+  }
 }
