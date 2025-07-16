@@ -31,11 +31,7 @@ const questionCategories = [
   { title: '基本情報 科目B', description: 'Title\nDescription', path: '/issue_list/basic_info_b_problem/problems' }, // 科目Bは最初の問題(ID:1)に直接遷移
   { title: '応用情報 午前', description: 'Title\nDescription', path: '/issue_list/applied_info_morning_problem/problems' },
   { title: '応用情報 午後', description: 'Title\nDescription', path: '/issue_list/applied_info_afternoon_problem/problems' },
-  { title: 'Python', description: 'Title\nDescription', path: '/issue_list/python_problem/problems' },
-  { title: 'JavaScript', description: 'Title\nDescription', path: '/issue_list/JavaScript_problem/problems' },
-  { title: 'Java', description: 'Title\nDescription', path: '/issue_list/java_problem/problems' },
-  { title: 'C++', description: 'Title\nDescription', path: '/issue_list/Cplus_problem/problems' },
-  { title: 'C#', description: 'Title\nDescription', path: '/issue_list/Csya_problem/problems' },
+  { title: 'プログラミング', description: 'Title\nDescription', path: '/issue_list/programming_problem/problems' },
 
 ];
 

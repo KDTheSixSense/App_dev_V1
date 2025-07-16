@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GroupLayout } from '../GroupLayout'; // 共通レイアウトをインポート
+import FloatingActionButton from '../button/FloatingActionButton'; // ファイルパスは適宜調整
 
 // === 型定義 ===
 interface Group {
