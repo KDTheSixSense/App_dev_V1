@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation'
 import FloatingActionButton from './button/FloatingActionButton'; 
+import { createGroupAction,getGroupsAction,joinGroupAction } from '@/lib/actions'; // グループ作成アクションをインポート
+import MemberList from './components/MemberList'; // メンバーリストコンポーネントをインポート
 
 // グループデータの型定義
 interface Group {
@@ -10,18 +12,21 @@ interface Group {
     hashedId: string;
     name: string;
     description: string;
-    section?: string;
     room?: string;
     color: string;
     teacher: string;
     memberCount: number;
+    members: Member[]; // メンバー情報を追加
 }
 
 // メンバーデータの型定義
 interface Member {
-    id: number;
-    name: string;
-    avatar: string;
+    admin_flg: boolean;
+    user: {
+        id: number;
+        username: string | null;
+        icon: string | null;
+    };
 }
 
 // フォーマット状態の型定義
@@ -107,30 +112,28 @@ const ClassroomApp: React.FC = () => {
     // APIからグループ一覧を取得する関数
     const fetchGroups = async () => {
         try {
-            const response = await fetch('/api/groups');
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'グループの読み込みに失敗しました');
+            // fetchの代わりに、インポートしたServer Actionを直接呼び出す
+            const result = await getGroupsAction();
+
+            if (!result.success) {
+                throw new Error(result.error || 'グループの読み込みに失敗しました');
             }
-            const data = await response.json();
-            const formattedGroups: Group[] = data.map((group: any) => ({
+            
+            // Actionから返されたデータを整形する
+            const formattedGroups: Group[] = result.data.map((group: any) => ({
                 id: group.id,
                 hashedId: group.hashedId,
                 name: group.groupname,
                 description: group.body,
                 color: '#00bcd4',
                 teacher: '管理者',
-                memberCount: group._count?.Groups_User || 0,
+                memberCount: group._count?.groups_User || 0,
+                // ★★★ サーバーからの `groups_User` を、クライアントの `members` にマッピングする ★★★
+                members: group.groups_User || [], 
             }));
+
             setGroups(formattedGroups);
-            if (formattedGroups.length > 0) {
-                // ★ 修正：設定画面から戻ってきた場合を考慮
-                if (currentView !== 'settings') {
-                    setCurrentView('groups');
-                }
-            } else {
-                setCurrentView('empty');
-            }
+
         } catch (error) {
             console.error("グループ取得エラー:", error);
             alert(error instanceof Error ? error.message : '不明なエラーが発生しました');
@@ -149,6 +152,11 @@ const ClassroomApp: React.FC = () => {
             return acc;
         }, {} as { [key: number]: boolean });
         setClassNotificationSettings(initialSettings);
+        if (groups.length > 0) {
+            setCurrentView('groups');
+        } else {
+            setCurrentView('empty');
+        }
     }, [groups]);
 
     // ★ 追加：設定ページ用のイベントハンドラ
@@ -299,49 +307,68 @@ const ClassroomApp: React.FC = () => {
     };
 
     // --- ★ 修正: グループ作成処理 (API呼び出し) ---
-    const handleCreateGroup = async () => {
-        if (!createGroupForm.className.trim()) {
-            alert('クラス名を入力してください。');
-            return;
-        }
-        try {
-            const response = await fetch('/api/groups', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    groupname: createGroupForm.className,
-                    body: createGroupForm.description,
-                }),
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'グループの作成に失敗しました');
-            }
-            alert('グループが正常に作成されました！');
-            setShowCreateModal(false);
-            setCreateGroupForm({ className: '', description: '', section: '',subject: '', room: '' });
-            fetchGroups(); // グループ一覧を再取得して画面を更新
-        } catch (error) {
-            console.error(error);
-            alert(error instanceof Error ? error.message : '不明なエラー');
-        }
-    };
+const handleCreateGroup = async () => {
+    // 2. フォームから値を取得
+    const groupName = createGroupForm.className.trim();
+    const description = createGroupForm.description;
+
+    if (!groupName) {
+        alert('クラス名を入力してください。');
+        return;
+    }
+
+    try {
+        // 3. fetchの代わりに、インポートしたServer Actionを直接呼び出す
+        const result = await createGroupAction({ 
+            groupName: groupName, 
+            body: description 
+        });
+
+        // 4. Actionからの戻り値で成功・失敗を判定
+        if (result.success) {
+            setShowCreateModal(false);
+            setCreateGroupForm({ className: '', description: '', section: '',subject: '', room: '' });
+            fetchGroups(); // Server ActionのrevalidatePathが機能するため、これは不要になる場合があります
+        } else {
+            // エラーがあればそれを表示
+            throw new Error(result.error || 'グループの作成に失敗しました');
+        }
+    } catch (error) {
+        console.error(error);
+        alert(error instanceof Error ? error.message : '不明なエラー');
+    }
+};
 
     // クラス参加処理
-    const handleJoinGroup = () => {
-        if (classCode.trim()) {
-            alert(`クラスコード「${classCode}」でクラスに参加しました！`);
-            setShowJoinModal(false);
-            setClassCode('');
-            if (groups.length > 0) {
-                setCurrentView('groups');
+    const handleJoinGroup = async () => {
+        if (!classCode.trim()) {
+            alert('招待コードを入力してください。');
+            return;
+        }
+        
+        try {
+            // Server Actionを呼び出して、実際に入室処理を行う
+            const result = await joinGroupAction(classCode);
+
+            if (result.success) {
+                alert(`「${result.groupName}」に参加しました！`);
+                setShowJoinModal(false);
+                setClassCode('');
+                // ★★★ 成功したら、グループ一覧を再取得して画面を更新 ★★★
+                fetchGroups();
+            } else {
+                throw new Error(result.error || 'グループへの参加に失敗しました。');
             }
+        } catch (error) {
+            console.error(error);
+            alert(error instanceof Error ? error.message : '不明なエラー');
         }
     };
-
     // グループクリック処理
     const handleGroupClick = (group: Group) => {
-        router.push(`/group/${group.hashedId}`);
+        // router.push(`/group/${group.hashedId}`); // ルーティングを使わずに状態管理で表示切り替え
+        setSelectedGroup(group);
+        setCurrentView('detail');
     };
 
     // 3点メニューの表示切り替え
@@ -398,19 +425,6 @@ const ClassroomApp: React.FC = () => {
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [activeDropdown, isEditorExpanded]);
-
-    // メンバーデータの生成
-    const generateMembers = (count: number): Member[] => {
-        const members: Member[] = [];
-        for (let i = 0; i < count; i++) {
-            members.push({
-                id: i + 1,
-                name: i === 0 ? selectedGroup?.teacher || 'あなた' : `メンバー ${i}`,
-                avatar: i === 0 ? selectedGroup?.teacher?.charAt(0) || 'あ' : 'メ'
-            });
-        }
-        return members;
-    };
 
     // ★ 追加：再利用可能なトグルスイッチコンポーネント
     const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ id, checked, onChange, label, description }) => (
@@ -1277,53 +1291,12 @@ const ClassroomApp: React.FC = () => {
                                 )}
 
                                 {activeTab === 'メンバー' && (
-                                    <div>
-                                        <h3 style={{
-                                            fontSize: '18px',
-                                            color: '#3c4043',
-                                            margin: '0 0 16px 0',
-                                            fontWeight: '500'
-                                        }}>
-                                            メンバー ({selectedGroup.memberCount}人)
-                                        </h3>
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                                            gap: '12px'
-                                        }}>
-                                            {generateMembers(selectedGroup.memberCount).map(member => (
-                                                <div
-                                                    key={member.id}
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        padding: '8px'
-                                                    }}
-                                                >
-                                                    <div style={{
-                                                        width: '24px',
-                                                        height: '24px',
-                                                        borderRadius: '50%',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        marginRight: '8px',
-                                                        backgroundColor: '#00bcd4',
-                                                        color: '#fff',
-                                                        fontSize: '12px'
-                                                    }}>
-                                                        {member.avatar}
-                                                    </div>
-                                                    <span style={{
-                                                        fontSize: '12px',
-                                                        color: '#3c4043'
-                                                    }}>
-                                                        {member.name}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    // selectedGroup.groups_User (APIから取得したメンバーリスト) と
+                                    // selectedGroup._count.groups_User (メンバー数) を渡す
+                                    <MemberList 
+                                        members={selectedGroup.members} 
+                                        memberCount={selectedGroup.memberCount} 
+                                    />
                                 )}
                             </div>
                         </div>
