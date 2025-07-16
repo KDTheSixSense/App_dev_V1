@@ -5,6 +5,7 @@ import { prisma } from './prisma';
 import { calculateLevelFromXp } from './leveling';
 import { getSession } from './session';
 import { revalidatePath } from 'next/cache';
+import type { Problem as SerializableProblem } from '@/lib/types';
 
 /**
  * 次の問題のIDを取得するサーバーアクション
@@ -267,13 +268,13 @@ export async function updateUserLoginStats(userId: number) {
   let newConsecutiveDays = user.continuouslogin ?? 0;
   let newTotalDays = user.totallogin ?? 0;
 
-  // if (lastLoginAppDateString && lastLoginAppDateString === yesterdayAppDateString) {
+  if (lastLoginAppDateString && lastLoginAppDateString === yesterdayAppDateString) {
     // ケースA: 最後のログインが「アプリ内での昨日」 -> 連続ログイン
     newConsecutiveDays += 1;
-  // } else {
+  } else {
     // ケースB: 連続ログインが途切れた -> リセット
-    // newConsecutiveDays = 1;
-  // }
+    newConsecutiveDays = 1;
+  }
   newTotalDays += 1;
 
   await prisma.user.update({
@@ -284,4 +285,89 @@ export async function updateUserLoginStats(userId: number) {
       lastlogin: now,
     },
   });
+}
+
+// Prismaのデータモデルを、フロントエンドで利用している `SerializableProblem` 型に変換するヘルパー関数
+const convertToSerializableProblem = (dbProblem: any): SerializableProblem | undefined => {
+  if (!dbProblem) {
+    return undefined;
+  }
+  return {
+    id: String(dbProblem.id),
+    logicType: 'CODING_PROBLEM',
+    title: { ja: dbProblem.title, en: dbProblem.title },
+    description: { ja: dbProblem.description, en: dbProblem.description },
+    programLines: {
+      ja: (dbProblem.codeTemplate || '').split('\n'),
+      en: (dbProblem.codeTemplate || '').split('\n'),
+    },
+    answerOptions: { ja: [], en: [] },
+    // ▼▼▼【ここを修正】▼▼▼
+    // testCasesではなく、データが存在するsampleCasesから正解を取得します。
+    // これで「NONE」になる問題が解決します。
+    correctAnswer: dbProblem.sampleCases?.[0]?.expectedOutput || '',
+    // ▲▲▲【修正ここまで】▲▲▲
+    explanationText: {
+      ja: dbProblem.sampleCases?.[0]?.description || '解説は準備中です。',
+      en: dbProblem.sampleCases?.[0]?.description || 'Explanation is not ready yet.',
+    },
+    sampleCases: dbProblem.sampleCases || [],
+    initialVariables: {},
+    traceLogic: [],
+  };
+};
+
+/**
+ * IDに基づいて単一のプログラミング問題を取得する Server Action
+ * @param problemId 問題のID
+ * @returns 問題データ、または見つからない場合は undefined
+ */
+export async function getProblemByIdAction(problemId: string): Promise<SerializableProblem | undefined> {
+  const id = parseInt(problemId, 10);
+  if (isNaN(id)) {
+    console.error('Invalid problem ID:', problemId);
+    return undefined;
+  }
+
+  try {
+    const problemFromDb = await prisma.programmingProblem.findUnique({
+      where: { id },
+      include: {
+        sampleCases: { orderBy: { order: 'asc' } },
+        testCases: { orderBy: { order: 'asc' } },
+      },
+    });
+
+    return convertToSerializableProblem(problemFromDb);
+
+  } catch (error) {
+    console.error(`Failed to fetch problem ${id}:`, error);
+    return undefined;
+  }
+}
+
+/**
+ * 次のプログラミング問題のIDを取得する Server Action
+ */
+export async function getNextProgrammingProblemId(currentId: number): Promise<string | null> {
+    try {
+        const nextProblem = await prisma.programmingProblem.findFirst({
+            where: {
+                id: {
+                    gt: currentId
+                },
+                isPublished: true,
+            },
+            orderBy: {
+                id: 'asc'
+            },
+            select: {
+                id: true
+            }
+        });
+        return nextProblem ? String(nextProblem.id) : null;
+    } catch (error) {
+        console.error("Failed to get next programming problem ID:", error);
+        return null;
+    }
 }
