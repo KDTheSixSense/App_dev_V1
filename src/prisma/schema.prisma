@@ -30,12 +30,13 @@ model User {
   lastlogin                DateTime?
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
   answers                  UserAnswer[]
-  Answer_Algorithm         Answer_Algorithm[]
-  Answerd_Genre_Table      Answerd_Genre_Table[]
-  Groups_User              Groups_User[]
-  Status_Kohaku            Status_Kohaku[]
+  answer_Algorithm         Answer_Algorithm[]
+  answerd_Genre_Table      Answerd_Genre_Table[]
+  groups_User              Groups_User[]
+  status_Kohaku            Status_Kohaku[]
   createdProblems          ProgrammingProblem[] @relation("ProblemCreator")
   posts Post[]
+  
 }
 
 // グループ内の投稿・お知らせを保存するモデル
@@ -321,21 +322,24 @@ model Difficulty {
 model Groups {
   id          Int           @id @default(autoincrement())
   hashedId    String        @unique @default(cuid())
-  groupname   String        @unique
+  groupname   String       
   body        String        @db.Text
-  Groups_User Groups_User[]
-  Assignment  Assignment[]
+  groups_User Groups_User[]
+  assignment  Assignment[]
   posts Post[]
+  invite_code   String   @unique
 }
 
 model Groups_User {
-  id        Int     @id @default(autoincrement())
   user_id   Int
   group_id  Int
   admin_flg Boolean
   // --- リレーション定義 ---
   user      User    @relation(fields: [user_id], references: [id])
   group     Groups  @relation(fields: [group_id], references: [id])
+
+  // user_idとgroup_idの組み合わせを主キーに設定します
+  @@id([group_id, user_id])
 }
 
 model Submission_Files_Table {

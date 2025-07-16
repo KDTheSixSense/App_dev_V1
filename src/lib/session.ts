@@ -22,6 +22,7 @@ declare module 'iron-session' {
       id: number;
       email: string;
       username: string | null;
+      lastlogin?: Date | null;
     };
   }
 }

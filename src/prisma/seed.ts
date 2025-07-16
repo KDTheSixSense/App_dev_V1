@@ -1,7 +1,6 @@
 // prisma/seed.ts
 import { Prisma, PrismaClient, TitleType } from '@prisma/client';
 import { addXp } from '../lib/actions';
-import { updateUserLoginStats } from '../lib/actions';
 import path from 'path';
 import * as XLSX from 'xlsx';
 import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/data/problems';

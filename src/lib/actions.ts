@@ -2,10 +2,21 @@
 'use server'; // このファイルがサーバーアクションであることを示す
 
 import { prisma } from './prisma';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
 import { calculateLevelFromXp } from './leveling';
 import { getSession } from './session';
 import { revalidatePath } from 'next/cache';
+import { nanoid } from 'nanoid'; // 招待コード生成に使う
+import { sessionOptions } from '../lib/session';
 import type { Problem as SerializableProblem } from '@/lib/types';
+
+interface SessionData {
+  user?: {
+    id: string;
+    email: string;
+  };
+}
 
 /**
  * 次の問題のIDを取得するサーバーアクション
@@ -132,6 +143,8 @@ export async function awardXpForCorrectAnswer(problemId: number) {
 
   // 5. 経験値を付与
   const { unlockedTitle } = await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
+  // ログイン統計を更新
+  await updateUserLoginStats(userId);
 
   // 6. 解答履歴を正しいテーブルに保存
   if (problemDetails.type === 'ALGO') {
@@ -268,6 +281,11 @@ export async function updateUserLoginStats(userId: number) {
   let newConsecutiveDays = user.continuouslogin ?? 0;
   let newTotalDays = user.totallogin ?? 0;
 
+  if(lastLoginAppDateString === todayAppDateString) {
+    console.log(`ユーザーID:${userId} は今日すでにログインしています。連続ログインは更新されません。`);
+    return;
+  }
+
   if (lastLoginAppDateString && lastLoginAppDateString === yesterdayAppDateString) {
     // ケースA: 最後のログインが「アプリ内での昨日」 -> 連続ログイン
     newConsecutiveDays += 1;
@@ -276,6 +294,7 @@ export async function updateUserLoginStats(userId: number) {
     newConsecutiveDays = 1;
   }
   newTotalDays += 1;
+  console.log(`ユーザーID:${userId} のログイン統計を更新: 連続ログイン ${newConsecutiveDays}日, 総ログイン日数 ${newTotalDays}日`);
 
   await prisma.user.update({
     where: { id: userId },
@@ -370,4 +389,132 @@ export async function getNextProgrammingProblemId(currentId: number): Promise<st
         console.error("Failed to get next programming problem ID:", error);
         return null;
     }
+}
+
+/**
+ * 新しいグループを作成し、招待コードを発行するAction
+ * @param groupName フォームから受け取った新しいグループの名前
+ */
+export async function createGroupAction(data:{groupName: string,body: string}) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) return { error: 'ログインしていません。' };
+  const userId = Number(session.user.id);
+
+  const { groupName, body } = data;
+
+  if (!groupName || groupName.trim() === '') {
+      return { error: 'グループ名を入力してください。'};
+  }
+
+  const inviteCode = nanoid(8);
+
+  const newGroup = await prisma.groups.create({
+    data: {
+      groupname: groupName,
+      invite_code: inviteCode,
+      body: body, // グループの説明は空で初期化
+    },
+  });
+
+  await prisma.groups_User.create({
+    data: {
+      user_id: userId,
+      group_id: newGroup.id,
+      admin_flg: true, // 作成者は自動的に管理者
+    },
+  });
+  revalidatePath('/groups');
+  return { success: true, groupName: newGroup.groupname, inviteCode: newGroup.invite_code };
+}
+
+export async function joinGroupAction(inviteCode: string) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) return { error: 'ログインしていません。' };
+  const userId = Number(session.user.id);
+
+  if (!inviteCode || inviteCode.trim() === '') {
+    return { error: '招待コードを入力してください。'};
+  }
+
+  // モデル名とフィールド名をあなたのスキーマに合わせる
+  const group = await prisma.groups.findUnique({
+    where: { invite_code: inviteCode },
+  });
+
+  if (!group) {
+    return { error: '無効な招待コードです。' };
+  }
+
+  // モデル名とフィールド名をあなたのスキーマに合わせる
+  const existingMembership = await prisma.groups_User.findUnique({
+    where: {
+      group_id_user_id: { group_id: group.id, user_id: userId },
+    },
+  });
+
+  if (existingMembership) {
+    return { error: '既にこのグループに参加しています。' };
+  }
+
+  // モデル名とフィールド名をあなたのスキーマに合わせる
+  await prisma.groups_User.create({
+    data: {
+      user_id: userId,
+      group_id: group.id,
+      admin_flg: false, // 参加者はデフォルトで管理者ではない
+    },
+  });
+
+  revalidatePath('/groups');
+  return { success: true, groupName: group.groupname };
+}
+
+export async function getGroupsAction() {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const userId = session.user?.id ? Number(session.user.id) : null;
+
+  // --- ▼▼▼ デバッグログ1: セッションから取得したユーザーIDを確認 ---
+  console.log('[DEBUG] getGroupsAction: userId from session is:', userId);
+
+  if (!userId) {
+    return { error: 'ログインしていません。' };
+  }
+
+  try {
+    const groups = await prisma.groups.findMany({
+      where: {
+        // ログイン中のユーザーがメンバーに含まれるグループのみを検索
+        groups_User: {
+          some: {
+            user_id: userId,
+          },
+        },
+      },
+      // 各グループのメンバー数を一緒に取得
+      include: {
+        // メンバー数と、メンバーの詳細リストの両方を取得します
+        _count: {
+          select: {
+            groups_User: true,
+          },
+        },
+        groups_User: {
+          include: {
+            user: { // 各メンバーのユーザー情報も取得
+              select: {
+                id: true,
+                username: true,
+                icon: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    console.log('[DEBUG] getGroupsAction: Raw groups from DB:', JSON.stringify(groups, null, 2));
+    return { success: true, data: groups };
+  } catch (error) {
+    console.error("Failed to fetch groups:", error);
+    return { error: 'グループの取得に失敗しました。' };
+  }
 }

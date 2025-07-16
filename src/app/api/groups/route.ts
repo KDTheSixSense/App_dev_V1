@@ -1,7 +1,6 @@
 // /app/api/groups/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 
 // グループ一覧を取得
 export async function GET() {
@@ -10,7 +9,7 @@ export async function GET() {
       orderBy: { id: 'asc' },
       include: {
         _count: {
-          select: { Groups_User: true },
+          select: { groups_User: true },
         },
       },
     });
@@ -38,21 +37,19 @@ export async function POST(request: Request) {
       data: {
         groupname,
         body: description || '',
-        Groups_User: {
+        groups_User: {
           create: {
             user_id: creatorId,
             admin_flg: true,
           },
         },
+        invite_code: '', // 招待コードは後で生成するか、別の方法で設定する
       },
     });
 
     return NextResponse.json(newGroup, { status: 201 });
   } catch (error) {
     console.error('❌ グループ作成エラー:', error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return NextResponse.json({ message: 'そのグループ名は既に使用されています' }, { status: 409 });
-    }
     return NextResponse.json({ message: 'グループの作成に失敗しました' }, { status: 500 });
   }
 }

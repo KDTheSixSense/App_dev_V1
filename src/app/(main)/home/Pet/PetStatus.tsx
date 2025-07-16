@@ -1,10 +1,14 @@
+'use client';
+
 import Image from 'next/image';
+import { useRouter } from 'next/navigation'; // next/navigationからインポート
 
 export default function PetStatus() {
   // 満腹度をパーセンテージで管理（デザイン固定のため今回は66%に設定）
   // 動的にする場合は、useStateやpropsでこの値を受け取る
   const fullnessPercentage = 66;
 
+  const router = useRouter();
   return (
     // 全体を囲むコンテナ
     <div className="flex flex-col items-center gap-6 p-8 bg-white max-w-300 rounded-2xl shadow-lg">
@@ -51,6 +55,7 @@ export default function PetStatus() {
             transition-all duration-300 ease-in-out
             focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50
           "
+          onClick={() => router.push('/issue_list')}
         >
           餌を探しに行く
         </button>
