@@ -92,5 +92,25 @@ export const basicInfoAProblems: Problem[] = [
 ];
 
 export const getProblemAById = (id: string): Problem | undefined => {
-  return basicInfoAProblems.find(p => p.id === id);
+  return basicInfoAProblems.find(p => p.id === id);
 };
+
+// ▼▼▼【ここから追加】▼▼▼
+/**
+ * 現在のA問題IDを受け取り、次の問題のIDを返すクライアントサイド関数
+ * @param currentId 現在の問題ID (例: 'A1')
+ * @returns 次の問題ID (例: 'A2')、最後の問題の場合は null
+ */
+export const getNextAProblemId = (currentId: string): string | null => {
+  // basicInfoAProblems 配列から現在の問題のインデックスを探す
+  const currentIndex = basicInfoAProblems.findIndex(p => p.id === currentId);
+
+  // インデックスが見つからないか、または最後の問題だった場合
+  if (currentIndex === -1 || currentIndex >= basicInfoAProblems.length - 1) {
+    return null; // 次の問題はない
+  }
+
+  // 次の問題のIDを返す
+  return basicInfoAProblems[currentIndex + 1].id;
+};
+// ▲▲▲【ここまで追加】▲▲▲
