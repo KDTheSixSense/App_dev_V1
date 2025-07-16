@@ -37,14 +37,14 @@ import Image from 'next/image'; // Imageコンポーネントをインポート
                     />
                 </div>
             </div>
-            <div className='flex items-center justify-end rounded-full h-15 w-15 bg-white'>
+            <div className='flex items-center justify-end rounded-full h-24 w-24 bg-white overflow-hidden relative'>
                 <Link href="/" className="">
                     <Image
                     src="/images/test_icon.webp"
                     alt="ユーザーアイコン"
-                    width={60}
-                    height={60}
-                    className="rounded-full"
+                    width={96}
+                    height={96}
+                    className="w-full h-full rounded-full object-cover"
                     />
                 </Link>
             </div>
