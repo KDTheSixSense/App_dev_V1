@@ -171,14 +171,14 @@ export default function Header({user}: HeaderProps) {
             </div>   
           </div>
         </div>
-        <div className='flex items-center justify-end rounded-full h-15 w-15 bg-white overflow-hidden'>
-          <Link href="/profile" className="">
+        <div className='flex items-center justify-end h-[60px] w-[60px] rounded-full overflow-hidden flex-shrink-0'>
+          <Link href="/profile" className="w-full h-full">
             <Image
               src={user?.icon || "/images/test_icon.webp"}
               alt="ユーザーアイコン"
               width={60}
               height={60}
-              className="rounded-full"
+              className="object-cover w-full h-full"
             />
           </Link>
         </div>

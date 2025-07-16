@@ -45,9 +45,11 @@
     "csv-parse": "^5.6.0",
     "eslint": "8.x.x",
     "eslint-config-next": "14.x.x",
+    "jest": "^30.0.4",
     "postcss": "^8.x.x",
     "prisma": "^6.11.1",
     "tailwindcss": "^4",
+    "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5"
   },

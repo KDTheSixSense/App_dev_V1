@@ -54,7 +54,7 @@ export default async function UserDetail() {
         <div className="flex flex-col w-full max-w-150 h-100 rounded-lg shadow-lg p-4">
             <div className="flex items-center w-full h-50 gap-10 pl-10">
                 <div className="w-30 h-30">
-                    <Image src={user?.icon || "/images/test_icon.webp"} alt="Test Icon" width={120} height={120} className="rounded-full"/>
+                    <Image src={user?.icon || "/images/test_icon.webp"} alt="Test Icon" width={120} height={120} className="rounded-full object-cover w-full h-full"/>
                 </div>
                 <div className="flex flex-col justify-center items-center h-30 gap-2">
                     {user ? (
