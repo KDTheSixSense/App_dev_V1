@@ -17,6 +17,7 @@ interface Group {
     teacher: string;
     memberCount: number;
     members: Member[]; // メンバー情報を追加
+    inviteCode: string; // 招待コードを追加
 }
 
 // メンバーデータの型定義
@@ -130,6 +131,7 @@ const ClassroomApp: React.FC = () => {
                 memberCount: group._count?.groups_User || 0,
                 // ★★★ サーバーからの `groups_User` を、クライアントの `members` にマッピングする ★★★
                 members: group.groups_User || [], 
+                inviteCode: group.invite_code || '' // 招待コードを追加
             }));
 
             setGroups(formattedGroups);
@@ -478,7 +480,6 @@ const handleCreateGroup = async () => {
                     position: 'fixed',
                     left: 0,
                     top: '80px',
-                    zIndex: 999,
                     boxSizing: 'border-box'
                 }}>
                     {/* ハンバーガーメニューボタン */}
@@ -1296,6 +1297,7 @@ const handleCreateGroup = async () => {
                                     <MemberList 
                                         members={selectedGroup.members} 
                                         memberCount={selectedGroup.memberCount} 
+                                        inviteCode={selectedGroup.inviteCode} // 招待コードを渡す
                                     />
                                 )}
                             </div>

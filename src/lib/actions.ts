@@ -406,7 +406,7 @@ export async function createGroupAction(data:{groupName: string,body: string}) {
       return { error: 'グループ名を入力してください。'};
   }
 
-  const inviteCode = nanoid(6);
+  const inviteCode = nanoid(8);
 
   const newGroup = await prisma.groups.create({
     data: {
