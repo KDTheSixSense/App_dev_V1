@@ -101,8 +101,8 @@ async function main() {
     // 1. 新しいグループを作成
     const pblGroup = await prisma.groups.create({
         data: {
-            groupname: 'PBL Group',
-            body: 'This is a sample group for PBL development.',
+            groupname: 'プログラミングクラブ',
+            body: 'プログラミングについて学ぶグループです',
             invite_code: nanoid(8),
             // hashedIdはデフォルトでcuid()が生成するため不要
         },
