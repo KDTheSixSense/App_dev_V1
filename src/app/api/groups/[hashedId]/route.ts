@@ -24,8 +24,19 @@ export async function GET(
       },
       include: {
         _count: {
-          select: { Groups_User: true },
+          select: { groups_User: true },
         },
+        groups_User:{
+          include: {
+            user: {
+              select: {
+                id:true,
+                username:true,
+                icon : true,
+              },
+            },
+          },
+        }
       },
     });
 
@@ -42,7 +53,7 @@ export async function GET(
       hashedId: group.hashedId,
       name: group.groupname,
       description: group.body,
-      memberCount: group._count?.Groups_User || 0,
+      memberCount: group._count?.groups_User || 0,
     };
 
     return NextResponse.json(response);

@@ -1,38 +1,49 @@
-// "use client"; を削除します
+// /workspaces/my-next-app/src/app/(main)/issue_list/programming_problem/problems/page.tsx
 
 import React from 'react';
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client'; // Prisma Clientをインポート
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient(); // Prisma Clientのインスタンスを作成
+const prisma = new PrismaClient();
 
-// 問題リスト行のProps型定義
 interface ProblemListRowProps {
   problemId: string;
   title: string;
+  authorName: string | null;
 }
 
-const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => {
+// ★ ProblemListRowコンポーネントを修正して作成者名を表示
+const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, authorName }) => {
   return (
     <Link href={`/issue_list/programming_problem/${problemId}`} className="block w-full">
-      <li className="p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200 cursor-pointer">
+      <li className="flex justify-between items-center p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200 cursor-pointer">
         <span className="font-medium text-blue-600 hover:text-blue-800">
           問{problemId}: {title}
+        </span>
+        {/* ★★★ この部分を追加 ★★★ */}
+        <span className="text-sm text-gray-500">
+          作成者: {authorName}
         </span>
       </li>
     </Link>
   );
 };
 
-// コンポーネントを async 関数に変更
+// pageコンポーネントは提供されたコードのままでOKです
 const ProgrammingProblemsListPage = async () => {
-  // データベースから公開されている問題を取得
   const problems = await prisma.programmingProblem.findMany({
     where: {
-      isPublished: true, // 公開済みの問題のみ取得
+      isPublished: true,
+    },
+    include: {
+      creator: {
+        select: {
+          username: true,
+        },
+      },
     },
     orderBy: {
-      id: 'asc', // IDの昇順でソート
+      id: 'asc',
     },
   });
 
@@ -42,14 +53,14 @@ const ProgrammingProblemsListPage = async () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           プログラミングコーディング問題一覧
         </h1>
-        <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-4xl mx-auto">
           <ul>
-            {/* 取得した問題データをマップして表示 */}
             {problems.map((problem) => (
               <ProblemListRow
                 key={problem.id}
-                problemId={String(problem.id)} // IDを文字列に変換
-                title={problem.title} // DBから取得したタイトル
+                problemId={String(problem.id)}
+                title={problem.title}
+                authorName={problem.creator?.username ?? '不明'}
               />
             ))}
           </ul>

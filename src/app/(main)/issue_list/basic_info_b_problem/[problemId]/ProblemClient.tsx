@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation';
 import ProblemStatement from '../components/ProblemStatement';
 import TraceScreen from '../components/TraceScreen';
 import VariableTraceControl from '../components/VariableTraceControl';
-import KohakuChat from '@/components/KohakuChat';
-import { getHintFromAI } from '@/lib/actions/hintactions';
+import KohakuChat from '../components/KohakuChat';
+
+import { problemLogicsMap } from '../data/problem-logics';
+// ▼▼▼【修正】インポート元を lib/data から lib/actions に変更 ▼▼▼
 import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
 import type { SerializableProblem } from '@/lib/data';
-import { problemLogicsMap } from '../data/problem-logics';
 import type { VariablesState } from '../data/problems';
 
 // --- 多言語対応テキストとヘルパー関数 ---
@@ -112,25 +113,20 @@ type TextResources = typeof textResources['ja']['problemStatement'];
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 
 interface ProblemClientProps {
-  initialProblem: SerializableProblem;
+  initialProblem: SerializableProblem;
 }
 
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
-  const router = useRouter();
-  
-  // --- 状態管理 ---
-  const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [isAiLoading, setIsAiLoading] = useState(false);
+  const router = useRouter();
+
+  const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
   const [currentTraceLine, setCurrentTraceLine] = useState(0);
   const [variables, setVariables] = useState<VariablesState>(initialProblem.initialVariables);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
   const [isPresetSelected, setIsPresetSelected] = useState<boolean>(false);
-
-  const [userCode, setUserCode] = useState(''); // ユーザーのコード入力用
-
 
   useEffect(() => {
     let problemData = initialProblem;
@@ -300,25 +296,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
   };
 
-  const handleUserMessage = async (message: string) => {
-    if (!problem) return;
-
-    const newMessages: ChatMessage[] = [...chatMessages, { sender: 'user', text: message }];
-    setChatMessages(newMessages);
-    setIsAiLoading(true);
-
-    const context = {
-        problemTitle: problem.title.ja,
-        problemDescription: problem.description.ja,
-        userCode: userCode, // ★★★ userCodeをコンテキストに含める
-    };
-
-    const hint = await getHintFromAI(message, context);
-
-    setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
-    setIsAiLoading(false);
+  const handleUserMessage = (message: string) => {
+    setChatMessages((prev) => [...prev, { sender: 'user', text: message }]);
+    setTimeout(() => {
+      const kohakuResponse = generateKohakuResponse(currentTraceLine, variables, false, null, message);
+      setChatMessages((prev) => [...prev, { sender: 'kohaku', text: kohakuResponse }]);
+    }, 1000);
   };
-  
+
   // 【修正】より汎用的なオブジェクトを受け取れるように変更
   const handleSetData = (dataToSet: Record<string, any>) => {
     if (problem) {
@@ -403,8 +388,6 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
             onSendMessage={handleUserMessage}
             language={language}
             textResources={t}
-            isLoading={isAiLoading}
-
             />
         </div>
       </div>
