@@ -1,11 +1,11 @@
 // prisma/seed.ts
 import { Prisma, PrismaClient, TitleType } from '@prisma/client';
-import { addXp } from '../lib/actions';
-import { updateUserLoginStats } from '../lib/actions';
+import { addXp, updateUserLoginStats} from '../lib/actions';
 import path from 'path';
 import * as XLSX from 'xlsx';
 import { problems as localProblems } from '../app/(main)/issue_list/basic_info_b_problem/data/problems';
 import bcrypt from 'bcryptjs';
+import { nanoid } from 'nanoid'
 
 const prisma = new PrismaClient();
 
@@ -79,6 +79,73 @@ for (const userData of usersToSeed) {
   console.log(`✅ Upserted user with email: ${userData.email}`);
 }
 console.log('✅ Users seeded.');
+        await prisma.user.upsert({
+            where: { email: userData.email },
+            update: {
+                ...userData,
+                password: hashedPassword,
+            },
+            create: {
+                ...userData,
+                password: hashedPassword,
+            },
+        });
+        console.log(`✅ Upserted user with email: ${userData.email}`);
+    }
+    console.log('✅ Users seeded.');
+
+    // ★★★ ユーザー取得を一度にまとめる ★★★
+    // これから何度も使うユーザー情報をここで一度だけ取得します。
+    const alice = await prisma.user.findUnique({ where: { email: 'alice@example.com' } });
+    const godUser = await prisma.user.findUnique({ where: { email: 'GodOfGod@example.com' } });
+
+    // ユーザーが見つからない場合は、エラーを出して処理を中断します。
+    if (!alice || !godUser) {
+        console.error("❌ Seeding users (alice, GodOfGod) not found. Aborting subsequent operations.");
+        return;
+    }
+
+    // ★★★【ここから追加】★★★
+    console.log('🌱 Seeding groups and memberships...');
+    
+    // 既存のグループ関連データをクリア（冪等性を保つため）
+    await prisma.groups_User.deleteMany({});
+    await prisma.groups.deleteMany({});
+
+    // 1. 新しいグループを作成
+    const pblGroup = await prisma.groups.create({
+        data: {
+            groupname: 'プログラミングクラブ',
+            body: 'プログラミングについて学ぶグループです',
+            invite_code: nanoid(8),
+            // hashedIdはデフォルトでcuid()が生成するため不要
+        },
+    });
+    console.log(`✅ Created group: "${pblGroup.groupname}" (ID: ${pblGroup.id})`);
+
+    // 2. Aliceをメンバーとしてグループに追加
+    await prisma.groups_User.create({
+        data: {
+            user_id: alice.id,
+            group_id: pblGroup.id,
+            admin_flg: false, // false = member
+        },
+    });
+    console.log(`✅ Added Alice to "${pblGroup.groupname}" as a member.`);
+
+    // 3. Godを管理者としてグループに追加
+    await prisma.groups_User.create({
+        data: {
+            user_id: godUser.id,
+            group_id: pblGroup.id,
+            admin_flg: true, // true = admin
+        },
+    });
+    console.log(`✅ Added God to "${pblGroup.groupname}" as an admin.`);
+    // ★★★【ここまで追加】★★★
+
+
+    console.log('✅ Seeding finished.');
 
   // 4. 問題データのシーディング (`localProblems` から)
   console.log('🌱 Seeding questions from local data...');
