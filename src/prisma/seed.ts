@@ -176,7 +176,6 @@ console.log('✅ Users seeded.');
   // サンプル問題データ
   const problems = [
     {
-      id: 1,
       title: 'はじめてのプログラミング：Hello World',
       description: '標準出力に "Hello, World!" と表示するプログラムを作成してください。',
       difficulty: 1,
@@ -191,7 +190,6 @@ console.log('✅ Users seeded.');
       },
     },
     {
-      id: 2,
       title: '変数の計算：2つの数の和',
       description: '整数 `a` と `b` の和を計算し、結果を標準出力に出力するプログラムを作成してください。\n`a = 10`, `b = 25` とします。',
       difficulty: 2,
@@ -206,7 +204,6 @@ console.log('✅ Users seeded.');
       },
     },
     {
-      id: 3,
       title: '条件分岐：偶数か奇数か',
       description: '与えられた整数 `n` が偶数であれば "even"、奇数であれば "odd" と出力するプログラムを作成してください。\n`n = 7` とします。',
       difficulty: 3,
