@@ -17,11 +17,7 @@ CREATE TABLE "User" (
     "xp" INTEGER NOT NULL DEFAULT 0,
     "icon" TEXT,
     "selectedTitleId" INTEGER,
-<<<<<<<< HEAD:src/prisma/migrations/20250715003547_init/migration.sql
     "continuouslogin" INTEGER,
-========
-    "continuouslogin" INTEGER DEFAULT 0,
->>>>>>>> main:src/prisma/migrations/20250714075103_/migration.sql
     "totallogin" INTEGER DEFAULT 0,
     "lastlogin" TIMESTAMP(3),
 
@@ -400,9 +396,6 @@ CREATE UNIQUE INDEX "Difficulty_name_key" ON "Difficulty"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Groups_hashedId_key" ON "Groups"("hashedId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Groups_groupname_key" ON "Groups"("groupname");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Groups_invite_code_key" ON "Groups"("invite_code");

@@ -1,6 +1,3 @@
--- CreateEnum
-CREATE TYPE "TitleType" AS ENUM ('USER_LEVEL', 'SUBJECT_LEVEL');
-
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
@@ -16,12 +13,8 @@ CREATE TABLE "User" (
     "level" INTEGER NOT NULL DEFAULT 1,
     "xp" INTEGER NOT NULL DEFAULT 0,
     "icon" TEXT,
-    "selectedTitleId" INTEGER,
-<<<<<<<< HEAD:src/prisma/migrations/20250715003547_init/migration.sql
+    "title" TEXT,
     "continuouslogin" INTEGER,
-========
-    "continuouslogin" INTEGER DEFAULT 0,
->>>>>>>> main:src/prisma/migrations/20250714075103_/migration.sql
     "totallogin" INTEGER DEFAULT 0,
     "lastlogin" TIMESTAMP(3),
 
@@ -278,18 +271,18 @@ CREATE TABLE "Groups" (
     "hashedId" TEXT NOT NULL,
     "groupname" TEXT NOT NULL,
     "body" TEXT NOT NULL,
-    "invite_code" TEXT NOT NULL,
 
     CONSTRAINT "Groups_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Groups_User" (
+    "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
     "group_id" INTEGER NOT NULL,
     "admin_flg" BOOLEAN NOT NULL,
 
-    CONSTRAINT "Groups_User_pkey" PRIMARY KEY ("group_id","user_id")
+    CONSTRAINT "Groups_User_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -350,32 +343,8 @@ CREATE TABLE "Degree" (
     CONSTRAINT "Degree_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "Title" (
-    "id" SERIAL NOT NULL,
-    "name" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "type" "TitleType" NOT NULL,
-    "requiredLevel" INTEGER NOT NULL,
-    "requiredSubjectId" INTEGER,
-
-    CONSTRAINT "Title_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "UserUnlockedTitle" (
-    "userId" INTEGER NOT NULL,
-    "titleId" INTEGER NOT NULL,
-    "unlockedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "UserUnlockedTitle_pkey" PRIMARY KEY ("userId","titleId")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "User_selectedTitleId_key" ON "User"("selectedTitleId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Subject_name_key" ON "Subject"("name");
@@ -405,16 +374,7 @@ CREATE UNIQUE INDEX "Groups_hashedId_key" ON "Groups"("hashedId");
 CREATE UNIQUE INDEX "Groups_groupname_key" ON "Groups"("groupname");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Groups_invite_code_key" ON "Groups"("invite_code");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Degree_degree_key" ON "Degree"("degree");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Title_name_key" ON "Title"("name");
-
--- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_selectedTitleId_fkey" FOREIGN KEY ("selectedTitleId") REFERENCES "Title"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Post" ADD CONSTRAINT "Post_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Groups"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -490,9 +450,3 @@ ALTER TABLE "Submissions" ADD CONSTRAINT "Submissions_assignment_id_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "Status_Kohaku" ADD CONSTRAINT "Status_Kohaku_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "UserUnlockedTitle" ADD CONSTRAINT "UserUnlockedTitle_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "UserUnlockedTitle" ADD CONSTRAINT "UserUnlockedTitle_titleId_fkey" FOREIGN KEY ("titleId") REFERENCES "Title"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
