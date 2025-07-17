@@ -37,7 +37,7 @@ export default function Header({user}: HeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#fff] text-white border-b border-gray-200 flex w-full">
+    <header className="fixed top-0 left-0 w-full bg-[#fff] text-white border-b border-gray-200 flex w-full z-999">
       <div className="flex items-center w-50 h-20 mx-4">
         <Link href={"/"} className="text-2xl font-bold transition-colors">
           <Image
