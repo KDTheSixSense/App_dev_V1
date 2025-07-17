@@ -77,7 +77,7 @@ for (const userData of usersToSeed) {
     },
   });
   console.log(`✅ Upserted user with email: ${userData.email}`);
-}
+
 console.log('✅ Users seeded.');
         await prisma.user.upsert({
             where: { email: userData.email },
@@ -206,7 +206,6 @@ console.log('✅ Users seeded.');
   } catch (error) { console.error(`❌ Failed to read or process ${excelFileName}:`, error); }
 
   // 6. 最後に、作成したデータを使った処理を実行
-  const alice = await prisma.user.findUnique({ where: { email: 'alice@example.com' } });
   if (alice) {
     console.log('🧪 Testing addXp function...');
     await addXp(alice.id, 1, 1);
@@ -225,9 +224,8 @@ console.log('✅ Users seeded.');
     console.log(`✅ Alice's Basic Info B XP updated.`)
     await updateUserLoginStats(alice.id);
   }
-
+for (const userData of usersToSeed)
   console.log('👼 Creating God Mode progress...');
-  const godUser = await prisma.user.findUnique({ where: { email: 'GodOfGod@example.com' } });
   if (godUser) {
     const progressData = subjectsToSeed.map((subject) => ({ user_id: godUser.id, subject_id: subject.id, level: 9999, xp: 99999999 }));
     await prisma.userSubjectProgress.createMany({ data: progressData, skipDuplicates: true });
