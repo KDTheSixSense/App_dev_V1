@@ -28,12 +28,12 @@ model User {
   continuouslogin          Int?
 　totallogin               Int? @default(0)
   lastlogin                DateTime?
+  status_Kohaku            Status_Kohaku? //Userに対してStatus_Kohakuは1対1の関係です。
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
   answers                  UserAnswer[]
   answer_Algorithm         Answer_Algorithm[]
   answerd_Genre_Table      Answerd_Genre_Table[]
   groups_User              Groups_User[]
-  status_Kohaku            Status_Kohaku[]
   createdProblems          ProgrammingProblem[] @relation("ProblemCreator")
   posts Post[]
   
@@ -381,9 +381,9 @@ model Submissions {
 
 model Status_Kohaku {
   id          Int    @id @default(autoincrement())
-  user_id     Int
+  user_id     Int    @unique
   status      String
-  hungerlevel Int
+  hungerlevel Int    @default(1000) // 満腹度の初期値
 
   user User @relation(fields: [user_id], references: [id])
 }

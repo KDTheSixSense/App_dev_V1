@@ -620,3 +620,55 @@ export async function getMineProblems() {
     return { error: '問題の取得中にエラーが発生しました。' };
   }
 }
+
+/**
+ * ペットに餌を与え、満腹度を更新するAction
+ * @param foodAmount - 与える餌の量（回復する満腹度）
+ */
+export async function feedPetAction(foodAmount: number) {
+
+  const MAX_HUNGER = 1500; // 最大値をここで定義
+
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  // 1. 現在のペットのステータスを取得
+  const petStatus = await prisma.status_Kohaku.findFirst({
+    where: { user_id: userId },
+  });
+
+  // データがない場合は、新規作成を促すか、初期値で作成する
+  if (!petStatus) {
+    // ここでは例として、新しいペットステータスを作成します
+    await prisma.status_Kohaku.create({
+        data: {
+            user_id: userId,
+            status: "元気",
+            hungerlevel: Math.min(foodAmount, MAX_HUNGER) // 初回でも上限を超えないように
+        }
+    });
+    return { success: true };
+  }
+
+  // 2. 新しい満腹度を計算
+  const newHungerLevel = petStatus.hungerlevel + foodAmount;
+
+  // 3. 最大値を超えないように調整
+  const cappedHungerLevel = Math.min(newHungerLevel, MAX_HUNGER);
+
+  // 4. 調整後の値でデータベースを更新
+  await prisma.status_Kohaku.update({
+    where: {
+      id: petStatus.id,
+    },
+    data: {
+       hungerlevel: cappedHungerLevel,
+    },
+  });
+
+  revalidatePath('/'); // PetStatusが表示されているページを再検証
+  return { success: true };
+}
