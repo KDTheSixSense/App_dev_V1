@@ -368,9 +368,9 @@ const handleCreateGroup = async () => {
     };
     // グループクリック処理
     const handleGroupClick = (group: Group) => {
-        // router.push(`/group/${group.hashedId}`); // ルーティングを使わずに状態管理で表示切り替え
-        setSelectedGroup(group);
-        setCurrentView('detail');
+        router.push(`/group/${group.hashedId}`); // ルーティングを使わずに状態管理で表示切り替え
+        // setSelectedGroup(group);
+        // setCurrentView('detail');
     };
 
     // 3点メニューの表示切り替え
