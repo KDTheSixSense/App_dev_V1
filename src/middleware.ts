@@ -7,7 +7,6 @@ const config = {
   // 保護対象のパス（正規表現が使えます）
   protectedRoutes: [
     '/home',
-    '/auth/mail',
     '/auth/password-reset',
     '/issue_list/:path*', // /issue_list 以下の全ページ
     '/profile',
@@ -20,6 +19,7 @@ const config = {
   publicRoutes: [
     '/',
     '/auth/login',
+    '/auth/mail',
     '/auth/register',
   ],
 };

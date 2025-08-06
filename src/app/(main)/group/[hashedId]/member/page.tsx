@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { GroupLayout } from '../../GroupLayout';
 
+export const dynamic = 'force-dynamic';
+
 // === 型定義 ===
 // ※PostやAPIからのデータ型に合わせて調整してください
 interface Post {

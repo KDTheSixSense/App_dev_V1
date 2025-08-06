@@ -64,3 +64,20 @@ export const appliedInfoMorningProblems: Problem[] = [
 export const getAppliedInfoMorningProblemById = (id: string): Problem | undefined => {
   return appliedInfoMorningProblems.find(p => p.id === id);
 };
+
+/**
+ * 現在の問題IDを受け取り、次の問題のIDを返す
+ * @param currentId - 現在の問題のID (例: 'AM1')
+ * @returns 次の問題のID。なければ null
+ */
+export const getNextAppliedInfoMorningProblemId = (currentId: string): string | null => {
+  const currentIndex = appliedInfoMorningProblems.findIndex(p => p.id === currentId);
+
+  // インデックスが見つかり、かつ最後の問題でなければ、次の問題のIDを返す
+  if (currentIndex !== -1 && currentIndex < appliedInfoMorningProblems.length - 1) {
+    return appliedInfoMorningProblems[currentIndex + 1].id;
+  }
+
+  // 次の問題がなければ null を返す
+  return null;
+};
