@@ -73,9 +73,8 @@ interface Kadai {
     id: number;
     title: string;
     description: string;
-    dueDate: string;
-    progress: number;
-    createdAt: string;
+    due_date: string;
+    created_at: string;
     showComments?: boolean; // 課題詳細表示用
     comments?: Comment[]; // 課題に紐づくコメント
 }
@@ -215,29 +214,63 @@ const GroupDetailPage: React.FC = () => {
 
     // === データ取得 ===
     useEffect(() => {
-        if (hashedId) {
-            const fetchGroupDetail = async () => {
-                try {
-                    setLoading(true);
-                    const response = await fetch(`/api/groups/${hashedId}`);
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || 'グループの読み込みに失敗しました');
-                    }
-                    const data = await response.json();
-                    setGroup({ teacher: '管理者', ...data });
-                    
-                    // メンバー情報も同時に取得
-                    await fetchGroupMembers(hashedId);
-                    
-                } catch (err) {
-                    setError(err instanceof Error ? err.message : 'データの取得に失敗しました');
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchGroupDetail();
-        }
+      if (hashedId) {
+        const fetchGroupData = async () => { // 関数名を変更
+          setLoading(true);
+          try {
+            // グループ詳細の取得
+            const groupResponse = await fetch(`/api/groups/${hashedId}`);
+            if (!groupResponse.ok) {
+              throw new Error('グループの読み込みに失敗しました');
+            }
+            const groupData = await groupResponse.json();
+            setGroup({ teacher: '管理者', ...groupData });
+
+            // メンバー情報の取得
+            await fetchGroupMembers(hashedId);
+
+            // 課題一覧の取得
+            const assignmentsResponse = await fetch(`/api/groups/${hashedId}/assignments`);
+            if (assignmentsResponse.ok) {
+              const assignmentsData = await assignmentsResponse.json();
+              setKadaiList(assignmentsData.data);
+            } else {
+              console.error('課題の取得に失敗しました');
+            }
+
+            // ✨【ここから追加】お知らせ一覧の取得
+            const postsResponse = await fetch(`/api/groups/${hashedId}/posts`);
+            if (postsResponse.ok) {
+              const postsData = await postsResponse.json();
+
+              // APIから返されたデータをフロントエンドの'Post'型に整形
+              const formattedPosts = postsData.data.map((post: any) => ({
+                  id: post.id,
+                  content: post.content,
+                  author: post.author.username || '不明なユーザー',
+                  date: new Date(post.createdAt).toLocaleDateString('ja-JP', {
+                      month: 'long',
+                      day: 'numeric'
+                  }),
+                  showMenu: false,
+                  comments: [],
+                  showComments: false,
+                  isEditing: false
+              }));
+              setPosts(formattedPosts);
+            } else {
+              console.error('お知らせの取得に失敗しました');
+            }
+            // ✨【ここまで追加】
+
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'データの取得に失敗しました');
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchGroupData(); // 関数呼び出し
+      }
     }, [hashedId]);
 
     // === イベントハンドラ ===
@@ -267,42 +300,44 @@ const GroupDetailPage: React.FC = () => {
         }
         
         try {
-            const response = await fetch('/api/posts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: editorContent, groupId: group.id }),
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || '投稿に失敗しました');
-            }
-            
-            // 新しい投稿を投稿リストに追加
-            const newPost: Post = {
-                id: Date.now(),
-                content: editorContent,
-                author: '管理者', // または実際のユーザー名
-                date: new Date().toLocaleDateString('ja-JP', { 
-                    month: 'long', 
-                    day: 'numeric' 
-                }),
-                showMenu: false,
-                // コメント機能の初期化
-                comments: [],
-                showComments: false,
-                // 投稿編集機能の初期化を追加
-                isEditing: false
-            };
-            
-            setPosts([newPost, ...posts]);
-            alert('投稿に成功しました！');
-            handleEditorCollapse();
-            
-        } catch (error) {
-            console.error('投稿エラー:', error);
-            alert(`投稿に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+        // ✨【修正】APIのパスをグループ指定のものに変更
+        const response = await fetch(`/api/groups/${hashedId}/posts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // ✨【修正】bodyに含めるのはcontentだけでOK
+          body: JSON.stringify({ content: editorContent }),
+        });
+        
+        const result = await response.json();
+    
+        if (!result.success) {
+          throw new Error(result.message || '投稿に失敗しました');
         }
+        
+        // APIから返ってきた、DBに保存済みの正しいデータを使ってStateを更新
+        const newPostData = result.data;
+        const formattedNewPost: Post = {
+          id: newPostData.id,
+          content: newPostData.content,
+          author: newPostData.author.username || '不明なユーザー',
+          date: new Date(newPostData.createdAt).toLocaleDateString('ja-JP', {
+            month: 'long',
+            day: 'numeric',
+          }),
+          showMenu: false,
+          comments: [],
+          showComments: false,
+          isEditing: false,
+        };
+        
+        setPosts([formattedNewPost, ...posts]);
+        alert('投稿に成功しました！');
+        handleEditorCollapse();
+        
+      } catch (error) {
+        console.error('投稿エラー:', error);
+        alert(`投稿に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      }
     };
 
     // 投稿メニュー操作関数
@@ -561,31 +596,47 @@ const GroupDetailPage: React.FC = () => {
         }
     };
 
-    // 課題作成処理
-    const handleKadaiCreate = (): void => {
-        if (!kadaiTitle.trim()) {
-            alert('課題のタイトルを入力してください');
-            return;
-        }
-        
-        const newKadai: Kadai = {
-            id: Date.now(),
+    // 【修正】課題作成処理をAPI連携に修正
+    const handleKadaiCreate = async (): Promise<void> => {
+      if (!kadaiTitle.trim() || !kadaiDescription.trim() || !kadaiDueDate) {
+        alert('タイトル、説明、期限は必須です。');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/groups/${hashedId}/assignments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             title: kadaiTitle,
             description: kadaiDescription,
             dueDate: kadaiDueDate,
-            progress: 0,
-            createdAt: new Date().toISOString()
-        };
-        
-        setKadaiList([...kadaiList, newKadai]);
-        handleKadaiEditorCollapse();
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          // 成功したら、返ってきた新しい課題データをStateの先頭に追加
+          setKadaiList([result.data, ...kadaiList]);
+          handleKadaiEditorCollapse();
+          alert('課題を作成しました。');
+        } else {
+          throw new Error(result.message || '課題の作成に失敗しました。');
+        }
+      } catch (error) {
+        console.error('課題作成エラー:', error);
+        alert(error instanceof Error ? error.message : '不明なエラーが発生しました。');
+      }
     };
 
     // 課題編集処理
     const handleKadaiEdit = (kadai: Kadai): void => {
         setKadaiTitle(kadai.title);
         setKadaiDescription(kadai.description);
-        setKadaiDueDate(kadai.dueDate);
+        setKadaiDueDate(kadai.due_date);
         setIsKadaiEditorExpanded(true);
         
         setTimeout(() => {
@@ -1861,14 +1912,14 @@ const GroupDetailPage: React.FC = () => {
                                                             color: '#5f6368',
                                                             marginLeft: '44px'
                                                         }}>
-                                                            投稿日: {new Date(kadai.createdAt).toLocaleDateString('ja-JP')}
+                                                            投稿日: {new Date(kadai.created_at).toLocaleDateString('ja-JP')}
                                                         </div>
                                                         <div style={{
                                                             fontSize: '14px',
                                                             color: '#5f6368',
                                                             marginLeft: '44px'
                                                         }}>
-                                                            期限: {kadai.dueDate ? new Date(kadai.dueDate).toLocaleString('ja-JP') : '未設定'}
+                                                            期限: {kadai.due_date ? new Date(kadai.due_date).toLocaleString('ja-JP') : '未設定'}
                                                         </div>
 
                                                         {/* コメント表示切り替えボタン */}
@@ -2200,7 +2251,7 @@ const GroupDetailPage: React.FC = () => {
                                                             fontSize: '14px',
                                                             color: '#5f6368'
                                                         }}>
-                                                            管理者 • {new Date(selectedKadai.createdAt).toLocaleDateString('ja-JP')}
+                                                            管理者 • {new Date(selectedKadai.created_at).toLocaleDateString('ja-JP')}
                                                         </div>
                                                         <div style={{
                                                             fontSize: '14px',
@@ -2216,7 +2267,7 @@ const GroupDetailPage: React.FC = () => {
                                                     color: '#5f6368',
                                                     marginBottom: '16px'
                                                 }}>
-                                                    期限: {selectedKadai.dueDate ? new Date(selectedKadai.dueDate).toLocaleString('ja-JP') : '未設定'}
+                                                    期限: {selectedKadai.due_date ? new Date(selectedKadai.due_date).toLocaleString('ja-JP') : '未設定'}
                                                 </div>
 
                                                 <div style={{
