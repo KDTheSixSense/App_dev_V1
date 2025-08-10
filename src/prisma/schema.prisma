@@ -177,6 +177,7 @@ model ProgrammingProblem {
   sampleCases       SampleCase[]                           // サンプルケース
   testCases         TestCase[]                             // テストケース
   files             ProblemFile[]                          // 添付ファイル
+  assignment Assignment?                                   // 課題との関連 (オプショナル) 
 }
 
 /// サンプルケースモデル
@@ -359,6 +360,9 @@ model Assignment {
   due_date    DateTime
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
+
+  programmingProblemId Int? @unique // プログラミング問題との関連付け (オプショナル)
+  programmingProblem   ProgrammingProblem? @relation(fields: [programmingProblemId], references: [id])
 
   // --- リレーション定義 ---
   group       Groups        @relation(fields: [groupid], references: [id])

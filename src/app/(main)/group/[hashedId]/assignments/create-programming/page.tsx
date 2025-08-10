@@ -182,13 +182,8 @@ export default function CreateProgrammingQuestionPage() {
 
   // カテゴリリスト
   const categories = [
-    { id: 'programming', name: 'プログラミング', subItems: [] },
-    { id: 'itpassport', name: 'ITパスポート', subItems: [] },
-    { id: 'basic-a', name: '基本情報 A', subItems: [] },
-    { id: 'basic-b', name: '基本情報 B', subItems: [] },
-    { id: 'applied-morning', name: '応用情報 午前', subItems: [] },
-    { id: 'applied-afternoon', name: '応用情報 午後', subItems: [] },
-    { id: 'information', name: '情報検定', subItems: [] },
+    { id: 'programming', name: 'プログラミング問題', subItems: [] },
+    { id: 'itpassport', name: 'プログラミング選択問題', subItems: [] },
   ]
 
   // カテゴリ選択処理

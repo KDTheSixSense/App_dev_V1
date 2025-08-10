@@ -107,6 +107,9 @@ const GroupDetailPage: React.FC = () => {
     // 投稿編集用のstateを追加
     const [editingPosts, setEditingPosts] = useState<{[postId: number]: string}>({});
 
+    // 作成オプション表示用のStateを追加
+    const [showCreateOptions, setShowCreateOptions] = useState(false); 
+
     // コメント編集テキスト更新機能
     const updateEditingComment = (commentId: number, value: string) => {
         setEditingComments(prev => ({ ...prev, [commentId]: value }));
@@ -156,6 +159,16 @@ const GroupDetailPage: React.FC = () => {
 
     const editorRef = useRef<HTMLDivElement>(null);
     const kadaiEditorRef = useRef<HTMLDivElement>(null);
+
+    // 「+ 追加または作成」ボタンがクリックされたときの処理
+    const handleCreateButtonClick = () => {
+        setShowCreateOptions(!showCreateOptions); // メニューの表示・非表示を切り替え
+    };
+
+    // プログラミング問題作成ページへ遷移する処理
+    const navigateToCreateProgrammingProblem = () => {
+        router.push(`/group/${hashedId}/assignments/create-programming`);
+    };
 
     // === API関数 ===
     // メンバー一覧を取得する関数
@@ -1566,7 +1579,7 @@ const GroupDetailPage: React.FC = () => {
                             </div>
                         )}
 
-{activeTab === '課題' && (
+                        {activeTab === '課題' && (
                             <div>
                                 {kadaiViewMode === 'list' && (
                                     <div>
@@ -1750,6 +1763,22 @@ const GroupDetailPage: React.FC = () => {
                                                                 fontSize: '14px'
                                                             }}
                                                         />
+                                                    </div>
+                                                    
+                                                    {/* 課題作成オプション */}
+                                                    <div style={{ position: 'relative', marginBottom: '24px' }}>
+                                                      <button
+                                                        onClick={navigateToCreateProgrammingProblem}
+                                                        style={{
+                                                          /* 既存のボタンのデザインを参考にしてください */
+                                                          display: 'flex', alignItems: 'center', gap: '8px',
+                                                          padding: '12px 24px', background: '#1976d2', color: 'white',
+                                                          border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px'
+                                                        }}
+                                                      >
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                                                        <span>追加または作成</span>
+                                                      </button>
                                                     </div>
 
                                                     {/* アクションボタン */}
