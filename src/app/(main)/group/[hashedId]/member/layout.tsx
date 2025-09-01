@@ -1,47 +1,62 @@
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { sessionOptions } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/session';
-import { ReactNode } from 'react';
+import React from 'react';
 
-// このレイアウトがmemberディレクトリ配下のすべてのページを保護します。
+// セッションデータの型を定義
+interface SessionData {
+  user?: {
+    id: string;
+    email: string;
+  };
+}
+
+// レイアウトコンポーネントは、子要素とURLのパラメータを受け取ります
 export default async function MemberLayout({
   children,
   params,
 }: {
-  children: ReactNode;
-  params: { hashedId: string };
+  children: React.ReactNode;
+  params: { hashedId: string }; // URLの [hashedId] 部分
 }) {
-  const session = await getSession();
-  const user = session.user;
+  // --- 1. セッションとユーザーIDを正しく取得 ---
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const userId = session.user?.id ? Number(session.user.id) : null;
 
-  // 1. ユーザーがログインしているか確認
-  if (!user?.id) {
-    redirect('/auth/login');
+  // ログインしていなければ、ログインページにリダイレクト
+  if (!userId) {
+    redirect('/auth/login'); // あなたのログインページのパスに合わせてください
   }
 
-  const userIdAsNumber = parseInt(String(user.id), 10);
-  if (isNaN(userIdAsNumber)) {
-    redirect('/auth/login');
+  // --- 2. URLのhashedIdから、対象のグループの整数IDを取得 ---
+  const group = await prisma.groups.findUnique({
+      where: { hashedId: params.hashedId },
+      select: { id: true }, // 必要なのは整数のIDだけ
+  });
+
+  // グループが存在しない場合は、グループ一覧ページなどにリダイレクト
+  if (!group) {
+      redirect('/group?error=not_found');
   }
 
-  // 2. このグループのメンバーであるかデータベースで確認
-  const groupMembership = await prisma.groups_User.findFirst({
+  // --- 3. ログインユーザーがそのグループのメンバーか確認 ---
+  // 複合主キーを使って、メンバーシップレコードを直接検索します
+  const membership = await prisma.groups_User.findUnique({
     where: {
-      user_id: userIdAsNumber,
-      group: {
-        hashedId: params.hashedId,
+      group_id_user_id: {
+        group_id: group.id,
+        user_id: userId,
       },
-    },
-    select: {
-      id: true, // 存在確認のため、何か一つフィールドを選択
     },
   });
 
-  // 3. メンバーでない場合、グループ一覧ページへリダイレクト
-  if (!groupMembership) {
+  // メンバーでなければ、アクセスを拒否してリダイレクト
+  if (!membership) {
     redirect('/group?error=not_member');
   }
 
-  // 4. メンバーであれば、ページの表示を許可
+  // メンバーであれば、子ページ（{children}）をそのまま表示
   return <>{children}</>;
 }

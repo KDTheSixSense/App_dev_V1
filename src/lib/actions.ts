@@ -518,3 +518,157 @@ export async function getGroupsAction() {
     return { error: 'グループの取得に失敗しました。' };
   }
 }
+
+/**
+ * プログラミング問題を削除するサーバーアクション
+ * @param formData - フォームから送信されたデータ
+ */
+export async function deleteProblemAction(formData: FormData) {
+  'use server'; // Server Actionであることを明示
+
+  // 1. セッションを取得し、ユーザー認証を行う
+  const session = await getSession();
+  const user = session.user;
+
+  if (!user?.id) {
+    // ログインしていない場合はエラー
+    throw new Error('認証が必要です。');
+  }
+
+  const userId = Number(user.id);
+  if (isNaN(userId)) {
+    throw new Error('セッションのユーザーIDが無効です。');
+  }
+
+  // 2. フォームから問題IDを取得し、検証する
+  const problemIdStr = formData.get('problemId');
+  if (typeof problemIdStr !== 'string') {
+    throw new Error('無効な問題IDです。');
+  }
+
+  const problemId = Number(problemIdStr);
+  if (isNaN(problemId)) {
+    throw new Error('問題IDが数値ではありません。');
+  }
+
+  try {
+    // 3. 削除対象の問題を取得し、所有者か確認する (セキュリティ上、非常に重要)
+    const problem = await prisma.programmingProblem.findUnique({
+      where: {
+        id: problemId,
+      },
+      select: {
+        createdBy: true, // 所有者IDのみ取得
+      },
+    });
+
+    // 問題が存在しない、または作成者が自分でない場合はエラー
+    if (!problem || problem.createdBy !== userId) {
+      throw new Error('この問題を削除する権限がありません。');
+    }
+
+    // 4. 問題を削除する
+    // schema.prismaの onDelele: Cascade 設定により、関連データも自動削除される
+    await prisma.programmingProblem.delete({
+      where: {
+        id: problemId,
+      },
+    });
+
+    // 5. 問題一覧ページのキャッシュをクリアし、UIを更新する
+    revalidatePath('/issue_list/mine_issue_list/problems');
+
+    console.log(`ユーザーID:${userId} が 問題ID:${problemId} を削除しました。`);
+    // return { success: true };
+
+  } catch (error) {
+    console.error('問題の削除中にエラーが発生しました:', error);
+    // エラー内容をオブジェクトで返すことで、将来的にUIでのハンドリングも可能
+    // return { error: (error instanceof Error) ? error.message : '問題の削除に失敗しました。' };
+  }
+}
+
+// ★ 新しく追加する関数
+export async function getMineProblems() {
+  'use server';
+  try {
+    const session = await getSession();
+    const user = session.user;
+
+    if (!user || !user.id) {
+      return { error: '認証が必要です。ログインしてください。' };
+    }
+
+    const userId = Number(user.id);
+    if (isNaN(userId)) {
+      return { error: 'ユーザー情報が無効です。' };
+    }
+
+    const problems = await prisma.programmingProblem.findMany({
+      where: { createdBy: userId },
+      include: {
+        creator: {
+          select: { username: true },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    return { data: problems };
+  } catch (error) {
+    console.error("Failed to fetch user's problems:", error);
+    return { error: '問題の取得中にエラーが発生しました。' };
+  }
+}
+
+/**
+ * ペットに餌を与え、満腹度を更新するAction
+ * @param foodAmount - 与える餌の量（回復する満腹度）
+ */
+export async function feedPetAction(foodAmount: number) {
+
+  const MAX_HUNGER = 1500; // 最大値をここで定義
+
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  // 1. 現在のペットのステータスを取得
+  const petStatus = await prisma.status_Kohaku.findFirst({
+    where: { user_id: userId },
+  });
+
+  // データがない場合は、新規作成を促すか、初期値で作成する
+  if (!petStatus) {
+    // ここでは例として、新しいペットステータスを作成します
+    await prisma.status_Kohaku.create({
+        data: {
+            user_id: userId,
+            status: "元気",
+            hungerlevel: Math.min(foodAmount, MAX_HUNGER) // 初回でも上限を超えないように
+        }
+    });
+    return { success: true };
+  }
+
+  // 2. 新しい満腹度を計算
+  const newHungerLevel = petStatus.hungerlevel + foodAmount;
+
+  // 3. 最大値を超えないように調整
+  const cappedHungerLevel = Math.min(newHungerLevel, MAX_HUNGER);
+
+  // 4. 調整後の値でデータベースを更新
+  await prisma.status_Kohaku.update({
+    where: {
+      id: petStatus.id,
+    },
+    data: {
+       hungerlevel: cappedHungerLevel,
+    },
+  });
+
+  revalidatePath('/'); // PetStatusが表示されているページを再検証
+  return { success: true };
+}

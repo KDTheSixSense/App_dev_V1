@@ -37,7 +37,7 @@ export default function Header({user}: HeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#fff] text-white border-b border-gray-200 flex w-full">
+    <header className="fixed top-0 left-0 w-full bg-[#fff] text-white border-b border-gray-200 flex w-full z-999">
       <div className="flex items-center w-50 h-20 mx-4">
         <Link href={"/"} className="text-2xl font-bold transition-colors">
           <Image
@@ -171,14 +171,14 @@ export default function Header({user}: HeaderProps) {
             </div>   
           </div>
         </div>
-        <div className='flex items-center justify-end h-[60px] w-[60px] rounded-full overflow-hidden flex-shrink-0'>
-          <Link href="/profile" className="w-full h-full">
+        <div className='flex items-center justify-end rounded-full h-15 w-15 bg-white overflow-hidden'>
+          <Link href="/profile" className="">
             <Image
               src={user?.icon || "/images/test_icon.webp"}
               alt="ユーザーアイコン"
               width={60}
               height={60}
-              className="object-cover w-full h-full"
+              className="rounded-full"
             />
           </Link>
         </div>

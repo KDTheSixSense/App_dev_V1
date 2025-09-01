@@ -1,18 +1,30 @@
 'use client';
 
+import { Status_Kohaku } from '@prisma/client';
 import Image from 'next/image';
 import React, { useState } from 'react';
 
+// 1. Propsの型定義： 親コンポーネントから渡されるデータの型を定義します
+
+//DBからコハクの情報を取得してるから現在何も表示されない
+
+interface PetStatusProps {
+  status: Status_Kohaku[] | null;
+}
+
 /**
  * PetStatusコンポーネント
- * ユーザーのペット（コハク）のステータス（満腹度など）を表示します。
+ * ユーザーのペット（コハク）のステータスを表示します。
+ * 親コンポーネントから渡された動的なデータを表示します。
  */
-export default function PetStatus() {
-  // 満腹度をパーセンテージで管理（デザイン固定のため今回は66%に設定）
-  // 動的にする場合は、useStateやpropsでこの値を受け取る
-  const fullnessPercentage = 66;
+const PetStatus: React.FC<PetStatusProps> = ({ status }) => {
+  // ペットのステータスは配列で渡される可能性があるため、最初のものを取得します
+  const petStatus = status && status.length > 0 ? status[0] : null;
+  
+  // 2. Propsから渡された動的な満腹度を使用します
+  const fullnessPercentage = petStatus ? petStatus.hungerlevel : 0;
 
-  // 吹き出しの表示状態とメッセージ
+  // 吹き出しの表示状態とメッセージを管理
   const [showSpeechBubble, setShowSpeechBubble] = useState(false);
   const [speechBubbleMessage, setSpeechBubbleMessage] = useState('');
 
@@ -25,23 +37,31 @@ export default function PetStatus() {
     'zzz...',
   ];
 
-  // ペットクリック時のハンドラ
+  // ペットクリック時の処理
   const handlePetClick = () => {
     const randomIndex = Math.floor(Math.random() * messages.length);
     setSpeechBubbleMessage(messages[randomIndex]);
     setShowSpeechBubble(true);
-
     // 3秒後に吹き出しを非表示にする
     setTimeout(() => {
       setShowSpeechBubble(false);
-    }, 10000);
+    }, 3000);
   };
+
+  // ペット情報がない場合は、その旨を表示します
+  if (!petStatus) {
+    return (
+        <div className="flex flex-col items-center gap-6 p-8 bg-white max-w-xs mx-auto rounded-2xl shadow-lg relative">
+            <p className="text-gray-500">ペットの情報がありません。</p>
+        </div>
+    );
+  }
 
   return (
     // 全体を囲むコンテナ
-    <div className="flex flex-col items-center gap-6 p-8 bg-white max-w-300 rounded-2xl shadow-lg relative">
+    <div className="flex flex-col items-center gap-6 p-8 bg-white max-w-xs mx-auto rounded-2xl shadow-lg relative">
 
-      {/* 1. キャラクター画像 */}
+      {/* 1. キャラクター画像と吹き出し */}
       <div onClick={handlePetClick} className="cursor-pointer relative">
         <Image
           src="/images/kohaku.png" 
@@ -66,13 +86,11 @@ export default function PetStatus() {
 
       {/* 3. プログレスバー（満腹度バー） */}
       <div className="w-full">
-        {/* バーの背景（トラック） */}
-        <div className="h-5 bg-gray-200 rounded-full overflow-hidden relative">
-          {/* バーの実際の値（塗りつぶし部分） */}
+        <div className="h-5 bg-gray-200 rounded-full overflow-hidden">
+          {/* 3. 動的な満腹度をインラインスタイルで反映させます */}
           <div
-            className="h-full bg-amber-400 rounded-full w-2/3"
-            // 動的に変更する場合: インラインスタイルでwidthをパーセンテージで指定
-            // style={{ width: `${fullnessPercentage}%` }} 
+            className="h-full bg-amber-400 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${fullnessPercentage}%` }} 
           ></div>
         </div>
       </div>
@@ -80,19 +98,13 @@ export default function PetStatus() {
       {/* 4. アクションボタン */}
       <div className="w-full mt-2">
         <button 
-          className="
-            w-full py-3 px-6 rounded-full 
-            bg-cyan-400 text-white 
-            font-bold text-xl 
-            shadow-md hover:bg-cyan-500 
-            transition-all duration-300 ease-in-out
-            focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50
-          "
+          className="w-full py-3 px-6 rounded-full bg-cyan-400 text-white font-bold text-xl shadow-md hover:bg-cyan-500 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50"
         >
           餌を探しに行く
         </button>
       </div>
-
     </div>
   );
-}
+};
+
+export default PetStatus;
