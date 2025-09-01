@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { GroupLayout } from '../../GroupLayout';
+import Link from 'next/link'; // Next.jsのLinkコンポーネントをインポート
 
 // === 型定義 ===
 interface GroupDetail {
@@ -75,8 +76,17 @@ interface Kadai {
     description: string;
     due_date: string;
     created_at: string;
-    showComments?: boolean; // 課題詳細表示用
-    comments?: Comment[]; // 課題に紐づくコメント
+    programmingProblemId?: number; // プログラミング問題IDを追加
+    showComments?: boolean;
+    comments?: Comment[];
+    completed?: boolean;
+}
+
+// プログラミング問題の型定義 (簡易)
+interface ProgrammingProblem {
+    id: number;
+    title: string;
+    difficulty: number;
 }
 
 const GroupDetailPage: React.FC = () => {
@@ -147,6 +157,13 @@ const GroupDetailPage: React.FC = () => {
     const [selectedKadai, setSelectedKadai] = useState<Kadai | null>(null);
     const [kadaiViewMode, setKadaiViewMode] = useState<'list' | 'expanded' | 'detail'>('list');
 
+    const [isProblemSelectModalOpen, setIsProblemSelectModalOpen] = useState(false);
+    const [availableProblems, setAvailableProblems] = useState<ProgrammingProblem[]>([]);
+    const [isLoadingProblems, setIsLoadingProblems] = useState(false);
+
+    // プレビュー専用のStateを新しく用意します
+    const [problemPreview, setProblemPreview] = useState<ProgrammingProblem | null>(null);
+
     const [createGroupForm, setCreateGroupForm] = useState({
         className: '',
         description: '',
@@ -156,6 +173,8 @@ const GroupDetailPage: React.FC = () => {
     });
 
     const [classCode, setClassCode] = useState('');
+    // プレビュー用の選択された問題を保持するStateを追加
+    const [selectedProblemForAssignment, setSelectedProblemForAssignment] = useState<ProgrammingProblem | null>(null);
 
     const editorRef = useRef<HTMLDivElement>(null);
     const kadaiEditorRef = useRef<HTMLDivElement>(null);
@@ -251,7 +270,7 @@ const GroupDetailPage: React.FC = () => {
               console.error('課題の取得に失敗しました');
             }
 
-            // ✨【ここから追加】お知らせ一覧の取得
+            // お知らせ一覧の取得
             const postsResponse = await fetch(`/api/groups/${hashedId}/posts`);
             if (postsResponse.ok) {
               const postsData = await postsResponse.json();
@@ -274,7 +293,6 @@ const GroupDetailPage: React.FC = () => {
             } else {
               console.error('お知らせの取得に失敗しました');
             }
-            // ✨【ここまで追加】
 
           } catch (err) {
             setError(err instanceof Error ? err.message : 'データの取得に失敗しました');
@@ -285,6 +303,83 @@ const GroupDetailPage: React.FC = () => {
         fetchGroupData(); // 関数呼び出し
       }
     }, [hashedId]);
+
+    const fetchAvailableProblems = async () => {
+        setIsLoadingProblems(true);
+        try {
+            const response = await fetch('/api/problems?isDraft=false&limit=100');
+            if (response.ok) {
+                const data = await response.json();
+                setAvailableProblems(data.problems);
+            } else {
+                alert('問題一覧の取得に失敗しました。');
+            }
+        } catch (error) {
+            alert('問題一覧の取得中にエラーが発生しました。');
+        } finally {
+            setIsLoadingProblems(false);
+        }
+    };
+
+    const handleOpenProblemSelectModal = () => {
+        fetchAvailableProblems();
+        setIsProblemSelectModalOpen(true);
+    };
+
+    // 選択された問題の情報を、編集可能なState（kadaiTitle, kadaiDescription）に反映させます。
+    const handleProblemSelect = (problem: ProgrammingProblem) => {
+        setProblemPreview(problem);
+        setIsKadaiEditorExpanded(true); 
+        
+        setKadaiTitle(`[プログラミング課題] ${problem.title}`);
+        
+        const defaultDescription = '割り当てられたプログラミング問題に取り組んでください。';
+        setKadaiDescription(defaultDescription);
+        
+        if (kadaiEditorRef.current) {
+            kadaiEditorRef.current.innerHTML = defaultDescription;
+        }
+
+        const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+        setKadaiDueDate(defaultDueDate);
+
+        setIsProblemSelectModalOpen(false);
+        setShowCreateOptions(false);
+    };
+
+    const handleAssignProblem = async (problem: ProgrammingProblem) => {
+        const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16).replace('T', ' ');
+        const dueDate = prompt('この課題の提出期限を入力してください (YYYY-MM-DD HH:MM形式)', defaultDueDate);
+
+        if (!dueDate) {
+            alert('期限が設定されなかったため、処理を中断しました。');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/groups/${hashedId}/assignments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: kadaiTitle,
+                    description: kadaiDescription,
+                    dueDate: new Date(kadaiDueDate).toISOString(),
+                    programmingProblemId: problemPreview ? problemPreview.id : null,
+                }),
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert('課題として問題を追加しました。');
+                setKadaiList([result.data, ...kadaiList]);
+                setIsProblemSelectModalOpen(false);
+            } else {
+                throw new Error(result.message || '課題の割り当てに失敗しました。');
+            }
+        } catch (error) {
+            alert(error instanceof Error ? error.message : '不明なエラーです。');
+        }
+    };
 
     // === イベントハンドラ ===
     // エディター展開処理
@@ -313,11 +408,11 @@ const GroupDetailPage: React.FC = () => {
         }
         
         try {
-        // ✨【修正】APIのパスをグループ指定のものに変更
+        // APIのパスをグループ指定のものに変更
         const response = await fetch(`/api/groups/${hashedId}/posts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          // ✨【修正】bodyに含めるのはcontentだけでOK
+          // bodyに含めるのはcontentだけでOK
           body: JSON.stringify({ content: editorContent }),
         });
         
@@ -595,9 +690,11 @@ const GroupDetailPage: React.FC = () => {
     // 課題エディター縮小処理
     const handleKadaiEditorCollapse = (): void => {
         setIsKadaiEditorExpanded(false);
+        setProblemPreview(null);
         setKadaiTitle('');
         setKadaiDescription('');
         setKadaiDueDate('');
+        setSelectedProblemForAssignment(null);
         setKadaiFormatState({
             bold: false,
             italic: false,
@@ -609,40 +706,36 @@ const GroupDetailPage: React.FC = () => {
         }
     };
 
-    // 【修正】課題作成処理をAPI連携に修正
+    // この関数一つで、通常課題とプログラミング課題の両方を作成します。
     const handleKadaiCreate = async (): Promise<void> => {
-      if (!kadaiTitle.trim() || !kadaiDescription.trim() || !kadaiDueDate) {
-        alert('タイトル、説明、期限は必須です。');
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/groups/${hashedId}/assignments`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: kadaiTitle,
-            description: kadaiDescription,
-            dueDate: kadaiDueDate,
-          }),
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          // 成功したら、返ってきた新しい課題データをStateの先頭に追加
-          setKadaiList([result.data, ...kadaiList]);
-          handleKadaiEditorCollapse();
-          alert('課題を作成しました。');
-        } else {
-          throw new Error(result.message || '課題の作成に失敗しました。');
+        if (!kadaiTitle.trim() || !kadaiDueDate) {
+            alert('必須項目が不足しています');
+            return;
         }
-      } catch (error) {
-        console.error('課題作成エラー:', error);
-        alert(error instanceof Error ? error.message : '不明なエラーが発生しました。');
-      }
+
+        try {
+            const response = await fetch(`/api/groups/${hashedId}/assignments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: kadaiTitle, // Stateからタイトルを取得
+                    description: kadaiDescription, // Stateから説明を取得
+                    dueDate: new Date(kadaiDueDate).toISOString(),
+                    programmingProblemId: problemPreview ? problemPreview.id : null,
+                }),
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                setKadaiList([result.data, ...kadaiList]);
+                handleKadaiEditorCollapse();
+                alert('課題を作成しました。');
+            } else {
+                throw new Error(result.message || '課題の作成に失敗しました。');
+            }
+        } catch (error) {
+            alert(error instanceof Error ? error.message : '不明なエラーが発生しました。');
+        }
     };
 
     // 課題編集処理
@@ -883,7 +976,7 @@ const GroupDetailPage: React.FC = () => {
                                             {/* テキストエディター */}
                                             <div 
                                                 ref={editorRef} 
-                                                contentEditable 
+                                                contentEditable={true}
                                                 onInput={handleEditorChange} 
                                                 style={{ 
                                                     minHeight: '120px', 
@@ -1592,15 +1685,7 @@ const GroupDetailPage: React.FC = () => {
                                             課題一覧
                                         </h2>
 
-                                        {/* 課題作成ボタン */}
-                                        <div style={{
-                                            backgroundColor: '#fff',
-                                            border: '1px solid #e0e0e0',
-                                            borderRadius: '8px',
-                                            marginBottom: '24px',
-                                            overflow: 'hidden'
-                                        }}>
-                                            {!isKadaiEditorExpanded ? (
+                                        {!isKadaiEditorExpanded ? (
                                                 <div
                                                     onClick={handleKadaiEditorExpand}
                                                     style={{
@@ -1615,21 +1700,229 @@ const GroupDetailPage: React.FC = () => {
                                                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
                                                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                                 >
-                                                    <div style={{
-                                                        width: '32px',
-                                                        height: '32px',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: '#ff9800',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        marginRight: '12px'
-                                                    }}>
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff">
-                                                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                                                        </svg>
+                                                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#1976d2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                                                     </div>
+                                                     新しい課題を作成
+                                                </div>
+                                            ) : (
+                                        <div style={{ border: '1px solid #e0e0e0', borderRadius: '8px', marginBottom: '24px' }}>
+                                            {/* 変更点: isKadaiEditorExpanded だけでなく problemPreview も考慮 */}
+                                            
+                                            {isKadaiEditorExpanded || problemPreview ? (
+                                                <div>
+                                                    {/* 課題タイトル入力 */}
+                                                    <div style={{ padding: '16px', borderBottom: '1px solid #e0e0e0' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={kadaiTitle}
+                                                            onChange={(e) => setKadaiTitle(e.target.value)}
+                                                            placeholder="課題のタイトルを入力..."
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '12px',
+                                                                border: '1px solid #e0e0e0',
+                                                                borderRadius: '4px',
+                                                                fontSize: '16px',
+                                                                fontWeight: '500'
+                                                            }}
+                                                        />
                                                     </div>
-                                                    新しい課題を作成
+
+                                                    {/* ツールバー */}
+                                                    <div style={{
+                                                        padding: '12px 16px',
+                                                        borderBottom: '1px solid #e0e0e0',
+                                                        display: 'flex',
+                                                        gap: '8px',
+                                                        alignItems: 'center'
+                                                    }}>
+                                                        <button
+                                                            onClick={() => applyKadaiFormat('bold')}
+                                                            style={{
+                                                                padding: '6px 8px',
+                                                                border: '1px solid #e0e0e0',
+                                                                backgroundColor: kadaiFormatState.bold ? '#e8f0fe' : '#fff',
+                                                                color: kadaiFormatState.bold ? '#1976d2' : '#5f6368',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '14px',
+                                                                fontWeight: 'bold'
+                                                            }}
+                                                        >
+                                                            B
+                                                        </button>
+                                                        <button
+                                                            onClick={() => applyKadaiFormat('italic')}
+                                                            style={{
+                                                                padding: '6px 8px',
+                                                                border: '1px solid #e0e0e0',
+                                                                backgroundColor: kadaiFormatState.italic ? '#e8f0fe' : '#fff',
+                                                                color: kadaiFormatState.italic ? '#1976d2' : '#5f6368',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '14px',
+                                                                fontStyle: 'italic'
+                                                            }}
+                                                        >
+                                                            I
+                                                        </button>
+                                                        <button
+                                                            onClick={() => applyKadaiFormat('underline')}
+                                                            style={{
+                                                                padding: '6px 8px',
+                                                                border: '1px solid #e0e0e0',
+                                                                backgroundColor: kadaiFormatState.underline ? '#e8f0fe' : '#fff',
+                                                                color: kadaiFormatState.underline ? '#1976d2' : '#5f6368',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '14px',
+                                                                textDecoration: 'underline'
+                                                            }}
+                                                        >
+                                                            U
+                                                        </button>
+                                                        <button
+                                                            onClick={() => applyKadaiFormat('strikeThrough')}
+                                                            style={{
+                                                                padding: '6px 8px',
+                                                                border: '1px solid #e0e0e0',
+                                                                backgroundColor: kadaiFormatState.strikethrough ? '#e8f0fe' : '#fff',
+                                                                color: kadaiFormatState.strikethrough ? '#1976d2' : '#5f6368',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '14px',
+                                                                textDecoration: 'line-through'
+                                                            }}
+                                                        >
+                                                            S
+                                                        </button>
+                                                    </div>
+
+                                                    {/* 課題説明エディター */}
+                                                    <div
+                                                        ref={kadaiEditorRef}
+                                                        contentEditable={true}
+                                                        onInput={handleKadaiEditorChange}
+                                                        data-placeholder="課題の詳細説明を入力..."
+                                                        style={{
+                                                            padding: '16px',
+                                                            minHeight: '120px',
+                                                            fontSize: '14px',
+                                                            lineHeight: '1.5',
+                                                            outline: 'none',
+                                                            position: 'relative'
+                                                        }}
+                                                    >
+                                                    </div>
+
+                                                    {/* 期限設定 */}
+                                                    <div style={{
+                                                        padding: '16px',
+                                                        borderTop: '1px solid #e0e0e0',
+                                                        borderBottom: '1px solid #e0e0e0'
+                                                    }}>
+                                                        <label style={{
+                                                            display: 'block',
+                                                            fontSize: '14px',
+                                                            color: '#3c4043',
+                                                            marginBottom: '8px'
+                                                        }}>
+                                                            期限
+                                                        </label>
+                                                        <input
+                                                            type="datetime-local"
+                                                            value={kadaiDueDate}
+                                                            onChange={(e) => setKadaiDueDate(e.target.value)}
+                                                            style={{
+                                                                padding: '8px 12px',
+                                                                border: '1px solid #e0e0e0',
+                                                                borderRadius: '4px',
+                                                                fontSize: '14px'
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    
+                                                    {/* 課題作成オプション */}
+                                                    <div style={{ position: 'relative', marginBottom: '24px' }}>
+                                                      <button
+                                                        onClick={handleCreateButtonClick}
+                                                        style={{
+                                                          /* 既存のボタンのデザインを参考にしてください */
+                                                          display: 'flex', alignItems: 'center', gap: '8px',
+                                                          padding: '12px 24px', background: '#1976d2', color: 'white',
+                                                          border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px'
+                                                        }}
+                                                      >
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                                                        <span>追加または作成</span>
+                                                      </button>
+
+                                                      {showCreateOptions && (
+                                                            <div style={{
+                                                                position: 'absolute', top: '100%', left: 0,
+                                                                background: 'white', border: '1px solid #e0e0e0',
+                                                                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                                                zIndex: 10, minWidth: '250px', marginTop: '8px',
+                                                                padding: '8px 0'
+                                                            }}>
+                                                                <button onClick={() => { navigateToCreateProgrammingProblem(); setShowCreateOptions(false); }} style={{ display: 'block', width: '100%', padding: '12px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer' }}>
+                                                                    プログラミング問題 (新規作成)
+                                                                </button>
+                                                                <button onClick={() => { handleOpenProblemSelectModal(); setShowCreateOptions(false); }} style={{ display: 'block', width: '100%', padding: '12px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer' }}>
+                                                                    プログラミング問題 (既存から選択)
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* プレビューUIを挿入 */}
+                                                        {problemPreview && (
+                                                            <div style={{ border: '1px solid #1976d2', borderRadius: '8px', padding: '12px', backgroundColor: '#e3f2fd', flexGrow: 1 }}>
+                                                                <p style={{ margin: '0', color: '#1565c0' }}>
+                                                                  <strong>添付された問題:</strong> {typeof problemPreview === 'object' ? problemPreview.title : problemPreview}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        
+                                                    </div>
+
+                                                    {/* アクションボタン */}
+                                                    <div style={{
+                                                        padding: '12px 16px',
+                                                        display: 'flex',
+                                                        justifyContent: 'flex-end',
+                                                        gap: '12px'
+                                                    }}>
+                                                        <button
+                                                            onClick={handleKadaiEditorCollapse}
+                                                            style={{
+                                                                padding: '8px 16px',
+                                                                border: 'none',
+                                                                backgroundColor: 'transparent',
+                                                                color: '#5f6368',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '14px'
+                                                            }}
+                                                        >
+                                                            キャンセル
+                                                        </button>
+                                                        <button
+                                                            onClick={handleKadaiCreate}
+                                                            style={{
+                                                                padding: '8px 16px',
+                                                                border: 'none',
+                                                                backgroundColor: '#1976d2',
+                                                                color: '#fff',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '14px',
+                                                                fontWeight: '500'
+                                                            }}
+                                                        >
+                                                            課題を作成
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ) : (
                                                 <div>
@@ -1724,7 +2017,7 @@ const GroupDetailPage: React.FC = () => {
                                                     {/* 課題説明エディター */}
                                                     <div
                                                         ref={kadaiEditorRef}
-                                                        contentEditable
+                                                        contentEditable={true}
                                                         onInput={handleKadaiEditorChange}
                                                         data-placeholder="課題の詳細説明を入力..."
                                                         style={{
@@ -1768,7 +2061,7 @@ const GroupDetailPage: React.FC = () => {
                                                     {/* 課題作成オプション */}
                                                     <div style={{ position: 'relative', marginBottom: '24px' }}>
                                                       <button
-                                                        onClick={navigateToCreateProgrammingProblem}
+                                                        onClick={handleCreateButtonClick}
                                                         style={{
                                                           /* 既存のボタンのデザインを参考にしてください */
                                                           display: 'flex', alignItems: 'center', gap: '8px',
@@ -1779,6 +2072,33 @@ const GroupDetailPage: React.FC = () => {
                                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                                                         <span>追加または作成</span>
                                                       </button>
+
+                                                      {showCreateOptions && (
+                                                            <div style={{
+                                                                position: 'absolute', top: '100%', left: 0,
+                                                                background: 'white', border: '1px solid #e0e0e0',
+                                                                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                                                zIndex: 10, minWidth: '250px', marginTop: '8px',
+                                                                padding: '8px 0'
+                                                            }}>
+                                                                <button onClick={() => { navigateToCreateProgrammingProblem(); setShowCreateOptions(false); }} style={{ display: 'block', width: '100%', padding: '12px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer' }}>
+                                                                    プログラミング問題 (新規作成)
+                                                                </button>
+                                                                <button onClick={() => { handleOpenProblemSelectModal(); setShowCreateOptions(false); }} style={{ display: 'block', width: '100%', padding: '12px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer' }}>
+                                                                    プログラミング問題 (既存から選択)
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* プレビューUIを挿入 */}
+                                                        {problemPreview && (
+                                                            <div style={{ border: '1px solid #1976d2', borderRadius: '8px', padding: '12px', backgroundColor: '#e3f2fd', flexGrow: 1 }}>
+                                                                <p style={{ margin: '0', color: '#1565c0' }}>
+                                                                  <strong>添付された問題:</strong> {problemPreview}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        
                                                     </div>
 
                                                     {/* アクションボタン */}
@@ -1821,8 +2141,8 @@ const GroupDetailPage: React.FC = () => {
                                                 </div>
                                             )}
                                         </div>
-
-                                        {/* 課題一覧 */}
+                                        )}
+                                            {/* 課題一覧 */}
                                         <div style={{
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -1852,6 +2172,7 @@ const GroupDetailPage: React.FC = () => {
                                                             transition: 'box-shadow 0.2s'
                                                         }}
                                                         onClick={() => handleKadaiDetail(kadai)}
+                                                        
                                                         onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
                                                         onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
                                                     >
@@ -1866,19 +2187,28 @@ const GroupDetailPage: React.FC = () => {
                                                                 alignItems: 'center'
                                                             }}>
                                                                 <div style={{
-                                                                    width: '32px',
-                                                                    height: '32px',
-                                                                    borderRadius: '50%',
-                                                                    backgroundColor: '#4caf50',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    marginRight: '12px'
-                                                                }}>
-                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff">
-                                                                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
-                                                                    </svg>
-                                                                </div>
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            borderRadius: '50%',
+                                                            backgroundColor: kadai.completed ? '#4caf50' : '#d32f2f', // 完了なら緑、未完了なら赤
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            marginRight: '16px',
+                                                            flexShrink: 0,
+                                                        }}>
+                                                            {kadai.completed ? (
+                                                                // 完了時のチェックマークアイコン
+                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+                                                                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                                                                </svg>
+                                                            ) : (
+                                                                // 未完了時のバツマークアイコン
+                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+                                                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                                                </svg>
+                                                            )}
+                                                        </div>
                                                                 <div>
                                                                     <div style={{
                                                                         fontSize: '14px',
@@ -2254,19 +2584,28 @@ const GroupDetailPage: React.FC = () => {
                                                     marginBottom: '16px'
                                                 }}>
                                                     <div style={{
-                                                        width: '40px',
-                                                        height: '40px',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: '#4caf50',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        marginRight: '16px'
-                                                    }}>
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
-                                                            <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
-                                                        </svg>
-                                                    </div>
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            borderRadius: '50%',
+                                                            backgroundColor: selectedKadai.completed ? '#4caf50' : '#d32f2f', // 完了なら緑、未完了なら赤
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            marginRight: '16px',
+                                                            flexShrink: 0,
+                                                        }}>
+                                                            {selectedKadai.completed ? (
+                                                                // 完了時のチェックマークアイコン
+                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+                                                                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                                                                </svg>
+                                                            ) : (
+                                                                // 未完了時のバツマークアイコン
+                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+                                                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                                                </svg>
+                                                            )}
+                                                        </div>
                                                     <div>
                                                         <h1 style={{
                                                             fontSize: '24px',
@@ -2297,6 +2636,24 @@ const GroupDetailPage: React.FC = () => {
                                                     marginBottom: '16px'
                                                 }}>
                                                     期限: {selectedKadai.due_date ? new Date(selectedKadai.due_date).toLocaleString('ja-JP') : '未設定'}
+                                                    <div dangerouslySetInnerHTML={{ __html: selectedKadai.description }} />
+                                                        {selectedKadai.programmingProblemId && (
+                                                            <div style={{ marginTop: '24px' }}>
+                                                                <Link 
+                                                                    href={`/issue_list/programming_problem/${selectedKadai.programmingProblemId}`} 
+                                                                    style={{ 
+                                                                        display: 'inline-block', 
+                                                                        padding: '10px 20px', 
+                                                                        backgroundColor: '#28a745', 
+                                                                        color: 'white', 
+                                                                        textDecoration: 'none', 
+                                                                        borderRadius: '5px' 
+                                                                    }}
+                                                                >
+                                                                    問題に挑戦する
+                                                                </Link>
+                                                            </div>
+                                                        )}
                                                 </div>
 
                                                 <div style={{
@@ -2306,18 +2663,6 @@ const GroupDetailPage: React.FC = () => {
                                                 }}>
             
                                                 </div>
-
-                                                {selectedKadai.description && (
-                                                    <div
-                                                        style={{
-                                                            fontSize: '14px',
-                                                            lineHeight: '1.6',
-                                                            color: '#3c4043',
-                                                            marginBottom: '24px'
-                                                        }}
-                                                        dangerouslySetInnerHTML={{ __html: selectedKadai.description }}
-                                                    />
-                                                )}
                                             </div>
                                         </div>
                                         
@@ -2523,6 +2868,50 @@ const GroupDetailPage: React.FC = () => {
                                             <span style={{ fontSize: '12px', color: '#3c4043' }}>{member.name}</span>
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {isProblemSelectModalOpen && (
+                            <div style={{
+                                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+                                justifyContent: 'center', alignItems: 'center', zIndex: 1000
+                            }}>
+                                <div style={{
+                                    background: 'white', padding: '2rem', borderRadius: '8px',
+                                    width: '90%', maxWidth: '600px',
+                                    boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
+                                }}>
+                                    <h2 style={{ marginTop: 0, borderBottom: '1px solid #ccc', paddingBottom: '1rem' }}>
+                                        既存の問題を選択して課題に追加
+                                    </h2>
+
+                                    {isLoadingProblems ? (
+                                        <p>問題リストを読み込み中...</p>
+                                    ) : (
+                                        <ul style={{ listStyle: 'none', padding: 0, margin: '1rem 0', maxHeight: '60vh', overflowY: 'auto' }}>
+                                            {availableProblems.length > 0 ? availableProblems.map(problem => (
+                                                <li key={problem.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 8px', borderBottom: '1px solid #eee' }}>
+                                                    <span style={{ flex: 1 }}>
+                                                        {problem.title} 
+                                                        <span style={{ color: '#777', fontSize: '0.8em', marginLeft: '10px' }}>(難易度: {problem.difficulty})</span>
+                                                    </span>
+                                                    <button onClick={() => handleProblemSelect(problem)} style={{ padding: '6px 12px', border: '1px solid #007bff', background: '#007bff', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>
+                                                        選択
+                                                    </button>
+                                                </li>
+                                            )) : (
+                                                <p>選択可能なプログラミング問題がありません。先に問題を作成してください。</p>
+                                            )}
+                                        </ul>
+                                    )}
+
+                                    <div style={{ borderTop: '1px solid #ccc', paddingTop: '1rem', textAlign: 'right' }}>
+                                        <button onClick={() => setIsProblemSelectModalOpen(false)} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+                                            閉じる
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}

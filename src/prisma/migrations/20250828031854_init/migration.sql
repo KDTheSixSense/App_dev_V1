@@ -309,6 +309,7 @@ CREATE TABLE "Assignment" (
     "due_date" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "programmingProblemId" INTEGER,
 
     CONSTRAINT "Assignment_pkey" PRIMARY KEY ("id")
 );
@@ -333,7 +334,7 @@ CREATE TABLE "Status_Kohaku" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
     "status" TEXT NOT NULL,
-    "hungerlevel" INTEGER NOT NULL,
+    "hungerlevel" INTEGER NOT NULL DEFAULT 1000,
 
     CONSTRAINT "Status_Kohaku_pkey" PRIMARY KEY ("id")
 );
@@ -399,6 +400,12 @@ CREATE UNIQUE INDEX "Groups_hashedId_key" ON "Groups"("hashedId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Groups_invite_code_key" ON "Groups"("invite_code");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Assignment_programmingProblemId_key" ON "Assignment"("programmingProblemId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Status_Kohaku_user_id_key" ON "Status_Kohaku"("user_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Degree_degree_key" ON "Degree"("degree");
@@ -474,6 +481,9 @@ ALTER TABLE "Groups_User" ADD CONSTRAINT "Groups_User_user_id_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "Groups_User" ADD CONSTRAINT "Groups_User_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Groups"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_programmingProblemId_fkey" FOREIGN KEY ("programmingProblemId") REFERENCES "ProgrammingProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_groupid_fkey" FOREIGN KEY ("groupid") REFERENCES "Groups"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
