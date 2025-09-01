@@ -1,54 +1,30 @@
 import Image from 'next/image';
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions } from '@/lib/session';
-import { prisma } from '@/lib/prisma';
-import type { User } from '@prisma/client';
+import type { User,Title } from '@prisma/client';
 
-interface SessionData {
-  user?: {
-    id: string;
-    email: string;
-  };
+// Userオブジェクトに、関連するTitleも含まれるように型を拡張
+type UserWithTitle = User & {
+  selectedTitle: Title | null;
+};
+
+// 親コンポーネントからuser情報を受け取るためのPropsを定義
+interface UserDetailProps {
+  user: UserWithTitle | null;
 }
 
-export default async function UserDetail() {
+export default async function UserDetail({ user }: UserDetailProps) {
 
-  // 1. cookies()をawaitで取得します
-  const cookieStore = await cookies();
-  
-  // 2. getIronSessionに<SessionData>という型を明示的に渡します
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
-
-  // 3. セッション、またはセッション内のユーザー情報がなければ、ここで処理を中断します
-  if (!session.user?.id) {
-    return <div>ログインしていません。</div>;
-  }
-
-  // 4. DBからユーザー情報を取得します。型は PrismaのUser型またはnullになります
-  const user: User | null = await prisma.user.findUnique({
-    where: { id: Number(session.user.id) },
-    include: {
-      selectedTitle: true,
-    },
-  });
+ 
 
   // 5. DBから取得したユーザーが見つからない場合も、ここで処理を中断します
   if (!user) {
     return <div>ユーザーが見つかりません。</div>;
   }   
   
-    let progressPercentage = 0;
-    let currentXpInLevel = 0;
-    const requiredXpForLevelUp = 1000;
-
-    if (user) {
-        // 1. 現在のレベルでの経験値を取得
-        currentXpInLevel = user.xp % requiredXpForLevelUp;
-
-        // 2. パーセンテージを計算
-        progressPercentage = (currentXpInLevel / requiredXpForLevelUp) * 100;
-    }
+    const requiredXpForNextLevel = 1000;
+    // 総経験値(user.xp)を1000で割った余り = 現在のレベルでの経験値
+    const currentXpInLevel = (user.xp ?? 0) % requiredXpForNextLevel;
+    // バーの幅をパーセンテージで計算
+    const progressPercentage = (currentXpInLevel / requiredXpForNextLevel) * 100;
 
     return (
         <div className="flex flex-col w-full max-w-150 h-100 rounded-lg shadow-lg p-4">
@@ -58,7 +34,7 @@ export default async function UserDetail() {
                 </div>
                 <div className="flex flex-col justify-center items-center h-30 gap-2">
                     {user ? (
-                        <p className="text-2xl font-bold">{user.username}</p>
+                        <p className="text-2xl font-bold truncate max-w-70">{user.username}</p>
                     ):(
                         <p className="text-2xl font-bold">ゲスト</p>
                     )
@@ -78,6 +54,9 @@ export default async function UserDetail() {
                 <div className="w-full bg-gray-200 rounded-full h-5 relative overflow-hidden mt-2">
                     <div className="bg-lime-400 rounded-full h-full absolute top-0 left-0" style={{ width: `${progressPercentage}%`}}>
                     </div>
+                </div>
+                <div className="text-right text-sm font-mono text-gray-500 mt-1">
+                    {currentXpInLevel} / {requiredXpForNextLevel}
                 </div>
             </div>
             <div className="flex justify-center items-center w-full h-50 gap-10 mt-4">

@@ -2,6 +2,8 @@
 'use server'; // このファイルがサーバーアクションであることを示す
 
 import { prisma } from './prisma';
+import { Prisma } from '@prisma/client'; // Prismaのエラー型をインポート
+import bcrypt from 'bcryptjs';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { calculateLevelFromXp } from './leveling';
@@ -16,6 +18,51 @@ interface SessionData {
     id: string;
     email: string;
   };
+}
+
+const MAX_HUNGER = 200; //満腹度の最大値を一括管理
+
+/**
+ * 新しいユーザーアカウントと、そのペットを作成するAction (改良版)
+ * @param data - ユーザー名、メールアドレス、パスワード、生年月日
+ */
+export async function registerUserAction(data: { username: string, email: string, password: string, birth?: string }) {
+  const { username, email, password, birth } = data;
+
+  if (!username || !email || !password) {
+    return { error: '必須項目が不足しています。' };
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await prisma.user.create({
+      data: {
+        username: username,
+        email: email,
+        password: hashedPassword,
+        // --- ▼▼▼ 生年月日を保存するロジックを追加 ▼▼▼ ---
+        birth: birth ? new Date(birth) : null,
+        // 関連するペットステータスも同時に作成
+        status_Kohaku: {
+          create: {
+            status: '満腹 ',
+            hungerlevel: 150,
+            hungerLastUpdatedAt: new Date(),
+          },
+        },
+      },
+    });
+
+    return { success: true, user: newUser };
+
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { error: 'そのメールアドレスまたはユーザー名は既に使用されています。' };
+    }
+    console.error("User registration failed:", error);
+    return { error: 'アカウントの作成中にエラーが発生しました。' };
+  }
 }
 
 /**
@@ -141,12 +188,19 @@ export async function awardXpForCorrectAnswer(problemId: number) {
     return { message: '既に正解済みです。' };
   }
 
+  //ユーザーの回答数を数える
+  const userAnswerCount = await prisma.userAnswer.count({ where: { userId } });
+  const algoAnswerCount = await prisma.answer_Algorithm.count({ where: { userId } });
+  const isFirstAnswerEver = (userAnswerCount + algoAnswerCount) === 0; //初めての解答ならtrue,違うならfalse
+
   // 5. 経験値を付与
   const { unlockedTitle } = await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
+  // 6. コハクの満腹度を回復
+  await feedPetAction(problemDetails.difficultyId);
   // ログイン統計を更新
   await updateUserLoginStats(userId);
 
-  // 6. 解答履歴を正しいテーブルに保存
+  // 7. 解答履歴を正しいテーブルに保存
   if (problemDetails.type === 'ALGO') {
     await prisma.answer_Algorithm.create({
       data: { userId, questionId: problemId, isCorrect: true, symbol: 'CORRECT', text: '正解' },
@@ -158,6 +212,18 @@ export async function awardXpForCorrectAnswer(problemId: number) {
   }
 
   console.log(`ユーザーID:${userId} が問題ID:${problemId} に正解し、XPを獲得しました。`);
+
+
+    // 8. もし最初の解答だったら、ペットの満腹度減少タイマーを開始する
+  if (isFirstAnswerEver) {
+    await prisma.status_Kohaku.updateMany({
+      where: { user_id: userId },
+      data: {
+        hungerLastUpdatedAt: new Date(), // 最終更新日時を「今」に設定
+      },
+    });
+    console.log(`ユーザーID:${userId} のペットの満腹度タイマーを開始しました。`);
+  }
 
   return { message: '経験値を獲得しました！', unlockedTitle };
 }
@@ -622,53 +688,68 @@ export async function getMineProblems() {
 }
 
 /**
- * ペットに餌を与え、満腹度を更新するAction
+ * コハクに餌を与え、満腹度を更新するAction
  * @param foodAmount - 与える餌の量（回復する満腹度）
  */
-export async function feedPetAction(foodAmount: number) {
-
-  const MAX_HUNGER = 1500; // 最大値をここで定義
-
+export async function feedPetAction(difficultyId: number) {
+  // 1. ログインセッションを取得
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return { error: 'ログインしていません。' };
   }
   const userId = Number(session.user.id);
 
-  // 1. 現在のペットのステータスを取得
-  const petStatus = await prisma.status_Kohaku.findFirst({
-    where: { user_id: userId },
-  });
-
-  // データがない場合は、新規作成を促すか、初期値で作成する
-  if (!petStatus) {
-    // ここでは例として、新しいペットステータスを作成します
-    await prisma.status_Kohaku.create({
-        data: {
-            user_id: userId,
-            status: "元気",
-            hungerlevel: Math.min(foodAmount, MAX_HUNGER) // 初回でも上限を超えないように
-        }
+  try {
+    // 2. 難易度IDを元に、回復する満腹度(feed)を取得
+    const difficulty = await prisma.difficulty.findUnique({
+      where: { id: difficultyId },
     });
+
+    if (!difficulty) {
+      return { error: '指定された難易度が見つかりません。' };
+    }
+    const foodAmount = difficulty.feed; // データベースから回復量を取得
+
+    // 3. 現在のペットのステータスを取得
+    const petStatus = await prisma.status_Kohaku.findFirst({
+      where: { user_id: userId },
+    });
+
+    const now = new Date();
+
+    if (!petStatus) {
+      // 4a. ペット情報がない場合は、新しく作成する
+      await prisma.status_Kohaku.create({
+          data: {
+              user_id: userId,
+              status: "満腹",
+              hungerlevel: Math.min(foodAmount, MAX_HUNGER), // 初回でも上限を超えないように
+              hungerLastUpdatedAt: now,
+          }
+      });
+      console.log(`新規ペットステータスを作成し、満腹度を${Math.min(foodAmount, MAX_HUNGER)}に設定しました。`);
+    } else {
+      // 4b. ペット情報がある場合は、満腹度を更新する
+      const newHungerLevel = petStatus.hungerlevel + foodAmount;
+      const cappedHungerLevel = Math.min(newHungerLevel, MAX_HUNGER); // 最大値を超えないように調整
+
+      await prisma.status_Kohaku.update({
+        where: {
+          id: petStatus.id,
+        },
+        data: {
+          hungerlevel: cappedHungerLevel,
+          hungerLastUpdatedAt: now, // 最終更新日時を「今」に設定
+        },
+      });
+      console.log(`満腹度を${cappedHungerLevel}に更新しました。`);
+    }
+
+    revalidatePath('/'); // PetStatusが表示されているページを再検証
     return { success: true };
+
+  } catch (error) {
+    console.error("Failed to feed pet:", error);
+    return { error: 'コハクへの餌やりに失敗しました。' };
   }
-
-  // 2. 新しい満腹度を計算
-  const newHungerLevel = petStatus.hungerlevel + foodAmount;
-
-  // 3. 最大値を超えないように調整
-  const cappedHungerLevel = Math.min(newHungerLevel, MAX_HUNGER);
-
-  // 4. 調整後の値でデータベースを更新
-  await prisma.status_Kohaku.update({
-    where: {
-      id: petStatus.id,
-    },
-    data: {
-       hungerlevel: cappedHungerLevel,
-    },
-  });
-
-  revalidatePath('/'); // PetStatusが表示されているページを再検証
-  return { success: true };
 }

@@ -1,102 +1,79 @@
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions } from '@/lib/session';
-import { prisma } from '@/lib/prisma';
-import RankingContainer from "@/components/RankingContainer"; 
-import type { User } from '@prisma/client';
+import { prisma } from "@/lib/prisma";
+import RankingContainer from "@/components/RankingContainer";
+import { assignRanks } from "@/lib/ranking"; 
 
-interface SessionData {
-  user?: {
-    id: string;
-    email: string;
-  };
+// --- ▼▼▼ Propsの型定義を修正 ▼▼▼ ---
+// searchParamsに加えて、userIdも受け取るように定義します
+interface RankingPageProps {
+  searchParams: { subject?: string };
+  userId: number | null; 
 }
 
-export default async function RankingPage({ searchParams}: { searchParams: { subject?: string } }) {
+// --- ▼▼▼ 関数の引数を修正 ▼▼▼ ---
+export default async function RankingPage({ searchParams, userId }: RankingPageProps) {
 
-  // --- 1. iron-sessionでログインユーザー情報を取得 ---
-  // 1. cookies()をawaitで取得します
-  const cookieStore = await cookies();
-  
-  // 2. getIronSessionに<SessionData>という型を明示的に渡します
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
-
-  // 3. セッション、またはセッション内のユーザー情報がなければ、ここで処理を中断します
-  if (!session.user?.id) {
-    return <div>ログインしていません。</div>;
-  }
-
-  // 4. DBからユーザー情報を取得します。型は PrismaのUser型またはnullになります
-  const user: User | null = await prisma.user.findUnique({
-    where: { id: Number(session.user.id) },
-  });
-
-  // 5. DBから取得したユーザーが見つからない場合も、ここで処理を中断します
-  if (!user) {
-    return <div>ユーザーが見つかりません。</div>;
-  }   
-  const userId = session.user?.id ? Number(session.user.id) : null;
-
-  // --- 2. 総合ランキングのデータを取得 (これはログイン状態に関わらず表示) ---
-  const topUsersOverall = await prisma.user.findMany({
-    orderBy: { xp: 'desc' },
-    take: 10,
-  });
-  const overallRanking = topUsersOverall.map((user, index) => ({
+  // 総合ランキングのデータを準備
+  const allUsersOverall = await prisma.user.findMany({ orderBy: { xp: 'desc' } });
+  const overallRankingFull = assignRanks(allUsersOverall.map(user => ({
     id: user.id,
-    rank: index + 1,
     name: user.username || '名無しさん',
     iconUrl: user.icon || '/images/test_icon.webp',
     score: user.level,
-  }));
+  })));
 
-  // --- 3. 全ての科目のランキングデータを取得 (これもログイン状態に関わらず表示) ---
+  // 科目別ランキングのデータを準備
   const subjects = await prisma.subject.findMany();
-  const subjectRankings: { [key: string]: any[] } = {};
+  const subjectRankingsFull: { [key: string]: any[] } = {};
 
   for (const subject of subjects) {
-    const progress = await prisma.userSubjectProgress.findMany({
+    const allProgress = await prisma.userSubjectProgress.findMany({
       where: { subject_id: subject.id },
       orderBy: { xp: 'desc' },
-      take: 10,
       include: { user: true },
     });
-    subjectRankings[subject.name] = progress.map((p, index) => ({
-      id: p.user_id,
-      rank: index + 1,
+    subjectRankingsFull[subject.name] = assignRanks(allProgress.map(p => ({
+      id: p.user.id,
       name: p.user.username || '名無しさん',
       iconUrl: p.user.icon || '/images/test_icon.webp',
       score: p.level,
-    }));
+    })));
   }
-  
-  const allRankings = { '総合': overallRanking, ...subjectRankings };
-  const tabs = [{ name: '総合' }, ...subjects.map(s => ({ name: s.name }))];
 
-  // --- 4. 「自分の順位」を計算 (ログインしている場合のみ) ---
+  // 表示用のデータを準備
+  const allRankingsForDisplay = {
+    '総合': overallRankingFull.slice(0, 10),
+    ...Object.fromEntries(
+      Object.entries(subjectRankingsFull).map(([key, value]) => [key, value.slice(0, 10)])
+    ),
+  };
+  
+  // 自分の順位を取得
+  const selectedSubject = searchParams.subject || '総合';
   let myRankInfo = null;
+
+  // 親から渡されたuserIdを使って自分の順位を探します
   if (userId) {
-    const currentUser = await prisma.user.findUnique({ where: { id: userId } });
-    if (currentUser) {
-      const higherRankCount = await prisma.user.count({
-        where: { xp: { gt: currentUser.xp } },
-      });
-      myRankInfo = {
-        id: currentUser.id,
-        rank: higherRankCount + 1,
-        name: currentUser.username || '名無しさん',
-        iconUrl: currentUser.icon || '/images/test_icon.webp',
-        score: currentUser.level,
-      };
+    const fullListForSelectedSubject = selectedSubject === '総合' 
+      ? overallRankingFull 
+      : subjectRankingsFull[selectedSubject];
+      
+    if (fullListForSelectedSubject) {
+      myRankInfo = fullListForSelectedSubject.find(user => user.id === userId) || null;
     }
   }
+  
+  const tabs = [{ name: '総合' }, ...subjects.map(s => ({ name: s.name }))];
+
   return (
-    <div className="bg-slate-50 min-h-150">
+    <div className="bg-slate-50">
       <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6">
         <h1 className="text-2xl font-bold text-slate-800">ランキング</h1>
         
-        {/* 全てのデータをクライアントコンポーネントに渡す */}
-        <RankingContainer tabs={tabs} allRankings={allRankings} myRankInfo={myRankInfo}/>
+        <RankingContainer 
+          tabs={tabs} 
+          allRankings={allRankingsForDisplay}
+          myRankInfo={myRankInfo}
+        />
       </div>
     </div>
   );

@@ -9,8 +9,40 @@ interface PetStatusViewProps {
   maxHunger: number;
 }
 
+/**
+ * 満腹度に応じて、表示するコハクの画像パスとステータステキストを返すヘルパー関数
+ * @param hungerLevel 現在の満腹度
+ * @returns { image: string, statusText: string }
+ */
+const getKohakuState = (hungerLevel: number) => {
+  if (hungerLevel >= 150) {
+    return {
+      image: '/images/kohaku/kohaku-full.png', // 満腹の画像
+      statusText: '満腹',
+    };
+  } else if (hungerLevel >= 100) {
+    return {
+      image: '/images/kohaku/kohaku-normal.png', // 普通の画像
+      statusText: '普通',
+    };
+  } else if (hungerLevel >= 50) {
+    return {
+      image: '/images/kohaku/kohaku-hungry.png', // 空腹の画像
+      statusText: '空腹',
+    };
+  } else {
+    return {
+      image: '/images/kohaku/kohaku-starving.png', // 死にかけの画像
+      statusText: '死にかけ…',
+    };
+  }
+};
+
 export default function PetStatusView({ initialHunger, maxHunger }: PetStatusViewProps) {
   const router = useRouter();
+
+  // ヘルパー関数を呼び出して、現在の状態を取得
+  const kohakuState = getKohakuState(initialHunger);
 
   // プログレスバーのパーセンテージを計算
   const fullnessPercentage = (initialHunger / maxHunger) * 100;
@@ -23,7 +55,7 @@ export default function PetStatusView({ initialHunger, maxHunger }: PetStatusVie
       {/* 1. キャラクター画像 */}
       <div>
         <Image
-          src="/images/kohaku.png" 
+          src={kohakuState.image} 
           alt="コハク"
           width={200}
           height={200}

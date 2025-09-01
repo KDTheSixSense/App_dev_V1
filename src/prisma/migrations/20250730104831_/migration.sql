@@ -333,7 +333,8 @@ CREATE TABLE "Status_Kohaku" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
     "status" TEXT NOT NULL,
-    "hungerlevel" INTEGER NOT NULL,
+    "hungerlevel" INTEGER NOT NULL DEFAULT 1000,
+    "hungerLastUpdatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Status_Kohaku_pkey" PRIMARY KEY ("id")
 );
@@ -399,6 +400,9 @@ CREATE UNIQUE INDEX "Groups_hashedId_key" ON "Groups"("hashedId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Groups_invite_code_key" ON "Groups"("invite_code");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Status_Kohaku_user_id_key" ON "Status_Kohaku"("user_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Degree_degree_key" ON "Degree"("degree");

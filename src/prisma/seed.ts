@@ -15,7 +15,7 @@ async function main() {
   // 1. マスターデータのシーディング
   console.log('Seeding difficulties...');
   const difficultiesToSeed = [
-    { id: 1, name: 'やさしい', xp: 200 }, { id: 2, name: 'かんたん', xp: 400 }, { id: 3, name: 'ふつう', xp: 800 }, { id: 4, name: 'むずかしい', xp: 1200 }, { id: 5, name: '鬼むず', xp: 2000 }, { id: 6, name: '基本資格A問題', xp: 40 }, { id: 7, name: '基本資格B問題(かんたん)', xp: 120 }, { id: 8, name: '基本資格B問題(むずかしい)', xp: 280 }, { id: 9, name: '応用資格午前問題', xp: 60 }, { id: 10, name: '応用資格午後問題', xp: 1200 },
+    { id: 1, name: 'やさしい', xp: 200 ,feed: 40}, { id: 2, name: 'かんたん', xp: 400 ,feed: 80}, { id: 3, name: 'ふつう', xp: 800 ,feed: 160}, { id: 4, name: 'むずかしい', xp: 1200 ,feed: 200}, { id: 5, name: '鬼むず', xp: 2000 ,feed: 200}, { id: 6, name: '基本資格A問題', xp: 40 ,feed: 8}, { id: 7, name: '基本資格B問題(かんたん)', xp: 120 ,feed: 24}, { id: 8, name: '基本資格B問題(むずかしい)', xp: 280 ,feed: 56}, { id: 9, name: '応用資格午前問題', xp: 60 ,feed: 12}, { id: 10, name: '応用資格午後問題', xp: 1200 ,feed: 200},
   ];
   for (const d of difficultiesToSeed) { await prisma.difficulty.upsert({ where: { id: d.id }, update: {}, create: d }); }
   console.log('✅ Difficulties seeded.');
@@ -60,37 +60,48 @@ const usersToSeed = [
   { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', year: 2021, class: 2, birth: new Date('2003-08-20') },
   { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', year: 2020, class: 3, birth: new Date('2002-11-05') },
   { email: 'GodOfGod@example.com', password: 'godisgod', username: 'God', level: 9999, xp: 9999999, totallogin: 999 },
+  { email: 'diana@example.com', password: 'password456', username: 'Diana Prince', level: 25, xp: 24500, totallogin: 50 },
+  { email: 'eva@example.com', password: 'password789', username: 'Eva Green', level: 5, xp: 4100, totallogin: 3 },
+  { email: 'frank@example.com', password: 'password101', username: 'Frank Castle', level: 50, xp: 49900, totallogin: 100 },
+  { email: 'grace@example.com', password: 'password112', username: 'Grace Hopper', level: 50, xp: 49900, totallogin: 200 },
+  { email: 'tanaka@example.com', password: 'password131', username: '田中 恵子', level: 2, xp: 1500, totallogin: 1 },
+  { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎', level: 18, xp: 17500, totallogin: 25 },
+  { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲', level: 22, xp: 21300, totallogin: 42 },
 ];
 
-for (const userData of usersToSeed) {
-  const hashedPassword = await bcrypt.hash(userData.password, 10);
+for (const u of usersToSeed) {
+  const hashedPassword = await bcrypt.hash(u.password, 10);
 
-  await prisma.user.upsert({
-    where: { email: userData.email }, 
-    update: { 
-        ...userData,
+// upsertを使って、ユーザーが存在すれば更新、なければ作成する
+    await prisma.user.upsert({
+      where: { email: u.email },
+      // ユーザーが存在する場合の更新内容
+      update: {
+        username: u.username,
         password: hashedPassword,
-    },
-    create: { 
-      ...userData, 
-      password: hashedPassword, 
-    },
-  });
-  console.log(`✅ Upserted user with email: ${userData.email}`);
-
-console.log('✅ Users seeded.');
-        await prisma.user.upsert({
-            where: { email: userData.email },
-            update: {
-                ...userData,
-                password: hashedPassword,
-            },
-            create: {
-                ...userData,
-                password: hashedPassword,
-            },
-        });
-        console.log(`✅ Upserted user with email: ${userData.email}`);
+        level: u.level,
+        xp: u.xp,
+        totallogin: u.totallogin,
+      },
+      // ユーザーが存在しない場合に作成する内容
+      create: {
+        email: u.email,
+        username: u.username,
+        password: hashedPassword,
+        level: u.level,
+        xp: u.xp,
+        totallogin: u.totallogin,
+        // --- ★★★ ネストされた書き込み ★★★ ---
+        // User作成と同時に、関連するペットのステータスも作成する
+        status_Kohaku: {
+          create: {
+            status: '空腹',
+            hungerlevel: 49, // 満腹度の初期値
+          },
+        },
+      },
+    });
+    console.log(`✅ Upserted user with email: ${u.email}`);
     }
     console.log('✅ Users seeded.');
 

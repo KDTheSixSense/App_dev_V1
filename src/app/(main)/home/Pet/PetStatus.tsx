@@ -13,27 +13,64 @@ interface SessionData {
   };
 }
 
-// --- 1. 親コンポーネントはサーバーコンポーネントのまま ---
-// 'use client' や useRouter は使わない
+const MAX_HUNGER = 200; // 満腹度の最大値をここで一元管理
+
 export default async function PetStatus() {
-  // --- サーバーサイドで全てのデータ準備を行う ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? Number(session.user.id) : null;
 
-  const petStatus = userId ? await prisma.status_Kohaku.findFirst({
+  // ログインしていない場合は、デフォルトの満タン状態で表示
+  if (!userId) {
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} />;
+  }
+
+  // --- ▼▼▼ ここからが時間経過の計算ロジックです ▼▼▼ ---
+  const now = new Date();
+  let petStatus = await prisma.status_Kohaku.findFirst({
     where: { user_id: userId },
-  }) : null;
+  });
+  
+  // もしペット情報がなければ、ここで処理を中断（表示はデフォルト）
+  if (!petStatus) {
+    console.error(`User ID: ${userId} のペット情報が見つかりません。`);
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} />;
+  }
 
-  const MAX_HUNGER = 1500; // 満腹度の最大値を1500に設定
-  const currentHunger = petStatus?.hungerlevel ?? 1000; // ペットの現在の満腹度を取得、なければデフォルト値1000を使用
-  const safeHunger = Math.max(0, Math.min(currentHunger, MAX_HUNGER));
+  // 1. 最後に更新されてからの経過時間（分）を計算
+  const lastUpdate = petStatus.hungerLastUpdatedAt; // この値はnullの可能性がある
+  let minutesPassed = 0; // 経過時間のデフォルトは0分
+  let finalHungerLevel = petStatus.hungerlevel;
+  // 1. lastUpdateがnullでない（タイマーが開始されている）場合のみ、経過時間を計算
+  if (lastUpdate) {
+    minutesPassed = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60));
+    // 10分ごとに1ポイント減少するので、経過分数を10で割って切り捨て
+    const hungerPointsToDecrease = Math.floor(minutesPassed / 10);
 
-  // --- 取得したデータを、表示用のクライアントコンポーネントにPropsとして渡す ---
+ // 10分以上経過していれば（＝1ポイント以上減少する場合）、DBを更新
+    if (hungerPointsToDecrease > 0) {
+      const newHungerLevel = Math.max(0, petStatus.hungerlevel - hungerPointsToDecrease);
+      
+      // 最後に更新した時刻から、経過した「10分の倍数」の時間を加算して新しい更新時刻を計算
+      // これにより、9分などの端数が切り捨てられず、次回の計算に引き継がれる
+      const newLastUpdate = new Date(lastUpdate.getTime() + hungerPointsToDecrease * 10 * 60 * 1000);
+
+      const updatedPetStatus = await prisma.status_Kohaku.update({
+        where: { id: petStatus.id },
+        data: {
+          hungerlevel: newHungerLevel,
+          hungerLastUpdatedAt: newLastUpdate,
+        },
+      });
+      finalHungerLevel = updatedPetStatus.hungerlevel;
+      console.log(`${minutesPassed}分経過したため、満腹度を${hungerPointsToDecrease}ポイント減少させました。`);
+    }
+  }
+  // --- ▲▲▲ 計算ロジックここまで ▲▲▲ ---
+
   return (
     <PetStatusView 
-      initialHunger={safeHunger} 
+      initialHunger={finalHungerLevel} 
       maxHunger={MAX_HUNGER} 
     />
   );
 }
-
