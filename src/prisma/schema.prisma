@@ -10,11 +10,11 @@ datasource db {
 model User {
   id                       Int                   @id    @default(autoincrement()) // ID: 整数型、主キー、自動増分
   email                    String                @unique // メールアドレス: 文字列型、ユニーク
-  password                 String // パスワード: 文字列型
+  password                 String  // パスワード: 文字列型
   hash                     String? // ハッシュ値: 文字列型、Null許容
   username                 String? // ユーザー名: 文字列型、Null許容
-  year                     Int? // 年: 整数型、Null許容
-  class                    Int? // クラス: 整数型、Null許容
+  year                     Int?    // 年: 整数型、Null許容
+  class                    Int?    // クラス: 整数型、Null許容
   birth                    DateTime?             @db.Date // 誕生日: 日付型、Null許容
   resetPasswordToken       String?
   resetPasswordTokenExpiry DateTime?
@@ -35,6 +35,7 @@ model User {
   answerd_Genre_Table      Answerd_Genre_Table[]
   groups_User              Groups_User[]
   createdProblems          ProgrammingProblem[] @relation("ProblemCreator")
+  createdSelectProblems SelectProblem[]      @relation("SelectProblemCreator") // SelectProblemとのリレーション
   posts Post[]
   
 }
@@ -75,6 +76,7 @@ model Subject {
 
   userProgresses      UserSubjectProgress[] // この科目を学習しているユーザーの進捗リスト
   Questions_Algorithm Questions_Algorithm[]
+   SelectProblem       SelectProblem[]      // SelectProblemとのリレーション
 }
 
 model Language {
@@ -140,6 +142,30 @@ model Questions {
   language   Language     @relation(fields: [language_id], references: [id])
   answer     UserAnswer[]
   Answers    Answers[]
+}
+
+/// プログラミング選択問題モデル
+model SelectProblem {
+  id              Int      @id @default(autoincrement())
+  title           String   // 問題タイトル
+  description     String   @db.Text // 問題文 (Markdown)
+  explanation     String?  @db.Text // 解説文
+  answerOptions   Json     // 選択肢 (例: ["選択肢A", "選択肢B", ...])
+  correctAnswer   String   // 正解のテキスト
+  
+  // --- リレーション ---
+  difficultyId    Int
+  difficulty      Difficulty @relation(fields: [difficultyId], references: [id])
+  
+  subjectId       Int
+  subject         Subject    @relation(fields: [subjectId], references: [id])
+
+  createdBy       Int?
+  creator         User?      @relation("SelectProblemCreator", fields: [createdBy], references: [id])
+
+  // --- タイムスタンプ ---
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 
 /// プログラミング問題の情報を格納するモデル 
@@ -318,6 +344,7 @@ model Difficulty {
   xp                  Int // この難易度で得られる経験値
   Questions_Algorithm Questions_Algorithm[]
   Questions           Questions[]
+  SelectProblem       SelectProblem[]
 }
 
 model Groups {

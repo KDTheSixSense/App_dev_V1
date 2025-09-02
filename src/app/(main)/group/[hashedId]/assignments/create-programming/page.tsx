@@ -4,6 +4,11 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Case, TestCase, FormData, UploadedFile } from '@/types/problem';
 
+interface AnswerOption {
+  id: string;
+  text: string;
+}
+
 // プログラミング問題作成ページのメインコンポーネント（改良版）
 export default function CreateProgrammingQuestionPage() {
   // フォームの状態管理
@@ -35,6 +40,16 @@ export default function CreateProgrammingQuestionPage() {
   const [testCases, setTestCases] = useState<TestCase[]>([
     { id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' } 
   ])
+
+  // ★【追加】4択問題用の状態 ---
+  const [answerOptions, setAnswerOptions] = useState<AnswerOption[]>([
+    { id: 'a', text: '' },
+    { id: 'b', text: '' },
+    { id: 'c', text: '' },
+    { id: 'd', text: '' },
+  ]);
+  const [correctAnswer, setCorrectAnswer] = useState<string>('a');
+  const [explanation, setExplanation] = useState<string>('');
   
   const [tagInput, setTagInput] = useState('')
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -187,13 +202,32 @@ export default function CreateProgrammingQuestionPage() {
   ]
 
   // カテゴリ選択処理
-  const handleCategorySelect = (categoryId: string, categoryName: string) => {
-    setSelectedCategory(categoryId)
-    setFormData(prev => ({
-      ...prev,
-      category: categoryName
-    }))
-  }
+  // ★【修正】カテゴリ選択時に問題タイプも更新し、フォームをリセットする
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    resetForm(categoryId); // フォームをリセット
+
+    if (categoryId === 'itpassport') {
+      setFormData(prev => ({
+        ...prev,
+        category: 'プログラミング選択問題',
+        problemType: '選択問題',
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        category: 'プログラミング基礎',
+        problemType: 'コーディング問題',
+      }));
+    }
+  };
+
+  // 4択問題の選択肢のテキストを更新するハンドラ
+  const handleOptionChange = (id: string, text: string) => {
+    setAnswerOptions(options => 
+      options.map(opt => (opt.id === id ? { ...opt, text } : opt))
+    );
+  };
 
   // タグ追加処理
   const addTag = () => {
@@ -217,7 +251,7 @@ export default function CreateProgrammingQuestionPage() {
   // サンプルケース追加処理
   const addSampleCase = () => {
     const newId = Math.max(...sampleCases.map(c => c.id ?? 0)) + 1;
-    setSampleCases(prev => [...prev, { id: newId, name: `ケース${testCases.length + 1}`, input: '', expectedOutput: '', description: '' }]);
+    setSampleCases(prev => [...prev, { id: Date.now(), input: '', expectedOutput: '', description: '' }]);
   }
 
   // サンプルケース削除処理
@@ -366,49 +400,50 @@ export default function CreateProgrammingQuestionPage() {
     }
   }
 
-  // 問題投稿処理
+  // 問題投稿処理 (Publish Problem)
   const handlePublishProblem = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault()
-  setIsSubmitting(true)
-  
-  try {
-    // ★ 修正: 送信するデータに sampleCases と testCases を含める
-    const problemData = {
-      ...formData,
-      tags: JSON.stringify(formData.tags), // tagsはJSON文字列に変換
-      sampleCases: sampleCases.filter(sc => sc.input || sc.expectedOutput),
-      testCases: testCases.filter(tc => tc.input || tc.expectedOutput),
-    };
-
-    // ★ 修正: 呼び出すAPIのエンドポイントを /api/problems に変更
-    const problemResponse = await fetch('/api/problems', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(problemData),
-    });
-
-    if (!problemResponse.ok) {
-      const errorData = await problemResponse.json();
-      const errorMessage = errorData.error || '不明なエラーが発生しました';
-      throw new Error(`問題の投稿に失敗しました: ${errorMessage}`);
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      if (selectedCategory === 'itpassport') {
+        const requestBody = {
+          title: formData.title,
+          description: formData.description,
+          explanation: explanation,
+          answerOptions: answerOptions.map(opt => opt.text),
+          correctAnswer: answerOptions.find(opt => opt.id === correctAnswer)?.text || '',
+          subjectId: 4, 
+          difficultyId: formData.difficulty,
+        };
+          const response = await fetch('/api/select-problems', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+        if (!response.ok) throw new Error((await response.json()).message || '選択問題の作成に失敗しました。');
+        alert('選択問題が正常に投稿されました！');
+      } else {
+        const problemData = {
+          ...formData,
+          tags: JSON.stringify(formData.tags),
+          sampleCases: sampleCases.filter(sc => sc.input || sc.expectedOutput),
+          testCases: testCases.filter(tc => tc.input || tc.expectedOutput),
+        };
+        const response = await fetch('/api/problems', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(problemData),
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'コーディング問題の投稿に失敗しました');
+        alert('コーディング問題が正常に投稿されました！');
+      }
+      resetForm(selectedCategory);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '不明なエラーが発生しました。';
+      console.error('Error:', error);
+      alert(`エラー: ${message}`); // サーバーからのメッセージを直接表示
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const problemResult = await problemResponse.json();
-    alert('問題が正常に投稿されました！');
-
-    // フォームリセット処理
-    resetForm();
-
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('Error:', error);
-    alert(message); // エラーメッセージを直接表示
-  } finally {
-    setIsSubmitting(false);
-  }
-}
+  };
 
   // 編集モード切り替え
   const handleEditMode = () => {
@@ -420,21 +455,29 @@ export default function CreateProgrammingQuestionPage() {
     }
   }
 
-  // フォームリセット処理
-  const resetForm = () => {
+  // フォームリセット処理をカテゴリに応じて変更
+  const resetForm = (category = selectedCategory) => {
     setFormData({
       title: '',
-      problemType: 'コーディング問題',
+      problemType: category === 'itpassport' ? '選択問題' : 'コーディング問題',
       difficulty: 4,
       timeLimit: 10,
-      category: 'プログラミング基礎',
+      category: category === 'itpassport' ? 'プログラミング選択問題' : 'プログラミング基礎',
       topic: '標準入力',
       tags: [],
       description: '',
       codeTemplate: '',
       isPublic: false,
       allowTestCaseView: false
-    })
+    });
+
+    // 4択問題用のstateをリセット
+    setAnswerOptions([
+      { id: 'a', text: '' }, { id: 'b', text: '' }, { id: 'c', text: '' }, { id: 'd', text: '' }
+    ]);
+    setCorrectAnswer('a');
+    setExplanation('');
+
     setSampleCases([{ id: 1, input: '', expectedOutput: '', description: '' }])
     setTestCases([{ id: 1, name: 'ケース1', input: '', expectedOutput: '', description: '' }])
     setFiles([])
@@ -1363,7 +1406,7 @@ export default function CreateProgrammingQuestionPage() {
                 <li key={category.id} className="sidebar-item">
                   <button
                     className={`sidebar-link ${selectedCategory === category.id ? 'active' : ''}`}
-                    onClick={() => handleCategorySelect(category.id, category.name)}
+                    onClick={() => handleCategorySelect(category.id)}
                   >
                     <div className="sidebar-link-content">
                       <span className="sidebar-link-text">{category.name}</span>
@@ -1428,8 +1471,82 @@ export default function CreateProgrammingQuestionPage() {
               </button>
             </div>
 
-            {/* フォーム */}
             <form onSubmit={isEditMode ? handleUpdateProblem : handlePublishProblem}>
+              {selectedCategory === 'itpassport' ? (
+                // 4択問題作成フォーム
+                <div className="card">
+                  <div className="card-header">プログラミング選択問題</div>
+                  <div className="card-body">
+                    <div className="form-group">
+                      <label className="form-label"><span className="required-badge">必須</span>問題タイトル</label>
+                      <input type="text" className="form-input" value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} placeholder="例: Pythonの変数宣言について" required />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label"><span className="required-badge">必須</span>問題文</label>
+                      <textarea className="form-textarea" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="問題文を記述してください..." rows={8} required />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label"><span className="required-badge">必須</span>選択肢と正解</label>
+                      {answerOptions.map((option, index) => (
+                        <div key={option.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
+                          <input type="radio" name="correctAnswer" value={option.id} checked={correctAnswer === option.id} onChange={(e) => setCorrectAnswer(e.target.value)} style={{ marginRight: '1rem', transform: 'scale(1.2)' }} />
+                          <input type="text" className="form-input" value={option.text} onChange={(e) => handleOptionChange(option.id, e.target.value)} placeholder={`選択肢 ${index + 1}`} required />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">解説</label>
+                      <textarea className="form-textarea" value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="正解の解説を記述してください..." rows={6} />
+                    </div>
+                     <div className="form-group">
+                    <label className="form-label">難易度</label>
+                    <select
+                      className="form-select"
+                      value={formData.difficulty}
+                      onChange={(e) => setFormData(prev => ({ ...prev, difficulty: parseInt(e.target.value) }))}
+                    >
+                      <option value={1}>1 (やさしい)</option>
+                      <option value={2}>2 (かんたん)</option>
+                      <option value={3}>3 (ふつう)</option>
+                      <option value={4}>4 (むずかしい)</option>
+                      <option value={5}>5 (鬼むず)</option>
+                    </select>
+                  </div>
+                  </div>
+                  <div className="action-buttons">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleSaveDraft}
+                  disabled={isSubmitting}
+                >
+                  下書き保存
+                </button>
+                
+                {isEditMode ? (
+                  <button
+                    type="submit"
+                    className="btn btn-success"
+                    disabled={isSubmitting}
+                  >
+                    問題を更新
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isSubmitting}
+                  >
+                    問題を投稿
+                  </button>
+                )}
+                
+                <button type="button" className="btn btn-secondary" onClick={() => resetForm()} disabled={isSubmitting}>リセット</button>
+              </div>
+                </div>
+              ) : (
+                // コーディング問題作成フォーム
+                <>
               {/* 基本情報タブ */}
               {activeTab === 'basic' && (
                 <div className="card">
@@ -1937,15 +2054,10 @@ export default function CreateProgrammingQuestionPage() {
                   </button>
                 )}
                 
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={resetForm}
-                  disabled={isSubmitting}
-                >
-                  リセット
-                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => resetForm()} disabled={isSubmitting}>リセット</button>
               </div>
+              </>
+              )}
             </form>
           </div>
         </div>
