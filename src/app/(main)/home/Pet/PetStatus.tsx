@@ -1,9 +1,6 @@
-import Image from 'next/image';
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import PetStatusView from './PetStatusView'; // すぐ下に作成するクライアントコンポーネントをインポート
+import type { User } from '@prisma/client';
 
 // セッションデータの型を定義
 interface SessionData {
@@ -15,24 +12,22 @@ interface SessionData {
 
 const MAX_HUNGER = 200; // 満腹度の最大値をここで一元管理
 
-export default async function PetStatus() {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+export default async function PetStatus({user}: {user : User | null} ) {
 
   // ログインしていない場合は、デフォルトの満タン状態で表示
-  if (!userId) {
+  if (!user) {
     return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} />;
   }
 
   // --- ▼▼▼ ここからが時間経過の計算ロジックです ▼▼▼ ---
   const now = new Date();
   let petStatus = await prisma.status_Kohaku.findFirst({
-    where: { user_id: userId },
+    where: { user_id: user.id },
   });
   
   // もしペット情報がなければ、ここで処理を中断（表示はデフォルト）
   if (!petStatus) {
-    console.error(`User ID: ${userId} のペット情報が見つかりません。`);
+    console.error(`User ID: ${user.id} のペット情報が見つかりません。`);
     return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} />;
   }
 

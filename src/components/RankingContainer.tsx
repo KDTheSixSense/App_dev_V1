@@ -3,21 +3,31 @@
 import { useState } from 'react';
 import RankingList from '../app/(main)/home/ranking/RankingList';
 import RankingListItem from '../app/(main)/home/ranking/RankingListItem';
-import type { UserForRanking } from '@/lib/types/ranking'; // 型定義をインポート
+import { useMemo } from "react";
+import { useSearchParams } from 'next/navigation';
 
-// 型定義
-type Props = {
+
+export default function RankingContainer({    
+  tabs,
+  allRankings,
+  allRankingsFull,
+  userId,
+}: {
   tabs: { name: string }[];
   allRankings: { [key: string]: any[] };
-  myRankInfo: UserForRanking | null;
-};
-
-export default function RankingContainer({ tabs, allRankings, myRankInfo }: Props) {
+  allRankingsFull: { [key: string]: any[] };
+  userId: number | null;
+}) {
+  const searchParams = useSearchParams();
+  let selectedSubject = searchParams.get('subject') || '総合';
+    // タブ切り替え時に自分の順位を再計算
+  const myRankInfo = useMemo(() => {
+    if (!userId) return null;
+    const fullList = allRankingsFull[selectedSubject] || [];
+    return fullList.find(user => user.id === userId) || null;
+  }, [userId, selectedSubject, allRankingsFull]);
   const [activeTab, setActiveTab] = useState('総合');
   const displayedUsers = allRankings[activeTab] || [];
-
-  // 自分自身がトップ10に含まれているかどうかのフラグ
-  const isMeInTop10 = myRankInfo ? displayedUsers.some(user => user.id === myRankInfo.id) : false;
 
   return (
     <div>

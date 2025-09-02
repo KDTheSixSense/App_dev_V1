@@ -1,17 +1,14 @@
+'use server';
+
 import { prisma } from "@/lib/prisma";
 import RankingContainer from "@/components/RankingContainer";
-import { assignRanks } from "@/lib/ranking"; 
+import { assignRanks } from "@/lib/ranking";
 
-// --- ▼▼▼ Propsの型定義を修正 ▼▼▼ ---
-// searchParamsに加えて、userIdも受け取るように定義します
 interface RankingPageProps {
-  searchParams: { subject?: string };
-  userId: number | null; 
+  userId: number | null;
 }
 
-// --- ▼▼▼ 関数の引数を修正 ▼▼▼ ---
-export default async function RankingPage({ searchParams, userId }: RankingPageProps) {
-
+export default async function RankingPage({ userId }: RankingPageProps) {
   // 総合ランキングのデータを準備
   const allUsersOverall = await prisma.user.findMany({ orderBy: { xp: 'desc' } });
   const overallRankingFull = assignRanks(allUsersOverall.map(user => ({
@@ -46,33 +43,24 @@ export default async function RankingPage({ searchParams, userId }: RankingPageP
       Object.entries(subjectRankingsFull).map(([key, value]) => [key, value.slice(0, 10)])
     ),
   };
-  
-  // 自分の順位を取得
-  const selectedSubject = searchParams.subject || '総合';
-  let myRankInfo = null;
 
-  // 親から渡されたuserIdを使って自分の順位を探します
-  if (userId) {
-    const fullListForSelectedSubject = selectedSubject === '総合' 
-      ? overallRankingFull 
-      : subjectRankingsFull[selectedSubject];
-      
-    if (fullListForSelectedSubject) {
-      myRankInfo = fullListForSelectedSubject.find(user => user.id === userId) || null;
-    }
-  }
-  
+  // 全ランキングデータを渡す
+  const allRankingsFull = {
+    '総合': overallRankingFull,
+    ...subjectRankingsFull,
+  };
+
   const tabs = [{ name: '総合' }, ...subjects.map(s => ({ name: s.name }))];
 
   return (
     <div className="bg-slate-50">
       <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6">
         <h1 className="text-2xl font-bold text-slate-800">ランキング</h1>
-        
-        <RankingContainer 
-          tabs={tabs} 
+        <RankingContainer
+          tabs={tabs}
           allRankings={allRankingsForDisplay}
-          myRankInfo={myRankInfo}
+          allRankingsFull={allRankingsFull}
+          userId={userId}
         />
       </div>
     </div>
