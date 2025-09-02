@@ -198,7 +198,7 @@ export default function CreateProgrammingQuestionPage() {
   // カテゴリリスト
   const categories = [
     { id: 'programming', name: 'プログラミング問題', subItems: [] },
-    { id: 'itpassport', name: 'プログラミング選択問題', subItems: [] },
+    { id: 'itpassport', name: '4択問題', subItems: [] },
   ]
 
   // カテゴリ選択処理
@@ -210,7 +210,7 @@ export default function CreateProgrammingQuestionPage() {
     if (categoryId === 'itpassport') {
       setFormData(prev => ({
         ...prev,
-        category: 'プログラミング選択問題',
+        category: '4択問題',
         problemType: '選択問題',
       }));
     } else {
@@ -462,7 +462,7 @@ export default function CreateProgrammingQuestionPage() {
       problemType: category === 'itpassport' ? '選択問題' : 'コーディング問題',
       difficulty: 4,
       timeLimit: 10,
-      category: category === 'itpassport' ? 'プログラミング選択問題' : 'プログラミング基礎',
+      category: category === 'itpassport' ? '4択問題' : 'プログラミング基礎',
       topic: '標準入力',
       tags: [],
       description: '',
@@ -1475,7 +1475,7 @@ export default function CreateProgrammingQuestionPage() {
               {selectedCategory === 'itpassport' ? (
                 // 4択問題作成フォーム
                 <div className="card">
-                  <div className="card-header">プログラミング選択問題</div>
+                  <div className="card-header">4択問題</div>
                   <div className="card-body">
                     <div className="form-group">
                       <label className="form-label"><span className="required-badge">必須</span>問題タイトル</label>
@@ -1510,6 +1510,7 @@ export default function CreateProgrammingQuestionPage() {
                       <option value={3}>3 (ふつう)</option>
                       <option value={4}>4 (むずかしい)</option>
                       <option value={5}>5 (鬼むず)</option>
+                      <option value={6}>6 (基本資格A問題)</option>
                     </select>
                   </div>
                   </div>
