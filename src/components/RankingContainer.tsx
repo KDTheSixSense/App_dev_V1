@@ -18,16 +18,21 @@ export default function RankingContainer({
   allRankingsFull: { [key: string]: any[] };
   userId: number | null;
 }) {
-  const searchParams = useSearchParams();
-  let selectedSubject = searchParams.get('subject') || '総合';
-    // タブ切り替え時に自分の順位を再計算
+
+
+    // useSearchParamsを削除し、useStateを唯一の情報源とします
+  const [activeTab, setActiveTab] = useState('総合');
+
+  // 上位10名の表示は、useStateのactiveTabを参照します（これは元々正しい）
+  const displayedUsers = allRankings[activeTab] || [];
+
+  // あなたの順位も、useStateのactiveTabを参照するように修正します
   const myRankInfo = useMemo(() => {
     if (!userId) return null;
-    const fullList = allRankingsFull[selectedSubject] || [];
+    // selectedSubjectではなく、activeTabを使います
+    const fullList = allRankingsFull[activeTab] || [];
     return fullList.find(user => user.id === userId) || null;
-  }, [userId, selectedSubject, allRankingsFull]);
-  const [activeTab, setActiveTab] = useState('総合');
-  const displayedUsers = allRankings[activeTab] || [];
+  }, [userId, activeTab, allRankingsFull]); // 依存配列にactiveTabを追加
 
   return (
     <div>
