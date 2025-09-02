@@ -32,6 +32,7 @@ const questionCategories = [
   { title: '応用情報 午前', description: 'Title\nDescription', path: '/issue_list/applied_info_morning_problem/problems' },
   { title: '応用情報 午後', description: 'Title\nDescription', path: '/issue_list/applied_info_afternoon_problem/problems' },
   { title: 'プログラミング', description: 'Title\nDescription', path: '/issue_list/programming_problem/problems' },
+  { title: '4択問題', description: 'Title\nDescription', path: '/issue_list/selects_problems' },
   { title: '作成した問題', description: 'Title\nDescription', path: '/issue_list/mine_issue_list/problems' },
 ];
 

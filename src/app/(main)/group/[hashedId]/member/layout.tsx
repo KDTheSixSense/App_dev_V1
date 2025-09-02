@@ -5,6 +5,8 @@ import { sessionOptions } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import React from 'react';
 
+export const dynamic = 'force-dynamic';
+
 // セッションデータの型を定義
 interface SessionData {
   user?: {
