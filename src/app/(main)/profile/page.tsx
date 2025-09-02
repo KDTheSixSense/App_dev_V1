@@ -57,7 +57,7 @@ export default async function ProfilePage() {
     include: {
       unlockedTitles: { include: { title: true } },
       selectedTitle: true,
-      Status_Kohaku: true, // ★ ペットのステータス情報を追加
+      status_Kohaku: true, // ★ ペットのステータス情報を追加
     },
   });
 
@@ -101,6 +101,7 @@ export default async function ProfilePage() {
       ...ut,
       unlockedAt: ut.unlockedAt.toISOString(),
     })),
+    Status_Kohaku: userWithDetails.status_Kohaku, // Add this line to match SerializedUser type
   };
 
   // --- 5. すべてのデータをクライアントコンポーネントに渡す ---

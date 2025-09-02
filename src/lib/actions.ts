@@ -259,15 +259,15 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
       }
 
     // 称号付与ロジック (科目)
-    if (newSubjectLevel >= 10) {
-      const title = await tx.title.findFirst({
-        where: {
-          type: 'SUBJECT_LEVEL',
-          requiredLevel: 10,
-          requiredSubjectId: subject_id,
-        },
-      });
-      if (title) {
+    const subjectTitles = await tx.title.findMany({
+      where: {
+        type: 'SUBJECT_LEVEL',
+        requiredSubjectId: subject_id,
+      },
+    });
+
+    for (const title of subjectTitles) {
+      if (newSubjectLevel >= title.requiredLevel) {
         const existingUnlock = await tx.userUnlockedTitle.findUnique({
           where: { userId_titleId: { userId: user_id, titleId: title.id } },
         });
@@ -294,14 +294,14 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
       console.log(`[アカウントレベルアップ!] ${user.username} がアカウントレベル ${newAccountLevel} に！`);
 
       // 称号付与ロジック (ユーザー)
-      if (newAccountLevel >= 10) {
-        const title = await tx.title.findFirst({
-          where: {
-            type: 'USER_LEVEL',
-            requiredLevel: 10,
-          },
-        });
-        if (title) {
+      const userTitles = await tx.title.findMany({
+        where: {
+          type: 'USER_LEVEL',
+        },
+      });
+
+      for (const title of userTitles) {
+        if (newAccountLevel >= title.requiredLevel) {
           const existingUnlock = await tx.userUnlockedTitle.findUnique({
             where: { userId_titleId: { userId: user_id, titleId: title.id } },
           });
@@ -368,6 +368,12 @@ export async function updateUserLoginStats(userId: number) {
       totallogin: newTotalDays,
       continuouslogin: newConsecutiveDays,
       lastlogin: now,
+    },
+  });
+
+  await prisma.loginHistory.create({
+    data: {
+      userId: userId,
     },
   });
 }

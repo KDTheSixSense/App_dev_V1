@@ -331,11 +331,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
 
   const handleNextProblem = async () => {
     const currentId = parseInt(problem.id, 10);
-    // この呼び出しは、lib/actions.ts のサーバーアクションを指すようになります
     const nextProblemId = await getNextProblemId(currentId, 'basic_info_b_problem');
     
     if (nextProblemId) {
-      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
+      window.location.href = `/issue_list/basic_info_b_problem/${nextProblemId}`;
     } else {
       alert("最後の問題です！");
       router.push('/issue_list/basic_info_b_problem/problems');

@@ -39,8 +39,14 @@ async function main() {
   const titlesToSeed = [
     { id: 1, name: '駆け出し冒険者', description: 'ユーザーレベル10に到達した証。', type: TitleType.USER_LEVEL, requiredLevel: 10 },
     { id: 2, name: '見習いプログラマー', description: 'プログラミングレベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 1 },
-    { id: 3, name: 'A問題の新人', description: '基本情報A問題レベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 2 },
-    { id: 4, name: 'B問題の新人', description: '基本情報B問題レベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 3 },
+    { id: 3, name: 'B問題の新人', description: '基本情報B問題レベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 3 },
+    { id: 4, name: 'A問題の新人', description: '基本情報A問題レベル10に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 10, requiredSubjectId: 2 },
+    { id: 5, name: 'ベテラン冒険者', description: 'ユーザーレベル20に到達した証。', type: TitleType.USER_LEVEL, requiredLevel: 20 },
+    { id: 6, name: 'マスター冒険者', description: 'ユーザーレベル30に到達した証。', type: TitleType.USER_LEVEL, requiredLevel: 30 },
+    { id: 7, name: '熟練プログラマー', description: 'プログラミングレベル20に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 20, requiredSubjectId: 1 },
+    { id: 8, name: 'マスタープログラマー', description: 'プログラミングレベル30に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 30, requiredSubjectId: 1 },
+    { id: 9, name: 'A問題の達人', description: '基本情報A問題レベル20に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 20, requiredSubjectId: 2 },
+    { id: 10, name: 'B問題の達人', description: '基本情報B問題レベル20に到達した証。', type: TitleType.SUBJECT_LEVEL, requiredLevel: 20, requiredSubjectId: 3 },
   ];
   for (const t of titlesToSeed) { await prisma.title.upsert({ where: { id: t.id }, update: {}, create: t }); }
   console.log('✅ Titles seeded.');

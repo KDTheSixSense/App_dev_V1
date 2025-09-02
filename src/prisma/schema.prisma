@@ -36,7 +36,16 @@ model User {
   groups_User              Groups_User[]
   createdProblems          ProgrammingProblem[] @relation("ProblemCreator")
   posts Post[]
+  loginHistory LoginHistory[]
   
+}
+
+model LoginHistory {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  loggedInAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 // グループ内の投稿・お知らせを保存するモデル
