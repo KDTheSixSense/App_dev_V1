@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
 import Chart from './Chart/Chart';
-import PetStatus from './Pet/PetStatus';
+import PetStatusView from '../home/Pet/PetStatusView';
 import Advice from './Advice/Advice';
+import { updateUserProfileAction } from './actions';
 
 // --- 型定義 ---
-// サーバーから渡されるデータと、フォームで扱うデータの型を定義します。
 type SerializedUserUnlockedTitle = Omit<UserUnlockedTitle, 'unlockedAt'> & {
   unlockedAt: string;
   title: Title;
@@ -33,30 +33,23 @@ type UserStats = {
   };
 };
 
-// このコンポーネントが受け取るPropsの型
 interface ProfileClientProps {
   initialUser: SerializedUser;
   initialStats: UserStats;
   aiAdvice: string;
 }
 
-// プリセットアイコンの定義
 const presetIcons = {
   male: [ '/images/DefaultIcons/male1.jpg', '/images/DefaultIcons/male2.jpg', '/images/DefaultIcons/male3.jpg' ],
   female: [ '/images/DefaultIcons/female1.jpg', '/images/DefaultIcons/female2.jpg', '/images/DefaultIcons/female3.jpg' ],
 };
 
-
 export default function ProfileClient({ initialUser, initialStats, aiAdvice }: ProfileClientProps) {
   const router = useRouter();
-  
-  // --- 状態管理(State) ---
-  // 編集モードの状態
   const [isEditing, setIsEditing] = useState(false);
-  // パスワード変更フォームの表示状態
+  const [isLoading, setIsLoading] = useState(false);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   
-  // フォームの入力データ
   const [formData, setFormData] = useState({
     username: initialUser.username || '',
     birth: initialUser.birth ? new Date(initialUser.birth).toISOString().split('T')[0] : '',
@@ -64,21 +57,17 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
     selectedTitleId: initialUser.selectedTitleId || null,
   });
   
-  // フォームの初期データ（キャンセル時に使用）
   const [initialData, setInitialData] = useState(formData);
   
-  // パスワード関連のデータ
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
 
-  // モーダルの表示状態
   const [isTitleModalOpen, setIsTitleModalOpen] = useState(false);
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
 
-  // initialUserが変更された場合にフォームデータを更新
   useEffect(() => {
     const initial = {
       username: initialUser.username || '',
@@ -90,8 +79,6 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
     setInitialData(initial);
   }, [initialUser]);
 
-
-  // --- イベントハンドラ ---
   const handleEdit = () => setIsEditing(true);
 
   const handleCancel = () => {
@@ -134,13 +121,18 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isEditing) return;
-    
-    // (ここにプロフィール更新とパスワード変更のAPI通信処理を実装)
-    console.log("Form submission logic goes here.", { formData, passwordData });
-    
-    setIsEditing(false);
-    setShowPasswordChange(false);
-    router.refresh();
+
+    setIsLoading(true);
+    const result = await updateUserProfileAction(formData);
+    setIsLoading(false);
+
+    if (result.error) {
+      alert(result.error);
+    } else {
+      setIsEditing(false);
+      setShowPasswordChange(false);
+      router.refresh();
+    }
   };
 
   const displayedTitleName = isEditing
@@ -218,7 +210,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
                 <div className="flex justify-center mt-8">
                   {isEditing ? (
                     <div className="flex gap-4">
-                      <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-8 rounded-full">更新</button>
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-8 rounded-full" disabled={isLoading}>{isLoading ? '更新中...' : '更新'}</button>
                       <button type="button" onClick={handleCancel} className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-8 rounded-full">キャンセル</button>
                     </div>
                   ) : (
@@ -231,7 +223,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
 
           {/* 右カラム：ペット、チャート、アドバイス */}
           <div className="lg:col-span-1 space-y-8">
-            <PetStatus status={initialUser.Status_Kohaku} />
+            <PetStatusView initialHunger={initialUser.Status_Kohaku?.[0]?.hungerlevel ?? 200} maxHunger={200} />
             <Chart stats={initialStats} />
             <Advice advice={aiAdvice} />
           </div>

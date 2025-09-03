@@ -18,6 +18,7 @@ const config = {
   publicRoutes: [
     '/',
     '/auth/login',
+    '/auth/mail',
     '/auth/register',
     '/auth/mail',
     '/auth/password-reset',
