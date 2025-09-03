@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { GroupLayout } from '../../GroupLayout';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,9 +11,9 @@ export const dynamic = 'force-dynamic';
 // ※PostやAPIからのデータ型に合わせて調整してください
 interface Post {
     id: number;
-    authorName: string;
-    authorAvatar: string;
     content: string;
+    authorName: string; 
+    authorAvatar: string;
     createdAt: string;
 }
 
@@ -20,9 +21,13 @@ interface Kadai {
     id: number;
     title: string;
     description: string;
-    dueDate: string;
+    dueDate: string; 
     createdAt: string;
+    completed?: boolean;
+    programmingProblemId?: number;
+    selectProblemId?: number;
 }
+
 
 interface GroupDetail {
     id: number;
@@ -75,14 +80,33 @@ const MemberGroupPage: React.FC = () => {
                     const groupData = await groupRes.json();
                     setGroup({ teacher: '管理者', ...groupData });
 
-                    if(postsRes.ok) {
+                     // APIレスポンスをフロントエンドの型に合わせて整形
+                    if (postsRes.ok) {
                         const postsData = await postsRes.json();
-                        setPosts(postsData);
+                        const formattedPosts: Post[] = postsData.data.map((post: any) => ({
+                            id: post.id,
+                            content: post.content,
+                            authorName: post.author.username || '不明なユーザー',
+                            authorAvatar: post.author.username?.charAt(0) || '?',
+                            createdAt: new Date(post.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }),
+                        }));
+                        setPosts(formattedPosts);
                     }
                     
-                    if(assignmentsRes.ok) {
+                    if (assignmentsRes.ok) {
                         const assignmentsData = await assignmentsRes.json();
-                        setKadaiList(assignmentsData);
+                        // APIからのデータ(スネークケース)をフロントエンドの型(キャメルケース)に変換
+                        const formattedKadai: Kadai[] = assignmentsData.data.map((kadai: any, index: number) => ({
+                            id: kadai.id,
+                            title: kadai.title,
+                            description: kadai.description,
+                            dueDate: kadai.due_date,       // due_date -> dueDate
+                            createdAt: kadai.created_at,   // created_at -> createdAt
+                            completed: false,              // ダミーデータ
+                            programmingProblemId: kadai.programmingProblemId,
+                            selectProblemId: kadai.selectProblemId,
+                        }));
+                        setKadaiList(formattedKadai);
                     }
 
                 } catch (err) {
@@ -180,6 +204,15 @@ const MemberGroupPage: React.FC = () => {
                                 {posts.length > 0 ? posts.map(post => (
                                     <div key={post.id} style={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px' }}>
                                         {/* お知らせアイテムのUI */}
+                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#4CAF50', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', fontWeight: 'bold' }}>
+                                                {post.authorAvatar}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 'bold' }}>{post.authorName}</div>
+                                                <div style={{ fontSize: '12px', color: '#888' }}>{post.createdAt}</div>
+                                            </div>
+                                        </div>
                                         <p>{post.content}</p>
                                     </div>
                                 )) : <p>お知らせはありません。</p>}
@@ -198,6 +231,17 @@ const MemberGroupPage: React.FC = () => {
                                                 onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
                                                 onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
                                             >
+                                                <div style={{
+                                                    width: '32px', height: '32px', borderRadius: '50%',
+                                                    backgroundColor: kadai.completed ? '#4caf50' : '#d32f2f',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '16px', flexShrink: 0
+                                                }}>
+                                                    {kadai.completed ? (
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                                    ) : (
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                                    )}
+                                                </div>
                                                 <h3 style={{ margin: '0 0 8px 0' }}>{kadai.title}</h3>
                                                 <p style={{ fontSize: '14px', color: '#5f6368', margin: 0 }}>期限: {kadai.dueDate ? new Date(kadai.dueDate).toLocaleString('ja-JP') : '未設定'}</p>
                                             </div>
@@ -219,6 +263,19 @@ const MemberGroupPage: React.FC = () => {
                                                  <h1 style={{ fontSize: '24px', fontWeight: '500', color: '#3c4043', margin: '0 0 4px 0' }}>{selectedKadai.title}</h1>
                                                  <div style={{ fontSize: '14px', color: '#5f6368', marginBottom: '16px' }}>期限: {selectedKadai.dueDate ? new Date(selectedKadai.dueDate).toLocaleString('ja-JP') : '未設定'}</div>
                                                  {selectedKadai.description && <div dangerouslySetInnerHTML={{ __html: selectedKadai.description }} style={{ lineHeight: '1.6' }} />}
+                                                 {(selectedKadai.programmingProblemId || selectedKadai.selectProblemId) && (
+                                                    <div style={{ marginTop: '24px' }}>
+                                                        <Link
+                                                            href={selectedKadai.programmingProblemId 
+                                                                ? `/issue_list/programming_problem/${selectedKadai.programmingProblemId}` 
+                                                                : `/select-problems/${selectedKadai.selectProblemId}`
+                                                            }
+                                                            style={{ display: 'inline-block', padding: '10px 20px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}
+                                                        >
+                                                            問題に挑戦する
+                                                        </Link>
+                                                    </div>
+                                                )}
                                              </div>
                                         </div>
 
