@@ -161,6 +161,20 @@ for (const u of usersToSeed) {
     console.log(`✅ Added God to "${pblGroup.groupname}" as an admin.`);
     // ★★★【ここまで追加】★★★
 
+    // ★★★【Aliceに全ての称号を付与】★★★
+    console.log('👑 Granting all titles to Alice...');
+    const allTitles = await prisma.title.findMany({ select: { id: true } });
+    const aliceUnlockedTitles = allTitles.map(title => ({
+      userId: alice.id,
+      titleId: title.id,
+    }));
+    await prisma.userUnlockedTitle.createMany({
+      data: aliceUnlockedTitles,
+      skipDuplicates: true,
+    });
+    console.log(`✅ Granted ${allTitles.length} titles to Alice.`);
+    // ★★★【ここまで】★★★
+
 
     console.log('✅ Seeding finished.');
 
