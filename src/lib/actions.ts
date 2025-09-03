@@ -751,7 +751,7 @@ export async function feedPetAction(difficultyId: number) {
       console.log(`満腹度を${cappedHungerLevel}に更新しました。`);
     }
 
-    revalidatePath('/'); // PetStatusが表示されているページを再検証
+    // revalidatePath('/'); // PetStatusが表示されているページを再検証
     return { success: true };
 
   } catch (error) {

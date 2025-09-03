@@ -28,14 +28,14 @@ export async function runOperations(prisma: PrismaClient) {
   const godUser = await prisma.user.findUnique({ where: { email: 'GodOfGod@example.com' } });
   
   if (alice) {
-    console.log("🧪 Testing addXp function for Alice...");
-    await addXpForSeed(prisma, alice.id, 1, 1);
+    // console.log("🧪 Testing addXp function for Alice...");
+    // await addXpForSeed(prisma, alice.id, 1, 1);
     
-    for (let i = 0; i < 40; i++) {
-      await addXpForSeed(prisma, alice.id, 2, 8); // Basic Info A
-      await addXpForSeed(prisma, alice.id, 3, 8); // Basic Info B
-    }
-    console.log(`✅ Alice's XP updated.`);
+    // for (let i = 0; i < 40; i++) {
+    //   await addXpForSeed(prisma, alice.id, 2, 8); // Basic Info A
+    //   await addXpForSeed(prisma, alice.id, 3, 8); // Basic Info B
+    // }
+    // console.log(`✅ Alice's XP updated.`);
   }
 
   if (godUser) {
