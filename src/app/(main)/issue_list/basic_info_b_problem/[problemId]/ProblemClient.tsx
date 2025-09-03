@@ -334,7 +334,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
     const nextProblemId = await getNextProblemId(currentId, 'basic_info_b_problem');
     
     if (nextProblemId) {
-      window.location.href = `/issue_list/basic_info_b_problem/${nextProblemId}`;
+            router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
     } else {
       alert("最後の問題です！");
       router.push('/issue_list/basic_info_b_problem/problems');

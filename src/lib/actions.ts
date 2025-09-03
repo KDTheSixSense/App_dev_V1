@@ -163,9 +163,9 @@ export async function awardXpForCorrectAnswer(problemId: number) {
 
     if (staticProblem) {
       problemDetails = {
-        // QuestionsテーブルにはsubjectIdがないため、デフォルト値を設定
-        // seed.tsの内容から「基本情報A問題」のIDである2を想定
-        subjectId: 2,
+        // QuestionsテーブルにはsubjectIdがないため、正しい値を設定
+        // seed.tsでこのテーブルに投入されるのは「基本情報B問題」なので、IDである3を設定
+        subjectId: 3,
         difficultyId: staticProblem.difficultyId,
         type: 'STATIC',
       };
