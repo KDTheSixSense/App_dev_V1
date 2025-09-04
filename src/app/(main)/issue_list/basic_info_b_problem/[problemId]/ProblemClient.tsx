@@ -10,7 +10,7 @@ import KohakuChat from '@/components/KohakuChat';
 import { getHintFromAI } from '@/lib/actions/hintactions';
 import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
 import type { SerializableProblem } from '@/lib/data';
-import { problemLogicsMap } from '../data/problem-logics';
+import { useNotification } from '@/app/contexts/NotificationContext';
 import type { VariablesState } from '../data/problems';
 
 // --- 多言語対応テキストとヘルパー関数 ---
@@ -117,6 +117,7 @@ interface ProblemClientProps {
 
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
   const router = useRouter();
+  const { showNotification } = useNotification();
   
   // --- 状態管理 ---
   const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
@@ -287,13 +288,13 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
         const result = await awardXpForCorrectAnswer(problemId);
         console.log(result.message); // "経験値を獲得しました！" or "既に正解済みです。"
         if (result.unlockedTitle) {
-          alert(`称号【${result.unlockedTitle.name}】を獲得しました！`);
+          showNotification({ message: `称号【${result.unlockedTitle.name}】を獲得しました！`, type: 'success' });
         }
         // ここで成功時のUIフィードバック（例: トースト通知）を表示することも可能
       } catch (error) {
         console.error("XPの付与に失敗しました:", error);
         // エラーハンドリング（例: ユーザーにエラーメッセージを表示）
-        alert('経験値の付与に失敗しました。再度ログインしてお試しください。');
+        showNotification({ message: '経験値の付与に失敗しました。再度ログインしてお試しください。', type: 'error' });
       }
     }
     const hint = generateKohakuResponse(currentTraceLine, variables, true, selectedValue);

@@ -82,4 +82,14 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     data: { user_id: godUser.id, group_id: pblGroup.id, admin_flg: true },
   });
   console.log(`✅ Added God to "${pblGroup.groupname}" as an admin.`);
+
+  // UserSubjectProgressのシードデータ
+  await prisma.userSubjectProgress.deleteMany({});
+  await prisma.userSubjectProgress.createMany({
+    data: [
+      { user_id: 1, subject_id: 2, level: 9, xp: 8900 },
+      { user_id: 1, subject_id: 3, level: 9, xp: 8900 },
+    ],
+  });
+  console.log(`✅ Seeded UserSubjectProgress data for Alice.`);
 }
