@@ -36,9 +36,20 @@ export default function RankingContainer({
 
   return (
     <div>
+      {/* スクロールバーを非表示にするためのスタイル */}
+      <style jsx>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera*/
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none; /* IE and Edge */
+          scrollbar-width: none; /* Firefox */
+        }
+      `}</style>
+
       {/* タブ表示 */}
       <div className="mt-4 border-b border-slate-200">
-        <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+        <nav className="-mb-px flex space-x-6 overflow-x-auto flex-nowrap hide-scrollbar" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
               key={tab.name}
