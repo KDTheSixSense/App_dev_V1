@@ -13,6 +13,7 @@ interface GroupDetail {
     description: string;
     memberCount: number;
     teacher: string;
+    invite_code: string;
 }
 
 interface Member {
@@ -241,6 +242,31 @@ const GroupDetailPage: React.FC = () => {
         } catch (error) {
             console.error('メンバー追加エラー:', error);
             alert('メンバー追加に失敗しました');
+        }
+    };
+
+    //メンバーの招待
+    const handleCopyInviteCode = () => {
+        // 1. ボタンがクリックされたことをコンソールに表示
+        console.log("「招待コードをコピー」ボタンがクリックされました！");
+        
+        // 2. 現在の group state の内容を確認
+        console.log("現在のgroupオブジェクト:", group);
+
+        if (group && group.invite_code) {
+            console.log(`コピーを試みます: ${group.invite_code}`);
+            navigator.clipboard.writeText(group.invite_code)
+                .then(() => {
+                    alert(`招待コード「${group.invite_code}」をクリップボードにコピーしました！`);
+                })
+                .catch(err => {
+                    console.error('クリップボードへのコピーに失敗しました:', err);
+                    alert('コピーに失敗しました。');
+                });
+        } else {
+            // 3. invite_code が存在しない場合にメッセージを表示
+            console.error("groupオブジェクト、またはinvite_codeが存在しません。APIのレスポンスを確認してください。");
+            alert('招待コードを取得できませんでした。');
         }
     };
 
@@ -2970,6 +2996,22 @@ const GroupDetailPage: React.FC = () => {
                                     <h3 style={{ fontSize: '18px', color: '#3c4043', margin: '0', fontWeight: '500' }}>
                                         メンバー一覧 ({members.length}人)
                                     </h3>
+                                    <button
+                                        onClick={() => handleCopyInviteCode()}
+                                        style={{
+                                            padding: '8px 12px',
+                                            border: '1px solid #1976d2',
+                                            backgroundColor: 'transparent',
+                                            color: '#1976d2',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
+                                            fontWeight: '500',
+                                            transition: 'background-color 0.2s',
+                                        }}
+                                        >
+                                        招待コードをコピー
+                                    </button>
                                 </div>
 
                                 {/* メンバー一覧 */}

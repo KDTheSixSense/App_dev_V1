@@ -17,15 +17,40 @@ export async function GET(req: NextRequest, { params }: { params: { hashedId: st
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
 
-  try {
-    const group = await prisma.groups.findUnique({
-      where: { hashedId: params.hashedId },
-    });
+    const hashedId = params.hashedId;
+
+    if (!hashedId) {
+        return NextResponse.json({ success: false, message: 'Invalid group ID format.' }, { status: 400 });
+    }
+
+    try {
+      const group = await prisma.groups.findUnique({
+        where: { hashedId },
+        select: {
+          id: true,
+          hashedId: true,
+          groupname: true,
+          body: true,
+          invite_code: true, // ★ 招待コードをデータベースから取得
+          _count: {
+              select: { groups_User: true }
+          }
+        }
+      });
 
     if (!group) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
 
+    const formattedGroup = {
+      id: group.id,
+      hashedId: group.hashedId,
+      name: group.groupname,
+      description: group.body,
+      memberCount: group._count.groups_User,
+      invite_code: group.invite_code, // ★ 招待コードをレスポンスに含める
+    };
+      
     const assignments = await prisma.assignment.findMany({
       where: { groupid: group.id },
       orderBy: { created_at: 'desc' },
