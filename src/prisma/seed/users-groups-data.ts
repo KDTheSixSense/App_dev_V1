@@ -13,7 +13,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   const usersToSeed = [
     { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', year: 2020, class: 1, birth: new Date('2002-04-15') },
     { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', year: 2021, class: 2, birth: new Date('2003-08-20') },
-    { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', year: 2020, class: 3, birth: new Date('2002-11-05') },
+    { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', year: 2020, class: 3, birth: new Date('2002-11-05') ,level: 18, xp: 17800, totallogin: 10 },
     { email: 'GodOfGod@example.com', password: 'godisgod', username: 'God', level: 9999, xp: 9999999, totallogin: 999 },
     { email: 'diana@example.com', password: 'password456', username: 'Diana Prince', level: 25, xp: 24500, totallogin: 50 },
     { email: 'eva@example.com', password: 'password789', username: 'Eva Green', level: 5, xp: 4100, totallogin: 3 },
@@ -87,8 +87,8 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   await prisma.userSubjectProgress.deleteMany({});
   await prisma.userSubjectProgress.createMany({
     data: [
-      { user_id: 1, subject_id: 2, level: 9, xp: 8900 },
-      { user_id: 1, subject_id: 3, level: 9, xp: 8900 },
+      { user_id: 3, subject_id: 2, level: 9, xp: 8900 },
+      { user_id: 3, subject_id: 3, level: 9, xp: 8900 },
     ],
   });
   console.log(`✅ Seeded UserSubjectProgress data for Alice.`);
