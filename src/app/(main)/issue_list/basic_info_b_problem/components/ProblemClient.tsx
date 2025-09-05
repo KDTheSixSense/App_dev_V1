@@ -1,22 +1,10 @@
 import React from 'react';
 // ✅ 【修正点】インポート元を、Prismaが自動生成する最新の型定義に変更します
-// import type { AlgorithmProblem, TraceStep } from '@prisma/client';
-// import type { TraceStep } from '@prisma/client';
-// Define TraceStep type locally if needed
-// export interface TraceStep { /* define fields here */ }
-
-// Define AlgorithmProblem type locally if not available from Prisma
-export interface AlgorithmProblem {
-  id: string;
-  title: string;
-  description: string;
-  options: any;
-  // Add other fields as needed to match your data structure
-}
+import type { SerializableProblem } from '@/lib/data';
 import type { VariablesState } from '../data/problems';
 
 interface VariableTraceControlProps {
-  problem: AlgorithmProblem; // 型がPrismaのものに更新されます
+  problem: SerializableProblem; // 型がPrismaのものに更新されます
   variables: VariablesState;
   onNextTrace: () => void;
   isTraceFinished: boolean;
@@ -39,8 +27,10 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
 }) => {
   
   // ✅ 【修正点】データベースの新しいデータの形に合わせて、データの参照方法を変更します
-  const showPresets = (problem.options as { presets?: number[] })?.presets;
+  const showPresets = problem.traceOptions?.presets;
+  const showArrayPresets = problem.traceOptions?.presets_array;
   const isNumSet = variables.num !== null;
+  
 
   return (
     <div className="p-4 flex flex-col items-center">

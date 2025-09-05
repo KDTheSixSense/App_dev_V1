@@ -10,7 +10,10 @@ import KohakuChat from '../components/KohakuChat';
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem } from '@/lib/types';
-import { getAppliedInfoMorningProblemById } from '@/lib/issue_list/applied_info_morning_problem/problem';
+import { 
+  getAppliedInfoMorningProblemById,
+  getNextAppliedInfoMorningProblemId 
+} from '@/lib/issue_list/applied_info_morning_problem/problem';
 import { getNextProblemId } from '@/lib/actions'; // サーバーアクション
 
 // --- カスタムアラートモーダルコンポーネント ---
@@ -154,7 +157,7 @@ const ProblemDetailPage = () => {
     }, 1000);
   };
 
-  const handleNextProblem = async () => {
+  const handleNextProblem = () => {
     const currentProblemId = problem.id;
 
     if (!currentProblemId) {
@@ -163,7 +166,7 @@ const ProblemDetailPage = () => {
       return;
     }
 
-    const nextProblemId = await getNextProblemId(currentProblemId, 'applied_info_morning_problem'); 
+    const nextProblemId = getNextAppliedInfoMorningProblemId(currentProblemId);
 
     if (nextProblemId) {
       router.push(`/issue_list/applied_info_morning_problem/${nextProblemId}`);

@@ -24,23 +24,23 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => 
 
 // ページコンポーネントを非同期関数に変更
 const BasicInfoBProblemsListPage = async () => {
-  // データベースから問題一覧を取得
-  const problems = await prisma.questions.findMany({
-    // 必要に応じてカテゴリなどで絞り込む
-    // ここでは、科目Bに関連する問題を想定して絞り込みます。
-    // 例: genre_id や difficultyid で絞り込む
-    where: {
-      // 仮のジャンルID。実際の科目BのジャンルIDに合わせてください。
-      // genre_id: 1, 
-    },
-    orderBy: {
-      id: 'asc',
-    },
-    select: {
-      id: true,
-      title: true, // Questionsモデルにはtitleフィールドがあります
-    }
-  });
+  // 1. 両方のテーブルからデータを同時に取得します
+  const [staticProblems, algoProblems] = await Promise.all([
+    prisma.questions.findMany({
+      orderBy: { id: 'asc' },
+      select: { id: true, title: true }
+    }),
+    prisma.questions_Algorithm.findMany({
+      orderBy: { id: 'asc' },
+      select: { id: true, title: true }
+    })
+  ]);
+
+  // 2. 取得した2つの配列を1つに結合します
+  const allProblems = [...staticProblems, ...algoProblems];
+
+  // 3. ID順に並び替えます
+  allProblems.sort((a, b) => a.id - b.id);
 
   return (
     <div className="min-h-screen bg-gray-100 py-10">
@@ -50,11 +50,11 @@ const BasicInfoBProblemsListPage = async () => {
         </h1>
         <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-2xl mx-auto">
           <ul>
-            {problems.map((problem) => (
+            {allProblems.map((problem) => (
               <ProblemListRow
                 key={problem.id}
                 problemId={problem.id.toString()}
-                title={problem.title} // titleフィールドを使用
+                title={problem.title} // 日本語タイトルを表示
               />
             ))}
           </ul>

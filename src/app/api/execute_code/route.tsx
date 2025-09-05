@@ -8,7 +8,7 @@ const PAIZA_IO_API_BASE_URL = 'https://api.paiza.io/runners';
 
 export async function POST(request: Request ) {
   try {
-    const { language, source_code } = await request.json();
+    const { language, source_code, input } = await request.json();
     console.log('Received request for language:', language);
 
     if (!language || !source_code) {
@@ -25,6 +25,7 @@ export async function POST(request: Request ) {
       body: JSON.stringify({
         language: language,
         source_code: source_code,
+        input: input,
         api_key: PAIZA_IO_API_KEY,
       }),
     });

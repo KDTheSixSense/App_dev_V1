@@ -1,61 +1,71 @@
-import Image from 'next/image';
+import { prisma } from '@/lib/prisma';
+import PetStatusView from './PetStatusView'; // すぐ下に作成するクライアントコンポーネントをインポート
+import type { User } from '@prisma/client';
 
-export default function PetStatus() {
-  // 満腹度をパーセンテージで管理（デザイン固定のため今回は66%に設定）
-  // 動的にする場合は、useStateやpropsでこの値を受け取る
-  const fullnessPercentage = 66;
+// セッションデータの型を定義
+interface SessionData {
+  user?: {
+    id: string;
+    email: string;
+  };
+}
+
+const MAX_HUNGER = 200; // 満腹度の最大値をここで一元管理
+
+export default async function PetStatus({user}: {user : User | null} ) {
+
+  // ログインしていない場合は、デフォルトの満タン状態で表示
+  if (!user) {
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} />;
+  }
+
+  // --- ▼▼▼ ここからが時間経過の計算ロジックです ▼▼▼ ---
+  const now = new Date();
+  let petStatus = await prisma.status_Kohaku.findFirst({
+    where: { user_id: user.id },
+  });
+  
+  // もしペット情報がなければ、ここで処理を中断（表示はデフォルト）
+  if (!petStatus) {
+    console.error(`User ID: ${user.id} のペット情報が見つかりません。`);
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} />;
+  }
+
+  // 1. 最後に更新されてからの経過時間（分）を計算
+  const lastUpdate = petStatus.hungerLastUpdatedAt; // この値はnullの可能性がある
+  let minutesPassed = 0; // 経過時間のデフォルトは0分
+  let finalHungerLevel = petStatus.hungerlevel;
+  // 1. lastUpdateがnullでない（タイマーが開始されている）場合のみ、経過時間を計算
+  if (lastUpdate) {
+    minutesPassed = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60));
+    // 10分ごとに1ポイント減少するので、経過分数を10で割って切り捨て
+    const hungerPointsToDecrease = Math.floor(minutesPassed / 10);
+
+ // 10分以上経過していれば（＝1ポイント以上減少する場合）、DBを更新
+    if (hungerPointsToDecrease > 0) {
+      const newHungerLevel = Math.max(0, petStatus.hungerlevel - hungerPointsToDecrease);
+      
+      // 最後に更新した時刻から、経過した「10分の倍数」の時間を加算して新しい更新時刻を計算
+      // これにより、9分などの端数が切り捨てられず、次回の計算に引き継がれる
+      const newLastUpdate = new Date(lastUpdate.getTime() + hungerPointsToDecrease * 10 * 60 * 1000);
+
+      const updatedPetStatus = await prisma.status_Kohaku.update({
+        where: { id: petStatus.id },
+        data: {
+          hungerlevel: newHungerLevel,
+          hungerLastUpdatedAt: newLastUpdate,
+        },
+      });
+      finalHungerLevel = updatedPetStatus.hungerlevel;
+      console.log(`${minutesPassed}分経過したため、満腹度を${hungerPointsToDecrease}ポイント減少させました。`);
+    }
+  }
+  // --- ▲▲▲ 計算ロジックここまで ▲▲▲ ---
 
   return (
-    // 全体を囲むコンテナ
-    <div className="flex flex-col items-center gap-6 p-8 bg-white max-w-300 rounded-2xl shadow-lg">
-
-      {/* 1. キャラクター画像 */}
-      <div>
-        <Image
-          src="/images/kohaku.png" 
-          alt="コハク"
-          width={200}
-          height={200}
-          className="object-contain"
-        />
-      </div>
-
-      {/* 2. ラベルテキスト */}
-      <div className="text-center">
-        <p className="text-lg font-semibold text-gray-700">
-          コハクの満腹度
-        </p>
-      </div>
-
-      {/* 3. プログレスバー（満腹度バー） */}
-      <div className="w-full">
-        {/* バーの背景（トラック） */}
-        <div className="h-5 bg-gray-200 rounded-full overflow-hidden relative">
-          {/* バーの実際の値（塗りつぶし部分） */}
-          <div
-            className="h-full bg-amber-400 rounded-full w-2/3"
-            // 動的に変更する場合: インラインスタイルでwidthをパーセンテージで指定
-            // style={{ width: `${fullnessPercentage}%` }} 
-          ></div>
-        </div>
-      </div>
-
-      {/* 4. アクションボタン */}
-      <div className="w-full mt-2">
-        <button 
-          className="
-            w-full py-3 px-6 rounded-full 
-            bg-cyan-400 text-white 
-            font-bold text-xl 
-            shadow-md hover:bg-cyan-500 
-            transition-all duration-300 ease-in-out
-            focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50
-          "
-        >
-          餌を探しに行く
-        </button>
-      </div>
-
-    </div>
+    <PetStatusView 
+      initialHunger={finalHungerLevel} 
+      maxHunger={MAX_HUNGER} 
+    />
   );
 }

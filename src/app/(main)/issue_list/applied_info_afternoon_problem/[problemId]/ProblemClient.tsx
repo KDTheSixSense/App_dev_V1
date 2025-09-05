@@ -224,7 +224,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
 
   const handleNextProblem = async () => {
     const currentId = parseInt(problem.id, 10);
-    const nextProblemId = await getNextProblemId(currentId.toString(), 'applied_info_afternoon_problem');
+    const nextProblemId = await getNextProblemId(currentId, 'applied_info_afternoon_problem');
     
     if (nextProblemId) {
       router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);

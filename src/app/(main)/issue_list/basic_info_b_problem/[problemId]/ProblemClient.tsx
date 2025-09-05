@@ -1,5 +1,3 @@
-// /workspaces/my-next-app/src/app/(main)/issue_list/basic_info_b_problem/[problemId]/ProblemClient.tsx
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,12 +6,12 @@ import { useRouter } from 'next/navigation';
 import ProblemStatement from '../components/ProblemStatement';
 import TraceScreen from '../components/TraceScreen';
 import VariableTraceControl from '../components/VariableTraceControl';
-import KohakuChat from '../components/KohakuChat';
-
-import { problemLogicsMap } from '../data/problem-logics';
+import KohakuChat from '@/components/KohakuChat';
+import { getHintFromAI } from '@/lib/actions/hintactions';
+import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
 import type { SerializableProblem } from '@/lib/data';
+import { useNotification } from '@/app/contexts/NotificationContext';
 import type { VariablesState } from '../data/problems';
-import { getNextProblemId } from '@/lib/actions';
 
 
 // --- 多言語対応テキストとヘルパー関数 ---
@@ -120,15 +118,21 @@ interface ProblemClientProps {
 
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
   const router = useRouter();
-
+  const { showNotification } = useNotification();
+  
+  // --- 状態管理 ---
   const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [currentTraceLine, setCurrentTraceLine] = useState(0);
   const [variables, setVariables] = useState<VariablesState>(initialProblem.initialVariables);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
   const [isPresetSelected, setIsPresetSelected] = useState<boolean>(false);
+
+  const [userCode, setUserCode] = useState(''); // ユーザーのコード入力用
+
 
   useEffect(() => {
     let problemData = initialProblem;
@@ -271,22 +275,52 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
     }
   };
 
-  const handleSelectAnswer = (selectedValue: string) => {
+  const handleSelectAnswer = async (selectedValue: string) => {
     if (isAnswered || !problem) return;
     setSelectedAnswer(selectedValue);
     setIsAnswered(true);
+    const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
+
+    // ▼▼▼【ここから修正・追加】▼▼▼
+    if (correct) {
+      try {
+        // 正解した場合、サーバーアクションを呼び出す
+        const problemId = parseInt(problem.id, 10);
+        const result = await awardXpForCorrectAnswer(problemId);
+        console.log(result.message); // "経験値を獲得しました！" or "既に正解済みです。"
+        if (result.unlockedTitle) {
+          showNotification({ message: `称号【${result.unlockedTitle.name}】を獲得しました！`, type: 'success' });
+        }
+        // ここで成功時のUIフィードバック（例: トースト通知）を表示することも可能
+      } catch (error) {
+        console.error("XPの付与に失敗しました:", error);
+        // エラーハンドリング（例: ユーザーにエラーメッセージを表示）
+        showNotification({ message: '経験値の付与に失敗しました。再度ログインしてお試しください。', type: 'error' });
+      }
+    }
     const hint = generateKohakuResponse(currentTraceLine, variables, true, selectedValue);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
   };
 
-  const handleUserMessage = (message: string) => {
-    setChatMessages((prev) => [...prev, { sender: 'user', text: message }]);
-    setTimeout(() => {
-      const kohakuResponse = generateKohakuResponse(currentTraceLine, variables, false, null, message);
-      setChatMessages((prev) => [...prev, { sender: 'kohaku', text: kohakuResponse }]);
-    }, 1000);
-  };
+  const handleUserMessage = async (message: string) => {
+    if (!problem) return;
 
+    const newMessages: ChatMessage[] = [...chatMessages, { sender: 'user', text: message }];
+    setChatMessages(newMessages);
+    setIsAiLoading(true);
+
+    const context = {
+        problemTitle: problem.title.ja,
+        problemDescription: problem.description.ja,
+        userCode: userCode, // ★★★ userCodeをコンテキストに含める
+    };
+
+    const hint = await getHintFromAI(message, context);
+
+    setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
+    setIsAiLoading(false);
+  };
+  
   // 【修正】より汎用的なオブジェクトを受け取れるように変更
   const handleSetData = (dataToSet: Record<string, any>) => {
     if (problem) {
@@ -298,22 +332,16 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
   };
 
   const handleNextProblem = async () => {
-    // ★ 修正点: IDを数値に変換せず、文字列のまま使用します
-    const currentId = problem.id;
-
-        // ★ 修正点: 2つ目の引数としてカテゴリ名を追加します
-    const category = 'basic_info_b_problem';
-    const nextProblemId = await getNextProblemId(currentId, category);
-    
-    if (nextProblemId) {
-      // 新しいパス構造に合わせる
-      router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
-    } else {
-      alert("最後の問題です！");
-      // 問題一覧ページのパスに修正
-      router.push('/issue_list/basic_info_b_problem/problems');
-    }
-  };
+    const currentId = parseInt(problem.id, 10);
+    const nextProblemId = await getNextProblemId(currentId, 'basic_info_b_problem');
+    
+    if (nextProblemId) {
+            router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);
+    } else {
+      alert("最後の問題です！");
+      router.push('/issue_list/basic_info_b_problem/problems');
+    }
+  };
 
   // ✅【追加】logicTypeに応じてトレースUIの表示を切り替えるフラグ
   const showTraceUI = problem.logicType !== 'STATIC_QA';
@@ -376,6 +404,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
             onSendMessage={handleUserMessage}
             language={language}
             textResources={t}
+            isLoading={isAiLoading}
+
             />
         </div>
       </div>

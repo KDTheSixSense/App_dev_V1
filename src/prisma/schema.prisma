@@ -8,27 +8,60 @@ datasource db {
 }
 
 model User {
-  id                       Int                   @id @default(autoincrement()) // ID: 整数型、主キー、自動増分
+  id                       Int                   @id    @default(autoincrement()) // ID: 整数型、主キー、自動増分
   email                    String                @unique // メールアドレス: 文字列型、ユニーク
-  password                 String // パスワード: 文字列型
+  password                 String  // パスワード: 文字列型
   hash                     String? // ハッシュ値: 文字列型、Null許容
   username                 String? // ユーザー名: 文字列型、Null許容
-  year                     Int? // 年: 整数型、Null許容
-  class                    Int? // クラス: 整数型、Null許容
+  year                     Int?    // 年: 整数型、Null許容
+  class                    Int?    // クラス: 整数型、Null許容
   birth                    DateTime?             @db.Date // 誕生日: 日付型、Null許容
   resetPasswordToken       String?
   resetPasswordTokenExpiry DateTime?
   level                    Int                   @default(1) //アカウントレベル
   xp                       Int                   @default(0) //総経験値
   icon                     String? //アイコン
+  selectedTitleId          Int?                  @unique
+  selectedTitle            Title?                @relation(fields: [selectedTitleId], references: [id])
   progresses               UserSubjectProgress[] // このユーザーの科目別進捗のリスト
-  totallogin               Int
+  unlockedTitles           UserUnlockedTitle[]
+  continuouslogin          Int?
+　totallogin               Int? @default(0)
+  lastlogin                DateTime?
+  status_Kohaku            Status_Kohaku? //Userに対してStatus_Kohakuは1対1の関係です。
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
   answers                  UserAnswer[]
-  Answer_Algorithm         Answer_Algorithm[]
-  Answerd_Genre_Table      Answerd_Genre_Table[]
-  Groups_User              Groups_User[]
-  Status_Kohaku            Status_Kohaku[]
+  answer_Algorithm         Answer_Algorithm[]
+  answerd_Genre_Table      Answerd_Genre_Table[]
+  groups_User              Groups_User[]
+  createdProblems          ProgrammingProblem[] @relation("ProblemCreator")
+  createdSelectProblems SelectProblem[]      @relation("SelectProblemCreator") // SelectProblemとのリレーション
+  posts Post[]
+  loginHistory LoginHistory[]
+  
+}
+
+model LoginHistory {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  loggedInAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// グループ内の投稿・お知らせを保存するモデル
+model Post {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- リレーション ---
+  groupId   Int    // どのグループへの投稿か
+  group     Groups @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  authorId  Int    // 誰が投稿したか
+  author    User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model UserAnswer {
@@ -52,21 +85,12 @@ model Subject {
 
   userProgresses      UserSubjectProgress[] // この科目を学習しているユーザーの進捗リスト
   Questions_Algorithm Questions_Algorithm[]
+   SelectProblem       SelectProblem[]      // SelectProblemとのリレーション
 }
 
 model Language {
   id                  Int                   @id @default(autoincrement())
-  title_ja            String?
-  title_en            String?
-  description_ja      String?
-  description_en      String?
-  answerOptions_ja    String?
-  answerOptions_en    String?
-  correctAnswer       String?
-  explanation_ja      String?
-  explanation_en      String?
-  programLines_ja     String?
-  programLines_en     String?
+  name                String                @unique
   Questions_Algorithm Questions_Algorithm[]
   Questions           Questions[]
 }
@@ -86,6 +110,12 @@ model Answer_Algorithm {
 
 model Questions_Algorithm {
   id              Int                @id @default(autoincrement())
+  title             String
+  description       String?
+  explanation       String?
+  programLines      String?
+  answerOptions     String?
+  correctAnswer     String?
   language_id     Int
   initialVariable Json
   logictype       String
@@ -113,14 +143,127 @@ model Questions {
   year         DateTime?
   explain      String?
   image        String?
-  difficultyid Int
+  difficultyId Int
 
   // --- リレーション定義 ---
   genre      Genre        @relation(fields: [genre_id], references: [id])
-  difficulty Difficulty   @relation(fields: [difficultyid], references: [id])
+  difficulty Difficulty   @relation(fields: [difficultyId], references: [id])
   language   Language     @relation(fields: [language_id], references: [id])
   answer     UserAnswer[]
   Answers    Answers[]
+}
+
+/// プログラミング選択問題モデル
+model SelectProblem {
+  id              Int      @id @default(autoincrement())
+  title           String   // 問題タイトル
+  description     String   @db.Text // 問題文 (Markdown)
+  explanation     String?  @db.Text // 解説文
+  answerOptions   Json     // 選択肢 (例: ["選択肢A", "選択肢B", ...])
+  correctAnswer   String   // 正解のテキスト
+  
+  // --- リレーション ---
+  difficultyId    Int
+  difficulty      Difficulty @relation(fields: [difficultyId], references: [id])
+  
+  subjectId       Int
+  subject         Subject    @relation(fields: [subjectId], references: [id])
+
+  createdBy       Int?
+  creator         User?      @relation("SelectProblemCreator", fields: [createdBy], references: [id])
+
+  // --- タイムスタンプ ---
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+/// プログラミング問題の情報を格納するモデル 
+model ProgrammingProblem {
+  id                Int      @id @default(autoincrement())
+  
+  // --- 基本情報 ---
+  title             String                                 // タイトル
+  problemType       String   @default("コーディング問題")    // 問題タイプ
+  difficulty        Int      @default(4)                   // 難易度 (1-10)
+  timeLimit         Int      @default(10)                  // 制限時間 (分)
+  category          String   @default("プログラミング基礎")   // カテゴリ
+  topic             String   @default("標準入力")           // トピック
+  tags              String   @default("[]")                // タグ (JSON文字列)
+  
+  // --- 問題内容 ---
+  description       String   @db.Text                      // 問題文
+  codeTemplate      String   @db.Text @default("")         // コードテンプレート
+  
+  // --- 公開設定 ---
+  isPublic          Boolean  @default(false)               // 公開フラグ
+  allowTestCaseView Boolean  @default(false)               // テストケース表示許可
+  isDraft           Boolean  @default(true)                // 下書きフラグ
+  isPublished       Boolean  @default(false)               // 公開済みフラグ
+  
+  // --- 作成者情報 ---
+  createdBy         Int?                                   // 作成者ID
+  creator           User?    @relation("ProblemCreator", fields: [createdBy], references: [id])
+  
+  // --- タイムスタンプ ---
+  createdAt         DateTime @default(now())               // 作成日時
+  updatedAt         DateTime @updatedAt                    // 更新日時
+  
+  // --- リレーション ---
+  sampleCases       SampleCase[]                           // サンプルケース
+  testCases         TestCase[]                             // テストケース
+  files             ProblemFile[]                          // 添付ファイル
+  assignment Assignment?                                   // 課題との関連 (オプショナル) 
+}
+
+/// サンプルケースモデル
+model SampleCase {
+  id                Int      @id @default(autoincrement())
+  problemId         Int                                    // 問題ID
+  input             String   @db.Text                      // 入力
+  expectedOutput    String   @db.Text                      // 期待される出力
+  description       String   @db.Text @default("")         // 説明
+  order             Int      @default(0)                   // 表示順序
+  
+  // --- リレーション ---
+  problem           ProgrammingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  
+  // --- インデックス ---
+  @@index([problemId])
+}
+
+/// テストケースモデル
+model TestCase {
+  id                Int      @id @default(autoincrement())
+  problemId         Int                                    // 問題ID
+  name              String   @default("ケース1")            // テストケース名
+  input             String   @db.Text                      // 入力
+  expectedOutput    String   @db.Text                      // 期待される出力
+  description       String   @db.Text @default("")         // 説明
+  order             Int      @default(0)                   // 表示順序
+  
+  // --- リレーション ---
+  problem           ProgrammingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  
+  // --- インデックス ---
+  @@index([problemId])
+}
+
+/// 問題添付ファイルモデル
+model ProblemFile {
+  id                Int      @id @default(autoincrement())
+  problemId         Int                                    // 問題ID
+  fileName          String                                 // ファイル名
+  originalName      String                                 // 元のファイル名
+  filePath          String                                 // ファイルパス
+  fileSize          Int                                    // ファイルサイズ (bytes)
+  mimeType          String                                 // MIMEタイプ
+  uploadedAt        DateTime @default(now())               // アップロード日時
+  
+  // --- リレーション ---
+  problem           ProgrammingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  
+  // --- インデックス ---
+  @@index([problemId])
 }
 
 model Genre {
@@ -208,26 +351,33 @@ model Difficulty {
   id                  Int                   @id @default(autoincrement())
   name                String                @unique // 難易度名 (例: "Easy", "Normal", "Hard")
   xp                  Int // この難易度で得られる経験値
+  feed                Int                   @default(0)// この難易度で得られるコハクの満腹度回復量
   Questions_Algorithm Questions_Algorithm[]
   Questions           Questions[]
+  SelectProblem       SelectProblem[]
 }
 
 model Groups {
   id          Int           @id @default(autoincrement())
-  groupname   String        @unique
+  hashedId    String        @unique @default(cuid())
+  groupname   String       
   body        String        @db.Text
-  Groups_User Groups_User[]
-  Assignment  Assignment[]
+  groups_User Groups_User[]
+  assignment  Assignment[]
+  posts Post[]
+  invite_code   String   @unique
 }
 
 model Groups_User {
-  id        Int     @id @default(autoincrement())
   user_id   Int
   group_id  Int
   admin_flg Boolean
   // --- リレーション定義 ---
   user      User    @relation(fields: [user_id], references: [id])
   group     Groups  @relation(fields: [group_id], references: [id])
+
+  // user_idとgroup_idの組み合わせを主キーに設定します
+  @@id([group_id, user_id])
 }
 
 model Submission_Files_Table {
@@ -247,6 +397,9 @@ model Assignment {
   due_date    DateTime
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
+
+  programmingProblemId Int? @unique // プログラミング問題との関連付け (オプショナル)
+  programmingProblem   ProgrammingProblem? @relation(fields: [programmingProblemId], references: [id])
 
   // --- リレーション定義 ---
   group       Groups        @relation(fields: [groupid], references: [id])
@@ -269,9 +422,11 @@ model Submissions {
 
 model Status_Kohaku {
   id          Int    @id @default(autoincrement())
-  user_id     Int
+  user_id     Int    @unique
   status      String
-  hungerlevel Int
+  hungerlevel Int    @default(1000) // 満腹度の初期値
+  // 満腹度を最後に更新した日時を記録します
+  hungerLastUpdatedAt DateTime?
 
   user User @relation(fields: [user_id], references: [id])
 }
@@ -279,4 +434,34 @@ model Status_Kohaku {
 model Degree {
   id     Int    @id @default(autoincrement())
   degree String @unique
+}
+
+model Title {
+  id                Int      @id @default(autoincrement())
+  name              String   @unique
+  description       String
+  type              TitleType // 'USER_LEVEL' or 'SUBJECT_LEVEL'
+  requiredLevel     Int
+  requiredSubjectId Int?     // SUBJECT_LEVELの場合のみ
+
+  // --- リレーション ---
+  unlockedByUsers UserUnlockedTitle[]
+  selectedByUsers User[]
+}
+
+model UserUnlockedTitle {
+  userId    Int
+  titleId   Int
+  unlockedAt DateTime @default(now())
+
+  // --- リレーション ---
+  user  User  @relation(fields: [userId], references: [id])
+  title Title @relation(fields: [titleId], references: [id])
+
+  @@id([userId, titleId])
+}
+
+enum TitleType {
+  USER_LEVEL
+  SUBJECT_LEVEL
 }
