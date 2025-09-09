@@ -5,14 +5,13 @@ import { notFound } from 'next/navigation';
 
 // ページに渡されるパラメータの型
 interface PageProps {
-  params: {
-    problemId: string;
-  };
+  params: Promise<{ problemId: string; }>;
 }
 
 // ページ自体をサーバー側でデータを取得する非同期関数に変更
 export default async function ProblemDetailPage({ params }: PageProps) {
-  const id = parseInt(params.problemId, 10);
+  const resolvedParams = await params;
+  const id = parseInt(resolvedParams.problemId, 10);
 
   // IDが無効な場合は404ページを表示
   if (isNaN(id)) {

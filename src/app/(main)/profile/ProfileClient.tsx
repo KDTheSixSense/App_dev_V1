@@ -19,7 +19,7 @@ type SerializedUser = Omit<User, 'birth' | 'lastlogin' | 'unlockedTitles'> & {
   lastlogin: string | null;
   unlockedTitles: SerializedUserUnlockedTitle[];
   selectedTitle: Title | null;
-  Status_Kohaku: Status_Kohaku[];
+  Status_Kohaku: Status_Kohaku | null;
 };
 
 type UserStats = {
@@ -223,7 +223,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
 
           {/* 右カラム：ペット、チャート、アドバイス */}
           <div className="lg:col-span-1 space-y-8">
-            <PetStatusView initialHunger={initialUser.Status_Kohaku?.[0]?.hungerlevel ?? 200} maxHunger={200} />
+            <PetStatusView initialHunger={initialUser.Status_Kohaku?.hungerlevel ?? 200} maxHunger={200} />
             <Chart stats={initialStats} />
             <Advice advice={aiAdvice} />
           </div>

@@ -9,7 +9,7 @@ import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '../components/KohakuChat';
 
 // --- データと型のインポート ---
-import type { Problem as SerializableProblem } from '@/lib/types';
+import type { Problem as SerializableProblem } from '@/lib/types/index';
 // 基本情報 科目B の問題データを取得する関数をインポート
 import { getBasicInfoBProblemsById } from '@/lib/issue_list/basic_info_b_problem/problem';
 import { getNextProblemId } from '@/lib/actions'; // サーバーアクション

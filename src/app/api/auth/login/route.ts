@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     session.user = {
       id: String(user.id),
       email: user.email,
+      username: user.username,
     };
     await session.save();
 

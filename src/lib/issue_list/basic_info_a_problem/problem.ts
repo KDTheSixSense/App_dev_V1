@@ -45,26 +45,6 @@ export const basicInfoAProblems: Problem[] = [
   {
     id: 'A2',
     logicType: 'TYPE_A',
-<<<<<<< HEAD
-    title: { ja: "科目A 問題2: 条件分岐", en: "Subject A Problem 2: Conditional Logic" },
-    description: { ja: "条件分岐がどのように機能するかを理解しましょう。", en: "Understand how conditional logic works." },
-    programLines: {
-      ja: [
-        "1: score = 75",
-        "2: if score >= 80 then",
-        "3:   print(\"合格\")",
-        "4: else",
-        "5:   print(\"不合格\")",
-        "6: end if"
-      ],
-      en: [
-        "1: score = 75",
-        "2: if score >= 80 then",
-        "3:   print(\"Pass\")",
-        "4: else",
-        "5:   print(\"Fail\")",
-        "6: end if"
-=======
     title: {
       ja: '第2問: CPUスケジューリング',
       en: 'Question 2: CPU Scheduling'
@@ -88,29 +68,10 @@ export const basicInfoAProblems: Problem[] = [
         '(2) Jobs are executed in the order they are in the queue.',
         '(3) The time quantum is assumed to be sufficiently small compared to the job processing times.',
         '(4) Job switching time is not considered.'
->>>>>>> main
       ]
     },
     answerOptions: {
       ja: [
-<<<<<<< HEAD
-        { label: 'ア', value: '合格' },
-        { label: 'イ', value: '不合格' },
-        { label: 'ウ', value: 'エラー' },
-        { label: 'エ', value: '80' }
-      ],
-      en: [
-        { label: 'A', value: 'Pass' },
-        { label: 'B', value: 'Fail' },
-        { label: 'C', value: 'Error' },
-        { label: 'D', value: '80' }
-      ]
-    },
-    correctAnswer: '不合格',
-    explanationText: {
-      ja: "scoreが80以上ではないため、「不合格」が出力されます。",
-      en: "Since the score is not 80 or above, \"Fail\" is printed."
-=======
         { label: 'ア', value: '15' },
         { label: 'イ', value: '20' },
         { label: 'ウ', value: '25' },
@@ -211,7 +172,6 @@ export const basicInfoAProblems: Problem[] = [
     explanationText: {
       ja: '**クリッピング**は、最終的な表示画面の範囲外（視点からみて可視できない部分）にあるデータを、CGの描画対象から除外する処理です。最終的な仕上がりに影響を与えない余分なデータをカットすることで、後工程で必要となる計算量を減らし、作業効率を高めるために行われます。\n\n- **ア**: **レンダリング**の説明です。\n- **イ**: **正しい。**クリッピングの説明です。\n- **ウ**: **アンチエイリアシング**の説明です。\n- **エ**: **シェーディング（陰影処理）**の説明です。',
       en: '**Clipping** is the process of removing data that is outside the final display area (parts not visible from the viewpoint) from the CG rendering target. By cutting this extra data that doesn\'t affect the final output, it reduces the computational load required in later stages and improves efficiency.\n\n- **A**: This describes **Rendering**.\n- **B**: **Correct.** This describes **Clipping**.\n- **C**: This describes **Anti-aliasing**.\n- **D**: This describes **Shading**.'
->>>>>>> main
     },
     initialVariables: {},
     traceLogic: []
@@ -221,9 +181,6 @@ export const basicInfoAProblems: Problem[] = [
 
 export const getProblemAById = (id: string): Problem | undefined => {
   return basicInfoAProblems.find(p => p.id === id);
-<<<<<<< HEAD
-};
-=======
 };
 
 // ▼▼▼【ここから追加】▼▼▼
@@ -245,4 +202,3 @@ export const getNextAProblemId = (currentId: string): string | null => {
   return basicInfoAProblems[currentIndex + 1].id;
 };
 // ▲▲▲【ここまで追加】▲▲▲
->>>>>>> main

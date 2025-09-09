@@ -19,7 +19,7 @@ const IssueCard: React.FC<IssueCardProps> = ({ title, description, onClick, isSe
       onClick={onClick}
     >
       <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
-      <p className="text-sm text-gray-600 whitespace-pre-line">{description}</p>
+      {/* <p className="text-sm text-gray-600 whitespace-pre-line">{description}</p> */}
     </button>
   );
 };

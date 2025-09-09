@@ -97,9 +97,9 @@ const QuestionsPage: React.FC = () => {
         </div>
 
         {/* 右側のコハクとアドバイスエリア */}
-        <div className="w-full lg:w-96"> {/* 画面幅が広い場合に固定幅になるように設定 */}
+        {/* <div className="w-full lg:w-96">
           <AdviceSection />
-        </div>
+        </div> */}
       </div>
 
     </div>

@@ -21,10 +21,12 @@ export default async function MemberLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { hashedId: string }; // URLの [hashedId] 部分
+  params: Promise<{ hashedId: string }>; // Promiseでラップ
 }) {
+  const resolvedParams = await params; // Promiseを解決
+
   // --- 1. セッションとユーザーIDを正しく取得 ---
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const session = await getIronSession<SessionData>(cookies() as any, sessionOptions);
   const userId = session.user?.id ? Number(session.user.id) : null;
 
   // ログインしていなければ、ログインページにリダイレクト
@@ -34,7 +36,7 @@ export default async function MemberLayout({
 
   // --- 2. URLのhashedIdから、対象のグループの整数IDを取得 ---
   const group = await prisma.groups.findUnique({
-      where: { hashedId: params.hashedId },
+      where: { hashedId: resolvedParams.hashedId },
       select: { id: true }, // 必要なのは整数のIDだけ
   });
 
