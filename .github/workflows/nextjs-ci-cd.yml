@@ -53,6 +53,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # ▼▼▼ この build-args を追加 ▼▼▼
+          build-args: |
+            DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
 
   # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
   update-manifest:
