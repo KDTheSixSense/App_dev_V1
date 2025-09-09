@@ -1,106 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/session'; // 修正: 独自に作成したgetSessionを使用
+import { getSession } from '@/lib/session';
 
-// お知らせ一覧を取得 (GET)
-export async function GET(req: NextRequest, { params }: { params: { hashedId: string } }) {
-  const session = await getSession();
-  if (!session.user?.id) {
-    return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
-  }
+/**
+ * お知らせ一覧を取得 (GET) - ページネーション対応
+ * @param req NextRequest - クエリパラメータ (page, limit) を含む
+ * @param context - ルートパラメータ (hashedId)
+ */
+export async function GET(req: NextRequest, context: any) {
+  const session = await getSession();
+  if (!session.user?.id) {
+    return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
+  }
 
-  try {
-    const { hashedId } = params;
+  try {
+    // 【重要】context.params は Promise のため await する
+    const { hashedId } = await context.params;
 
-    const group = await prisma.groups.findUnique({
-      where: { hashedId },
-      select: { id: true },
-    });
+    const page = parseInt(req.nextUrl.searchParams.get('page') || '1', 10);
+    const limit = parseInt(req.nextUrl.searchParams.get('limit') || '20', 10);
+    const skip = (page - 1) * limit;
 
-    if (!group) {
-      return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
-    }
+    const group = await prisma.groups.findUnique({
+      where: { hashedId },
+      select: { id: true },
+    });
 
-    const posts = await prisma.post.findMany({
-      where: { groupId: group.id },
-      include: {
-        author: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    if (!group) {
+      return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
+    }
 
-    return NextResponse.json({ success: true, data: posts });
+    const totalPosts = await prisma.post.count({
+      where: { groupId: group.id },
+    });
 
-  } catch (error) {
-    console.error('お知らせ取得エラー:', error);
-    return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
-  }
-}
+    const posts = await prisma.post.findMany({
+      where: { groupId: group.id },
+      skip: skip,
+      take: limit,
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            icon: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-// お知らせを投稿 (POST)
-export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
-  const session = await getSession();
-  const userId = session.user?.id;
-  
-  if (!userId) {
-    return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
-  }
+    return NextResponse.json({
+      success: true,
+      data: posts,
+      meta: {
+        total: totalPosts,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalPosts / limit),
+      },
+    });
 
-  try {
-    const { hashedId } = params;
-    const { content } = await req.json();
-
-    if (!content) {
-      return NextResponse.json({ success: false, message: '投稿内容がありません' }, { status: 400 });
-    }
-
-    const group = await prisma.groups.findUnique({
-      where: { hashedId },
-      select: { id: true },
-    });
-
-    if (!group) {
-      return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
-    }
-
-    // ★ 追加: 投稿者がグループのメンバーかどうかを確認する
-    const membership = await prisma.groups_User.findUnique({
-      where: {
-        group_id_user_id: {
-          group_id: group.id,
-          user_id: userId,
-        },
-      },
-    });
-
-    if (!membership) {
-       return NextResponse.json({ success: false, message: 'このグループに投稿する権限がありません' }, { status: 403 });
-    }
-    // ここでさらに membership.admin_flg をチェックすれば管理者のみに投稿を制限できます
-
-    const newPost = await prisma.post.create({
-      data: {
-        content,
-        groupId: group.id,
-        authorId: userId,
-      },
-      include: {
-        author: {
-          select: { username: true }
-        }
-      }
-    });
-
-    return NextResponse.json({ success: true, data: newPost }, { status: 201 });
-  } catch (error) {
-    console.error('お知らせ投稿エラー:', error);
-    return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
-  }
+  } catch (error) {
+    console.error('お知らせ取得エラー:', error);
+    return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
+  }
 }
