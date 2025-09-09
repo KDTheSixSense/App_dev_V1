@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma'; // Prisma Clientのインポートパス�
 import { getSession } from '@/lib/session'; // iron-sessionのセッション取得関数
 
 // UIは描画せず、サーバーサイドでのリダイレクト処理に特化させます。
-async function GroupRedirectPage({ params }: { params: { hashedId: string } }) {
+async function GroupRedirectPage({ params }: { params: Promise<{ hashedId: string }> }) {
+  const resolvedParams = await params;
   const session = await getSession();
   const user = session.user;
 
@@ -28,7 +29,7 @@ async function GroupRedirectPage({ params }: { params: { hashedId: string } }) {
     where: {
       user_id: userIdAsNumber,
       group: {
-        hashedId: params.hashedId,
+                hashedId: resolvedParams.hashedId,
       },
     },
     select: {
@@ -44,9 +45,9 @@ async function GroupRedirectPage({ params }: { params: { hashedId: string } }) {
 
   // 4. admin_flg の値に基づいて、適切なページにリダイレクト
   if (groupMembership.admin_flg) {
-    redirect(`/group/${params.hashedId}/admin`);
+        redirect(`/group/${resolvedParams.hashedId}/admin`);
   } else {
-    redirect(`/group/${params.hashedId}/member`);
+        redirect(`/group/${resolvedParams.hashedId}/member`);
   }
 
   // Next.jsのルール上、コンポーネントはnullまたはJSXを返す必要があるため、nullを返します。

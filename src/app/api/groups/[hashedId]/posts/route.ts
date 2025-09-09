@@ -1,17 +1,14 @@
 // /app/api/groups/[hashedId]/posts/route.ts (新規作成)
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getIronSession } from 'iron-session';
+import { getIronSession, IronSessionData } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
-interface SessionData {
-  user?: { id: number; email: string };
-}
-
 // お知らせ一覧を取得 (GET)
-export async function GET(req: NextRequest, { params }: { params: { hashedId: string } }) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+export async function GET(req: NextRequest, context: any) {
+  const { params } = context;
+  const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
@@ -51,8 +48,9 @@ export async function GET(req: NextRequest, { params }: { params: { hashedId: st
 }
 
 // ✨【ここから追加】お知らせを投稿 (POST)
-export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+export async function POST(req: NextRequest, context: any) {
+  const { params } = context;
+  const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
   
   if (!sessionUserId) {

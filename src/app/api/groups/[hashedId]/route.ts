@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getIronSession } from 'iron-session';
+import { getIronSession, IronSessionData } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
-
-// --- ▼▼▼ セッションの型定義を追加します ▼▼▼ ---
-interface SessionData {
-  user?: { id: number; email: string };
-}
 
 /**
  * グループの詳細情報を取得する (GET)
@@ -15,10 +10,11 @@ interface SessionData {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { hashedId: string } } // Next.js 13+ の標準的な引数の書き方
+  context: any
 ) {
+  const { params } = context;
   // --- ▼▼▼ 認証チェックを追加します ▼▼▼ ---
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     // 認証されていない場合はエラーを返す
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });

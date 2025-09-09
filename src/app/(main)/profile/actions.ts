@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 type ProfileUpdateData = {
   username?: string;
   birth?: string;
-  icon?: string;
+  icon?: string | null;
   selectedTitleId?: number | null;
 };
 

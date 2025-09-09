@@ -19,11 +19,12 @@ interface SessionData {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }; // 型を修正
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  const resolvedSearchParams = await searchParams;
 
   // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const session = await getIronSession<SessionData>(cookies() as any, sessionOptions);
   const userId = session.user?.id ? Number(session.user.id) : null;
 
   // ログインユーザーの全情報を取得
@@ -37,7 +38,7 @@ export default async function HomePage({
       <main className="flex justify-center w-full min-h-screen text-center pt-10 px-20 gap-10">
         <div className="flex flex-col w-full max-w-lg gap-8">
           <User user={user}/>
-          <Ranking userId={userId} />
+                    <Ranking />
         </div>
         <div className="flex flex-col w-full max-w-lg">
           <Pet user={user}/>

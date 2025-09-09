@@ -1,7 +1,8 @@
 import React from 'react';
 // ✅ 【修正点】インポート元を、Prismaが自動生成する最新の型定義に変更します
 import type { Problem } from '@/lib/types';
-import type { VariablesState } from '@/lib/types';
+
+type VariablesState = { [key: string]: number | string | number[] | null };
 
 interface VariableTraceControlProps {
   problem: Problem; // 型がPrismaのものに更新されます
