@@ -1,5 +1,5 @@
 // src/lib/issue_list/basic_info_b_problem/problem.ts
-import type { Problem, AnswerOption, VariablesState, TraceStep } from '@/lib/types'; // '@/lib/types'のパスとProblem型が正しいことを確認
+import type { Problem, AnswerOption, VariablesState, TraceStep } from '@/lib/types/index'; // '@/lib/types'のパスとProblem型が正しいことを確認
 
 export const basicInfoBProblems: Problem[] = [
   // =================================================================================

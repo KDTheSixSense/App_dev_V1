@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma'; // 名前付きインポートを使用
 
 export async function GET(
   req: Request,
-  { params }: { params: { currentId: string } }
+  context: any
 ) {
+  const { params } = context;
   try {
     const currentId = parseInt(params.currentId, 10);
     if (isNaN(currentId)) {

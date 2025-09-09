@@ -12,6 +12,7 @@ import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
 import type { SerializableProblem } from '@/lib/data';
 import { useNotification } from '@/app/contexts/NotificationContext';
 import type { VariablesState } from '../data/problems';
+import { problemLogicsMap } from '../data/problem-logics'; 
 
 
 // --- 多言語対応テキストとヘルパー関数 ---

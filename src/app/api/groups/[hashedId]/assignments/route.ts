@@ -1,18 +1,15 @@
 // /app/api/groups/[hashedId]/assignments/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getIronSession } from 'iron-session';
+import { getIronSession, IronSessionData } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { Prisma } from '@prisma/client'; // Prismaの型をインポート
 
-interface SessionData {
-  user?: { id: number; email: string };
-}
-
 // 課題一覧を取得 (GET)
-export async function GET(req: NextRequest, { params }: { params: { hashedId: string } }) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+export async function GET(req: NextRequest, context: any) {
+  const { params } = context;
+  const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
@@ -64,8 +61,9 @@ export async function GET(req: NextRequest, { params }: { params: { hashedId: st
 }
 
 // 課題を作成 (POST)
-export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+export async function POST(req: NextRequest, context: any) {
+  const { params } = context;
+  const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
 
   if (!sessionUserId) {

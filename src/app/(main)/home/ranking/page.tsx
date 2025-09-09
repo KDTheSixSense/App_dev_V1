@@ -3,12 +3,20 @@
 import { prisma } from "@/lib/prisma";
 import RankingContainer from "@/components/RankingContainer";
 import { assignRanks } from "@/lib/ranking";
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import { sessionOptions } from '@/lib/session';
 
-interface RankingPageProps {
-  userId: number | null;
+interface SessionData {
+  user?: {
+    id: string;
+    email: string;
+  };
 }
 
-export default async function RankingPage({ userId }: RankingPageProps) {
+export default async function RankingPage() {
+  const session = await getIronSession<SessionData>(cookies() as any, sessionOptions);
+  const userId = session.user?.id ? Number(session.user.id) : null;
   // 総合ランキングのデータを準備
   const allUsersOverall = await prisma.user.findMany({ orderBy: { xp: 'desc' } });
   const overallRankingFull = assignRanks(allUsersOverall.map(user => ({

@@ -6,7 +6,8 @@ import { getAppSession } from '@/lib/auth'; // セッション取得関数をイ
 const prisma = new PrismaClient();
 
 // --- GET関数 (変更なし) ---
-export async function GET(request: Request, { params }: { params: { problemId: string } }) {
+export async function GET(request: Request, context: any) {
+  const { params } = context;
   const problemId = parseInt(params.problemId, 10);
 
   if (isNaN(problemId)) {
@@ -35,7 +36,8 @@ export async function GET(request: Request, { params }: { params: { problemId: s
 }
 
 // --- PUT関数 (問題データを更新するため) ---
-export async function PUT(request: Request, { params }: { params: { problemId: string } }) {
+export async function PUT(request: Request, context: any) {
+  const { params } = context;
   const problemId = parseInt(params.problemId, 10);
 
   if (isNaN(problemId)) {
