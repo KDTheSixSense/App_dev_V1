@@ -83,78 +83,93 @@ export default function CreateProgrammingQuestionPage() {
 
   useEffect(() => {
   const idFromQuery = searchParams.get('id');
-  console.log('idFromQuery:', idFromQuery);
+  const typeFromQuery = searchParams.get('type');
+  // typeに応じて初期カテゴリを設定
+  if (typeFromQuery === 'select') {
+    setSelectedCategory('itpassport');
+    setFormData(prev => ({ ...prev, problemType: '選択問題', category: '4択問題' }));
+  } else {
+    setSelectedCategory('programming');
+    setFormData(prev => ({ ...prev, problemType: 'コーディング問題', category: 'プログラミング基礎' }));
+  }
 
+  // IDに応じて編集モードを設定
   if (idFromQuery) {
     const parsedId = parseInt(idFromQuery);
-    console.log('parsedId:', parsedId);
-
     if (!isNaN(parsedId) && parsedId > 0) {
       setProblemId(parsedId);
       setIsEditMode(true);
-      console.log('Edit mode activated for ID:', parsedId);
     } else {
-      console.error("Error: Invalid problemId. Raw value:", idFromQuery);
       alert('エラー: 無効な問題IDです');
-      setProblemId(null);
       setIsEditMode(false);
+      setProblemId(null);
     }
   } else {
-    setProblemId(null);
     setIsEditMode(false);
-    console.log('Create mode activated');
+    setProblemId(null);
   }
-}, [searchParams]);
+  }, [searchParams]);
 
 
-  // タブ切り替え処理
+  // 編集モード時に、カテゴリに応じたデータを取得するuseEffect
   useEffect(() => {
     if (problemId && isEditMode) {
-      console.log('Fetching data for problem ID:', problemId);
-
       const fetchProblemData = async () => {
+        const isSelectProblem = selectedCategory === 'itpassport';
+        const apiUrl = isSelectProblem ? `/api/select-problems/${problemId}` : `/api/problems/${problemId}`;
+        
         try {
-          const response = await fetch(`/api/problems/${problemId}`); 
-          console.log('Fetch response status:', response.status);
-
-          if (!response.ok) {
-            if (response.status === 404) {
-            throw new Error(`問題ID ${problemId} が見つかりません`);
-          }
-           throw new Error('問題データの読み込みに失敗しました');
-        }
+          const response = await fetch(apiUrl);
+          if (!response.ok) throw new Error(`問題データの読み込みに失敗しました (Status: ${response.status})`);
           const data = await response.json();
-          console.log('Fetched data:', data);
 
-          setFormData({
-          title: data.title || '',
-          problemType: data.problemType || 'コーディング問題',
-          difficulty: data.difficulty || 4,
-          timeLimit: data.timeLimit || 10,
-          category: data.category || 'プログラミング基礎',
-          topic: data.topic || '標準入力',
-          tags: JSON.parse(data.tags || '[]'), 
-          description: data.description || '',
-          codeTemplate: data.codeTemplate || '',
-          isPublic: data.isPublic || false,
-          allowTestCaseView: data.allowTestCaseView || false,
-        });
-
-          setSampleCases(data.sampleCases && data.sampleCases.length > 0 ? data.sampleCases : [{ id: null, input: '', expectedOutput: '', description: '' }]);
-          setTestCases(data.testCases && data.testCases.length > 0 ? data.testCases : [{ id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' }]);
-
-          console.log('Data loaded successfully');
-          
+          if (isSelectProblem) {
+            setFormData({
+              ...formData,
+              title: data.title || '',
+              description: data.description || '',
+              difficulty: data.difficultyId || 1,
+              problemType: '選択問題',
+              category: '4択問題',
+            });
+            setExplanation(data.explanation || '');
+            if (Array.isArray(data.answerOptions)) {
+              const optionsWithId = (data.answerOptions as string[]).map((text, index) => ({
+                id: String.fromCharCode(97 + index), // a, b, c, d
+                text: text,
+              }));
+              setAnswerOptions(optionsWithId);
+            }
+            const correctIndex = data.answerOptions.indexOf(data.correctAnswer);
+            if (correctIndex !== -1) {
+              setCorrectAnswer(String.fromCharCode(97 + correctIndex));
+            }
+          } else {
+            setFormData({
+              title: data.title || '',
+              problemType: data.problemType || 'コーディング問題',
+              difficulty: data.difficulty || 4,
+              timeLimit: data.timeLimit || 10,
+              category: data.category || 'プログラミング基礎',
+              topic: data.topic || '標準入力',
+              tags: JSON.parse(data.tags || '[]'),
+              description: data.description || '',
+              codeTemplate: data.codeTemplate || '',
+              isPublic: data.isPublic || false,
+              allowTestCaseView: data.allowTestCaseView || false,
+            });
+            setSampleCases(data.sampleCases?.length > 0 ? data.sampleCases : [{ id: null, input: '', expectedOutput: '', description: '' }]);
+            setTestCases(data.testCases?.length > 0 ? data.testCases : [{ id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' }]);
+          }
         } catch (error: any) {
-          console.error('Error loading problem for edit:', error);
-          alert(`問題データの読み込みに失敗しました: ${error.message}`);
-          setIsEditMode(false);
-          setProblemId(null); 
+          alert(`データ読み込みエラー: ${error.message}`);
+          router.push('/issue_list/mine_issue_list/problems');
         }
       };
       fetchProblemData();
     }
-  }, [problemId, isEditMode]); 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [problemId, isEditMode, selectedCategory, router]);
 
   // マークダウンツールバー用の関数
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -305,51 +320,52 @@ export default function CreateProgrammingQuestionPage() {
 
   // 問題更新処理 (Update Problem)
   const handleUpdateProblem = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    if (!problemId || problemId <= 0) { 
-    alert('エラー: 更新する問題IDが見つかりません。ページを再読み込みしてください。');
-    setIsSubmitting(false);
-    return;
-  }
-    console.log('Updating problem with ID:', problemId);
-
-    try {
-      const response = await fetch(`/api/problems/${problemId}`, { 
-        method: 'PUT', 
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          sampleCases: sampleCases.filter(sc => sc.input || sc.expectedOutput),
-          testCases: testCases.filter(tc => tc.input || tc.expectedOutput),
-        }),
-      });
-
-      console.log('Update response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Update error:', errorData);
-        const errorMessage = errorData.message || '不明なエラーが発生しました';
-        throw new Error(`問題の更新に失敗しました: ${errorMessage}`);
-      }
-
-    const result = await response.json();
-    console.log('Update successful:', result);
-    alert('問題が正常に更新されました！');
-
-    } catch (error: any) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('Error updating problem:', error);
-      alert(`エラーが発生しました: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }; 
-
+    e.preventDefault();
+    setIsSubmitting(true);
+    if (!problemId) {
+      alert('エラー: 更新する問題IDが見つかりません。');
+      setIsSubmitting(false);
+      return;
+    }
+    try {
+      let response;
+      if (selectedCategory === 'itpassport') {
+        const requestBody = {
+          title: formData.title,
+          description: formData.description,
+          explanation: explanation,
+          answerOptions: answerOptions.map(opt => opt.text),
+          correctAnswer: answerOptions.find(opt => opt.id === correctAnswer)?.text || '',
+          difficultyId: formData.difficulty,
+        };
+        response = await fetch(`/api/select-problems/${problemId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+      } else {
+        response = await fetch(`/api/problems/${problemId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...formData,
+            sampleCases: sampleCases.filter(sc => sc.input || sc.expectedOutput),
+            testCases: testCases.filter(tc => tc.input || tc.expectedOutput),
+          }),
+        });
+      }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '問題の更新に失敗しました');
+      }
+      alert('問題が正常に更新されました！');
+      router.push('/issue_list/mine_issue_list/problems');
+    } catch (error: any) {
+      alert(`エラー: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // ファイル削除処理（改良版）
   const removeFile = (index: number) => {
@@ -1463,7 +1479,12 @@ export default function CreateProgrammingQuestionPage() {
             {/* ヘッダー */}
             <div className="header">
               <h1 className="header-title">
-                {isEditMode ? '問題編集' : 'プログラミング問題作成'}
+                {isEditMode 
+                  ? '問題編集' 
+                  : selectedCategory === 'itpassport' 
+                    ? '選択問題作成' 
+                    : 'プログラミング問題作成'
+                }
               </h1>
               <p className="header-description">
                 {isEditMode ? '既存の問題を編集・更新できます' : '新しいプログラミング問題を作成しましょう'}
@@ -1610,6 +1631,37 @@ export default function CreateProgrammingQuestionPage() {
                           </div>
                       </div>
                   )}
+                  {/* アクションボタン */}
+              <div className="action-buttons">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleSaveDraft}
+                  disabled={isSubmitting}
+                >
+                  下書き保存
+                </button>
+                
+                {isEditMode ? (
+                  <button
+                    type="submit"
+                    className="btn btn-success"
+                    disabled={isSubmitting}
+                  >
+                    問題を更新
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isSubmitting}
+                  >
+                    問題を投稿
+                  </button>
+                )}
+                
+                <button type="button" className="btn btn-secondary" onClick={() => resetForm()} disabled={isSubmitting}>リセット</button>
+              </div>
               </>
           ) : (
                 // コーディング問題作成フォーム
