@@ -12,16 +12,20 @@ ENV DATABASE_URL=$DATABASE_URL
 # Next.jsプロジェクトのルートを作業ディレクトリにする
 WORKDIR /app
 
+# ▼▼▼【ここが今回の修正ポイントや！】▼▼▼
 # 依存関係のファイルを先にコピー
-# 備考: `src`ディレクトリ内にプロジェクトがある場合は、 `COPY src/package.json ./` のようにパスを調整してな
-COPY package*.json ./
+# あんたのプロジェクトは'src'フォルダの中にあるから、ちゃんと'src/'を指定するんや
+COPY src/package*.json ./
+# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # 依存関係をインストール
 # ビルドとコンパイルにはdevDependenciesも必要やから、ここでは全部インストールする
 RUN npm install
 
+# ▼▼▼【ここも修正ポイントや！】▼▼▼
 # プロジェクトのソースコードを全部コピー
-COPY . .
+COPY src/ .
+# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # ▼▼▼【ここがプロの仕事や！】▼▼▼
 # 1. Prisma Clientを生成する
