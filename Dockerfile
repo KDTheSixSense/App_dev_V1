@@ -23,20 +23,20 @@ RUN npm install
 # プロジェクトのソースコードを全部コピー
 COPY src/ .
 
-# ▼▼▼【ここがプロの仕事や！】▼▼▼
-# 1. Prisma Clientを生成する
+# Prisma Clientを生成する（これはbuildの前に必要）
 RUN npx prisma generate
 
-# 2. まず、prismaディレクトリに移動する
-WORKDIR /app/prisma
-# 3. そこにあるルールブックを使って、seed.ts と seed/ ディレクトリの中身を全部コンパイルする
-RUN npx tsc --project tsconfig.seed.json
-# 4. 仕事が終わったら、元の場所に戻っとく
-WORKDIR /app
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+# Next.jsアプリをビルドする。
+# この時だけ、DATABASE_URLをダミーの値で上書きして、ビルド中にDB接続しようとするのを防ぐ
+RUN DATABASE_URL="dummy" npm run build
 
-# Next.jsアプリをビルド (next.config.js に output: 'standalone' がある前提)
-RUN npm run build
+# ▼▼▼【ここが最後の修正ポイントや！】▼▼▼
+# Next.jsの掃除が終わった「後」で、シーディングスクリプトをコンパイルするんや！
+# これで、もう勝手に消されることはあらへん。
+WORKDIR /app/prisma
+RUN npx tsc --project tsconfig.seed.json
+WORKDIR /app
+# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 
 # --------------------------------------------------------------------
@@ -51,18 +51,14 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # ビルダー(builder)ステージから、実行に必要なファイルだけを厳選してコピー
-# standaloneモードの出力を使うと、これだけでOK
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# ▼▼▼【ここも大事なとこや！】▼▼▼
-# Prismaのスキーマファイルと、さっきコンパイルしたseed.jsを実行環境にコピーする
+# Prismaのスキーマファイルと、コンパイル済みのseed.jsと関連ファイルをコピー
 COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/
 COPY --from=builder --chown=nextjs:nodejs /app/prisma/seed.js ./prisma/
-# ★★★ seed.tsが読み込む、コンパイル済みのJSファイルも全部コピーする ★★★
 COPY --from=builder --chown=nextjs:nodejs /app/prisma/seed ./prisma/seed
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # 作成したユーザーに切り替え
 USER nextjs
