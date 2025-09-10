@@ -17,6 +17,7 @@ import { problemLogicsMap } from '../data/problem-logics';
 // --- 型定義 ---
 import type { SerializableProblem } from '@/lib/data';
 import type { VariablesState } from '../data/problems';
+import { problemLogicsMap } from '../data/problem-logics'; 
 
 // --- 多言語リソース ---
 const textResources = {
