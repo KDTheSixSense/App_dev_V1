@@ -41,7 +41,7 @@ export default function CreateProgrammingQuestionPage() {
     { id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' } 
   ])
 
-  // ★【追加】4択問題用の状態 ---
+  // 選択問題用の状態 ---
   const [answerOptions, setAnswerOptions] = useState<AnswerOption[]>([
     { id: 'a', text: '' },
     { id: 'b', text: '' },
@@ -201,9 +201,14 @@ export default function CreateProgrammingQuestionPage() {
     { id: 'itpassport', name: '4択問題', subItems: [] },
   ]
 
-  // カテゴリ選択処理
-  // ★【修正】カテゴリ選択時に問題タイプも更新し、フォームをリセットする
+  // カテゴリ選択時に問題タイプも更新し、フォームをリセットする
   const handleCategorySelect = (categoryId: string) => {
+
+    if (isEditMode) {
+      alert("編集モード中は問題のカテゴリを変更できません。");
+      return;
+    }
+
     setSelectedCategory(categoryId);
     resetForm(categoryId); // フォームをリセット
 
@@ -484,6 +489,21 @@ export default function CreateProgrammingQuestionPage() {
     setActiveTab('basic')
     setIsEditMode(false)
   } 
+
+  const programmingTabs = [
+    { id: 'basic', label: '基本情報' },
+    { id: 'description', label: '問題文' },
+    { id: 'sample-cases', label: 'サンプルケース' },
+    { id: 'test-cases', label: 'テストケース' },
+    { id: 'files', label: 'ファイル' },
+    { id: 'settings', label: '設定' },
+ ];
+ const selectProblemTabs = [
+    { id: 'basic', label: '基本情報' },
+    { id: 'files', label: 'ファイル' },
+    { id: 'settings', label: '設定' },
+ ];
+ const tabsToRender = selectedCategory === 'itpassport' ? selectProblemTabs : programmingTabs;
 
   // レンダリング
   return (
@@ -1474,78 +1494,105 @@ export default function CreateProgrammingQuestionPage() {
             <form onSubmit={isEditMode ? handleUpdateProblem : handlePublishProblem}>
               {selectedCategory === 'itpassport' ? (
                 // 4択問題作成フォーム
-                <div className="card">
-                  <div className="card-header">4択問題</div>
-                  <div className="card-body">
-                    <div className="form-group">
-                      <label className="form-label"><span className="required-badge">必須</span>問題タイトル</label>
-                      <input type="text" className="form-input" value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} placeholder="例: Pythonの変数宣言について" required />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label"><span className="required-badge">必須</span>問題文</label>
-                      <textarea className="form-textarea" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="問題文を記述してください..." rows={8} required />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label"><span className="required-badge">必須</span>選択肢と正解</label>
-                      {answerOptions.map((option, index) => (
-                        <div key={option.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
-                          <input type="radio" name="correctAnswer" value={option.id} checked={correctAnswer === option.id} onChange={(e) => setCorrectAnswer(e.target.value)} style={{ marginRight: '1rem', transform: 'scale(1.2)' }} />
-                          <input type="text" className="form-input" value={option.text} onChange={(e) => handleOptionChange(option.id, e.target.value)} placeholder={`選択肢 ${index + 1}`} required />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">解説</label>
-                      <textarea className="form-textarea" value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="正解の解説を記述してください..." rows={6} />
-                    </div>
-                     <div className="form-group">
-                    <label className="form-label">難易度</label>
-                    <select
-                      className="form-select"
-                      value={formData.difficulty}
-                      onChange={(e) => setFormData(prev => ({ ...prev, difficulty: parseInt(e.target.value) }))}
-                    >
-                      <option value={1}>1 (やさしい)</option>
-                      <option value={2}>2 (かんたん)</option>
-                      <option value={3}>3 (ふつう)</option>
-                      <option value={4}>4 (むずかしい)</option>
-                      <option value={5}>5 (鬼むず)</option>
-                      <option value={6}>6 (基本資格A問題)</option>
-                    </select>
-                  </div>
-                  </div>
-                  <div className="action-buttons">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleSaveDraft}
-                  disabled={isSubmitting}
-                >
-                  下書き保存
-                </button>
-                
-                {isEditMode ? (
-                  <button
-                    type="submit"
-                    className="btn btn-success"
-                    disabled={isSubmitting}
-                  >
-                    問題を更新
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={isSubmitting}
-                  >
-                    問題を投稿
-                  </button>
-                )}
-                
-                <button type="button" className="btn btn-secondary" onClick={() => resetForm()} disabled={isSubmitting}>リセット</button>
-              </div>
-                </div>
-              ) : (
+                <>
+                  {activeTab === 'basic' && (
+                      <div className="card">
+                          <div className="card-header">基本情報</div>
+                          <div className="card-body">
+                              {/* 全ての基本項目をここに集約 */}
+                              <div className="form-group">
+                                  <label className="form-label"><span className="required-badge">必須</span>問題タイトル</label>
+                                  <input type="text" className="form-input" value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} placeholder="例: Pythonの変数宣言について" required />
+                              </div>
+                              <div className="form-group">
+                                  <label className="form-label"><span className="required-badge">必須</span>問題文</label>
+                                  <textarea className="form-textarea" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="問題文を記述してください..." rows={8} required />
+                              </div>
+                              <div className="form-group">
+                                  <label className="form-label"><span className="required-badge">必須</span>選択肢と正解</label>
+                                  {answerOptions.map((option, index) => (
+                                      <div key={option.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                          <input type="radio" name="correctAnswer" value={option.id} checked={correctAnswer === option.id} onChange={(e) => setCorrectAnswer(e.target.value)} style={{ marginRight: '1rem', transform: 'scale(1.2)' }} />
+                                          <input type="text" className="form-input" value={option.text} onChange={(e) => handleOptionChange(option.id, e.target.value)} placeholder={`選択肢 ${index + 1}`} required />
+                                      </div>
+                                  ))}
+                              </div>
+                              <div className="form-group">
+                                  <label className="form-label">解説</label>
+                                  <textarea className="form-textarea" value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="正解の解説を記述してください..." rows={6} />
+                              </div>
+                              <div className="form-group">
+                                  <label className="form-label">難易度</label>
+                                  <select className="form-select" value={formData.difficulty} onChange={(e) => setFormData(prev => ({ ...prev, difficulty: parseInt(e.target.value) }))}>
+                                      <option value={1}>1 (やさしい)</option>
+                                      <option value={2}>2 (かんたん)</option>
+                                      <option value={3}>3 (ふつう)</option>
+                                      <option value={4}>4 (むずかしい)</option>
+                                      <option value={5}>5 (鬼むず)</option>
+                                      <option value={6}>6 (基本資格A問題)</option>
+                                  </select>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+                  {/* ファイルタブと設定タブはプログラミング問題と共通のものを表示 */}
+                  {activeTab === 'files' && (
+                      <div className="card">
+                          <div className="card-header">ファイル管理</div>
+                          <div className="card-body">
+                              {/* ファイルアップロードUI (内容はプログラミング問題と同じ) */}
+                              <div className="form-group">
+                                   <label className="form-label">添付ファイル</label>
+                                   <div className="file-upload-area" onClick={() => document.getElementById('file-input')?.click()} >
+                                       <div className="upload-icon">📁</div>
+                                       <div className="upload-text">ファイルをドラッグ&ドロップまたはクリックして選択</div>
+                                       <div className="upload-hint">画像、テキスト、PDFなど様々な形式に対応</div>
+                                       <input id="file-input" type="file" multiple onChange={handleFileUpload} style={{ display: 'none' }} />
+                                   </div>
+                                   {files.length > 0 && (
+                                       <div className="file-list">
+                                           {files.map((file, index) => (
+                                               <div key={index} className="file-item">
+                                                   <div className="file-info">
+                                                       <div className="file-icon">{file.type.startsWith('image/') ? '🖼️' : file.type.includes('text') ? '📄' : file.type.includes('pdf') ? '📕' : '📎'}</div>
+                                                       <div className="file-details">
+                                                           <div className="file-name">{file.name}</div>
+                                                           <div className="file-size">{(file.size / 1024).toFixed(1)} KB</div>
+                                                       </div>
+                                                   </div>
+                                                   <div className="file-actions">
+                                                       <button type="button" className="btn btn-primary btn-small" onClick={() => handlePreviewFile(file)}>プレビュー</button>
+                                                       <button type="button" className="btn btn-secondary btn-small" onClick={(e) => { e.stopPropagation(); removeFile(index); }}>削除</button>
+                                                   </div>
+                                               </div>
+                                           ))}
+                                       </div>
+                                   )}
+                              </div>
+                          </div>
+                      </div>
+                  )}
+                  {activeTab === 'settings' && (
+                      <div className="card">
+                          <div className="card-header">公開設定</div>
+                          <div className="card-body">
+                              {/* 公開設定UI (内容はプログラミング問題と同じ) */}
+                              <div className="checkbox-group">
+                                  <label className="checkbox"><input type="checkbox" checked={formData.isPublic} onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))} /><span className="checkbox-custom"></span></label>
+                                  <label className="checkbox-label">問題を公開する</label>
+                              </div>
+                              <div className="checkbox-group">
+                                   <label className="checkbox"><input type="checkbox" checked={formData.allowTestCaseView} onChange={(e) => setFormData(prev => ({ ...prev, allowTestCaseView: e.target.checked }))} /><span className="checkbox-custom"></span></label>
+                                   <label className="checkbox-label">テストケースの閲覧を許可する</label>
+                              </div>
+                              <div className="form-group" style={{ marginTop: '2rem' }}>
+                                   <button type="button" className="btn btn-warning" onClick={handleEditMode}>{isEditMode ? '編集モード終了' : '編集モード開始'}</button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+              </>
+          ) : (
                 // コーディング問題作成フォーム
                 <>
               {/* 基本情報タブ */}

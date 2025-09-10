@@ -759,3 +759,175 @@ export async function feedPetAction(difficultyId: number) {
     return { error: 'コハクへの餌やりに失敗しました。' };
   }
 }
+
+/**
+ * ログイン中のユーザーが作成した「選択問題」を取得するサーバーアクション
+ */
+export async function getMineSelectProblems() {
+  'use server';
+  try {
+    const session = await getSession();
+    const user = session.user;
+
+    if (!user || !user.id) {
+      return { error: '認証が必要です。ログインしてください。' };
+    }
+
+    const userId = Number(user.id);
+    if (isNaN(userId)) {
+      return { error: 'ユーザー情報が無効です。' };
+    }
+
+    // `SelectProblem` モデルからデータを取得するように変更
+    const problems = await prisma.selectProblem.findMany({
+      where: { createdBy: userId },
+      include: {
+        creator: {
+          select: { username: true },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    return { data: problems };
+  } catch (error) {
+    console.error("Failed to fetch user's select problems:", error);
+    return { error: '選択問題の取得中にエラーが発生しました。' };
+  }
+}
+
+/**
+ * 選択問題を削除するサーバーアクション
+ * @param formData - フォームから送信されたデータ
+ */
+export async function deleteSelectProblemAction(formData: FormData) {
+  'use server';
+
+  const session = await getSession();
+  const user = session.user;
+
+  if (!user?.id) {
+    throw new Error('認証が必要です。');
+  }
+  const userId = Number(user.id);
+
+  const problemIdStr = formData.get('problemId');
+  if (typeof problemIdStr !== 'string') {
+    throw new Error('無効な問題IDです。');
+  }
+  const problemId = Number(problemIdStr);
+
+  try {
+    // 削除対象の選択問題を取得し、所有者か確認
+    const problem = await prisma.selectProblem.findUnique({
+      where: { id: problemId },
+      select: { createdBy: true },
+    });
+
+    if (!problem || problem.createdBy !== userId) {
+      throw new Error('この問題を削除する権限がありません。');
+    }
+
+    // `selectProblem` を削除するように変更
+    await prisma.selectProblem.delete({
+      where: { id: problemId },
+    });
+
+    // キャッシュをクリアしてUIを更新
+    revalidatePath('/issue_list/mine_issue_list/problems');
+
+  } catch (error) {
+    console.error('選択問題の削除中にエラーが発生しました:', error);
+    // UI側でエラーハンドリングが必要な場合は、オブジェクトを返す
+    // return { error: (error instanceof Error) ? error.message : '問題の削除に失敗しました。' };
+  }
+}
+
+/**
+ * IDに基づいて単一の選択問題を取得するサーバーアクション
+ * @param problemId 取得する問題のID
+ */
+export async function getSelectProblemByIdAction(problemId: number) {
+  'use server';
+  try {
+    const session = await getSession();
+    if (!session.user) {
+      return { error: '認証が必要です。' };
+    }
+
+    const problem = await prisma.selectProblem.findUnique({
+      where: { id: problemId },
+    });
+
+    if (!problem) {
+      return { error: '問題が見つかりません。' };
+    }
+
+    // ログインユーザーが作成者であることを確認 (セキュリティのため)
+    if (problem.createdBy !== Number(session.user.id)) {
+        return { error: 'この問題の編集権限がありません。' };
+    }
+
+    return { data: problem };
+  } catch (error) {
+    console.error("Failed to fetch select problem:", error);
+    return { error: '問題の取得に失敗しました。' };
+  }
+}
+
+/**
+ * 既存の選択問題を更新するサーバーアクション
+ * @param formData フォームから送信されたデータ
+ */
+export async function updateSelectProblemAction(formData: FormData) {
+  'use server';
+  try {
+    const session = await getSession();
+    const user = session.user;
+    if (!user) {
+      return { error: '認証が必要です。' };
+    }
+
+    // フォームデータの取得と検証
+    const problemId = Number(formData.get('problemId'));
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const explanation = formData.get('explanation') as string;
+    const answerOptions = JSON.parse(formData.get('answerOptions') as string);
+    const correctAnswer = formData.get('correctAnswer') as string;
+    const subjectId = Number(formData.get('subjectId'));
+    const difficultyId = Number(formData.get('difficultyId'));
+
+    if (isNaN(problemId) || !title || !description || !answerOptions || !correctAnswer || isNaN(subjectId) || isNaN(difficultyId)) {
+        return { error: '必須項目が不足しています。' };
+    }
+
+    // 更新対象の問題の所有者か再度確認
+    const existingProblem = await prisma.selectProblem.findUnique({ where: { id: problemId } });
+    if (!existingProblem || existingProblem.createdBy !== Number(user.id)) {
+        return { error: 'この問題を更新する権限がありません。' };
+    }
+
+    // データベースを更新
+    const updatedProblem = await prisma.selectProblem.update({
+      where: { id: problemId },
+      data: {
+        title,
+        description,
+        explanation,
+        answerOptions,
+        correctAnswer,
+        subjectId,
+        difficultyId,
+      },
+    });
+    
+    // 問題一覧ページのキャッシュをクリアして表示を更新
+    revalidatePath('/issue_list/mine_issue_list/problems');
+    return { success: true, problem: updatedProblem };
+
+  } catch (error) {
+    console.error('Error updating select problem:', error);
+    return { error: '問題の更新中にエラーが発生しました。' };
+  }
+}

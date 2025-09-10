@@ -1,31 +1,34 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getSession } from '@/lib/session';
 
 const prisma = new PrismaClient();
 
 // 4択問題を作成するためのPOSTリクエストを処理する関数
 export async function POST(request: Request) {
     try {
+        // セッションからユーザー情報を取得
+        const session = await getSession();
+        const user = session.user;
+
+        // ログインしていない場合はエラーを返す
+        if (!user || !user.id) {
+            return NextResponse.json({ success: false, message: '認証されていません。' }, { status: 401 });
+        }
+        const userId = Number(user.id);
+
         const body = await request.json();
         const {
             title,
             description,
             explanation,
-            answerOptions, // フロントエンドからはこの名前で配列が送られてくる
+            answerOptions,
             correctAnswer,
             subjectId,
             difficultyId,
         } = body;
 
-        if (
-            !title || 
-            !description || 
-            !Array.isArray(answerOptions) || 
-            answerOptions.length !== 4 || 
-            !correctAnswer || 
-            !subjectId || 
-            !difficultyId
-        ) {
+        if (!title || !description || !Array.isArray(answerOptions) || answerOptions.length === 0 || !correctAnswer || !subjectId || !difficultyId) {
             return NextResponse.json({ success: false, message: '必須項目が不足しています。' }, { status: 400 });
         }
 
@@ -34,13 +37,11 @@ export async function POST(request: Request) {
                 title,
                 description,
                 explanation,
-                
-                // ★★★ 修正箇所: スキーマ定義に合わせて 'answerOptions' に修正 ★★★
                 answerOptions: answerOptions,
-                
                 correctAnswer,
                 subjectId,
                 difficultyId,
+                createdBy: userId,
             },
         });
 
