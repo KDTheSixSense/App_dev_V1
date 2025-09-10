@@ -16,25 +16,25 @@
     "@prisma/client": "^5.13.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
-    "geist": "^1.3.0",
+    "geist": "^1.5.1",
     "iron-session": "^8.0.1",
     "jsonwebtoken": "^9.0.2",
     "lightningcss": "^1.25.1",
     "lucide-react": "^0.379.0",
     "nanoid": "^5.0.7",
-    "next": "14.2.3",
+    "next": "^14.2.32",
     "nodemailer": "^6.9.13",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.51.4",
     "react-resizable-panels": "^2.0.19",
-    "react-syntax-highlighter": "^15.5.0",
+    "react-syntax-highlighter": "^5.8.0",
     "recharts": "^2.12.7",
     "sqlite3": "^5.1.7",
-    "vm2": "^3.9.19",
-    "xlsx": "^0.18.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vm2": "^3.9.19",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@google/gemini-cli": "^0.1.9",
@@ -47,7 +47,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@types/xlsx": "^0.0.36",
+    "@types/xlsx": "^0.0.35",
     "autoprefixer": "^10.4.19",
     "csv-parse": "^5.5.6",
     "eslint": "8.57.0",
@@ -62,4 +62,3 @@
     "seed": "node prisma/dist/seed.js"
   }
 }
-
