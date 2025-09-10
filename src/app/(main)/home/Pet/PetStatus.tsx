@@ -2,14 +2,6 @@ import { prisma } from '@/lib/prisma';
 import PetStatusView from './PetStatusView'; // すぐ下に作成するクライアントコンポーネントをインポート
 import type { User } from '@prisma/client';
 
-// セッションデータの型を定義
-interface SessionData {
-  user?: {
-    id: string;
-    email: string;
-  };
-}
-
 const MAX_HUNGER = 200; // 満腹度の最大値をここで一元管理
 
 export default async function PetStatus({user}: {user : User | null} ) {

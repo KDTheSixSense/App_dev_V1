@@ -27,7 +27,7 @@ export default async function UserDetail({ user }: UserDetailProps) {
     const progressPercentage = (currentXpInLevel / requiredXpForNextLevel) * 100;
 
     return (
-        <div className="flex flex-col w-full max-w-150 h-100 rounded-lg shadow-lg p-4">
+        <div className="flex flex-col w-full w-max-150 h-100 rounded-lg shadow-lg p-4">
             <div className="flex items-center w-full h-50 gap-10 pl-10">
                 <div className="w-30 h-30">
                     <Image src={user?.icon || "/images/test_icon.webp"} alt="Test Icon" width={120} height={120} className="rounded-full object-cover w-full h-full"/>
@@ -70,8 +70,8 @@ export default async function UserDetail({ user }: UserDetailProps) {
                         <span className="text-2xl font-bold text-gray-800">{user?.totallogin ?? 0}日</span>
                     </div>
                     <div className="flex flex-col justify-center items-center px-4 py-2 w-30 h-25 gap-2">
-                        <span className="text-sm text-gray-600">残課題</span>
-                        <span className="text-2xl font-bold text-gray-800">0</span>
+                        <span className="text-sm text-gray-600">課題</span>
+                        <span className="text-2xl font-bold text-gray-800">12</span>
                     </div>
                 </div>
             </div>

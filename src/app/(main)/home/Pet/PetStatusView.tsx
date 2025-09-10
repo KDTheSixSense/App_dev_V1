@@ -48,9 +48,7 @@ export default function PetStatusView({ initialHunger, maxHunger }: PetStatusVie
   const fullnessPercentage = (initialHunger / maxHunger) * 100;
 
   return (
-    // --- ▼▼▼ ここのクラス名を修正しました ▼▼▼ ---
-    // max-w-sm と mx-auto を削除し、親要素の幅に追従するようにしました
-    <div className="flex flex-col items-center gap-6 p-8 bg-white rounded-2xl shadow-lg">
+    <div className="flex flex-col items-center h-100 gap-2 p-5 bg-white rounded-2xl shadow-lg">
 
       {/* 1. キャラクター画像 */}
       <div>
