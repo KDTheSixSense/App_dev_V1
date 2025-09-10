@@ -30,19 +30,11 @@ RUN npx prisma generate
 # この時だけ、DATABASE_URLをダミーの値で上書きして、ビルド中にDB接続しようとするのを防ぐ
 RUN DATABASE_URL="dummy" npm run build
 
-# ▼▼▼【ここが最後の修正ポイントや！】▼▼▼
 # Next.jsの掃除が終わった「後」で、シーディングスクリプトをコンパイルするんや！
 # これで、もう勝手に消されることはあらへん。
 WORKDIR /app/prisma
 RUN npx tsc --project tsconfig.seed.json
 WORKDIR /app
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
-# ▼▼▼【デバッグ用のコマンドや！】▼▼▼
-# コンパイルが終わった直後に、prismaフォルダの中身を全部表示させる。
-# これで、'seed.js' がほんまに作られとるか、ワシら自身の目で確認できるんや。
-RUN ls -laR prisma
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 
 # --------------------------------------------------------------------
@@ -61,10 +53,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prismaのスキーマファイルと、コンパイル済みのseed.jsと関連ファイルをコピー
+# Prismaのスキーマファイルと、「dist」フォルダに作られた完成品をコピー
 COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/seed.js ./prisma/
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/seed ./prisma/seed
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/seed.js ./prisma/
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/seed ./prisma/seed
 
 # 作成したユーザーに切り替え
 USER nextjs

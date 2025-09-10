@@ -31,7 +31,8 @@
     "sqlite3": "^5.x.x",
     "vm2": "^3.x.x",
     "ts-node": "^10.9.2",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "typescript": "^5"
   },
   "devDependencies": {
     "@google/gemini-cli": "^0.1.9",
@@ -53,11 +54,10 @@
     "postcss": "^8.x.x",
     "prisma": "^6.11.1",
     "tailwindcss": "^4",
-    "ts-jest": "^29.4.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "ts-jest": "^29.4.0"
   },
   "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+    "seed": "node prisma/dist/seed.js"
   }
 }
+
