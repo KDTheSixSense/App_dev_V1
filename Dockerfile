@@ -56,8 +56,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Prismaのスキーマファイルと、「dist」フォルダに作られた完成品をコピー
 COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/seed.js ./prisma/
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/seed ./prisma/seed
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/prisma/seed.js ./prisma/
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/prisma/seed ./prisma/seed
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/app/(main)/issue_list/basic_info_b_problem\data\problems.js ./prisma/seed
 
 # 作成したユーザーに切り替え
 USER nextjs
