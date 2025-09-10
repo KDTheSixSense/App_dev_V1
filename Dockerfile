@@ -1,12 +1,13 @@
 # --------------------------------------------------------------------
 # ステージ1: ビルダー (Builder)
 # --------------------------------------------------------------------
+# Alpine LinuxベースのNode.js 20イメージを使う。軽くてええで。
 FROM node:20-alpine AS builder
 
+# ビルド時に外部から DATABASE_URL を受け取るための引数を定義
 ARG DATABASE_URL
-# その引数の値を環境変数として設定
+# 受け取った引数を環境変数として設定
 ENV DATABASE_URL=$DATABASE_URL
-
 
 # Next.jsプロジェクトのルートを作業ディレクトリにする
 WORKDIR /app
@@ -15,15 +16,18 @@ WORKDIR /app
 COPY src/package.json src/package-lock.json* ./
 
 # 依存関係をインストール
-RUN npm install
+# --omit=dev を付けると、devDependenciesを除外して本番に必要なもんだけインストールする
+RUN npm install --omit=dev
 
 # プロジェクトのソースコードを全部コピー
 COPY src/ .
 
-# ★★★★★★★★★★★★★★★★★★★★★★★
-# ★ ここに Prisma Client を生成するコマンドを追加！ ★
-# ★★★★★★★★★★★★★★★★★★★★★★★
+# ▼▼▼【ここがプロの仕事や！】▼▼▼
+# Prisma Clientを生成する
 RUN npx prisma generate
+# シーディングスクリプトを、TypeScriptからJavaScriptにコンパイルする
+RUN npx tsc prisma/seed.ts
+# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # Next.jsアプリをビルド (next.config.js に output: 'standalone' がある前提)
 RUN npm run build
@@ -46,10 +50,14 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prismaのスキーマファイルも実行環境にコピーする
-# これがないと、実行時にPrismaがスキーマを見つけられずにエラーになることがある
-COPY --from=builder /app/prisma ./prisma
+# ▼▼▼【ここも大事なとこや！】▼▼▼
+# Prismaのスキーマファイルと、さっきコンパイルしたseed.jsを実行環境にコピーする
+# これで、マイグレーションJobがちゃんと動くようになるで
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/seed.js ./prisma/
+# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
+# 作成したユーザーに切り替え
 USER nextjs
 
 EXPOSE 3000
@@ -58,3 +66,4 @@ ENV NODE_ENV=production
 
 # アプリケーションを起動
 CMD ["node", "server.js"]
+
