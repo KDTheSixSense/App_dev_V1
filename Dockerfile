@@ -12,27 +12,27 @@ ENV DATABASE_URL=$DATABASE_URL
 # Next.jsプロジェクトのルートを作業ディレクトリにする
 WORKDIR /app
 
-# ▼▼▼【ここが今回の修正ポイントや！】▼▼▼
 # 依存関係のファイルを先にコピー
 # あんたのプロジェクトは'src'フォルダの中にあるから、ちゃんと'src/'を指定するんや
 COPY src/package*.json ./
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # 依存関係をインストール
 # ビルドとコンパイルにはdevDependenciesも必要やから、ここでは全部インストールする
 RUN npm install
 
-# ▼▼▼【ここも修正ポイントや！】▼▼▼
 # プロジェクトのソースコードを全部コピー
 COPY src/ .
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # ▼▼▼【ここがプロの仕事や！】▼▼▼
 # 1. Prisma Clientを生成する
 RUN npx prisma generate
 
-# 2. tsconfig.seed.jsonっていう「翻訳ルールブック」を使って、シーディングスクリプトをコンパイルする
-RUN npx tsc --project prisma/tsconfig.seed.json
+# 2. まず、prismaディレクトリに移動する
+WORKDIR /app/prisma
+# 3. そこにあるルールブックを使って、seed.ts と seed/ ディレクトリの中身を全部コンパイルする
+RUN npx tsc --project tsconfig.seed.json
+# 4. 仕事が終わったら、元の場所に戻っとく
+WORKDIR /app
 # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # Next.jsアプリをビルド (next.config.js に output: 'standalone' がある前提)
@@ -58,11 +58,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # ▼▼▼【ここも大事なとこや！】▼▼▼
 # Prismaのスキーマファイルと、さっきコンパイルしたseed.jsを実行環境にコピーする
-# これで、マイグレーションJobがこのイメージを使い回せるようになるんや
 COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/
 COPY --from=builder --chown=nextjs:nodejs /app/prisma/seed.js ./prisma/
-# もしseed.tsが他のファイルを読み込んどるなら、それらもコピーする必要があるで
-# 例: COPY --from=builder --chown=nextjs:nodejs /app/prisma/seed ./prisma/seed
+# ★★★ seed.tsが読み込む、コンパイル済みのJSファイルも全部コピーする ★★★
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/seed ./prisma/seed
 # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # 作成したユーザーに切り替え
