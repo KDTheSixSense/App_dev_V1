@@ -23,19 +23,15 @@ RUN npm install
 # プロジェクトのソースコードを全部コピー
 COPY src/ .
 
-# Prisma Clientを生成する（この時は本物のDATABASE_URLが必要）
+# Prisma Clientを生成する（これはbuildの前に必要）
 RUN npx prisma generate
 
-# ▼▼▼【ここが最後の修正ポイントや！】▼▼▼
-# Next.jsアプリをビルドする。
-# この時だけ、Prismaが文句を言わんように、形式だけは完璧なダミーURLで上書きするんや！
+# ▼▼▼【ここがプロの仕事や！】▼▼▼
+# package.jsonの "build" スクリプトを実行する。
+# これで、まず "seed:compile" が動いて、その後に "next build" が動く。
+# DATABASE_URLも、Prismaが文句を言わん形式のダミーで渡すから、DB接続エラーも起きへん。
 RUN DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy" npm run build
 # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
-# Next.jsの掃除が終わった「後」で、シーディングスクリプトをコンパイルするんや！
-WORKDIR /app/prisma
-RUN npx tsc --project tsconfig.seed.json
-WORKDIR /app
 
 
 # --------------------------------------------------------------------
@@ -55,10 +51,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Prismaのスキーマファイルと、「dist」フォルダに作られた完成品をコピー
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/prisma/seed.js ./prisma/
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/prisma/seed ./prisma/seed
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/app/(main)/issue_list/basic_info_b_problem\data\problems.js ./prisma/seed
+# COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/
+# COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/seed.js ./prisma/
+# COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist/seed ./prisma/seed
 
 # 作成したユーザーに切り替え
 USER nextjs
