@@ -23,15 +23,16 @@ RUN npm install
 # プロジェクトのソースコードを全部コピー
 COPY src/ .
 
-# Prisma Clientを生成する（これはbuildの前に必要）
+# Prisma Clientを生成する（この時は本物のDATABASE_URLが必要）
 RUN npx prisma generate
 
+# ▼▼▼【ここが最後の修正ポイントや！】▼▼▼
 # Next.jsアプリをビルドする。
-# この時だけ、DATABASE_URLをダミーの値で上書きして、ビルド中にDB接続しようとするのを防ぐ
-RUN DATABASE_URL="dummy" npm run build
+# この時だけ、Prismaが文句を言わんように、形式だけは完璧なダミーURLで上書きするんや！
+RUN DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy" npm run build
+# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # Next.jsの掃除が終わった「後」で、シーディングスクリプトをコンパイルするんや！
-# これで、もう勝手に消されることはあらへん。
 WORKDIR /app/prisma
 RUN npx tsc --project tsconfig.seed.json
 WORKDIR /app
