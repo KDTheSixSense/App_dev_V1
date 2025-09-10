@@ -11,6 +11,7 @@ interface AssignmentEditorProps {
     onNavigateToCreateProblem: () => void;
     onOpenProblemSelectModal: () => void;
     problemPreview: ProgrammingProblem | null;
+    onRemoveProblemPreview?: () => void;
 }
 
 export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
@@ -20,7 +21,8 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     onCreateAssignment,
     onNavigateToCreateProblem,
     onOpenProblemSelectModal,
-    problemPreview
+    problemPreview,
+    onRemoveProblemPreview
 }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -61,7 +63,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         }
 
         try {
-            await onCreateAssignment(title, description, dueDate, problemPreview?.id);
+            await onCreateAssignment(title, description, dueDate, problemPreview ? parseInt(problemPreview.id) : undefined);
             handleReset();
         } catch (error) {
             console.error('課題作成エラー:', error);
@@ -322,7 +324,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                            プログラミング問題 (新規作成)
+                            問題作成 (新規作成)
                         </button>
                         <button
                             onClick={() => {
@@ -343,7 +345,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                            プログラミング問題 (既存から選択)
+                            問題作成 (既存から選択)
                         </button>
                     </div>
                 )}
@@ -355,11 +357,56 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                         borderRadius: '8px',
                         padding: '12px',
                         backgroundColor: '#e3f2fd',
-                        marginTop: '16px'
+                        marginTop: '16px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
                     }}>
-                        <p style={{ margin: '0', color: '#1565c0' }}>
+                        <p style={{ margin: '0', color: '#1565c0', flex: 1 }}>
                             <strong>添付された問題:</strong> {problemPreview.title}
                         </p>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                onClick={onOpenProblemSelectModal}
+                                style={{
+                                    background: 'none',
+                                    border: '1px solid #1976d2',
+                                    color: '#1976d2',
+                                    cursor: 'pointer',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    transition: 'background-color 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e3f2fd'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                title="問題を変更"
+                            >
+                                変更
+                            </button>
+                            {onRemoveProblemPreview && (
+                                <button
+                                    onClick={onRemoveProblemPreview}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#d32f2f',
+                                        cursor: 'pointer',
+                                        padding: '4px 8px',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
+                                        fontWeight: '500',
+                                        transition: 'background-color 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(211, 47, 47, 0.1)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    title="添付された問題を削除"
+                                >
+                                    ✕ 削除
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

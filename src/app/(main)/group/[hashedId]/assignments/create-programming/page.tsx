@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { Case, TestCase, FormData, UploadedFile } from '@/types/problem';
 
 interface AnswerOption {
@@ -14,6 +14,8 @@ export default function CreateProgrammingQuestionPage() {
   // フォームの状態管理
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
+  const hashedId = params.hashedId as string;
   const [problemId, setProblemId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('basic') // アクティブなタブ
   const [selectedCategory, setSelectedCategory] = useState('programming') // 選択されたカテゴリ
@@ -405,6 +407,8 @@ export default function CreateProgrammingQuestionPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      let problemResult: any = null;
+      
       if (selectedCategory === 'itpassport') {
         const requestBody = {
           title: formData.title,
@@ -415,11 +419,12 @@ export default function CreateProgrammingQuestionPage() {
           subjectId: 4, 
           difficultyId: formData.difficulty,
         };
-          const response = await fetch('/api/select-problems', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
+          const response = await fetch('/api/selects_problems', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
         });
         if (!response.ok) throw new Error((await response.json()).message || '選択問題の作成に失敗しました。');
+        problemResult = await response.json();
         alert('選択問題が正常に投稿されました！');
       } else {
         const problemData = {
@@ -433,9 +438,23 @@ export default function CreateProgrammingQuestionPage() {
           body: JSON.stringify(problemData),
         });
         if (!response.ok) throw new Error((await response.json()).error || 'コーディング問題の投稿に失敗しました');
+        problemResult = await response.json();
         alert('コーディング問題が正常に投稿されました！');
       }
-      resetForm(selectedCategory);
+      
+      // ★ 修正: 問題投稿成功後、グループの課題ページに遷移し、新しい課題作成エディターを開く
+      if (hashedId && problemResult) {
+        // 作成された問題の情報をURLパラメータとして渡す
+        const problemInfo = encodeURIComponent(JSON.stringify({
+          id: problemResult.id,
+          title: problemResult.title || formData.title,
+          type: selectedCategory === 'itpassport' ? '4択問題' : 'プログラミング問題'
+        }));
+        router.push(`/group/${hashedId}/admin?tab=課題&expand=true&problem=${problemInfo}`);
+      } else {
+        // hashedIdが取得できない場合は、フォームをリセットのみ
+        resetForm(selectedCategory);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : '不明なエラーが発生しました。';
       console.error('Error:', error);

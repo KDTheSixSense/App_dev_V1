@@ -34,6 +34,8 @@ const GroupDetailPage: React.FC = () => {
         assignments,
         availableProblems,
         isLoadingProblems,
+        availableSelectionProblems,
+        isLoadingSelectionProblems,
         createPost,
         updatePost,
         deletePost,
@@ -45,7 +47,10 @@ const GroupDetailPage: React.FC = () => {
         deleteAssignment,
         addMember,
         copyInviteCode,
-        fetchAvailableProblems
+        fetchAvailableProblems,
+        fetchAvailableSelectionProblems,
+        fetchProblemById,
+        fetchSelectionProblemById
     } = useAdminData(hashedId);
 
     // UI関連のstate
@@ -55,6 +60,55 @@ const GroupDetailPage: React.FC = () => {
     const [isAssignmentEditorExpanded, setIsAssignmentEditorExpanded] = useState(false);
     const [isProblemSelectModalOpen, setIsProblemSelectModalOpen] = useState(false);
     const [problemPreview, setProblemPreview] = useState<ProgrammingProblem | null>(null);
+
+    // URLパラメータの処理
+    React.useEffect(() => {
+        const handleUrlParams = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // タブパラメータの処理
+            const tabParam = urlParams.get('tab');
+            if (tabParam === '課題') {
+                setActiveTab('課題');
+            }
+
+            // 展開パラメータの処理
+            const expandParam = urlParams.get('expand');
+            if (expandParam === 'true') {
+                setIsAssignmentEditorExpanded(true);
+            }
+
+            // 問題パラメータの処理
+            const problemParam = urlParams.get('problem');
+            if (problemParam) {
+                try {
+                    const problemInfo = JSON.parse(decodeURIComponent(problemParam));
+                    const problemId = parseInt(problemInfo.id);
+
+                    if (!isNaN(problemId)) {
+                        let fetchedProblem = null;
+
+                        // 問題タイプに応じて適切なAPIを呼び出す
+                        if (problemInfo.type === '4択問題') {
+                            fetchedProblem = await fetchSelectionProblemById(problemId);
+                        } else {
+                            fetchedProblem = await fetchProblemById(problemId);
+                        }
+
+                        if (fetchedProblem) {
+                            setProblemPreview(fetchedProblem);
+                            setIsAssignmentEditorExpanded(true);
+                            setActiveTab('課題');
+                        }
+                    }
+                } catch (error) {
+                    console.error('問題情報の解析に失敗しました:', error);
+                }
+            }
+        };
+
+        handleUrlParams();
+    }, []);
 
     // === イベントハンドラ ===
     // 課題エディター展開
@@ -68,9 +122,18 @@ const GroupDetailPage: React.FC = () => {
         setProblemPreview(null);
     };
 
+    // 問題プレビュー削除
+    const handleRemoveProblemPreview = () => {
+        setProblemPreview(null);
+    };
+
     // 課題作成
     const handleAssignmentCreate = async (title: string, description: string, dueDate: string, programmingProblemId?: number) => {
-        await createAssignment(title, description, dueDate, programmingProblemId);
+        // 選択問題の場合はprogrammingProblemIdをnullにする
+        const isSelectionProblem = problemPreview && 'answerOptions' in problemPreview;
+        const finalProgrammingProblemId = isSelectionProblem ? undefined : programmingProblemId;
+
+        await createAssignment(title, description, dueDate, finalProgrammingProblemId);
         handleAssignmentEditorCollapse();
         alert('課題を作成しました。');
     };
@@ -101,11 +164,19 @@ const GroupDetailPage: React.FC = () => {
     // 問題選択モーダルを開く
     const handleOpenProblemSelectModal = () => {
         fetchAvailableProblems();
+        fetchAvailableSelectionProblems();
         setIsProblemSelectModalOpen(true);
     };
 
     // 問題選択処理
     const handleProblemSelect = (problem: ProgrammingProblem) => {
+        setProblemPreview(problem);
+        setIsAssignmentEditorExpanded(true);
+        setIsProblemSelectModalOpen(false);
+    };
+
+    // 選択問題選択処理
+    const handleSelectionProblemSelect = (problem: any) => {
         setProblemPreview(problem);
         setIsAssignmentEditorExpanded(true);
         setIsProblemSelectModalOpen(false);
@@ -192,6 +263,7 @@ const GroupDetailPage: React.FC = () => {
                                             onNavigateToCreateProblem={navigateToCreateProgrammingProblem}
                                             onOpenProblemSelectModal={handleOpenProblemSelectModal}
                                             problemPreview={problemPreview}
+                                            onRemoveProblemPreview={handleRemoveProblemPreview}
                                         />
                                         <AssignmentList
                                             assignments={assignments}
@@ -243,9 +315,11 @@ const GroupDetailPage: React.FC = () => {
                     <ProblemSelectModal
                         isOpen={isProblemSelectModalOpen}
                         problems={availableProblems}
-                        isLoading={isLoadingProblems}
+                        selectionProblems={availableSelectionProblems}
+                        isLoading={isLoadingProblems || isLoadingSelectionProblems}
                         onClose={() => setIsProblemSelectModalOpen(false)}
                         onSelectProblem={handleProblemSelect}
+                        onSelectSelectionProblem={handleSelectionProblemSelect}
                     />
                 </div>
             )}

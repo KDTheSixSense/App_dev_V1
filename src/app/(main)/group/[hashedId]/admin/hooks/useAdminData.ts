@@ -33,6 +33,10 @@ export const useAdminData = (hashedId: string) => {
     const [availableProblems, setAvailableProblems] = useState<ProgrammingProblem[]>([]);
     const [isLoadingProblems, setIsLoadingProblems] = useState(false);
 
+    // 選択問題関連のstate
+    const [availableSelectionProblems, setAvailableSelectionProblems] = useState<any[]>([]);
+    const [isLoadingSelectionProblems, setIsLoadingSelectionProblems] = useState(false);
+
     // === API関数 ===
     // グループ詳細を取得
     const fetchGroupData = async () => {
@@ -43,7 +47,7 @@ export const useAdminData = (hashedId: string) => {
                 throw new Error('グループの読み込みに失敗しました');
             }
             const data = await response.json();
-            setGroup({ teacher: '管理者', ...data });
+            setGroup(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'データの取得に失敗しました');
         } finally {
@@ -126,6 +130,64 @@ export const useAdminData = (hashedId: string) => {
         } finally {
             setIsLoadingProblems(false);
         }
+    };
+
+    // 利用可能な選択問題を取得
+    const fetchAvailableSelectionProblems = async () => {
+        setIsLoadingSelectionProblems(true);
+        try {
+            const response = await fetch('/api/selects_problems');
+            if (response.ok) {
+                const data = await response.json();
+                setAvailableSelectionProblems(data);
+            }
+        } catch (error) {
+            console.error('選択問題一覧の取得に失敗しました:', error);
+        } finally {
+            setIsLoadingSelectionProblems(false);
+        }
+    };
+
+    // 特定のプログラミング問題を取得
+    const fetchProblemById = async (problemId: number): Promise<ProgrammingProblem | null> => {
+        try {
+            const response = await fetch(`/api/problems/${problemId}`);
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    id: data.id.toString(),
+                    title: data.title,
+                    description: data.description,
+                    difficulty: data.difficulty === 1 ? 'easy' : data.difficulty === 2 ? 'medium' : 'hard',
+                    category: data.category,
+                    sampleCases: data.sampleCases || []
+                };
+            }
+        } catch (error) {
+            console.error('問題の取得に失敗しました:', error);
+        }
+        return null;
+    };
+
+    // 特定の選択問題を取得
+    const fetchSelectionProblemById = async (problemId: number): Promise<any | null> => {
+        try {
+            const response = await fetch(`/api/selects_problems/${problemId}`);
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    id: data.id.toString(),
+                    title: data.title,
+                    description: data.description,
+                    difficulty: data.difficulty === 1 ? 'easy' : data.difficulty === 2 ? 'medium' : 'hard',
+                    category: '4択問題',
+                    answerOptions: data.answerOptions || []
+                };
+            }
+        } catch (error) {
+            console.error('選択問題の取得に失敗しました:', error);
+        }
+        return null;
     };
 
     // === CRUD操作 ===
@@ -316,7 +378,9 @@ export const useAdminData = (hashedId: string) => {
         assignments,
         availableProblems,
         isLoadingProblems,
-        
+        availableSelectionProblems,
+        isLoadingSelectionProblems,
+
         // Actions
         createPost,
         updatePost,
@@ -330,7 +394,10 @@ export const useAdminData = (hashedId: string) => {
         addMember,
         copyInviteCode,
         fetchAvailableProblems,
-        
+        fetchAvailableSelectionProblems,
+        fetchProblemById,
+        fetchSelectionProblemById,
+
         // Refresh functions
         refreshData: () => {
             fetchGroupData();

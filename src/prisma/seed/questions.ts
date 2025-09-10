@@ -37,6 +37,10 @@ export async function seedProblems(prisma: PrismaClient) {
   // 3. スプレッドシートからのプログラミング問題のシーディング
   console.log('🌱 Seeding programming problems from spreadsheet data...');
   await seedSampleProgrammingProblems(prisma);
+
+  // 4. 選択問題のシーディング
+  console.log('🌱 Seeding selection problems...');
+  await seedSampleSelectionProblems(prisma);
 }
 
 async function seedProblemsFromExcel(prisma: PrismaClient) {
@@ -715,4 +719,105 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     await prisma.programmingProblem.create({ data: p });
   }
   console.log(`✅ Created ${spreadsheetProblems.length} programming problems from spreadsheet.`);
+}
+
+async function seedSampleSelectionProblems(prisma: PrismaClient) {
+  // Sample selection problems (4択問題)
+  const selectionProblems = [
+    {
+      title: 'Pythonの変数宣言について',
+      description: 'Pythonで変数を宣言する際の正しい記述はどれですか？',
+      explanation: 'Pythonでは変数の型を明示的に宣言する必要がありません。値を代入するだけで変数が作成されます。',
+      answerOptions: ['int x = 5', 'var x = 5', 'x = 5', 'declare x = 5'],
+      correctAnswer: 'x = 5',
+      difficultyId: 1,
+      subjectId: 4, // プログラミング選択問題
+    },
+    {
+      title: 'JavaScriptの関数定義',
+      description: 'JavaScriptで関数を定義する正しい方法はどれですか？',
+      explanation: 'JavaScriptでは function キーワードを使って関数を定義します。',
+      answerOptions: ['def myFunction():', 'function myFunction() {}', 'void myFunction() {}', 'func myFunction() {}'],
+      correctAnswer: 'function myFunction() {}',
+      difficultyId: 2,
+      subjectId: 4,
+    },
+    {
+      title: 'HTMLの基本構造',
+      description: 'HTMLドキュメントの基本的な構造で必須の要素はどれですか？',
+      explanation: 'HTMLドキュメントには<!DOCTYPE html>、<html>、<head>、<body>要素が必要です。',
+      answerOptions: ['<div>', '<span>', '<html>', '<section>'],
+      correctAnswer: '<html>',
+      difficultyId: 1,
+      subjectId: 4,
+    },
+    {
+      title: 'CSSのセレクタ',
+      description: 'CSSでクラス名を指定するセレクタはどれですか？',
+      explanation: 'CSSでクラスを指定する際は、クラス名の前にドット(.)を付けます。',
+      answerOptions: ['#className', '.className', '@className', '*className'],
+      correctAnswer: '.className',
+      difficultyId: 2,
+      subjectId: 4,
+    },
+    {
+      title: 'データベースの正規化',
+      description: '第1正規形の条件として正しいものはどれですか？',
+      explanation: '第1正規形では、各属性が原子値（分割できない値）を持つ必要があります。',
+      answerOptions: ['重複する行がない', '部分関数従属がない', '推移関数従属がない', '各属性が原子値を持つ'],
+      correctAnswer: '各属性が原子値を持つ',
+      difficultyId: 3,
+      subjectId: 4,
+    },
+    {
+      title: 'アルゴリズムの計算量',
+      description: 'バブルソートの最悪時間計算量はどれですか？',
+      explanation: 'バブルソートは最悪の場合、すべての要素を比較・交換するため O(n²) の時間計算量になります。',
+      answerOptions: ['O(n)', 'O(n log n)', 'O(n²)', 'O(2^n)'],
+      correctAnswer: 'O(n²)',
+      difficultyId: 4,
+      subjectId: 4,
+    },
+    {
+      title: 'オブジェクト指向プログラミング',
+      description: 'カプセル化の主な目的はどれですか？',
+      explanation: 'カプセル化は、データと処理を一つにまとめ、外部からの直接アクセスを制限することで、データの整合性を保つことが主な目的です。',
+      answerOptions: ['処理速度の向上', 'メモリ使用量の削減', 'データの隠蔽と保護', 'コードの短縮'],
+      correctAnswer: 'データの隠蔽と保護',
+      difficultyId: 3,
+      subjectId: 4,
+    },
+    {
+      title: 'ネットワークプロトコル',
+      description: 'HTTPSで使用される暗号化プロトコルはどれですか？',
+      explanation: 'HTTPSはHTTPにTLS/SSL暗号化を追加したプロトコルです。',
+      answerOptions: ['FTP', 'SSH', 'TLS/SSL', 'SMTP'],
+      correctAnswer: 'TLS/SSL',
+      difficultyId: 4,
+      subjectId: 4,
+    },
+    {
+      title: 'データ構造：スタック',
+      description: 'スタックのデータ取得方式として正しいものはどれですか？',
+      explanation: 'スタックはLIFO（Last In, First Out）方式で、最後に入れたデータを最初に取り出します。',
+      answerOptions: ['FIFO', 'LIFO', 'Random Access', 'Sequential Access'],
+      correctAnswer: 'LIFO',
+      difficultyId: 3,
+      subjectId: 4,
+    },
+    {
+      title: 'SQLの基本操作',
+      description: 'データベースからデータを取得するSQLコマンドはどれですか？',
+      explanation: 'SELECT文はデータベースからデータを検索・取得するために使用されます。',
+      answerOptions: ['INSERT', 'UPDATE', 'DELETE', 'SELECT'],
+      correctAnswer: 'SELECT',
+      difficultyId: 2,
+      subjectId: 4,
+    }
+  ];
+
+  for (const problem of selectionProblems) {
+    await prisma.selectProblem.create({ data: problem });
+  }
+  console.log(`✅ Created ${selectionProblems.length} selection problems.`);
 }
