@@ -22,13 +22,13 @@ spec:
       - name: migrator-seeder
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        # ▼▼▼【ここが修正ポイントや！】▼▼▼
-        # Prismaに、設計図のありかを '--schema' で直接教えるんや！
-        # これで、もうPrismaは迷わんようになるで。
+        # ▼▼▼【ここが最後の修正ポイントや！】▼▼▼
+        # 後半の 'db seed' にも、ちゃんと '--schema' を付けてやるんや！
+        # これで、シーディングの時もPrismaは迷わんようになるで。
         command:
           - "/bin/sh"
           - "-c"
-          - "npx prisma migrate deploy --schema=/app/prisma/schema.prisma && npx prisma db seed"
+          - "npx prisma migrate deploy --schema=/app/prisma/schema.prisma && npx prisma db seed --schema=/app/prisma/schema.prisma"
         # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
         env:
         - name: DATABASE_URL
