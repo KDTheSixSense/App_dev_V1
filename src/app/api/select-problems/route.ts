@@ -2,10 +2,29 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getSession } from '@/lib/session';
 
-const prisma = new PrismaClient();
-
-// 4択問題を作成するためのPOSTリクエストを処理する関数
+// Redirect to the correct API endpoint
 export async function POST(request: Request) {
+    console.warn('DEPRECATED: /api/select-problems is deprecated. Use /api/selects_problems instead.');
+    
+    // Redirect to the correct endpoint
+    const body = await request.text();
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/selects_problems`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            // Forward any authentication headers
+            ...Object.fromEntries(
+                Array.from(request.headers.entries()).filter(([key]) => 
+                    key.toLowerCase().includes('auth') || key.toLowerCase().includes('cookie')
+                )
+            )
+        },
+        body: body
+    });
+    
+    return response;
+}
+
     try {
         // セッションからユーザー情報を取得
         const session = await getSession();
@@ -58,28 +77,21 @@ export async function POST(request: Request) {
 
 // 選択問題の一覧を取得するGETハンドラ (こちらも念のため記載)
 export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '100');
-
-    const problems = await prisma.selectProblem.findMany({
-      take: limit,
-      orderBy: {
-        createdAt: 'desc',
-      },
+    console.warn('DEPRECATED: /api/select-problems is deprecated. Use /api/selects_problems instead.');
+    
+    // Redirect to the correct endpoint
+    const url = new URL(request.url);
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/selects_problems${url.search}`, {
+        method: 'GET',
+        headers: {
+            // Forward any authentication headers
+            ...Object.fromEntries(
+                Array.from(request.headers.entries()).filter(([key]) => 
+                    key.toLowerCase().includes('auth') || key.toLowerCase().includes('cookie')
+                )
+            )
+        }
     });
     
-    const formattedProblems = problems.map(p => ({
-        ...p,
-        difficulty: p.difficultyId
-    }));
-
-    return NextResponse.json({ success: true, problems: formattedProblems });
-  } catch (error) {
-    console.error('Error fetching select problems:', error);
-    if (error instanceof Error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ success: false, error: 'An unknown error occurred' }, { status: 500 });
-  }
+    return response;
 }

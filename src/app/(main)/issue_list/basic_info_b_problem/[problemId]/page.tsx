@@ -1,44 +1,54 @@
-// 'use client' は削除する
-
 import React from 'react';
 import { notFound } from 'next/navigation';
-// クライアントコンポーネントをインポート
-import ProblemClient from './ProblemClient';
-// サーバーサイドでデータを取得する関数をインポート
-import { getProblemForClient } from '@/lib/data';
+import { getAppSession } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-// --- Propsの型定義 ---
+// --- データ取得とコンポーネント ---
+import { getProblemForClient } from '@/lib/data';
+import ProblemClient from './ProblemClient'; // 同じ階層のクライアントコンポーネントをインポート
+
 interface PageProps {
-  params: {
-    problemId: string;
-  };
+  params: { problemId: string };
 }
 
 /**
- * 問題ページのサーバーコンポーネント。
- * データ取得と、クライアントコンポーネントへのデータ受け渡しを担当します。
+ * 基本情報技術者試験 科目B の問題詳細ページ (サーバーコンポーネント)
+ * ★ 修正点: ユーザーのクレジット数を取得し、クライアントに渡します
  */
-const BasicInfoBProblemPage = async ({ params }: any) => {
+const BasicInfoBProblemDetailPage = async ({ params }: PageProps) => {
   const problemId = parseInt(params.problemId, 10);
-
   if (isNaN(problemId)) {
     notFound();
   }
 
+  // ユーザーセッションと問題データを並行して取得
+  const session = await getAppSession();
   const problem = await getProblemForClient(problemId);
-  
-  // ✅ 【修正点】 このようにロジックの構造を変更します
 
-  // データが正常に取得できた場合のみ、クライアントコンポーネントをレンダリングする
-  if (problem) {
-    // このifブロックの中では、problemがnullでないことが保証されます
-    return <ProblemClient initialProblem={problem} />;
+  if (!problem) {
+    notFound();
   }
-  
-  // データが取得できなかった (problemがnullだった) 場合は、
-  // notFound() を呼び出して404ページを表示する
-  // notFound() は例外を投げるため、この後に関数が続くことはありません。
-  notFound();
+
+  // ログインしているユーザーの現在のクレジット数を取得
+  let userCredits = 0; // デフォルトは0回
+  if (session.user) {
+    const user = await prisma.user.findUnique({
+      where: { id: Number(session.user.id) },
+      select: { aiAdviceCredits: true }
+    });
+    if (user) {
+      userCredits = user.aiAdviceCredits;
+    }
+  }
+
+  return (
+    <ProblemClient
+      initialProblem={problem}
+      // ★ 修正点: 取得したユーザー情報をPropsとして渡す
+      initialCredits={userCredits}
+    />
+  );
 };
 
-export default BasicInfoBProblemPage;
+export default BasicInfoBProblemDetailPage;
+

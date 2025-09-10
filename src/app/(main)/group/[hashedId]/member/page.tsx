@@ -83,39 +83,30 @@ const MemberGroupPage: React.FC = () => {
                      // APIレスポンスをフロントエンドの型に合わせて整形
                     if (postsRes.ok) {
                         const postsData = await postsRes.json();
-                        if (postsData.success && Array.isArray(postsData.data)) {
-                            const formattedPosts: Post[] = postsData.data.map((post: any) => ({
-                                id: post.id,
-                                content: post.content,
-                                authorName: post.author.username || '不明なユーザー',
-                                authorAvatar: post.author.username?.charAt(0) || '?',
-                                createdAt: new Date(post.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }),
-                            }));
-                            setPosts(formattedPosts);
-                        }
-                    } else {
-                        console.error('お知らせの取得に失敗');
+                        const formattedPosts: Post[] = postsData.data.map((post: any) => ({
+                            id: post.id,
+                            content: post.content,
+                            authorName: post.author.username || '不明なユーザー',
+                            authorAvatar: post.author.username?.charAt(0) || '?',
+                            createdAt: new Date(post.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }),
+                        }));
+                        setPosts(formattedPosts);
                     }
                     
                     if (assignmentsRes.ok) {
                         const assignmentsData = await assignmentsRes.json();
-                        if (assignmentsData.success && Array.isArray(assignmentsData.data)) {
-                             const formattedKadai: Kadai[] = assignmentsData.data.map((kadai: any) => ({
-                                id: kadai.id,
-                                title: kadai.title,
-                                description: kadai.description,
-                                dueDate: kadai.due_date,
-                                createdAt: kadai.created_at,
-                                // TODO: 本来はAPIからユーザーごとの提出状況を取得すべき
-                                // 現状はダミーデータとして`false`を設定
-                                completed: false, 
-                                programmingProblemId: kadai.programmingProblemId,
-                                selectProblemId: kadai.selectProblemId,
-                            }));
-                            setKadaiList(formattedKadai);
-                        }
-                    } else {
-                         console.error('課題の取得に失敗');
+                        // APIからのデータ(スネークケース)をフロントエンドの型(キャメルケース)に変換
+                        const formattedKadai: Kadai[] = assignmentsData.data.map((kadai: any, index: number) => ({
+                            id: kadai.id,
+                            title: kadai.title,
+                            description: kadai.description,
+                            dueDate: kadai.due_date,       // due_date -> dueDate
+                            createdAt: kadai.created_at,   // created_at -> createdAt
+                            completed: false,              // ダミーデータ
+                            programmingProblemId: kadai.programmingProblemId,
+                            selectProblemId: kadai.selectProblemId,
+                        }));
+                        setKadaiList(formattedKadai);
                     }
 
                 } catch (err) {
