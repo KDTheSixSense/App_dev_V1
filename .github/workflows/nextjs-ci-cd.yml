@@ -1,41 +1,90 @@
-# ファイル名: next-chart/templates/migration-job.yaml
-# 役割: DBが準備できた「後」で、マイグレーションとシーディングを1回だけ実行する
+# .github/workflows/nextjs-ci-cd.yml
 
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: "{{ .Release.Name }}-migrate-seed"
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    # "argocd.argoproj.io/hook": "Sync"
-    # せっかちな'PreSync'はやめて、メインの同期作業の一員（'Sync'）になる。
-    "argocd.argoproj.io/hook": "Sync"
-    # "argocd.argoproj.io/sync-wave": "1"
-    # でもな、あんたは『第1陣』や！第0陣のDBチームの仕事が終わってから、現場に行きや！
-    "argocd.argoproj.io/sync-wave": "1"
-    # 仕事が終わった後の掃除ルールは今まで通りや
-    "argocd.argoproj.io/hook-delete-policy": "BeforeHookCreation,HookSucceeded"
-spec:
-  template:
-    spec:
-      containers:
-      - name: migrator-seeder
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        # ▼▼▼【ここが最後の修正ポイントや！】▼▼▼
-        # 後半の 'db seed' にも、ちゃんと '--schema' を付けてやるんや！
-        # これで、シーディングの時もPrismaは迷わんようになるで。
-        command:
-          - "/bin/sh"
-          - "-c"
-          - "npx prisma migrate deploy --schema=/app/prisma/schema.prisma && npx prisma db seed --schema=/app/prisma/schema.prisma"
-        # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secret
-              key: DATABASE_URL
-      restartPolicy: Never
-  backoffLimit: 2
+name: Next.js CI/CD - Build and Deploy
 
+# ワークフローが実行されるタイミング
+on:
+  push:
+    branches: [ pre ] # ★ preブランチにプッシュされた時に実行
+
+# ワークフロー全体で使う環境変数
+env:
+  # ★ Docker Hubのユーザー名と、アプリのイメージ名を指定
+  DOCKERHUB_USERNAME: rnagashiro # ★あんたのDocker Hubユーザー名
+  IMAGE_NAME: my-nextjs-app      # ★あんたが決めたイメージ名
+
+  # ★ マニフェスト用リポジトリの情報を指定
+  MANIFEST_REPO: RyoNagashiro9280/k8s-manifest # ★ユーザー名/リポジトリ名
+  MANIFEST_PATH: next-chart/values.yaml  # ★Helmチャートのvalues.yamlまでのパス
+
+jobs:
+  # ジョブ1: Dockerイメージをビルドしてプッシュする
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    # ジョブの出力を定義。ここで定義した値は、他のジョブから参照できる
+    outputs:
+      IMAGE_TAG: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # (オプション) ここに npm install と npm test を実行するステップを追加するのもええで
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }} # ★GitHub Secretsに設定する必要がある
+
+      - name: Generate image tag from Git commit
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # Gitのコミットハッシュ (短い形式) をタグとして使う
+            type=sha,prefix=,format=short
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # ▼▼▼ この build-args を追加 ▼▼▼
+          build-args: |
+            DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
+
+  # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
+  update-manifest:
+    runs-on: ubuntu-latest
+    needs: build-and-push-image # build-and-push-imageジョブが終わってから実行
+
+    steps:
+      - name: Checkout Manifest Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.MANIFEST_REPO }}
+          token: ${{ secrets.PAT_FOR_MANIFEST_REPO }} # ★マニフェストリポジトリを書き換えるためのPAT
+
+      - name: Update Helm chart values.yaml
+        uses: mikefarah/yq@v4
+        with:
+          # yqコマンドを使って、values.yamlの中の image.tag の値を書き換える
+          # needs.build-and-push-image.outputs.IMAGE_TAG で、前のジョブで作ったタグを参照
+          cmd: yq -i '.image.tag = "${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"' ${{ env.MANIFEST_PATH }}
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions-bot@github.com"
+          # 変更がなければ、コミットせずに終了する
+          if ! git diff --quiet ${{ env.MANIFEST_PATH }}; then
+            git add ${{ env.MANIFEST_PATH }}
+            git commit -m "Update image tag for ${{ env.IMAGE_NAME }} to ${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"
+            git push
+          else
+            echo "No changes to commit."
+          fi
