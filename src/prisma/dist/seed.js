@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
-const master_data_1 = require("../../seed/master-data");
-const users_groups_data_1 = require("../../seed/users-groups-data");
-const questions_1 = require("../../seed/questions");
-const run_operations_1 = require("../../seed/run-operations");
+const master_data_1 = require("../seed/master-data");
+const users_groups_data_1 = require("../seed/users-groups-data");
+const questions_1 = require("../seed/questions");
+const run_operations_1 = require("../seed/run-operations");
 const prisma = new client_1.PrismaClient();
 async function main() {
     console.log(`🚀 Start seeding ...`);
