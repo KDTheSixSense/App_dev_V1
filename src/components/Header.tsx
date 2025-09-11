@@ -140,7 +140,7 @@ export default function Header({ userWithPet }: HeaderProps) {
           {navItems.map((item) => (
             <li key={item.label}>
               {/* router.pushをwindow.location.hrefに変更 */}
-              <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#BAECEE] transition-colors">
+              <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
                 <img src={item.icon} alt={item.label} width={40} height={40} />
                 <span className='text-[#173660] text-sm mt-1 font-bold'>{item.label}</span>
               </button>

@@ -76,7 +76,7 @@ export default function RankingContainer({
       `}</style>
       
       {/* タブ表示 */}
-      <div className="mt-4 p-1 bg-slate-100 rounded-lg">
+      <div className="mt-4 p-1 bg-sky-100/50 rounded-lg">
         <nav 
           ref={navRef}
           className="relative flex space-x-1 overflow-x-auto flex-nowrap hide-scrollbar" 
