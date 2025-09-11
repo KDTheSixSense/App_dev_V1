@@ -38,9 +38,11 @@ COPY --from=builder /app/package*.json ./
 # --omit=dev は npm v7以降で使えるで
 RUN npm install --omit=dev
 
-# [修正点3] Prismaのスキーマとマイグレーションファイルをコピー
-# Jobで `prisma migrate deploy` を実行するために必須
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+# Prismaスキーマと、コンパイル済みのシードスクリプト群をコピー
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/
+
+# ★ prisma/dist フォルダを丸ごとコピーする
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist ./prisma/dist
 
 # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 

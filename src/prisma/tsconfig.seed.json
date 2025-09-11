@@ -1,20 +1,16 @@
 {
   "compilerOptions": {
-    "lib": ["ES2020"],
-    "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "node",
     "outDir": "./dist",
-    "esModuleInterop": true,
+    "rootDir": ".", // ★ ソースのルートディレクトリを指定
+    "module": "CommonJS",
+    "target": "es2017",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "types": ["node"]
+    "resolveJsonModule": true
   },
+  // ★ prismaディレクトリ以下のすべての.tsファイルを対象にする
   "include": [
-    "seed.ts",
-    "seed/**/*.ts"
-  ],
-  "exclude": []
+    "**/*.ts"
+  ]
 }
