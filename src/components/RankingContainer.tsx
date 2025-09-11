@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, MouseEvent } from 'react';
+import { useState, useMemo, useRef, MouseEvent, useEffect } from 'react';
 import RankingList from '@/app/(main)/home/ranking/RankingList';
 import RankingListItem from '@/app/(main)/home/ranking/RankingListItem';
 
@@ -35,6 +35,23 @@ export default function RankingContainer({
     return fullList.find(user => user.id === userId) || null;
   }, [userId, activeTab, allRankingsFull]);
 
+    const navRef = useRef<HTMLElement>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [sliderStyle, setSliderStyle] = useState({});
+
+  useEffect(() => {
+    const activeTabIndex = tabs.findIndex(tab => tab.name === activeTab);
+    const activeTabButton = buttonRefs.current[activeTabIndex];
+    if (activeTabButton && navRef.current) {
+      const navRect = navRef.current.getBoundingClientRect();
+      const buttonRect = activeTabButton.getBoundingClientRect();
+      setSliderStyle({
+        left: buttonRect.left - navRect.left + navRef.current.scrollLeft,
+        width: buttonRect.width,
+      });
+    }
+  }, [activeTab, tabs]);
+
     const handleTabClick = (event: MouseEvent<HTMLButtonElement>, tabName: string) => {
     setActiveTab(tabName);
     const clickedTab = event.currentTarget;
@@ -59,22 +76,31 @@ export default function RankingContainer({
       `}</style>
       
       {/* タブ表示 */}
-      <div className="mt-4 border-b border-slate-200">
+      <div className="mt-4 p-1 bg-slate-100 rounded-lg">
         <nav 
-          className="-mb-px flex space-x-6 overflow-x-auto flex-nowrap hide-scrollbar" 
+          ref={navRef}
+          className="relative flex space-x-1 overflow-x-auto flex-nowrap hide-scrollbar" 
           aria-label="Tabs"
         >
-          {tabs.map((tab) => (
+          {/* スライドする背景 */}
+          <div 
+            className="absolute h-full bg-white rounded-md shadow-sm transition-all duration-300 ease-in-out"
+            style={sliderStyle}
+          />
+          
+          {tabs.map((tab, index) => (
             <button
+              ref={el => {buttonRefs.current[index] = el; }}
               key={tab.name}
               onClick={(e) => handleTabClick(e, tab.name)}
               className={`
-                whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors
+                relative z-10 flex-shrink-0 whitespace-nowrap py-2 px-4 font-medium text-sm rounded-md transition-colors duration-300
+                focus:outline-none
                 ${
                   activeTab === tab.name
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }
+                    ? 'text-sky-600' // 選択中のテキスト色
+                    : 'text-slate-500 hover:text-slate-800' // 非選択のテキスト色
+                 }
               `}
             >
               {tab.name}

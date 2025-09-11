@@ -52,7 +52,7 @@ export default async function UserDetail({ user }: UserDetailProps) {
                     )}
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-5 relative overflow-hidden mt-2">
-                    <div className="bg-lime-400 rounded-full h-full absolute top-0 left-0" style={{ width: `${progressPercentage}%`}}>
+                    <div className="bg-gradient-to-r from-green-400 to-lime-500 rounded-full h-full absolute top-0 left-0" style={{ width: `${progressPercentage}%`}}>
                     </div>
                 </div>
                 <div className="text-right text-sm font-mono text-gray-500 mt-1">

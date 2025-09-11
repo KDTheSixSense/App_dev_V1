@@ -14,35 +14,40 @@ interface PetStatusViewProps {
  * @param hungerLevel 現在の満腹度
  * @returns { image: string, statusText: string }
  */
-const getKohakuState = (hungerLevel: number) => {
+const getPetDisplayInfo = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
-      image: '/images/kohaku/kohaku-full.png', // 満腹の画像
+      image: '/images/kohaku/kohaku-full.png',      // 満腹の画像
       statusText: '満腹',
+      colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
     };
   } else if (hungerLevel >= 100) {
     return {
-      image: '/images/kohaku/kohaku-normal.png', // 普通の画像
+      image: '/images/kohaku/kohaku-normal.png',    // 普通の画像
       statusText: '普通',
+      colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
     };
   } else if (hungerLevel >= 50) {
     return {
-      image: '/images/kohaku/kohaku-hungry.png', // 空腹の画像
+      image: '/images/kohaku/kohaku-hungry.png',    // 空腹の画像
       statusText: '空腹',
+      colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
     };
   } else {
     return {
-      image: '/images/kohaku/kohaku-starving.png', // 死にかけの画像
+      image: '/images/kohaku/kohaku-starving.png',  // 死にかけの画像
       statusText: '死にかけ…',
+      colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
     };
   }
+
 };
 
 export default function PetStatusView({ initialHunger, maxHunger }: PetStatusViewProps) {
   const router = useRouter();
 
   // ヘルパー関数を呼び出して、現在の状態を取得
-  const kohakuState = getKohakuState(initialHunger);
+  const petInfo = getPetDisplayInfo(initialHunger);
 
   // プログレスバーのパーセンテージを計算
   const fullnessPercentage = (initialHunger / maxHunger) * 100;
@@ -53,7 +58,7 @@ export default function PetStatusView({ initialHunger, maxHunger }: PetStatusVie
       {/* 1. キャラクター画像 */}
       <div>
         <Image
-          src={kohakuState.image} 
+          src={petInfo.image} 
           alt="コハク"
           width={200}
           height={200}
@@ -72,7 +77,7 @@ export default function PetStatusView({ initialHunger, maxHunger }: PetStatusVie
       <div className="w-full">
         <div className="h-5 bg-gray-200 rounded-full overflow-hidden relative">
           <div
-            className="h-full bg-amber-400 rounded-full transition-all duration-500 ease-out"
+            className={`h-full rounded-full transition-all duration-500 ease-out ${petInfo.colorClass}`}
             style={{ width: `${fullnessPercentage}%` }} 
           ></div>
         </div>
@@ -84,7 +89,7 @@ export default function PetStatusView({ initialHunger, maxHunger }: PetStatusVie
       {/* 4. アクションボタン */}
       <div className="w-full mt-2">
         <button 
-          className="w-full py-3 px-6 rounded-full bg-cyan-400 text-white font-bold text-xl shadow-md hover:bg-cyan-500 transition-colors"
+          className="w-full py-3 px-6 rounded-full bg-[#68F3FF] text-[#fff] font-bold text-xl shadow-md hover:bg-[#83F7FF] transition-colors"
           onClick={() => router.push('/issue_list')} // useRouterを使ってページ遷移
         >
           餌を探しに行く

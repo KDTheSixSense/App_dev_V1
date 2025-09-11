@@ -1,15 +1,94 @@
 'use client';
 
 import React from 'react';
+import { useState, useEffect } from 'react';
 // Link, Image, useRouter はNext.js固有のため削除
-import type { User } from '@prisma/client';
+import type { User, Status_Kohaku } from '@prisma/client';
 
-type HeaderProps = {
-  user: User | null; // ユーザー情報を受け取る
+type UserWithPetStatus = User & {
+  status_Kohaku: Status_Kohaku | null;
 };
 
-export default function Header({ user }: HeaderProps) {
-  // useRouterは使わないため削除
+type HeaderProps = {
+  userWithPet: UserWithPetStatus | null; // ユーザー情報を受け取る
+};
+
+type PetDisplayStatus = {
+  hungerlevel: number;
+  icon?: string;
+  colorClass?: string;
+};
+
+const MAX_HUNGER = 200; // 満腹度の最大値
+
+const getPetDisplayState = (hungerLevel: number) => {
+  if (hungerLevel >= 150) {
+    return {
+      icon: '/images/kohaku/kohaku-full.png',      // 満腹の画像
+      colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
+    };
+  } else if (hungerLevel >= 100) {
+    return {
+      icon: '/images/kohaku/kohaku-normal.png',    // 普通の画像
+      colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
+    };
+  } else if (hungerLevel >= 50) {
+    return {
+      icon: '/images/kohaku/kohaku-hungry.png',    // 空腹の画像
+      colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
+    };
+  } else {
+    return {
+      icon: '/images/kohaku/kohaku-starving.png',  // 死にかけの画像
+      colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
+    };
+  }
+};
+
+export default function Header({ userWithPet }: HeaderProps) {
+  const user = userWithPet; // 既存のコードとの互換性のため
+
+  const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
+    const initialStatus = userWithPet?.status_Kohaku;
+    if (initialStatus) {
+      const displayState = getPetDisplayState(initialStatus.hungerlevel);
+      return {
+        hungerlevel: initialStatus.hungerlevel,
+        ...displayState,
+      };
+    }
+    return null;
+  });
+
+    // ペットのステータスをAPIから再取得して、Stateを更新する関数
+  const refetchPetStatus = async () => {
+    try {
+      const res = await fetch('/api/pet/status');
+      if (res.ok) {
+        const { data } = await res.json();
+        if (data) {
+          const displayState = getPetDisplayState(data.hungerlevel);
+          setPetStatus({
+            hungerlevel: data.hungerlevel,
+            ...displayState,
+          });
+          console.log('ヘッダーのペット情報を更新しました。');
+        }
+      }
+    } catch (error) {
+      console.error("ペット情報の再取得に失敗:", error);
+    }
+  };
+
+  useEffect(() => {
+    // 'petStatusUpdated' という名前のカスタムイベントをウィンドウで監視します
+    window.addEventListener('petStatusUpdated', refetchPetStatus);
+
+    // コンポーネントが不要になった時に、イベントリスナーを解除してメモリリークを防ぎます
+    return () => {
+      window.removeEventListener('petStatusUpdated', refetchPetStatus);
+    };
+  }, []); // 空の依存配列なので、この設定はコンポーネントのマウント時に一度だけ行われます
 
   // ログアウト処理を行う非同期関数
   const handleLogout = async () => {
@@ -30,12 +109,12 @@ export default function Header({ user }: HeaderProps) {
 
   // ナビゲーションボタンのデータを配列で管理
   const navItems = [
-    { href: '/home', icon: '/images/home.png', label: 'ホーム' },
-    { href: '/issue_list', icon: '/images/question_list.png', label: '問題一覧' },
-    { href: '/CreateProgrammingQuestion', icon: '/images/question_create.png', label: '問題作成' },
-    { href: '/group', icon: '/images/group.png', label: 'グループ' },
-    { href: '/', icon: '/images/assignment.png', label: '提出' },
-    { href: '/', icon: '/images/event.png', label: 'イベント' },
+    { href: '/home', icon: '/images/home_blue.png', label: 'ホーム' },
+    { href: '/issue_list', icon: '/images/question_list_blue.png', label: '問題一覧' },
+    { href: '/CreateProgrammingQuestion', icon: '/images/question_create_blue.png', label: '問題作成' },
+    { href: '/group', icon: '/images/group_blue.png', label: 'グループ' },
+    { href: '/', icon: '/images/assignment_blue.png', label: '提出' },
+    { href: '/', icon: '/images/event_blue.png', label: 'イベント' },
   ];
 
   return (
@@ -61,25 +140,38 @@ export default function Header({ user }: HeaderProps) {
           {navItems.map((item) => (
             <li key={item.label}>
               {/* router.pushをwindow.location.hrefに変更 */}
-              <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#B9E2E2] transition-colors">
+              <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#BAECEE] transition-colors">
                 <img src={item.icon} alt={item.label} width={40} height={40} />
-                <span className='text-gray-800 text-sm mt-1'>{item.label}</span>
+                <span className='text-[#173660] text-sm mt-1 font-bold'>{item.label}</span>
               </button>
             </li>
           ))}
           <li>
             <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#B9E2E2] transition-colors">
-              <img src="/images/logout.png" alt="ログアウト" width={40} height={40} />
-              <span className='text-gray-800 text-sm mt-1'>ログアウト</span>
+              <img src="/images/logout_blue.png" alt="ログアウト" width={40} height={40} />
+              <span className='text-[#173660] text-sm mt-1 font-bold'>ログアウト</span>
             </button>
           </li>
         </ul>
       </nav>
       
-      {/*ここにペット譲歩を表示したい*/}
-      <div>
-      </div>
-      
+      {/*コハクの情報*/}
+      {petStatus && (
+        <div className="flex items-center gap-2 ml-20">
+            {/* アイコンをStateから動的に設定 */}
+            <img src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
+            <div className="w-50">
+                <div className="w-full bg-gray-300 rounded-full h-5 overflow-hidden">
+                    <div
+                        // ゲージの色をStateから動的に設定
+                        className={`${petStatus.colorClass} h-full rounded-full transition-all duration-500 ease-out`}
+                        style={{ width: `${(petStatus.hungerlevel / MAX_HUNGER) * 100}%` }}
+                    />
+                </div>
+            </div>
+        </div>
+      )}
+
       {/* 右側：ユーザー情報 */}
       <div className="flex items-center gap-4 ml-auto">
         {/* ランクとログイン日数 */}
