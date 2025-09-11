@@ -1,31 +1,53 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getSession } from '@/lib/session';
 
-const prisma = new PrismaClient();
-
-// 4択問題を作成するためのPOSTリクエストを処理する関数
+// Redirect to the correct API endpoint
 export async function POST(request: Request) {
+    console.warn('DEPRECATED: /api/select-problems is deprecated. Use /api/selects_problems instead.');
+    
+    // Redirect to the correct endpoint
+    const body = await request.text();
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/selects_problems`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            // Forward any authentication headers
+            ...Object.fromEntries(
+                Array.from(request.headers.entries()).filter(([key]) => 
+                    key.toLowerCase().includes('auth') || key.toLowerCase().includes('cookie')
+                )
+            )
+        },
+        body: body
+    });
+    
+    return response;
+}
+
     try {
+        // セッションからユーザー情報を取得
+        const session = await getSession();
+        const user = session.user;
+
+        // ログインしていない場合はエラーを返す
+        if (!user || !user.id) {
+            return NextResponse.json({ success: false, message: '認証されていません。' }, { status: 401 });
+        }
+        const userId = Number(user.id);
+
         const body = await request.json();
         const {
             title,
             description,
             explanation,
-            answerOptions, // フロントエンドからはこの名前で配列が送られてくる
+            answerOptions,
             correctAnswer,
             subjectId,
             difficultyId,
         } = body;
 
-        if (
-            !title || 
-            !description || 
-            !Array.isArray(answerOptions) || 
-            answerOptions.length !== 4 || 
-            !correctAnswer || 
-            !subjectId || 
-            !difficultyId
-        ) {
+        if (!title || !description || !Array.isArray(answerOptions) || answerOptions.length === 0 || !correctAnswer || !subjectId || !difficultyId) {
             return NextResponse.json({ success: false, message: '必須項目が不足しています。' }, { status: 400 });
         }
 
@@ -34,13 +56,11 @@ export async function POST(request: Request) {
                 title,
                 description,
                 explanation,
-                
-                // ★★★ 修正箇所: スキーマ定義に合わせて 'answerOptions' に修正 ★★★
                 answerOptions: answerOptions,
-                
                 correctAnswer,
                 subjectId,
                 difficultyId,
+                createdBy: userId,
             },
         });
 
@@ -57,28 +77,21 @@ export async function POST(request: Request) {
 
 // 選択問題の一覧を取得するGETハンドラ (こちらも念のため記載)
 export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '100');
-
-    const problems = await prisma.selectProblem.findMany({
-      take: limit,
-      orderBy: {
-        createdAt: 'desc',
-      },
+    console.warn('DEPRECATED: /api/select-problems is deprecated. Use /api/selects_problems instead.');
+    
+    // Redirect to the correct endpoint
+    const url = new URL(request.url);
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/selects_problems${url.search}`, {
+        method: 'GET',
+        headers: {
+            // Forward any authentication headers
+            ...Object.fromEntries(
+                Array.from(request.headers.entries()).filter(([key]) => 
+                    key.toLowerCase().includes('auth') || key.toLowerCase().includes('cookie')
+                )
+            )
+        }
     });
     
-    const formattedProblems = problems.map(p => ({
-        ...p,
-        difficulty: p.difficultyId
-    }));
-
-    return NextResponse.json({ success: true, problems: formattedProblems });
-  } catch (error) {
-    console.error('Error fetching select problems:', error);
-    if (error instanceof Error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ success: false, error: 'An unknown error occurred' }, { status: 500 });
-  }
+    return response;
 }
