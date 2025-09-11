@@ -15,7 +15,7 @@ env:
 
   # ★ マニフェスト用リポジトリの情報を指定
   MANIFEST_REPO: RyoNagashiro9280/ac-manifest-tss # ★ユーザー名/リポジトリ名
-  MANIFEST_PATH: next-chart/values.yaml  # ★Helmチャートのvalues.yamlまでのパス
+  MANIFEST_PATH: next/values.yaml  # ★Helmチャートのvalues.yamlまでのパス
 
 jobs:
   # ジョブ1: Dockerイメージをビルドしてプッシュする
