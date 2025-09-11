@@ -10,7 +10,7 @@ async function getHandler(req: NextRequest, session: IronSession<IronSessionData
     }
 
     // Fetch all selection problems
-    const selectionProblems = await prisma.selectProblem.findMany({
+    const selectionProblemsRaw = await prisma.selectProblem.findMany({
       orderBy: {
         createdAt: 'desc'
       },
@@ -25,6 +25,24 @@ async function getHandler(req: NextRequest, session: IronSession<IronSessionData
         }
       }
     });
+
+    // Flatten the data structure for easier consumption by the frontend
+    const selectionProblems = selectionProblemsRaw.map(problem => ({
+      id: problem.id,
+      title: problem.title,
+      description: problem.description,
+      explanation: problem.explanation,
+      answerOptions: problem.answerOptions,
+      correctAnswer: problem.correctAnswer,
+      difficulty: problem.difficulty?.id || problem.difficultyId,
+      difficultyId: problem.difficulty?.id || problem.difficultyId,
+      subjectId: problem.subjectId,
+      createdBy: problem.createdBy,
+      createdAt: problem.createdAt,
+      updatedAt: problem.updatedAt,
+      subject: problem.subject,
+      creator: problem.creator
+    }));
 
     return NextResponse.json(selectionProblems, { status: 200 });
   } catch (error) {
