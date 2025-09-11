@@ -33,6 +33,10 @@ export const useAdminData = (hashedId: string) => {
     const [availableProblems, setAvailableProblems] = useState<ProgrammingProblem[]>([]);
     const [isLoadingProblems, setIsLoadingProblems] = useState(false);
 
+    // 選択問題関連のstate
+    const [availableSelectionProblems, setAvailableSelectionProblems] = useState<any[]>([]);
+    const [isLoadingSelectionProblems, setIsLoadingSelectionProblems] = useState(false);
+
     // === API関数 ===
     // グループ詳細を取得
     const fetchGroupData = async () => {
@@ -125,6 +129,22 @@ export const useAdminData = (hashedId: string) => {
             console.error('問題一覧の取得に失敗しました:', error);
         } finally {
             setIsLoadingProblems(false);
+        }
+    };
+
+    // 利用可能な選択問題を取得
+    const fetchAvailableSelectionProblems = async () => {
+        setIsLoadingSelectionProblems(true);
+        try {
+            const response = await fetch('/api/selects_problems');
+            if (response.ok) {
+                const data = await response.json();
+                setAvailableSelectionProblems(data);
+            }
+        } catch (error) {
+            console.error('選択問題一覧の取得に失敗しました:', error);
+        } finally {
+            setIsLoadingSelectionProblems(false);
         }
     };
 
@@ -316,7 +336,9 @@ export const useAdminData = (hashedId: string) => {
         assignments,
         availableProblems,
         isLoadingProblems,
-        
+        availableSelectionProblems,
+        isLoadingSelectionProblems,
+
         // Actions
         createPost,
         updatePost,
@@ -330,7 +352,8 @@ export const useAdminData = (hashedId: string) => {
         addMember,
         copyInviteCode,
         fetchAvailableProblems,
-        
+        fetchAvailableSelectionProblems,
+
         // Refresh functions
         refreshData: () => {
             fetchGroupData();
