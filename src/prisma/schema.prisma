@@ -38,7 +38,7 @@ model User {
   createdSelectProblems SelectProblem[]      @relation("SelectProblemCreator") // SelectProblemとのリレーション
   posts Post[]
   loginHistory LoginHistory[]
-  
+  aiAdviceCredits            Int      @default(5)
 }
 
 model LoginHistory {
