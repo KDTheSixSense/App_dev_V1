@@ -99,7 +99,7 @@ export default function Header({user}: HeaderProps) {
               </button>
             </div>
             <div className='flex w-20 h-20 items-center justify-center m-0'>
-              <button onClick={() => router.push('/')} className="hover:bg-[#ddd] flex flex-col transition-colors justify-center items-center rounded">
+              <button onClick={() => router.push('/unsubmitted-assignments')} className="hover:bg-[#ddd] flex flex-col transition-colors justify-center items-center rounded">
                 <Image
                   src="/images/assignment.png"
                   alt="提出"
