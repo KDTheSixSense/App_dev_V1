@@ -1,38 +1,66 @@
 'use client';
 
-import { useState } from 'react';
-import RankingList from '../app/(main)/home/ranking/RankingList';
-import RankingListItem from '../app/(main)/home/ranking/RankingListItem';
-import { useMemo } from "react";
-import { useSearchParams } from 'next/navigation';
+import { useState, useMemo, useRef, MouseEvent, useEffect } from 'react';
+import RankingList from '@/app/(main)/home/ranking/RankingList';
+import RankingListItem from '@/app/(main)/home/ranking/RankingListItem';
 
+// Propsの型定義
+type UserForRanking = {
+  id: number;
+  rank: number;
+  name: string;
+  iconUrl: string;
+  score: number;
+};
 
-export default function RankingContainer({    
+type Props = {
+  tabs: { name: string }[];
+  allRankings: { [key: string]: UserForRanking[] };
+  allRankingsFull: { [key:string]: UserForRanking[] };
+  userId: number | null;
+};
+
+export default function RankingContainer({
   tabs,
   allRankings,
   allRankingsFull,
   userId,
-}: {
-  tabs: { name: string }[];
-  allRankings: { [key: string]: any[] };
-  allRankingsFull: { [key: string]: any[] };
-  userId: number | null;
-}) {
-
-
-    // useSearchParamsを削除し、useStateを唯一の情報源とします
+}: Props) {
   const [activeTab, setActiveTab] = useState('総合');
-
-  // 上位10名の表示は、useStateのactiveTabを参照します（これは元々正しい）
   const displayedUsers = allRankings[activeTab] || [];
 
-  // あなたの順位も、useStateのactiveTabを参照するように修正します
   const myRankInfo = useMemo(() => {
     if (!userId) return null;
-    // selectedSubjectではなく、activeTabを使います
     const fullList = allRankingsFull[activeTab] || [];
     return fullList.find(user => user.id === userId) || null;
-  }, [userId, activeTab, allRankingsFull]); // 依存配列にactiveTabを追加
+  }, [userId, activeTab, allRankingsFull]);
+
+    const navRef = useRef<HTMLElement>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [sliderStyle, setSliderStyle] = useState({});
+
+  useEffect(() => {
+    const activeTabIndex = tabs.findIndex(tab => tab.name === activeTab);
+    const activeTabButton = buttonRefs.current[activeTabIndex];
+    if (activeTabButton && navRef.current) {
+      const navRect = navRef.current.getBoundingClientRect();
+      const buttonRect = activeTabButton.getBoundingClientRect();
+      setSliderStyle({
+        left: buttonRect.left - navRect.left + navRef.current.scrollLeft,
+        width: buttonRect.width,
+      });
+    }
+  }, [activeTab, tabs]);
+
+    const handleTabClick = (event: MouseEvent<HTMLButtonElement>, tabName: string) => {
+    setActiveTab(tabName);
+    const clickedTab = event.currentTarget;
+    clickedTab.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest'
+    });
+  };
 
   return (
     <div>
@@ -46,22 +74,35 @@ export default function RankingContainer({
           scrollbar-width: none; /* Firefox */
         }
       `}</style>
-
+      
       {/* タブ表示 */}
-      <div className="mt-4 border-b border-slate-200">
-        <nav className="-mb-px flex space-x-6 overflow-x-auto flex-nowrap hide-scrollbar" aria-label="Tabs">
-          {tabs.map((tab) => (
+      <div className="mt-4 p-1 bg-sky-100/50 rounded-lg">
+        <nav 
+          ref={navRef}
+          className="relative flex space-x-1 overflow-x-auto flex-nowrap hide-scrollbar" 
+          aria-label="Tabs"
+        >
+          {/* スライドする背景 */}
+          <div 
+            className="absolute h-full bg-white rounded-md shadow-sm transition-all duration-300 ease-in-out"
+            style={sliderStyle}
+          />
+          
+          {tabs.map((tab, index) => (
             <button
+              ref={el => {buttonRefs.current[index] = el; }}
               key={tab.name}
-              onClick={() => setActiveTab(tab.name)}
+              onClick={(e) => handleTabClick(e, tab.name)}
               className={`
-                  whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors
-                  ${
-                    activeTab === tab.name
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-slate-500 hover:text-slate-700' // ← hover:border-slate-300 を削除
-                  }
-                `}            >
+                relative z-10 flex-shrink-0 whitespace-nowrap py-2 px-4 font-medium text-sm rounded-md transition-colors duration-300
+                focus:outline-none
+                ${
+                  activeTab === tab.name
+                    ? 'text-sky-600' // 選択中のテキスト色
+                    : 'text-slate-500 hover:text-slate-800' // 非選択のテキスト色
+                 }
+              `}
+            >
               {tab.name}
             </button>
           ))}
@@ -69,18 +110,16 @@ export default function RankingContainer({
       </div>
 
       {/* トップ10ランキングリスト */}
-      {/* myRankInfoを渡して、自分の順位がハイライトされるようにする */}
       <RankingList users={displayedUsers} myRankInfo={myRankInfo} />
 
       {/* 「自分の順位」表示部分 */}
-      {/* 自分のランク情報があり、かつトップ10に入っていない場合に表示 */}
       {myRankInfo && (
-        <div className="mt-6 pt-4 border-t-1 border-[#ccc]">
+        <div className="pt-4 border-t border-slate-200">
           <p className="text-sm text-center text-gray-500 mb-2">あなたの順位</p>
-          {/* 自分の順位なので、isCurrentUserをtrueにして渡す */}
           <RankingListItem user={myRankInfo} isCurrentUser={true} />
         </div>
       )}
     </div>
   );
 }
+

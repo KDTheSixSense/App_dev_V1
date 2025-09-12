@@ -24,7 +24,7 @@ export default function RankingListItem({ user, isCurrentUser = false }: Props) 
   const bgColor = isCurrentUser ? 'bg-[#DDFEFF] shadow-md' : 'hover:bg-slate-50';
 
   return (
-    <li className={`flex items-center p-3 transition-colors rounded-lg ${bgColor}`}>
+    <li className={`flex items-center p-3 m-0 transition-colors rounded-lg ${bgColor}`}>
       <div className="flex items-center justify-end w-20 shrink-0 gap-4 pr-5">
         {renderRankIcon(user.rank)}
         <span className="text-slate-500 font-bold text-lg">{user.rank}</span>
