@@ -80,6 +80,17 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
 
     // 課題詳細表示の場合
     if (viewMode === 'detail' && selectedAssignment) {
+        // ★ 修正点 1: 問題の種類に応じたリンク先を格納する変数を定義
+        let problemLink = '';
+
+        if (selectedAssignment.programmingProblemId) {
+            // プログラミング問題の場合のリンクを生成
+            problemLink = `/issue_list/programming_problem/${selectedAssignment.programmingProblemId}?assignmentId=${selectedAssignment.id}`;
+        } else if (selectedAssignment.selectProblemId) {
+            // 選択問題の場合のリンクを生成
+            problemLink = `/issue_list/selects_problems/${selectedAssignment.selectProblemId}?assignmentId=${selectedAssignment.id}`;
+        }
+        
         return (
             <div style={{ display: 'flex', gap: '24px' }}>
                 {/* メインコンテンツ */}
@@ -176,10 +187,10 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                             dangerouslySetInnerHTML={{ __html: selectedAssignment.description }}
                         />
 
-                        {selectedAssignment.programmingProblemId && (
+                        {problemLink && (
                             <div style={{ marginTop: '24px' }}>
                                 <Link 
-                                    href={`/issue_list/programming_problem/${selectedAssignment.programmingProblemId}`} 
+                                    href={problemLink}
                                     style={{ 
                                         display: 'inline-block', 
                                         padding: '10px 20px', 

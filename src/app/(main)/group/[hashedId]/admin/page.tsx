@@ -84,7 +84,8 @@ const GroupDetailPage: React.FC = () => {
                 setProblemPreview({
                     id: problemData.id,
                     title: problemData.title,
-                    difficulty: 1 // デフォルトの難易度を設定（実際の難易度は後で取得可能）
+                    difficulty: 1, // デフォルトの難易度を設定（実際の難易度は後で取得可能）
+                    type: problemData.type
                 });
                 console.log('問題プレビューを設定しました:', problemData.title);
             } catch (error) {
@@ -132,12 +133,12 @@ const GroupDetailPage: React.FC = () => {
 
     // プログラミング問題作成ページへ遷移 - 新しい問題を作成するために別ページへ移動
     const navigateToCreateProgrammingProblem = () => {
-        router.push(`/group/${hashedId}/assignments/create-programming`);
+        router.push(`/group/${hashedId}/assignments/create-programming?type=programming`);
     };
 
     // 選択問題作成ページへ遷移
     const navigateToCreateSelectionProblem = () => {
-        router.push(`/group/${hashedId}/assignments/create-selection`);
+        router.push(`/group/${hashedId}/assignments/create-programming?type=select`);
     };
 
     // 問題選択モーダルを開く - 既存の問題を選択するためのモーダルを表示
@@ -246,6 +247,7 @@ const GroupDetailPage: React.FC = () => {
                                             onCollapse={handleAssignmentEditorCollapse}
                                             onCreateAssignment={handleAssignmentCreate}
                                             onNavigateToCreateProblem={navigateToCreateProgrammingProblem}
+                                            onNavigateToCreateSelectionProblem={navigateToCreateSelectionProblem}
                                             onOpenProblemSelectModal={handleOpenProblemSelectModal}
                                             problemPreview={problemPreview}
                                             onRemoveProblemPreview={handleRemoveProblemPreview}
@@ -306,10 +308,7 @@ const GroupDetailPage: React.FC = () => {
                         isLoading={isLoadingProblems || isLoadingSelectionProblems}
                         onClose={() => setIsProblemSelectModalOpen(false)}
                         onSelectProblem={handleProblemSelect}
-                        onSelectSelectionProblem={(problem) => {
-                            // 選択問題を選択した場合の処理
-                            alert('選択問題は現在課題に添付できません。プログラミング問題のみ対応しています。');
-                        }}
+                        onSelectSelectionProblem={handleProblemSelect}
                     />
                 </div>
             )}
