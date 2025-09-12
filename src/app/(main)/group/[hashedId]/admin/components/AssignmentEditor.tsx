@@ -10,6 +10,7 @@ interface AssignmentEditorProps {
     onCollapse: () => void;
     onCreateAssignment: (title: string, description: string, dueDate: string, programmingProblemId?: number) => Promise<void>;
     onNavigateToCreateProblem: () => void;
+    onNavigateToCreateSelectionProblem: () => void;
     onOpenProblemSelectModal: () => void;
     problemPreview: ProgrammingProblem | null;
     onRemoveProblemPreview?: () => void;
@@ -21,6 +22,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     onCollapse,
     onCreateAssignment,
     onNavigateToCreateProblem,
+    onNavigateToCreateSelectionProblem,
     onOpenProblemSelectModal,
     problemPreview,
     onRemoveProblemPreview
@@ -460,8 +462,8 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                     setShowProblemTypeModal(false);
                 }}
                 onSelectSelectionProblem={() => {
-                    // 選択問題作成ページはまだ実装されていない
-                    alert('選択問題作成ページは現在開発中です。プログラミング問題作成をご利用ください。');
+                    onNavigateToCreateSelectionProblem();
+                    setShowProblemTypeModal(false);
                 }}
             />
         </div>
