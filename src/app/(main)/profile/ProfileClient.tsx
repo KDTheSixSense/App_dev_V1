@@ -123,8 +123,12 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
     if (!isEditing) return;
 
     setIsLoading(true);
-    const result = await updateUserProfileAction(formData);
-    setIsLoading(false);
+    const dataForAction = {
+      ...formData,
+      icon: formData.icon === null ? undefined : formData.icon,
+    };
+    
+    const result = await updateUserProfileAction(dataForAction);    setIsLoading(false);
 
     if (result.error) {
       alert(result.error);
