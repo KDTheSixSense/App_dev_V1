@@ -8,7 +8,7 @@ interface AssignmentEditorProps {
     isExpanded: boolean;
     onExpand: () => void;
     onCollapse: () => void;
-    onCreateAssignment: (title: string, description: string, dueDate: string, programmingProblemId?: number) => Promise<void>;
+    onCreateAssignment: (title: string, description: string, dueDate: string, problem: ProgrammingProblem | null) => Promise<void>;
     onNavigateToCreateProblem: () => void;
     onNavigateToCreateSelectionProblem: () => void;
     onOpenProblemSelectModal: () => void;
@@ -67,7 +67,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         }
 
         try {
-            await onCreateAssignment(title, description, dueDate, problemPreview ? problemPreview.id : undefined);
+            await onCreateAssignment(title, description, dueDate, problemPreview);
             handleReset();
         } catch (error) {
             console.error('課題作成エラー:', error);

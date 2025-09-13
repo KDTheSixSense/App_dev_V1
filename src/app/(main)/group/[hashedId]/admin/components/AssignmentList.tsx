@@ -187,8 +187,8 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                             dangerouslySetInnerHTML={{ __html: selectedAssignment.description }}
                         />
 
-                        {problemLink && (
-                            <div style={{ marginTop: '24px' }}>
+                        <div style={{ marginTop: '24px' }}>
+                            {problemLink ? (
                                 <Link 
                                     href={problemLink}
                                     style={{ 
@@ -202,8 +202,19 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                                 >
                                     問題に挑戦する
                                 </Link>
-                            </div>
-                        )}
+                            ) : (
+                                <p style={{
+                                    fontSize: '14px',
+                                    color: '#718096',
+                                    backgroundColor: '#f8f9fa',
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #e2e8f0'
+                                }}>
+                                    この課題には問題が添付されていません。
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
 
