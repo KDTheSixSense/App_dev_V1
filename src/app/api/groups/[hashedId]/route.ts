@@ -4,7 +4,7 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
-// --- ▼▼▼ セッションの型定義を追加します ▼▼▼ ---
+// セッションデータの型定義
 interface SessionData {
   user?: { id: number; email: string };
 }
@@ -17,7 +17,6 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { hashedId: string } } // Next.js 13+ の標準的な引数の書き方
 ) {
-  // --- ▼▼▼ 認証チェックを追加します ▼▼▼ ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     // 認証されていない場合はエラーを返す
@@ -38,7 +37,6 @@ export async function GET(
       where: {
         hashedId: hashedId,
       },
-      // --- ▼▼▼ include から select に変更し、取得するデータを明示します ▼▼▼ ---
       select: {
         id: true,
         hashedId: true,
@@ -58,14 +56,13 @@ export async function GET(
       );
     }
 
-    // --- ▼▼▼ フロントエンドで使いやすいように整形し、invite_code を含めます ▼▼▼ ---
     const formattedGroup = {
       id: group.id,
       hashedId: group.hashedId,
       name: group.groupname,
       description: group.body,
       memberCount: group._count?.groups_User || 0,
-      invite_code: group.invite_code, // ★ これが一番重要です
+      invite_code: group.invite_code,
     };
 
     return NextResponse.json(formattedGroup);

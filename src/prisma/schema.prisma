@@ -172,6 +172,8 @@ model SelectProblem {
   createdBy       Int?
   creator         User?      @relation("SelectProblemCreator", fields: [createdBy], references: [id])
 
+  assignment    Assignment? // 課題との関連 (オプショナル)
+
   // --- タイムスタンプ ---
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
@@ -400,6 +402,9 @@ model Assignment {
 
   programmingProblemId Int? @unique // プログラミング問題との関連付け (オプショナル)
   programmingProblem   ProgrammingProblem? @relation(fields: [programmingProblemId], references: [id])
+
+  selectProblemId Int?            @unique // 選択問題との関連付け (オプショナル)
+  selectProblem   SelectProblem?  @relation(fields: [selectProblemId], references: [id])
 
   // --- リレーション定義 ---
   group       Groups        @relation(fields: [groupid], references: [id])
