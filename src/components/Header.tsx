@@ -148,7 +148,7 @@ export default function Header({ userWithPet }: HeaderProps) {
             </li>
           ))}
           <li>
-            <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#B9E2E2] transition-colors">
+            <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
               <img src="/images/logout_slateblue.png" alt="ログアウト" width={40} height={40} />
               <span className='text-[#546E7A] text-sm mt-1 font-bold'>ログアウト</span>
             </button>

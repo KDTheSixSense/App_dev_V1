@@ -20,6 +20,7 @@ CREATE TABLE "User" (
     "continuouslogin" INTEGER,
     "totallogin" INTEGER DEFAULT 0,
     "lastlogin" TIMESTAMP(3),
+    "aiAdviceCredits" INTEGER NOT NULL DEFAULT 5,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -337,6 +338,7 @@ CREATE TABLE "Assignment" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "programmingProblemId" INTEGER,
+    "selectProblemId" INTEGER,
 
     CONSTRAINT "Assignment_pkey" PRIMARY KEY ("id")
 );
@@ -433,6 +435,9 @@ CREATE UNIQUE INDEX "Groups_invite_code_key" ON "Groups"("invite_code");
 CREATE UNIQUE INDEX "Assignment_programmingProblemId_key" ON "Assignment"("programmingProblemId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Assignment_selectProblemId_key" ON "Assignment"("selectProblemId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Status_Kohaku_user_id_key" ON "Status_Kohaku"("user_id");
 
 -- CreateIndex
@@ -524,6 +529,9 @@ ALTER TABLE "Groups_User" ADD CONSTRAINT "Groups_User_group_id_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_programmingProblemId_fkey" FOREIGN KEY ("programmingProblemId") REFERENCES "ProgrammingProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_selectProblemId_fkey" FOREIGN KEY ("selectProblemId") REFERENCES "SelectProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_groupid_fkey" FOREIGN KEY ("groupid") REFERENCES "Groups"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
