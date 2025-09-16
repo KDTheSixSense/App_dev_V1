@@ -123,7 +123,12 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
     if (!isEditing) return;
 
     setIsLoading(true);
-    const result = await updateUserProfileAction(formData);
+    const dataForAction = {
+      ...formData,
+      icon: formData.icon === null ? undefined : formData.icon,
+    };
+    
+    const result = await updateUserProfileAction(dataForAction);   
     setIsLoading(false);
 
     if (result.error) {
@@ -155,7 +160,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
                 {/* アイコンと称号 */}
                 <div className="flex items-center mb-4">
                   <div className="w-24 h-24 mr-6 relative">
-                    <img src={formData.icon || '/images/DefaultIcons/default.png'} alt="User Icon" className="w-full h-full rounded-full object-cover" />
+                    <img src={formData.icon || '/images/test_icon.webp'} alt="User Icon" className="w-full h-full rounded-full object-cover" />
                     {isEditing && (
                       <button type="button" onClick={() => setIsIconModalOpen(true)} className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 text-xs" title="アイコンを変更">変更</button>
                     )}

@@ -20,6 +20,7 @@ CREATE TABLE "User" (
     "continuouslogin" INTEGER,
     "totallogin" INTEGER DEFAULT 0,
     "lastlogin" TIMESTAMP(3),
+    "aiAdviceCredits" INTEGER NOT NULL DEFAULT 5,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
