@@ -27,11 +27,6 @@ export interface Problem {
   explanationText?: { ja: string; en: string };
   initialVariables?: { [key: string]: number | string };
   traceLogic?: any[];
-  traceOptions?: { presets?: number[] };
   // sampleCasesプロパティを追加し、オプショナル（?）に設定
   sampleCases?: SampleCase[];
 }
-
-export type VariablesState = { [key: string]: number | string | number[] | null };
-
-export type TraceStep = (vars: VariablesState) => VariablesState;

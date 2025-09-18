@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getIronSession, IronSessionData } from 'iron-session';
+import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
+
+// セッションデータの型定義
+interface SessionData {
+  user?: { id: number; email: string };
+}
 
 /**
  * グループの詳細情報を取得する (GET)
@@ -10,11 +15,9 @@ import { cookies } from 'next/headers';
  */
 export async function GET(
   request: NextRequest,
-  context: any
+  { params }: { params: { hashedId: string } } // Next.js 13+ の標準的な引数の書き方
 ) {
-  const { params } = context;
-  // --- ▼▼▼ 認証チェックを追加します ▼▼▼ ---
-  const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     // 認証されていない場合はエラーを返す
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
@@ -34,7 +37,6 @@ export async function GET(
       where: {
         hashedId: hashedId,
       },
-      // --- ▼▼▼ include から select に変更し、取得するデータを明示します ▼▼▼ ---
       select: {
         id: true,
         hashedId: true,
@@ -54,14 +56,13 @@ export async function GET(
       );
     }
 
-    // --- ▼▼▼ フロントエンドで使いやすいように整形し、invite_code を含めます ▼▼▼ ---
     const formattedGroup = {
       id: group.id,
       hashedId: group.hashedId,
       name: group.groupname,
       description: group.body,
       memberCount: group._count?.groups_User || 0,
-      invite_code: group.invite_code, // ★ これが一番重要です
+      invite_code: group.invite_code,
     };
 
     return NextResponse.json(formattedGroup);

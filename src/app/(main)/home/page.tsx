@@ -19,12 +19,11 @@ interface SessionData {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: { [key: string]: string | string[] | undefined }; // 型を修正
 }) {
-  const resolvedSearchParams = await searchParams;
 
   // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---
-  const session = await getIronSession<SessionData>(cookies() as any, sessionOptions);
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? Number(session.user.id) : null;
 
   // ログインユーザーの全情報を取得
@@ -34,14 +33,17 @@ export default async function HomePage({
   }) : null;
 
   return (
-    <div className='bg-white'>
-      <main className="flex justify-center w-full min-h-screen text-center pt-10 px-20 gap-10">
-        <div className="flex flex-col w-full max-w-lg gap-8">
+    <div className='bg-white select-none'>
+      <main className="flex justify-center w-full min-h-screen text-center py-10 px-20 gap-10">
+        <div className="flex flex-col w-full max-w-150 gap-8">
           <User user={user}/>
-                    <Ranking />
+          <Ranking userId={userId} />
         </div>
-        <div className="flex flex-col w-full max-w-lg">
+        <div className="flex flex-col w-full max-w-150 gap-10">
           <Pet user={user}/>
+          <div className="flex w-full h-120 rounded-lg shadow-lg p-4 justify-center items-center">
+            <img src={"/images/coming_soon.png"} alt="Coming Soon" width={500} height={500}/>
+          </div>
         </div>
       </main>
     </div>

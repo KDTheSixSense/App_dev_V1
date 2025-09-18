@@ -3,7 +3,8 @@ import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
-import type { User } from '@prisma/client';
+import type { User, Status_Kohaku } from '@prisma/client';
+import React from 'react';
 
 interface SessionData {
   user?: {
@@ -11,7 +12,12 @@ interface SessionData {
     email: string;
   };
 }
-import React from 'react';
+
+// User情報とペット情報を結合した新しい型
+export type UserWithPetStatus = User & {
+  status_Kohaku: Status_Kohaku | null;
+};
+
 
 // MainPagesLayoutを async 関数に変更
 export default async function MainPagesLayout({
@@ -20,31 +26,24 @@ export default async function MainPagesLayout({
   children: React.ReactNode;
 }) {
 
-  // 1. cookies()をawaitで取得します
-  const cookieStore = await cookies();
-  
-  // 2. getIronSessionに<SessionData>という型を明示的に渡します
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const userId = session.user?.id ? Number(session.user.id) : null;
 
-  // 3. セッション、またはセッション内のユーザー情報がなければ、ここで処理を中断します
-  if (!session.user?.id) {
-    return <div>ログインしていません。</div>;
-  }
-
-  // 4. DBからユーザー情報を取得します。型は PrismaのUser型またはnullになります
-  const user: User | null = await prisma.user.findUnique({
-    where: { id: Number(session.user.id) },
-  });
-
-  // 5. DBから取得したユーザーが見つからない場合も、ここで処理を中断します
-  if (!user) {
-    return <div>ユーザーが見つかりません。</div>;
+  let userWithPet: UserWithPetStatus | null = null;
+  if (userId) {
+    // --- ▼▼▼ ここでUser情報と一緒にペット情報も取得します ▼▼▼ ---
+    userWithPet = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        status_Kohaku: true, // ペットのステータスを一緒に取得
+      },
+    });
   }
 
   return (
     <>
       {/* 取得したuserオブジェクトをHeaderコンポーネントにpropsとして渡す */}
-      <Header user={user} />
+      <Header userWithPet={userWithPet} />
       <main className="pt-20 flex-grow">{children}</main>
     </>
   );

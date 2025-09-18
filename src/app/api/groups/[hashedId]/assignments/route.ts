@@ -1,15 +1,18 @@
 // /app/api/groups/[hashedId]/assignments/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getIronSession, IronSessionData } from 'iron-session';
+import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { Prisma } from '@prisma/client'; // Prismaの型をインポート
 
+interface SessionData {
+  user?: { id: number; email: string };
+}
+
 // 課題一覧を取得 (GET)
-export async function GET(req: NextRequest, context: any) {
-  const { params } = context;
-  const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
+export async function GET(req: NextRequest, { params }: { params: { hashedId: string } }) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
@@ -28,7 +31,7 @@ export async function GET(req: NextRequest, context: any) {
           hashedId: true,
           groupname: true,
           body: true,
-          invite_code: true, // ★ 招待コードをデータベースから取得
+          invite_code: true, 
           _count: {
               select: { groups_User: true }
           }
@@ -61,9 +64,8 @@ export async function GET(req: NextRequest, context: any) {
 }
 
 // 課題を作成 (POST)
-export async function POST(req: NextRequest, context: any) {
-  const { params } = context;
-  const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
+export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
 
   if (!sessionUserId) {
@@ -73,56 +75,65 @@ export async function POST(req: NextRequest, context: any) {
   const userId = Number(sessionUserId);
 
   try {
-    const body = await req.json();
-    const { title, description, dueDate, programmingProblemId } = body;
+        const { hashedId } = params; // Next.js 13 App Routerの正しい書き方
+        const body = await req.json();
+        
+        // selectProblemIdも受け取るようにする
+        const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
 
-    if (!title || !description || !dueDate) {
-      return NextResponse.json({ success: false, message: '必須項目が不足しています' }, { status: 400 });
-    }
+        if (!title || !description || !dueDate) {
+            return NextResponse.json({ success: false, message: '必須項目が不足しています' }, { status: 400 });
+        }
 
-    const group = await prisma.groups.findUnique({
-      where: { hashedId: params.hashedId },
-      select: { id: true },
-    });
+        const group = await prisma.groups.findUnique({
+            where: { hashedId: hashedId },
+            select: { id: true },
+        });
 
-    if (!group) {
-      return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
-    }
+        if (!group) {
+            return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
+        }
 
-    const membership = await prisma.groups_User.findUnique({
-      where: {
-        group_id_user_id: { group_id: group.id, user_id: userId },
-      },
-    });
+        // ユーザーが管理者かどうかのチェックを簡略化
+        const membership = await prisma.groups_User.findFirst({
+            where: {
+                group_id: group.id,
+                user_id: userId,
+                admin_flg: true,
+            },
+        });
 
-    if (!membership?.admin_flg) {
-      return NextResponse.json({ success: false, message: '権限がありません' }, { status: 403 });
-    }
-    
-    // Prismaに渡すデータオブジェクトを構築
-    const dataToCreate: Prisma.AssignmentCreateInput = {
-        title,
-        description,
-        due_date: new Date(dueDate),
-        group: {
-            connect: { id: group.id }
-        },
-    };
-
-    // もし programmingProblemId がリクエストに含まれていれば、リレーションを接続
-    if (programmingProblemId) {
-        dataToCreate.programmingProblem = {
-            connect: { id: Number(programmingProblemId) }
+        if (!membership) {
+            return NextResponse.json({ success: false, message: 'この操作を行う権限がありません' }, { status: 403 });
+        }
+        
+        // Prismaに渡すデータオブジェクトを構築
+        const dataToCreate: any = {
+            title,
+            description,
+            due_date: new Date(dueDate),
+            groupid: group.id, // groupidを直接指定
         };
+
+        // programmingProblemIdがあれば、それを設定
+        if (programmingProblemId) {
+            dataToCreate.programmingProblemId = Number(programmingProblemId);
+        // selectProblemIdがあれば、それを設定
+        } else if (selectProblemId) {
+            dataToCreate.selectProblemId = Number(selectProblemId);
+        }
+
+        const newAssignment = await prisma.assignment.create({
+            data: dataToCreate,
+        });
+
+        return NextResponse.json({ success: true, data: newAssignment }, { status: 201 });
+
+    } catch (error) {
+        console.error('課題作成エラー:', error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+             return NextResponse.json({ success: false, message: `データベースエラー: ${error.message}` }, { status: 500 });
+        }
+        return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
     }
-
-    const newAssignment = await prisma.assignment.create({
-      data: dataToCreate,
-    });
-
-    return NextResponse.json({ success: true, data: newAssignment }, { status: 201 });
-  } catch (error) {
-    console.error('課題作成エラー:', error);
-    return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
-  }
 }

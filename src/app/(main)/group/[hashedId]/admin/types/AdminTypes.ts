@@ -65,6 +65,7 @@ export interface Assignment {
     due_date: string;
     created_at: string;
     programmingProblemId?: number;
+    selectProblemId?: number;
     showComments?: boolean;
     comments?: Comment[];
     completed?: boolean;
@@ -75,6 +76,7 @@ export interface ProgrammingProblem {
     id: number;
     title: string;
     difficulty: number;
+    type: 'programming' | 'selection';
 }
 
 // フォーマット状態の型

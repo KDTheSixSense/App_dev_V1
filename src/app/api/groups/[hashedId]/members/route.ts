@@ -6,9 +6,8 @@ import { getSession } from '@/lib/session';
 
 export async function GET(
   request: Request,
-  context: any
+  { params }: { params: { hashedId: string } }
 ) {
-  const { params } = context;
   try {
     const session = await getSession();
     if (!session.user) {

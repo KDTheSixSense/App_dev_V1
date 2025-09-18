@@ -33,6 +33,10 @@ export const useAdminData = (hashedId: string) => {
     const [availableProblems, setAvailableProblems] = useState<ProgrammingProblem[]>([]);
     const [isLoadingProblems, setIsLoadingProblems] = useState(false);
 
+    // 選択問題関連のstate
+    const [availableSelectionProblems, setAvailableSelectionProblems] = useState<any[]>([]);
+    const [isLoadingSelectionProblems, setIsLoadingSelectionProblems] = useState(false);
+
     // === API関数 ===
     // グループ詳細を取得
     const fetchGroupData = async () => {
@@ -112,19 +116,37 @@ export const useAdminData = (hashedId: string) => {
         }
     };
 
-    // 利用可能なプログラミング問題を取得
     const fetchAvailableProblems = async () => {
         setIsLoadingProblems(true);
         try {
             const response = await fetch('/api/problems?isDraft=false&limit=100');
             if (response.ok) {
                 const data = await response.json();
-                setAvailableProblems(data.problems);
+                // APIからのデータに 'type' プロパティを追加して型を統一
+                const typedProblems = data.problems.map((p: any) => ({ ...p, type: 'programming' }));
+                setAvailableProblems(typedProblems);
             }
         } catch (error) {
             console.error('問題一覧の取得に失敗しました:', error);
         } finally {
             setIsLoadingProblems(false);
+        }
+    };
+    
+    const fetchAvailableSelectionProblems = async () => {
+        setIsLoadingSelectionProblems(true);
+        try {
+            const response = await fetch('/api/selects_problems');
+            if (response.ok) {
+                const data = await response.json();
+                // APIからのデータに 'type' プロパティを追加して型を統一
+                const typedProblems = data.map((p: any) => ({ ...p, type: 'selection' }));
+                setAvailableSelectionProblems(typedProblems);
+            }
+        } catch (error) {
+            console.error('選択問題一覧の取得に失敗しました:', error);
+        } finally {
+            setIsLoadingSelectionProblems(false);
         }
     };
 
@@ -230,24 +252,40 @@ export const useAdminData = (hashedId: string) => {
     };
 
     // 課題作成
-    const createAssignment = async (title: string, description: string, dueDate: string, programmingProblemId?: number) => {
+    const createAssignment = async (title: string, description: string, dueDate: string, problem: ProgrammingProblem | null) => {
+        const body: any = {
+            title,
+            description,
+            dueDate: new Date(dueDate).toISOString(),
+        };
+
+        if (problem) {
+            // 問題のtypeプロパティを見て、どちらのIDをAPIに渡すか判断する
+            if (problem.type === 'selection') {
+                body.selectProblemId = problem.id;
+            } else {
+                body.programmingProblemId = problem.id;
+            }
+        }
+        
         const response = await fetch(`/api/groups/${hashedId}/assignments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title,
-                description,
-                dueDate: new Date(dueDate).toISOString(),
-                programmingProblemId,
-            }),
+            body: JSON.stringify(body),
         });
+
+        if (!response.ok) {
+             const errorData = await response.json();
+             throw new Error(errorData.message || 'サーバーエラーが発生しました');
+        }
 
         const result = await response.json();
         if (!result.success) {
             throw new Error(result.message || '課題の作成に失敗しました。');
         }
 
-        setAssignments([result.data, ...assignments]);
+        // 課題リストを更新
+        fetchAssignments();
     };
 
     // 課題編集
@@ -316,7 +354,9 @@ export const useAdminData = (hashedId: string) => {
         assignments,
         availableProblems,
         isLoadingProblems,
-        
+        availableSelectionProblems,
+        isLoadingSelectionProblems,
+
         // Actions
         createPost,
         updatePost,
@@ -330,7 +370,8 @@ export const useAdminData = (hashedId: string) => {
         addMember,
         copyInviteCode,
         fetchAvailableProblems,
-        
+        fetchAvailableSelectionProblems,
+
         // Refresh functions
         refreshData: () => {
             fetchGroupData();

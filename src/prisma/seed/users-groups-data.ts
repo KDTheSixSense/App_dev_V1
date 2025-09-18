@@ -2,94 +2,224 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 
+// --- ヘルパー関数 ---
+
+/**
+ * 指定された範囲のランダムな整数を生成します
+ * @param min 最小値
+ * @param max 最大値
+ */
+function getRandomInt(min: number, max: number) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * 総経験値からレベルを計算します (1000XPごとに1レベルアップ)
+ * @param xp 経験値
+ */
+function calculateLevelFromXp(xp: number): number {
+  if (xp < 0) return 1;
+  return Math.floor(xp / 1000) + 1;
+}
+
+/**
+ * ユーザーとグループのデモデータを作成する関数
+ * @param prisma PrismaClientのインスタンス
+ */
 export async function seedUsersAndGroups(prisma: PrismaClient) {
   console.log('🌱 Seeding users and groups...');
 
-  // 既存のグループ関連データをクリア
+  // --- 1. 既存データをクリア ---
   await prisma.groups_User.deleteMany({});
+  await prisma.userSubjectProgress.deleteMany({});
+  await prisma.status_Kohaku.deleteMany({});
   await prisma.groups.deleteMany({});
+  await prisma.user.deleteMany({});
+  console.log('🗑️ Cleared existing user and group data.');
 
-  //ユーザー情報
+  
+  // --- 2. シーディングするユーザーの基本情報を定義 ---
   const usersToSeed = [
-    { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', year: 2020, class: 1, birth: new Date('2002-04-15') },
-    { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', year: 2021, class: 2, birth: new Date('2003-08-20') },
-    { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', year: 2020, class: 3, birth: new Date('2002-11-05') ,level: 18, xp: 17800, totallogin: 10 },
-    { email: 'GodOfGod@example.com', password: 'godisgod', username: 'God', level: 9999, xp: 9999999, totallogin: 999 },
-    { email: 'diana@example.com', password: 'password456', username: 'Diana Prince', level: 25, xp: 24500, totallogin: 50 },
-    { email: 'eva@example.com', password: 'password789', username: 'Eva Green', level: 5, xp: 4100, totallogin: 3 },
-    { email: 'frank@example.com', password: 'password101', username: 'Frank Castle', level: 50, xp: 49900, totallogin: 100 },
-    { email: 'grace@example.com', password: 'password112', username: 'Grace Hopper', level: 50, xp: 49900, totallogin: 200 },
-    { email: 'tanaka@example.com', password: 'password131', username: '田中 恵子', level: 2, xp: 1500, totallogin: 1 },
-    { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎', level: 18, xp: 17500, totallogin: 25 },
-    { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲', level: 22, xp: 21300, totallogin: 42 },
+    { email: 'alice@example.com', password: 'password123', username: 'Alice Smith' },
+    { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson' },
+    { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown' },
+    { email: 'diana@example.com', password: 'password456', username: 'Diana Prince' },
+    { email: 'eva@example.com', password: 'password789', username: 'Eva Green' },
+    { email: 'frank@example.com', password: 'password101', username: 'Frank Castle' },
+    { email: 'grace@example.com', password: 'password112', username: 'Grace Hopper' },
+    { email: 'tanaka@example.com', password: 'password131', username: '田中 恵子' },
+    { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎' },
+    { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲' },
+    { email: 'kobe_taro@example.com', password: 'kobe', username: '神戸太郎' },
   ];
 
-  //デモユーザーのペット情報の作成
-  for (const u of usersToSeed) {
-    const hashedPassword = await bcrypt.hash(u.password, 10);
-    await prisma.user.upsert({
-      where: { email: u.email },
-      update: {
-        username: u.username,
+  // --- 3. 各ユーザーのデータと関連データを作成 ---
+  console.log('🌱 Seeding users, pets, and subject progresses...');
+  for (const userData of usersToSeed) {
+    const subjectProgressData = [];
+    let totalAccountXp = 0;
+    const numberOfSubjects = 4; // subject_idが4まであると仮定
+
+    // 科目ごとの進捗を生成
+    for (let subjectId = 1; subjectId <= numberOfSubjects; subjectId++) {
+      let subjectXp = 0;
+      
+      // ユーザーごとにXPの生成範囲を変える
+      if (userData.username === '神戸太郎') {
+        subjectXp = 8999;
+      } else if (['Frank Castle', 'Grace Hopper'].includes(userData.username!)) {
+        subjectXp = getRandomInt(10000, 50000);
+      } else if (['Alice Smith', '鈴木 一郎'].includes(userData.username!)) {
+        subjectXp = getRandomInt(5000, 20000);
+      } else {
+        subjectXp = getRandomInt(100, 8000);
+      }
+
+      totalAccountXp += subjectXp;
+      subjectProgressData.push({
+        subject_id: subjectId,
+        xp: subjectXp,
+        level: calculateLevelFromXp(subjectXp),
+      });
+    }
+
+    // アカウント全体のレベルとXPを計算
+    const accountLevel = calculateLevelFromXp(totalAccountXp);
+    
+    // パスワードをハッシュ化
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const isKobeTaro = userData.username === '神戸太郎';
+    const hungerLevel = isKobeTaro ? 150 : getRandomInt(10, 200);
+    let userLoginData = {};
+
+    if (isKobeTaro) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1); // 1日前の日付に設定
+      yesterday.setHours(10, 0, 0, 0);            // 時刻をAM 10:00に設定
+
+      userLoginData = {
+        continuouslogin: 30,
+        lastlogin: yesterday,
+      };
+    } 
+    await prisma.user.create({
+      data: {
+        email: userData.email,
+        username: userData.username,
         password: hashedPassword,
-        level: u.level,
-        xp: u.xp,
-        totallogin: u.totallogin,
-      },
-      create: {
-        email: u.email,
-        username: u.username,
-        password: hashedPassword,
-        level: u.level,
-        xp: u.xp,
-        totallogin: u.totallogin,
+        level: accountLevel,
+        xp: totalAccountXp,
+        totallogin: getRandomInt(1, 500),
+        ...userLoginData, // 神戸太郎の場合のみ、ここにデータが追加される
         status_Kohaku: {
           create: {
-            status: '空腹',
-            hungerlevel: 49,
+            status: '元気',
+            hungerlevel: hungerLevel,
           },
+        },
+        progresses: {
+          create: subjectProgressData,
         },
       },
     });
-    console.log(`✅ Upserted user with email: ${u.email}`);
   }
-  console.log('✅ Users seeded.');
-  
-  // グループとメンバーシップの作成
+  console.log('✅ Users, pets, and progresses seeded.');
+
+
+  // --- 4. グループとメンバーシップを作成 ---
+  console.log('🌱 Seeding specific groups for Taro Kobe...');
   const alice = await prisma.user.findUnique({ where: { email: 'alice@example.com' } });
-  const godUser = await prisma.user.findUnique({ where: { email: 'GodOfGod@example.com' } });
+  const bob = await prisma.user.findUnique({ where: { email: 'bob@example.com' } });
+  const kobeTaro = await prisma.user.findUnique({ where: { email: 'kobe_taro@example.com' } });
 
-  if (!alice || !godUser) {
-    console.error("❌ Seeding users (alice, GodOfGod) not found. Aborting group creation.");
-    return;
+  if (alice && bob && kobeTaro) {
+    // グループ1: 神戸太郎が管理者
+    const group1 = await prisma.groups.create({
+      data: {
+        groupname: '神戸ゼミ',
+        body: '神戸太郎が主催するゼミです。',
+        invite_code: nanoid(8),
+      },
+    });
+    await prisma.groups_User.create({
+      data: { user_id: kobeTaro.id, group_id: group1.id, admin_flg: true },
+    });
+    console.log(`✅ Created group "${group1.groupname}" with Taro as Admin.`);
+
+    // グループ2: 神戸太郎が一般メンバー
+    const group2 = await prisma.groups.create({
+      data: {
+        groupname: '先端技術研究会',
+        body: 'アリスが主催する研究会です。',
+        invite_code: nanoid(8),
+      },
+    });
+    await prisma.groups_User.createMany({
+      data: [
+        { user_id: alice.id, group_id: group2.id, admin_flg: true },
+        { user_id: kobeTaro.id, group_id: group2.id, admin_flg: false },
+      ],
+    });
+    console.log(`✅ Created group "${group2.groupname}" with Taro as a Member.`);
+    
+    // グループ3: 神戸太郎が参加していない (招待コード固定)
+    const group3 = await prisma.groups.create({
+      data: {
+        groupname: 'KDITクラス',
+        body: '神戸電子専門学校のITクラスです。',
+        invite_code: 'itinvite', // 招待コードを固定
+      },
+    });
+    console.log(`✅ Created group "${group3.groupname}" with fixed invite code.`);
+
+    // God以外の全ユーザーを取得
+    const allUsersExceptGod = await prisma.user.findMany({
+      where: {
+        email: {
+          not: 'kobe_taro@example.com'
+        }
+      }
+    });
+
+    // Aliceを管理者、それ以外を一般メンバーとして一括で追加
+    const group3Members = allUsersExceptGod.map(user => ({
+      user_id: user.id,
+      group_id: group3.id,
+      admin_flg: user.email === 'alice@example.com', // Aliceだけ管理者
+    }));
+
+    await prisma.groups_User.createMany({
+      data: group3Members,
+    });
+    console.log(`✅ Added ${group3Members.length} members to "${group3.groupname}".`);
+
+        // 「神戸ゼミ」のお知らせと課題
+    await prisma.post.createMany({
+        data: [
+            { content: '第一回ゼミ会のお知らせです。来週月曜の18時から開催します。', groupId: group1.id, authorId: kobeTaro.id },
+            { content: '参考文献リストを共有します。各自確認してください。', groupId: group1.id, authorId: kobeTaro.id },
+        ]
+    });
+    await prisma.assignment.createMany({
+        data: [
+            { groupid: group1.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-09-30T23:59:59Z') },
+            { groupid: group1.id, title: '[実践] ReactでTodoアプリ作成', description: 'Next.jsとTypeScriptを使い、簡単なTodoアプリを実装してください。', due_date: new Date('2025-10-15T23:59:59Z') },
+        ]
+    });
+
+    // 「KDITクラス」のお知らせ
+    await prisma.post.create({
+        data: {
+            content: '夏期集中講座の申し込みが開始されました。希望者はメールを確認してください。',
+            groupId: group3.id,
+            authorId: alice.id, // 管理者であるアリスが投稿
+        }
+    });
   }
 
-  const pblGroup = await prisma.groups.create({
-    data: {
-      groupname: 'プログラミングクラブ',
-      body: 'プログラミングについて学ぶグループです',
-      invite_code: nanoid(8),
-    },
-  });
-  console.log(`✅ Created group: "${pblGroup.groupname}"`);
+  console.log(`🎉 User and group seeding finished.`);
 
-  await prisma.groups_User.create({
-    data: { user_id: alice.id, group_id: pblGroup.id, admin_flg: false },
-  });
-  console.log(`✅ Added Alice to "${pblGroup.groupname}" as a member.`);
-
-  await prisma.groups_User.create({
-    data: { user_id: godUser.id, group_id: pblGroup.id, admin_flg: true },
-  });
-  console.log(`✅ Added God to "${pblGroup.groupname}" as an admin.`);
-
-  // UserSubjectProgressのシードデータ
-  await prisma.userSubjectProgress.deleteMany({});
-  await prisma.userSubjectProgress.createMany({
-    data: [
-      { user_id: 3, subject_id: 2, level: 9, xp: 8900 },
-      { user_id: 3, subject_id: 3, level: 9, xp: 8900 },
-    ],
-  });
-  console.log(`✅ Seeded UserSubjectProgress data for Alice.`);
 }
+
