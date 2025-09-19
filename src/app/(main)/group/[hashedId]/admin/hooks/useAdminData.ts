@@ -260,7 +260,6 @@ export const useAdminData = (hashedId: string) => {
         };
 
         if (problem) {
-            // 問題のtypeプロパティを見て、どちらのIDをAPIに渡すか判断する
             if (problem.type === 'selection') {
                 body.selectProblemId = problem.id;
             } else {
