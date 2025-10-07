@@ -113,8 +113,9 @@ export default function Header({ userWithPet }: HeaderProps) {
     { href: '/issue_list', icon: '/images/question_list_slateblue.png', label: '問題一覧' },
     { href: '/CreateProgrammingQuestion', icon: '/images/question_create_slateblue.png', label: '問題作成' },
     { href: '/group', icon: '/images/group_slateblue.png', label: 'グループ' },
-    { href: '/', icon: '/images/assignment_slateblue.png', label: '提出' },
-    { href: '/', icon: '/images/event_slateblue.png', label: 'イベント' },
+    //機能が完成してないから一旦隠す
+    // { href: '/', icon: '/images/assignment_slateblue.png', label: '提出' },
+    // { href: '/', icon: '/images/event_slateblue.png', label: 'イベント' },
   ];
 
   return (
@@ -147,7 +148,7 @@ export default function Header({ userWithPet }: HeaderProps) {
             </li>
           ))}
           <li>
-            <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#B9E2E2] transition-colors">
+            <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
               <img src="/images/logout_slateblue.png" alt="ログアウト" width={40} height={40} />
               <span className='text-[#546E7A] text-sm mt-1 font-bold'>ログアウト</span>
             </button>

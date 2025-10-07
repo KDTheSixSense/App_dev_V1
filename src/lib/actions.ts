@@ -125,7 +125,7 @@ export async function getNextProblemId(currentId: number, category: string): Pro
 export async function awardXpForCorrectAnswer(problemId: number) {
   'use server';
 
-  const session = await getSession();
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const user = session.user;
 
   if (!user) {
@@ -323,10 +323,11 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
   return result;
 }
 
-const RESET_HOUR = 6;
+//世界標準時が日本の-9時間なので+3して日本時間で朝6時にリセットされるようにする
+const RESET_HOUR = 3;
 function getAppDate(date: Date): Date {
   const newDate = new Date(date);
-  newDate.setHours(newDate.getHours() - RESET_HOUR);
+  newDate.setHours(newDate.getHours() + RESET_HOUR);
   return newDate;
 }
 export async function updateUserLoginStats(userId: number) {
@@ -348,7 +349,7 @@ export async function updateUserLoginStats(userId: number) {
   let newTotalDays = user.totallogin ?? 0;
 
   if(lastLoginAppDateString === todayAppDateString) {
-    console.log(`ユーザーID:${userId} は今日すでにログインしています。連続ログインは更新されません。`);
+    console.log(`ユーザーID:${userId} は今日すでにログインしています。連続ログインは更新されません。今日は${now}。 最終ログインは${lastLoginDate}です。`);
     return;
   }
 

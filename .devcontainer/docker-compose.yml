@@ -9,6 +9,8 @@ services:
     working_dir: /workspaces/my-next-app/src
     volumes:
       - ..:/workspaces/my-next-app:cached
+      # node_modulesを名前付きボリュームにマウントして、ホストとの同期から除外
+      - node_modules:/workspaces/my-next-app/src/node_modules
 
     #environment:
     #  - WATCHPACK_POLLING=true
@@ -42,3 +44,5 @@ services:
 # 名前付きボリュームの定義
 volumes:
   db_data:
+  # node_modules用の名前付きボリュームを定義
+  node_modules:
