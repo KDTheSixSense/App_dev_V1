@@ -102,6 +102,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
       userLoginData = {
         continuouslogin: 30,
         lastlogin: yesterday,
+        totallogin: 100,
       };
     } 
     await prisma.user.create({
