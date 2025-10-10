@@ -114,8 +114,8 @@ export default function Header({ userWithPet }: HeaderProps) {
     { href: '/CreateProgrammingQuestion', icon: '/images/question_create_slateblue.png', label: '問題作成' },
     { href: '/group', icon: '/images/group_slateblue.png', label: 'グループ' },
     //提出機能とイベント機能はまだ完成してないから一旦コメントアウトで隠しておく
-    // { href: '/', icon: '/images/assignment_slateblue.png', label: '提出' },
-    // { href: '/', icon: '/images/event_slateblue.png', label: 'イベント' },　
+    { href: '/unsubmitted-assignments', icon: '/images/assignment_slateblue.png', label: '課題' },
+    { href: '/', icon: '/images/event_slateblue.png', label: 'イベント' },
   ];
 
   return (
