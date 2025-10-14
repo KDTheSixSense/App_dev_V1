@@ -129,6 +129,34 @@ export async function POST(req: NextRequest, context: any) {
             data: dataToCreate,
         });
 
+          // 1. 課題が割り当てられるべきメンバー（管理者以外）を取得します
+          const membersToAssign = await prisma.groups_User.findMany({
+            where: {
+              group_id: group.id,
+              admin_flg: false, // 管理者ではないユーザー
+            },
+            select: {
+              user_id: true,
+            },
+          });
+        
+          // 2. メンバーが存在する場合、各メンバーの「提出状況」レコードを作成します
+          if (membersToAssign.length > 0) {
+            const submissionsData = membersToAssign.map(member => ({
+              assignment_id: newAssignment.id,
+              userid: member.user_id,
+              status: '未提出', // 初期ステータスを「未提出」に設定
+              description: '',   // 提出時に解答内容などを保存するためのフィールド。初期値は空文字。
+              codingid: 0,       // 提出されたコードIDなどを保存するフィールド。初期値は0など。
+          }));
+        
+          // 3. Submissionsテーブルに複数レコードを一括で作成します
+          await prisma.submissions.createMany({
+            data: submissionsData,
+          });
+          console.log(`✅ ${membersToAssign.length}人のメンバーに課題 (ID: ${newAssignment.id}) を配布しました。`);
+        }
+
         return NextResponse.json({ success: true, data: newAssignment }, { status: 201 });
 
     } catch (error) {

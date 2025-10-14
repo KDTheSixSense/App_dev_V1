@@ -127,7 +127,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         };
     }
 
-    // ✅【追加点】問11のデータ補完処理
+    // 【追加点】問11のデータ補完処理
     if (initialProblem.id.toString() === '11') {
         const initialVarsFor11 = {
             data: null, n: null, bins: null, i: null,
@@ -219,6 +219,12 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setCurrentTraceLine(0);
     setIsPresetSelected(true);
   };
+
+ const handleSetNum = (num: number) => {
+    setVariables({ ...problem.initialVariables, num: num }); // 選択された数値で変数を初期化
+    setCurrentTraceLine(0); // トレース行をリセット
+    setIsPresetSelected(true); // プリセットが選択されたことを示すフラグを立てる
+ };
   
   const handleNextProblem = async () => {
     const nextId = await getNextProblemId(parseInt(problem.id, 10), 'basic_info_b_problem');
@@ -291,7 +297,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
                 <TraceScreen programLines={problem.programLines?.[currentLang] || []} currentLine={currentTraceLine} language={language} textResources={t} />
               </div>
               <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                <VariableTraceControl problem={problem} variables={variables} onNextTrace={handleNextTrace} isTraceFinished={problem.programLines ? currentTraceLine >= problem.programLines[currentLang].length : true} onResetTrace={handleResetTrace} currentTraceLine={currentTraceLine} language={language} textResources={t} onSetData={handleSetData} isPresetSelected={isPresetSelected} onSetNum={() => {}} />
+                <VariableTraceControl problem={problem} variables={variables} onNextTrace={handleNextTrace} isTraceFinished={problem.programLines ? currentTraceLine >= problem.programLines[currentLang].length : true} onResetTrace={handleResetTrace} currentTraceLine={currentTraceLine} language={language} textResources={t} onSetData={handleSetData} isPresetSelected={isPresetSelected} onSetNum={handleSetNum} />
               </div>
             </div>
           )}

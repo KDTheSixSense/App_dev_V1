@@ -38,6 +38,7 @@ model User {
   createdSelectProblems SelectProblem[]      @relation("SelectProblemCreator") // SelectProblemとのリレーション
   posts Post[]
   loginHistory LoginHistory[]
+  submissions         Submissions[]
   aiAdviceCredits            Int      @default(5)
 }
 
@@ -417,6 +418,7 @@ model Submissions {
   userid        Int
   description   String
   status        String
+  user          User     @relation(fields: [userid], references: [id], onDelete: Cascade)
   codingid      Int
   submitted_at  DateTime @default(now())
   created_at    DateTime @default(now())
