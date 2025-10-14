@@ -1,6 +1,6 @@
 import React from "react";
 import User from "./user/UserDetail";
-import Ranking from "./ranking/page";
+
 import Pet from "./Pet/PetStatus";
 // --- ▼▼▼ セッション取得用のライブラリをインポート ▼▼▼ ---
 import { getIronSession } from 'iron-session';
@@ -19,7 +19,7 @@ interface SessionData {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }; // 型を修正
+  searchParams: any; // 型を修正
 }) {
 
   // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---
@@ -37,7 +37,7 @@ export default async function HomePage({
       <main className="flex justify-center w-full min-h-screen text-center py-10 px-20 gap-10">
         <div className="flex flex-col w-full max-w-150 gap-8">
           <User user={user}/>
-          <Ranking userId={userId} />
+          <div />
         </div>
         <div className="flex flex-col w-full max-w-150 gap-10">
           <Pet user={user}/>

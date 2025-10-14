@@ -1,4 +1,4 @@
-import { getIronSession } from 'iron-session';
+   import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { sessionOptions } from '@/lib/session';
@@ -16,13 +16,15 @@ interface SessionData {
 }
 
 // このレイアウトがadminディレクトリ配下のすべてのページを保護します
+interface AdminLayoutProps {
+  children: React.ReactNode;
+  params: any; // 型を any に変更
+}
+
 export default async function AdminLayout({
   children,
   params,
-}: {
-  children: React.ReactNode;
-  params: { hashedId: string }; // URLの [hashedId] 部分
-}) {
+}: AdminLayoutProps) {
   // --- 1. セッションとユーザーIDを正しく取得 ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? Number(session.user.id) : null;
