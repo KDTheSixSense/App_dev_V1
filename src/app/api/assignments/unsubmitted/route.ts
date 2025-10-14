@@ -13,7 +13,7 @@ interface JwtPayload {
 export async function GET() {
   try {
     // 1. Cookieからトークンを取得し、ユーザーIDを復元
-    const cookieStore: any = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
     if (!token) {
