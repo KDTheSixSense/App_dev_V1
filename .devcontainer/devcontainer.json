@@ -11,6 +11,9 @@
   // コンテナ内でVS Codeを実行するユーザー
   "remoteUser": "node",
 
+  // コンテナ内のユーザーのUID/GIDをホストに合わせ、パーミッションの問題を解決する
+  "updateRemoteUserUID": true,
+
   // コンテナ作成後に一度だけ実行されるコマンド (依存パッケージのインストール)
   "postCreateCommand": "npm install",
 
