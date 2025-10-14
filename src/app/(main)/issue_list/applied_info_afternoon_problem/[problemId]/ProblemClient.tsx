@@ -12,7 +12,7 @@ import KohakuChat from '../components/KohakuChat';
 
 import { problemLogicsMap } from '../problems/problem-logics';
 import type { SerializableProblem } from '@/lib/data';
-import type { VariablesState } from '@/lib/types';
+import type { VariablesState } from '@/lib/types/index';
 import { getNextProblemId } from '@/lib/actions';
 
 // --- 多言語対応テキストとヘルパー関数 ---

@@ -21,7 +21,7 @@ export default async function MemberLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { hashedId: string }; // URLの [hashedId] 部分
+  params: any; // URLの [hashedId] 部分
 }) {
   // --- 1. セッションとユーザーIDを正しく取得 ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);

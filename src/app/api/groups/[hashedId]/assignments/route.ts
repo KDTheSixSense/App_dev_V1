@@ -11,7 +11,8 @@ interface SessionData {
 }
 
 // 課題一覧を取得 (GET)
-export async function GET(req: NextRequest, { params }: { params: { hashedId: string } }) {
+export async function GET(req: NextRequest, context: any) {
+  const { params } = context;
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
@@ -64,7 +65,8 @@ export async function GET(req: NextRequest, { params }: { params: { hashedId: st
 }
 
 // 課題を作成 (POST)
-export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
+export async function POST(req: NextRequest, context: any) {
+  const { params } = context;
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
 

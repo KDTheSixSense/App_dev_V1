@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
 
     session.user = {
       id: user.id,
-      username: user.username,
       email: user.email,
+      username: user.username,
     };
     await session.save();
 

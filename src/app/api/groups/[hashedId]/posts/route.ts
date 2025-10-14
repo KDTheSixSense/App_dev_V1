@@ -10,7 +10,7 @@ interface SessionData {
 }
 
 // お知らせ一覧を取得 (GET)
-export async function GET(req: NextRequest, { params }: { params: { hashedId: string } }) {
+export async function GET(req: NextRequest, { params }: any) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest, { params }: { params: { hashedId: st
 }
 
 // ✨【ここから追加】お知らせを投稿 (POST)
-export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
+export async function POST(req: NextRequest, { params }: any) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
   

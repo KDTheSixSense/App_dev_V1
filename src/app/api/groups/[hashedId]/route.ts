@@ -15,7 +15,7 @@ interface SessionData {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { hashedId: string } } // Next.js 13+ の標準的な引数の書き方
+  { params }: any // Next.js 13+ の標準的な引数の書き方
 ) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
