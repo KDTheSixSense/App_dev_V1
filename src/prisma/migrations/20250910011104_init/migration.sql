@@ -540,12 +540,10 @@ ALTER TABLE "Groups_User" ADD CONSTRAINT "Groups_User_group_id_fkey" FOREIGN KEY
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_programmingProblemId_fkey" FOREIGN KEY ("programmingProblemId") REFERENCES "ProgrammingProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-<<<<<<<< HEAD:src/prisma/migrations/20250910011104_init/migration.sql
-========
+
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_selectProblemId_fkey" FOREIGN KEY ("selectProblemId") REFERENCES "SelectProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
->>>>>>>> main:src/prisma/migrations/20250916010934_/migration.sql
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_groupid_fkey" FOREIGN KEY ("groupid") REFERENCES "Groups"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
