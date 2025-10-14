@@ -56,6 +56,8 @@ COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/eng
 
 # (prisma/migrations を含む prisma ディレクトリのコピーもそのまま残す)
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/@prisma/debug ./node_modules/@prisma/debug
+
 
 USER nextjs
 EXPOSE 3000
