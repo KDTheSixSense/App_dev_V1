@@ -8,7 +8,7 @@ import { getProblemForClient } from '@/lib/data';
 import ProblemClient from './ProblemClient'; // 同じ階層のクライアントコンポーネントをインポート
 
 interface PageProps {
-  params: { problemId: string };
+  params: any;
 }
 
 /**

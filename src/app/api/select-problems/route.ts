@@ -25,8 +25,6 @@ export async function POST(request: Request) {
     return response;
 }
 
-// (The unreachable/duplicate code block below has been removed to fix the error)
-
 // 選択問題の一覧を取得するGETハンドラ (こちらも念のため記載)
 export async function GET(request: Request) {
     console.warn('DEPRECATED: /api/select-problems is deprecated. Use /api/selects_problems instead.');

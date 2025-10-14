@@ -101,7 +101,7 @@ export default async function ProfilePage() {
       ...ut,
       unlockedAt: ut.unlockedAt.toISOString(),
     })),
-    Status_Kohaku: userWithDetails.status_Kohaku, // Add this line to match SerializedUser type
+    Status_Kohaku: userWithDetails.status_Kohaku ? [userWithDetails.status_Kohaku] : [],
   };
 
   // --- 5. すべてのデータをクライアントコンポーネントに渡す ---

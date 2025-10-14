@@ -11,10 +11,10 @@ interface SessionData {
   user?: { id: number | string; email: string };
 }
 
-// 課題を作成 (POST)
-export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    const sessionUserId = session.user?.id;
+export async function POST(req: NextRequest, context: any) {
+  const { params } = context;
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const sessionUserId = session.user?.id;
 
     if (!sessionUserId) {
         return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });

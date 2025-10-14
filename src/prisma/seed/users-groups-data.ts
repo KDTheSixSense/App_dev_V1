@@ -161,6 +161,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
       data: [
         { user_id: alice.id, group_id: group2.id, admin_flg: true },
         { user_id: kobeTaro.id, group_id: group2.id, admin_flg: false },
+        { user_id: bob.id, group_id: group2.id, admin_flg: false },
       ],
     });
     console.log(`✅ Created group "${group2.groupname}" with Taro as a Member.`);
