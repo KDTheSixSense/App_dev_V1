@@ -8,7 +8,8 @@ import {
     Post, 
     Assignment, 
     ProgrammingProblem,
-    Comment 
+    Comment,
+    AssignmentWithSubmissions 
 } from '../types/AdminTypes';
 
 export const useAdminData = (hashedId: string) => {
@@ -36,6 +37,25 @@ export const useAdminData = (hashedId: string) => {
     // 選択問題関連のstate
     const [availableSelectionProblems, setAvailableSelectionProblems] = useState<any[]>([]);
     const [isLoadingSelectionProblems, setIsLoadingSelectionProblems] = useState(false);
+
+    const [assignmentsWithSubmissions, setAssignmentsWithSubmissions] = useState<AssignmentWithSubmissions[]>([]);
+    const [submissionsLoading, setSubmissionsLoading] = useState(false);
+
+    // 課題と提出状況を取得する関数
+    const fetchAssignmentsWithSubmissions = async () => {
+      setSubmissionsLoading(true);
+      try {
+        const response = await fetch(`/api/groups/${hashedId}/assignments-with-submissions`);
+        if (response.ok) {
+          const data = await response.json();
+          setAssignmentsWithSubmissions(data.data);
+        }
+      } catch (error) {
+        console.error('課題状況の取得に失敗しました:', error);
+      } finally {
+        setSubmissionsLoading(false);
+      }
+    };
 
     // === API関数 ===
     // グループ詳細を取得
@@ -337,6 +357,7 @@ export const useAdminData = (hashedId: string) => {
             fetchGroupMembers();
             fetchPosts();
             fetchAssignments();
+            fetchAssignmentsWithSubmissions();
         }
     }, [hashedId]);
 
@@ -355,6 +376,8 @@ export const useAdminData = (hashedId: string) => {
         isLoadingProblems,
         availableSelectionProblems,
         isLoadingSelectionProblems,
+        assignmentsWithSubmissions,
+        submissionsLoading,
 
         // Actions
         createPost,
@@ -377,6 +400,7 @@ export const useAdminData = (hashedId: string) => {
             fetchGroupMembers();
             fetchPosts();
             fetchAssignments();
+            fetchAssignmentsWithSubmissions();
         }
     };
 };
