@@ -80,7 +80,9 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
 
     // 課題詳細表示の場合
     if (viewMode === 'detail' && selectedAssignment) {
-        // ★ 修正点 1: 問題の種類に応じたリンク先を格納する変数を定義
+        // ★ 修正点 1: 問題タイトルを取得する変数を定義
+        const problemTitle = selectedAssignment.programmingProblem?.title || selectedAssignment.selectProblem?.title;
+        // 問題の種類に応じたリンク先を格納する変数を定義
         let problemLink = '';
 
         if (selectedAssignment.programmingProblemId) {
@@ -188,19 +190,20 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                         />
 
                         <div style={{ marginTop: '24px' }}>
+                            <p className='text-[#58A8fdff]'><strong> 添付された問題 : </strong></p>
                             {problemLink ? (
                                 <Link 
                                     href={problemLink}
                                     style={{ 
                                         display: 'inline-block', 
                                         padding: '10px 20px', 
-                                        backgroundColor: '#28a745', 
+                                        backgroundColor: '#58A8fdff', 
                                         color: 'white', 
                                         textDecoration: 'none', 
                                         borderRadius: '5px' 
                                     }}
                                 >
-                                    問題に挑戦する
+                                    {problemTitle ? ` ${problemTitle}` : ''}
                                 </Link>
                             ) : (
                                 <p style={{

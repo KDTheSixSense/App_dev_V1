@@ -55,6 +55,18 @@ export async function GET(req: NextRequest, context: any) {
     const assignments = await prisma.assignment.findMany({
       where: { groupid: group.id },
       orderBy: { created_at: 'desc' },
+      include: {
+        programmingProblem: {
+          select: {
+            title: true,
+          },
+        },
+        selectProblem: {
+          select: {
+            title: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json({ success: true, data: assignments });

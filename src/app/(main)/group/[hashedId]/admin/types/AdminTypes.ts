@@ -66,6 +66,14 @@ export interface Assignment {
     created_at: string;
     programmingProblemId?: number;
     selectProblemId?: number;
+
+    programmingProblem?: {
+      title: string;
+    };
+    selectProblem?: {
+      title: string;
+    };
+
     showComments?: boolean;
     comments?: Comment[];
     completed?: boolean;
@@ -95,8 +103,8 @@ export interface AssignmentWithSubmissions extends Assignment {
   Submissions: Submission[];
 }
 
-// タブの型に「課題状況一覧」を追加
-export type TabType = 'お知らせ' | '課題' | 'メンバー' | '課題状況一覧';
+// タブの型に「提出状況一覧」を追加
+export type TabType = 'お知らせ' | '課題' | 'メンバー' | '提出状況一覧';
 
 // フォーマット状態の型
 export interface FormatState {
