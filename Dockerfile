@@ -52,6 +52,8 @@ COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/clie
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/
 
+COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+
 # (prisma/migrations を含む prisma ディレクトリのコピーもそのまま残す)
 COPY --from=builder /app/prisma ./prisma
 
