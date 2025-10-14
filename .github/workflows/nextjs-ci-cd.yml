@@ -56,6 +56,7 @@ jobs:
           # ▼▼▼ この build-args を追加 ▼▼▼
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
+          no-cache: true
 
   # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
   update-manifest:
