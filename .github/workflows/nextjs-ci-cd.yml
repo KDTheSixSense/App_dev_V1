@@ -58,6 +58,21 @@ jobs:
             DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
           no-cache: true
 
+      - name: Build and push Migrator image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          # タグの末尾に '-migrator' をつける
+          tags: ${{ steps.meta.outputs.tags }}-migrator
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
+          no-cache: true
+          # ビルド対象として 'migrator' ステージを指定
+          target: migrator
+        
+
   # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
   update-manifest:
     runs-on: ubuntu-latest

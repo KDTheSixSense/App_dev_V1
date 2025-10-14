@@ -1,65 +1,44 @@
 # --------------------------------------------------------------------
-# ステージ1: ビルダー (Builder)
+# ステージ1: ビルダー (Builder / キッチン)
 # --------------------------------------------------------------------
 FROM node:20-alpine AS builder
 
-# Prisma generateにはDB接続情報が必要なためARGで受け取る
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 
 WORKDIR /app
-
-# 依存関係のファイルを先にコピー
 COPY src/package.json src/package-lock.json* ./
-
-# ★改善案: 本番ビルドに必要な依存関係のみインストール
+# prismaもdependenciesに含めておく
 RUN npm ci
-
-# プロジェクトのソースコードを全部コピー
 COPY src/ .
-
-# Prisma Client を生成する
 RUN npx prisma generate
-
-# Next.jsアプリをビルド
 RUN npm run build
 
 # --------------------------------------------------------------------
-# ステージ2: ランナー (Runner)
-# --------------------------------------------------------------------
-# --------------------------------------------------------------------
-# ステージ2: ランナー (Runner)
+# ステージ2: ランナー (Runner / アプリ用のお弁当箱)
 # --------------------------------------------------------------------
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# (adduser, addgroupは変更なし)
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# (standalone出力のコピーは変更なし)
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# (前回追加したPrisma Clientのコピーもそのまま残す)
-COPY --from=builder /app/node_modules/.prisma ./.prisma
-COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
-
-# ★★★★★ ここに2行追加 ★★★★★
-# マイグレーション実行に必要なprisma CLIをbuilderからコピーする
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/
-
-COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
-
-# (prisma/migrations を含む prisma ディレクトリのコピーもそのまま残す)
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/@prisma/debug ./node_modules/@prisma/debug
-
+# schema.prismaは実行時にも必要
+COPY --from=builder /app/prisma/schema.prisma ./prisma/schema.prisma
 
 USER nextjs
 EXPOSE 3000
 ENV NODE_ENV=production
 CMD ["node", "server.js"]
+
+# --------------------------------------------------------------------
+# ★★★ ステージ3: マイグレーター (Migrator / マイグレーション用のキッチン) ★★★
+# --------------------------------------------------------------------
+FROM builder AS migrator
+
+# このイメージのデフォルトの動作を設定
+CMD ["npm", "run", "db:deploy"]
