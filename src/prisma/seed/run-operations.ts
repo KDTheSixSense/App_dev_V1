@@ -45,4 +45,72 @@ export async function runOperations(prisma: PrismaClient) {
     await prisma.userSubjectProgress.createMany({ data: progressData, skipDuplicates: true });
     console.log(`✅ God Mode progress created.`);
   }
+  
+  console.log('🌱 Seeding assignments and submissions...');
+
+  // 1. 既存の課題と配布状況をクリアして初期化
+  await prisma.submissions.deleteMany({});
+  await prisma.assignment.deleteMany({});
+
+  // 2. 必要なグループと問題を取得
+  const kobeZemiGroup = await prisma.groups.findFirst({ where: { groupname: '神戸ゼミ' } });
+  const kditGroup = await prisma.groups.findFirst({ where: { groupname: 'KDITクラス' } });
+  const problemAplusB = await prisma.programmingProblem.findFirst({ where: { title: 'A + B' } });
+  const problemFizzBuzz = await prisma.programmingProblem.findFirst({ where: { title: 'FizzBuzz' } });
+  const problemPythonVar = await prisma.selectProblem.findFirst({ where: { title: 'Pythonの変数宣言について' } });
+
+  if (kobeZemiGroup && kditGroup) {
+    const assignmentsToCreate = [];
+
+    // --- 課題データを作成 ---
+    assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-10-30T23:59:59Z') });
+    
+    if (problemFizzBuzz) {
+      assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '[アルゴリズム] FizzBuzz問題', description: '添付の問題を解き、プログラミングの基本的なループと条件分岐の理解を深めましょう。', due_date: new Date('2025-11-20T23:59:59Z'), programmingProblemId: problemFizzBuzz.id });
+    }
+    if (problemPythonVar) {
+      assignmentsToCreate.push({ groupid: kditGroup.id, title: '[Python基礎] 変数宣言の基本', description: '添付の選択問題を解いて、Pythonにおける正しい変数宣言の方法を理解しましょう。', due_date: new Date('2025-10-31T23:59:59Z'), selectProblemId: problemPythonVar.id });
+    }
+    if (problemAplusB) {
+      assignmentsToCreate.push({ groupid: kditGroup.id, title: '[ウォーミングアップ] 簡単な足し算', description: 'プログラミングに慣れるための最初のステップです。添付問題の指示に従い、2つの数値を足し合わせるプログラムを書いてみましょう。', due_date: new Date('2025-11-05T23:59:59Z'), programmingProblemId: problemAplusB.id });
+    }
+
+    // 3. 課題を一括作成
+    await prisma.assignment.createMany({
+      data: assignmentsToCreate,
+    });
+    console.log(`✅ Created ${assignmentsToCreate.length} assignments.`);
+
+    // 4. 作成した課題をメンバーに配布 (Submissions作成)
+    console.log('🌱 Distributing assignments to members...');
+    const allAssignments = await prisma.assignment.findMany();
+    const allNonAdminMembers = await prisma.groups_User.findMany({
+      where: { admin_flg: false },
+    });
+    
+    const submissionsToCreate = [];
+    for (const assignment of allAssignments) {
+      const membersInGroup = allNonAdminMembers.filter(
+        (member) => member.group_id === assignment.groupid
+      );
+      for (const member of membersInGroup) {
+        submissionsToCreate.push({
+          assignment_id: assignment.id,
+          userid: member.user_id,
+          status: '未提出',
+          description: '',
+          codingid: 0,
+        });
+      }
+    }
+
+    if (submissionsToCreate.length > 0) {
+      await prisma.submissions.createMany({
+        data: submissionsToCreate,
+      });
+      console.log(`✅ Distributed assignments, creating ${submissionsToCreate.length} submission records.`);
+    }
+  } else {
+    console.warn('⚠️ Could not find groups to seed assignments.');
+  }
 }

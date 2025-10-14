@@ -25,55 +25,7 @@ export async function POST(request: Request) {
     return response;
 }
 
-    try {
-        // セッションからユーザー情報を取得
-        const session = await getSession();
-        const user = session.user;
-
-        // ログインしていない場合はエラーを返す
-        if (!user || !user.id) {
-            return NextResponse.json({ success: false, message: '認証されていません。' }, { status: 401 });
-        }
-        const userId = Number(user.id);
-
-        const body = await request.json();
-        const {
-            title,
-            description,
-            explanation,
-            answerOptions,
-            correctAnswer,
-            subjectId,
-            difficultyId,
-        } = body;
-
-        if (!title || !description || !Array.isArray(answerOptions) || answerOptions.length === 0 || !correctAnswer || !subjectId || !difficultyId) {
-            return NextResponse.json({ success: false, message: '必須項目が不足しています。' }, { status: 400 });
-        }
-
-        const newProblem = await prisma.selectProblem.create({
-            data: {
-                title,
-                description,
-                explanation,
-                answerOptions: answerOptions,
-                correctAnswer,
-                subjectId,
-                difficultyId,
-                createdBy: userId,
-            },
-        });
-
-        return NextResponse.json({ success: true, problem: newProblem }, { status: 201 });
-
-    } catch (error) {
-        console.error('Error creating select problem:', error);
-        if (error instanceof Error) {
-            return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-        }
-        return NextResponse.json({ success: false, message: 'An unknown error occurred' }, { status: 500 });
-    }
-}
+// (The unreachable/duplicate code block below has been removed to fix the error)
 
 // 選択問題の一覧を取得するGETハンドラ (こちらも念のため記載)
 export async function GET(request: Request) {
