@@ -1,55 +1,56 @@
 # --------------------------------------------------------------------
-# ステージ1: ビルダー (Builder) - アプリの部品を作る専門の職人
+# ステージ1: ビルダー (Builder)
 # --------------------------------------------------------------------
-# このステージはほぼ完璧なので、変更なし！
 FROM node:20-alpine AS builder
 
+# Prisma generateにはDB接続情報が必要なためARGで受け取る
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 
 WORKDIR /app
 
-COPY src/package*.json ./
-RUN npm install
-COPY src/ .
-RUN npx prisma generate
-RUN DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy" npm run build
+# 依存関係のファイルを先にコピー
+COPY src/package.json src/package-lock.json* ./
 
+# ★改善案: 本番ビルドに必要な依存関係のみインストール
+RUN npm ci --only=production
+
+# プロジェクトのソースコードを全部コピー
+COPY src/ .
+
+# Prisma Client を生成する
+RUN npx prisma generate
+
+# Next.jsアプリをビルド
+RUN npm run build
 
 # --------------------------------------------------------------------
-# ステージ2: ランナー (Runner) - 完成品を動かしつつ、道具箱も持ってる職人
+# ステージ2: ランナー (Runner)
 # --------------------------------------------------------------------
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+# 実行に必要な最小限のユーザーを作成
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# ▼▼▼【ここからが修正ポイントや！】▼▼▼
-
-# [修正点1] package.jsonを先にコピー
-# これで `npm run db:deploy` のようなスクリプトを実行できるようになる
-COPY --from=builder /app/package*.json ./
-
-# [修正点2] 本番用の依存関係をインストール
-# これにより、Prisma CLIのようなdevDependenciesは除外されつつ、
-# Prisma Clientのようなdependenciesはインストールされる
-# --omit=dev は npm v7以降で使えるで
-RUN npm install --omit=dev
-
-# Prismaスキーマと、コンパイル済みのシードスクリプト群をコピー
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/
-
-# ★ prisma/dist フォルダを丸ごとコピーする
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/dist ./prisma/dist
-
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
-# 実行に必要なNext.jsのビルド成果物をコピー
+# ビルダーから、実行に必要なファイルだけをコピー
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# ★★★★★ ここが最重要ポイント ★★★★★
+# builderステージのnode_modulesから、生成済みのPrisma Clientをコピーする
+# これでクエリエイジンが確実に含まれる
+COPY --from=builder /app/node_modules/.prisma ./.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+
+
+# ★★★★★ これも重要 ★★★★★
+# prisma/migrations を含む prisma ディレクトリをコピーする
+# これがないとマイグレーションJobが失敗する
+COPY --from=builder /app/prisma ./prisma
 
 USER nextjs
 
@@ -57,4 +58,5 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 
+# アプリケーションを起動
 CMD ["node", "server.js"]
