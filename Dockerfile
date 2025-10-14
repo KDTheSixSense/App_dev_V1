@@ -13,7 +13,7 @@ WORKDIR /app
 COPY src/package.json src/package-lock.json* ./
 
 # ★改善案: 本番ビルドに必要な依存関係のみインストール
-RUN npm ci --only=production
+RUN npm ci
 
 # プロジェクトのソースコードを全部コピー
 COPY src/ .
