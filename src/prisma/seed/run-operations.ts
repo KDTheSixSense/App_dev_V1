@@ -110,6 +110,52 @@ export async function runOperations(prisma: PrismaClient) {
       });
       console.log(`✅ Distributed assignments, creating ${submissionsToCreate.length} submission records.`);
     }
+
+    console.log('🌱 Creating dummy "submitted" records...');
+
+    // 提出済みにしたい課題とユーザーを取得
+    const pythonAssignment = await prisma.assignment.findFirst({
+      where: { title: '[Python基礎] 変数宣言の基本' },
+    });
+    const aPlusBAssignment = await prisma.assignment.findFirst({
+      where: { title: '[ウォーミングアップ] 簡単な足し算' },
+    });
+  
+    const bob = await prisma.user.findUnique({ where: { email: 'bob@example.com' } });
+    const charlie = await prisma.user.findUnique({ where: { email: 'charlie@example.com' } });
+    const diana = await prisma.user.findUnique({ where: { email: 'diana@example.com' } });
+  
+    // BobとCharlieがPythonの課題を提出したことにする
+    if (pythonAssignment && bob && charlie) {
+      await prisma.submissions.updateMany({
+        where: {
+          assignment_id: pythonAssignment.id,
+          userid: { in: [bob.id, charlie.id] },
+        },
+        data: {
+          status: '提出済み',
+          submitted_at: new Date('2025-10-20T10:00:00Z'), // ダミーの提出日時
+          description: '提出しました。確認お願いします。', // ダミーのコメント
+        },
+      });
+      console.log(`✅ Created 2 dummy submissions for "${pythonAssignment.title}".`);
+    }
+  
+    // Dianaが足し算の課題を提出したことにする
+    if (aPlusBAssignment && diana) {
+      await prisma.submissions.updateMany({
+        where: {
+          assignment_id: aPlusBAssignment.id,
+          userid: diana.id,
+        },
+        data: {
+          status: '提出済み',
+          submitted_at: new Date('2025-10-22T15:30:00Z'),
+          description: '完了しました。',
+        },
+      });
+      console.log(`✅ Created 1 dummy submission for "${aPlusBAssignment.title}".`);
+    }
   } else {
     console.warn('⚠️ Could not find groups to seed assignments.');
   }
