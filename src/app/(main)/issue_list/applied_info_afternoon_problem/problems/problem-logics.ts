@@ -1,7 +1,7 @@
 /**
  * @file DBのlogicTypeと、対応するトレース関数をマッピングします。
  */
-import type { VariablesState, TraceStep } from '@/lib/types'; // 既存の型定義を再利用
+import type { VariablesState, TraceStep } from '@/lib/types/index'; // 既存の型定義を再利用
 
 // 各ロジックの定義
 const variableSwapLogic: { traceLogic: TraceStep[] } = {

@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest) {
 
     // If a title is being selected, verify the user has unlocked it
     if (data.selectedTitleId) {
-      const userId = parseInt(session.user.id, 10);
+      const userId = session.user.id;
       const titleId = parseInt(data.selectedTitleId, 10);
 
       const unlockedTitle = await prisma.userUnlockedTitle.findUnique({
@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest) {
 
     const updatedUser = await prisma.user.update({
       where: {
-        id: parseInt(session.user.id, 10),
+        id: session.user.id,
       },
       data: {
         username: data.username,

@@ -102,6 +102,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
       userLoginData = {
         continuouslogin: 30,
         lastlogin: yesterday,
+        totallogin: 100,
       };
     } 
     await prisma.user.create({
@@ -160,6 +161,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
       data: [
         { user_id: alice.id, group_id: group2.id, admin_flg: true },
         { user_id: kobeTaro.id, group_id: group2.id, admin_flg: false },
+        { user_id: bob.id, group_id: group2.id, admin_flg: false },
       ],
     });
     console.log(`✅ Created group "${group2.groupname}" with Taro as a Member.`);
@@ -217,9 +219,72 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
             authorId: alice.id, // 管理者であるアリスが投稿
         }
     });
+    // --- ▼▼▼ ここから課題のシーディング処理を追加 ▼▼▼ ---
+    console.log('🌱 Seeding assignments with problem relations...');
+
+    // 1. 課題を割り当てるグループを名前で取得
+    const kobeZemiGroup = await prisma.groups.findFirst({
+      where: { groupname: '神戸ゼミ' },
+    });
+    const kditGroup = await prisma.groups.findFirst({
+      where: { groupname: 'KDITクラス' },
+    });
+
+    // 2. 紐付けたい問題をタイトルで取得（IDよりも安定的です）
+    const problemAplusB = await prisma.programmingProblem.findFirst({ where: { title: 'A + B' } });
+    const problemFizzBuzz = await prisma.programmingProblem.findFirst({ where: { title: 'FizzBuzz' } });
+    const problemPythonVar = await prisma.selectProblem.findFirst({ where: { title: 'Pythonの変数宣言について' } });
+
+    if (kobeZemiGroup && kditGroup) {
+      const assignmentsToCreate = [];
+
+      // --- 神戸ゼミの課題 ---
+      assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-10-30T23:59:59Z') });
+
+      // FizzBuzz問題が見つかった場合のみ、課題を作成して紐付ける
+      if (problemFizzBuzz) {
+        assignmentsToCreate.push({
+          groupid: kditGroup.id,
+          title: '[アルゴリズム] FizzBuzz問題',
+          description: '添付の問題を解き、プログラミングの基本的なループと条件分岐の理解を深めましょう。',
+          due_date: new Date('2025-11-20T23:59:59Z'),
+          programmingProblemId: problemFizzBuzz.id,
+        });
+      }
+
+      // --- KDITクラスの課題 ---
+      // Python変数宣言の問題が見つかった場合のみ、課題を作成して紐付ける
+      if (problemPythonVar) {
+        assignmentsToCreate.push({
+          groupid: kditGroup.id,
+          title: '[Python基礎] 変数宣言の基本',
+          description: '添付の選択問題を解いて、Pythonにおける正しい変数宣言の方法を理解しましょう。',
+          due_date: new Date('2025-10-31T23:59:59Z'),
+          selectProblemId: problemPythonVar.id,
+        });
+      }
+
+      // A+B問題が見つかった場合のみ、課題を作成して紐付ける
+      if (problemAplusB) {
+        assignmentsToCreate.push({
+          groupid: kditGroup.id,
+          title: '[ウォーミングアップ] 簡単な足し算',
+          description: 'プログラミングに慣れるための最初のステップです。添付問題の指示に従い、2つの数値を足し合わせるプログラムを書いてみましょう。',
+          due_date: new Date('2025-11-05T23:59:59Z'),
+          programmingProblemId: problemAplusB.id,
+        });
+      }
+
+      // 3. 準備ができた課題データをデータベースに作成
+      await prisma.assignment.createMany({
+        data: assignmentsToCreate,
+        skipDuplicates: true,
+      });
+      console.log(`✅ Created ${assignmentsToCreate.length} assignments.`);
+
+    } else {
+      console.warn('⚠️ Could not find "神戸ゼミ" or "KDITクラス". Skipping assignment creation.');
+    }
   }
-
   console.log(`🎉 User and group seeding finished.`);
-
 }
-

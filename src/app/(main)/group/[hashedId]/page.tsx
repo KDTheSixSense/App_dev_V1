@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'; // Prisma Clientのインポートパス�
 import { getSession } from '@/lib/session'; // iron-sessionのセッション取得関数
 
 // UIは描画せず、サーバーサイドでのリダイレクト処理に特化させます。
-async function GroupRedirectPage({ params }: { params: { hashedId: string } }) {
+async function GroupRedirectPage({ params }: { params: any }) {
   const session = await getSession();
   const user = session.user;
 

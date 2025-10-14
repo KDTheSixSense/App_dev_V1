@@ -19,7 +19,7 @@ interface SessionData {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }; // 型を修正
+  searchParams: any; // 型を修正
 }) {
 
   // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---

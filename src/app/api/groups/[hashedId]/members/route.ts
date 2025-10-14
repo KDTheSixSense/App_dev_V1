@@ -4,10 +4,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { hashedId: string } }
-) {
+export async function GET(request: Request, context: any) {
+  const { params } = context;
   try {
     const session = await getSession();
     if (!session.user) {

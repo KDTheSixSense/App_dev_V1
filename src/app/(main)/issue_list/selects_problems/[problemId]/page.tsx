@@ -5,9 +5,7 @@ import { notFound } from 'next/navigation';
 
 // ページに渡されるパラメータの型
 interface PageProps {
-  params: {
-    problemId: string;
-  };
+  params: any;
 }
 
 // ページ自体をサーバー側でデータを取得する非同期関数に変更

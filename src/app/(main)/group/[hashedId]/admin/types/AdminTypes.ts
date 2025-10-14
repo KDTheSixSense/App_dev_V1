@@ -78,6 +78,25 @@ export interface ProgrammingProblem {
     difficulty: number;
     type: 'programming' | 'selection';
 }
+// 提出状況の詳細を表す型
+export interface Submission {
+  id: number;
+  status: '提出済み' | '未提出' | string; // statusは文字列なので柔軟に
+  submitted_at: string | null;
+  user: {
+    id: number;
+    username: string | null;
+    icon: string | null;
+  };
+}
+
+// 課題とそれに紐づく提出状況リストを持つ型
+export interface AssignmentWithSubmissions extends Assignment {
+  Submissions: Submission[];
+}
+
+// タブの型に「課題状況一覧」を追加
+export type TabType = 'お知らせ' | '課題' | 'メンバー' | '課題状況一覧';
 
 // フォーマット状態の型
 export interface FormatState {
@@ -86,9 +105,6 @@ export interface FormatState {
     underline: boolean;
     strikethrough: boolean;
 }
-
-// タブの型
-export type TabType = 'お知らせ' | '課題' | 'メンバー';
 
 // 課題表示モードの型
 export type AssignmentViewMode = 'list' | 'expanded' | 'detail';
