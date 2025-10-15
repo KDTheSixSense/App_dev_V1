@@ -1,13 +1,14 @@
 // /app/api/groups/[hashedId]/assignments/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+
+import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client'; // Prismaの型をインポート
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
-import { Prisma } from '@prisma/client'; // Prismaの型をインポート
 
 interface SessionData {
-  user?: { id: number; email: string };
+  user?: { id: number | string; email: string; username?: string | null };
 }
 
 // 課題一覧を取得 (GET)
@@ -27,46 +28,36 @@ export async function GET(req: NextRequest, context: any) {
     try {
       const group = await prisma.groups.findUnique({
         where: { hashedId },
-        select: {
-          id: true,
-          hashedId: true,
-          groupname: true,
-          body: true,
-          invite_code: true, 
-          _count: {
-              select: { groups_User: true }
-          }
-        }
+      select: { id: true },
       });
 
     if (!group) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
-
-    const formattedGroup = {
-      id: group.id,
-      hashedId: group.hashedId,
-      name: group.groupname,
-      description: group.body,
-      memberCount: group._count.groups_User,
-      invite_code: group.invite_code, // ★ 招待コードをレスポンスに含める
-    };
       
     const assignments = await prisma.assignment.findMany({
       where: { groupid: group.id },
       orderBy: { created_at: 'desc' },
-      include: {
-        programmingProblem: {
-          select: {
-            title: true,
-          },
-        },
-        selectProblem: {
-          select: {
-            title: true,
-          },
-        },
-      },
+      // Use `select` to be explicit about the fields, preventing Prisma
+      // from trying to access columns that might not exist in the DB.
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        due_date: true,
+        created_at: true,
+        updated_at: true,
+        programmingProblemId: true,
+        selectProblemId: true,
+        // Include the related records
+        programmingProblem: true,
+        selectProblem: true,
+        // Add the group relation to the select clause
+        group: true,
+        Submissions: {
+          select: { id: true },
+        }
+      }
     });
 
     return NextResponse.json({ success: true, data: assignments });
@@ -89,93 +80,67 @@ export async function POST(req: NextRequest, context: any) {
   const userId = Number(sessionUserId);
 
   try {
-        const { hashedId } = params; // Next.js 13 App Routerの正しい書き方
-        const body = await req.json();
-        
-        // selectProblemIdも受け取るようにする
-        const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
+    const body = await req.json();
+    const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
 
-        if (!title || !description || !dueDate) {
-            return NextResponse.json({ success: false, message: '必須項目が不足しています' }, { status: 400 });
-        }
-
-        const group = await prisma.groups.findUnique({
-            where: { hashedId: hashedId },
-            select: { id: true },
-        });
-
-        if (!group) {
-            return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
-        }
-
-        // ユーザーが管理者かどうかのチェックを簡略化
-        const membership = await prisma.groups_User.findFirst({
-            where: {
-                group_id: group.id,
-                user_id: userId,
-                admin_flg: true,
-            },
-        });
-
-        if (!membership) {
-            return NextResponse.json({ success: false, message: 'この操作を行う権限がありません' }, { status: 403 });
-        }
-        
-        // Prismaに渡すデータオブジェクトを構築
-        const dataToCreate: any = {
-            title,
-            description,
-            due_date: new Date(dueDate),
-            groupid: group.id, // groupidを直接指定
-        };
-
-        // programmingProblemIdがあれば、それを設定
-        if (programmingProblemId) {
-            dataToCreate.programmingProblemId = Number(programmingProblemId);
-        // selectProblemIdがあれば、それを設定
-        } else if (selectProblemId) {
-            dataToCreate.selectProblemId = Number(selectProblemId);
-        }
-
-        const newAssignment = await prisma.assignment.create({
-            data: dataToCreate,
-        });
-
-          // 1. 課題が割り当てられるべきメンバー（管理者以外）を取得します
-          const membersToAssign = await prisma.groups_User.findMany({
-            where: {
-              group_id: group.id,
-              admin_flg: false, // 管理者ではないユーザー
-            },
-            select: {
-              user_id: true,
-            },
-          });
-        
-          // 2. メンバーが存在する場合、各メンバーの「提出状況」レコードを作成します
-          if (membersToAssign.length > 0) {
-            const submissionsData = membersToAssign.map(member => ({
-              assignment_id: newAssignment.id,
-              userid: member.user_id,
-              status: '未提出', // 初期ステータスを「未提出」に設定
-              description: '',   // 提出時に解答内容などを保存するためのフィールド。初期値は空文字。
-              codingid: 0,       // 提出されたコードIDなどを保存するフィールド。初期値は0など。
-          }));
-        
-          // 3. Submissionsテーブルに複数レコードを一括で作成します
-          await prisma.submissions.createMany({
-            data: submissionsData,
-          });
-          console.log(`✅ ${membersToAssign.length}人のメンバーに課題 (ID: ${newAssignment.id}) を配布しました。`);
-        }
-
-        return NextResponse.json({ success: true, data: newAssignment }, { status: 201 });
-
-    } catch (error) {
-        console.error('課題作成エラー:', error);
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-             return NextResponse.json({ success: false, message: `データベースエラー: ${error.message}` }, { status: 500 });
-        }
-        return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
+    if (!title || !dueDate) {
+      return NextResponse.json({ success: false, message: 'タイトルと期日は必須です。' }, { status: 400 });
     }
+    if (!programmingProblemId && !selectProblemId) {
+      return NextResponse.json({ success: false, message: '課題となる問題が指定されていません。' }, { status: 400 });
+    }
+
+    const hashedId = params.hashedId;
+    if (typeof hashedId !== 'string') {
+      return NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });
+    }
+
+    const group = await prisma.groups.findUnique({ where: { hashedId: hashedId } });
+    if (!group) {
+      return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
+    }
+
+    // ユーザーが管理者かどうかのチェック
+    const membership = await prisma.groups_User.findFirst({
+      where: {
+        group_id: group.id,
+        user_id: userId,
+        admin_flg: true,
+      },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ success: false, message: 'この操作を行う権限がありません' }, { status: 403 });
+    }
+
+    const newAssignment = await prisma.$transaction(async (tx) => {
+      const createdAssignment = await tx.assignment.create({
+        data: {
+          title,
+          description,
+          due_date: new Date(dueDate), // due_dateをDateオブジェクトに変換
+          group: { connect: { id: group.id } },
+          // IDが存在する場合のみ、それぞれの問題と接続
+          ...(programmingProblemId && { programmingProblem: { connect: { id: Number(programmingProblemId) } } }),
+          ...(selectProblemId && { selectProblem: { connect: { id: Number(selectProblemId) } } }),
+        },
+      });
+
+      return createdAssignment;
+    });
+
+    return NextResponse.json({ success: true, data: newAssignment }, { status: 201 });
+  } catch (error) {
+    console.error('課題作成APIエラー:', error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+      // 外部キー制約違反
+      if (error.meta?.field_name === 'Assignment_programmingProblemId_fkey') {
+        return NextResponse.json({ success: false, message: '指定されたプログラミング問題が見つかりません。' }, { status: 404 });
+      }
+      if (error.meta?.field_name === 'Assignment_selectProblemId_fkey') {
+        return NextResponse.json({ success: false, message: '指定された選択問題が見つかりません。' }, { status: 404 });
+      }
+    }
+    return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
+  }
 }

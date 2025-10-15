@@ -110,8 +110,8 @@ const GroupDetailPage: React.FC = () => {
     };
 
     // 課題作成 - タイトル、説明、期限、問題IDを指定して課題を作成
-    const handleAssignmentCreate = async (title: string, description: string, dueDate: string, problem: ProgrammingProblem | null) => {
-        await createAssignment(title, description, dueDate, problem);
+    const handleAssignmentCreate = async (assignmentData: { title: string, description: string, dueDate: string, problem: ProgrammingProblem | null }) => {
+        await createAssignment(assignmentData.title, assignmentData.description, assignmentData.dueDate, assignmentData.problem);
         handleAssignmentEditorCollapse(); // 作成後にエディターを閉じる
         alert('課題を作成しました。');
     };

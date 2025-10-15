@@ -8,7 +8,7 @@ interface AssignmentEditorProps {
     isExpanded: boolean;
     onExpand: () => void;
     onCollapse: () => void;
-    onCreateAssignment: (title: string, description: string, dueDate: string, problem: ProgrammingProblem | null) => Promise<void>;
+    onCreateAssignment: (assignmentData: any) => Promise<void>;
     onNavigateToCreateProblem: () => void;
     onNavigateToCreateSelectionProblem: () => void;
     onOpenProblemSelectModal: () => void;
@@ -67,10 +67,23 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         }
 
         try {
-            await onCreateAssignment(title, description, dueDate, problemPreview);
+            // APIに渡すデータオブジェクトを構築
+            const assignmentData: any = {
+                title,
+                description,
+                dueDate,
+            };
+
+            if (problemPreview) {
+                // 既存の問題を添付する場合
+                assignmentData.problem = problemPreview;
+            }
+
+            await onCreateAssignment(assignmentData);
             handleReset();
         } catch (error) {
             console.error('課題作成エラー:', error);
+            alert(`課題の作成に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
         }
     };
 

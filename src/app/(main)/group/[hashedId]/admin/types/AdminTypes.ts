@@ -84,7 +84,7 @@ export interface ProgrammingProblem {
     id: number;
     title: string;
     difficulty: number;
-    type: 'programming' | 'selection';
+    type: 'programming' | 'select';
 }
 // 提出状況の詳細を表す型
 export interface Submission {

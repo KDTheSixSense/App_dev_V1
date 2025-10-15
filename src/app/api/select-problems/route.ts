@@ -1,29 +1,58 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getSession } from '@/lib/session';
+import { withApiSession } from '@/lib/session-api';
 
-// Redirect to the correct API endpoint
-export async function POST(request: Request) {
-    console.warn('DEPRECATED: /api/select-problems is deprecated. Use /api/selects_problems instead.');
-    
-    // Redirect to the correct endpoint
-    const body = await request.text();
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/selects_problems`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            // Forward any authentication headers
-            ...Object.fromEntries(
-                Array.from(request.headers.entries()).filter(([key]) => 
-                    key.toLowerCase().includes('auth') || key.toLowerCase().includes('cookie')
-                )
-            )
-        },
-        body: body
-    });
-    
-    return response;
-}
+const prisma = new PrismaClient();
+
+export const POST = withApiSession(async (req, session) => {
+    try {
+        // セッションからユーザー情報を取得
+        const user = session.user;
+
+        // ログインしていない場合はエラーを返す
+        if (!user || !user.id) {
+            return NextResponse.json({ success: false, message: '認証されていません。' }, { status: 401 });
+        }
+        const userId = Number(user.id);
+
+        const body = await req.json();
+        const {
+            title,
+            description,
+            explanation,
+            answerOptions,
+            correctAnswer,
+            subjectId,
+            difficultyId,
+        } = body;
+
+        if (!title || !description || !Array.isArray(answerOptions) || answerOptions.length === 0 || !correctAnswer || !subjectId || !difficultyId) {
+            return NextResponse.json({ success: false, message: '必須項目が不足しています。' }, { status: 400 });
+        }
+
+        const newProblem = await prisma.selectProblem.create({
+            data: {
+                title,
+                description,
+                explanation,
+                answerOptions: answerOptions,
+                correctAnswer,
+                subjectId,
+                difficultyId,
+                createdBy: userId,
+            },
+        });
+
+        return NextResponse.json({ success: true, problem: newProblem }, { status: 201 });
+
+    } catch (error) {
+        console.error('Error creating select problem:', error);
+        if (error instanceof Error) {
+            return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+        }
+        return NextResponse.json({ success: false, message: 'An unknown error occurred' }, { status: 500 });
+    }
+});
 
 // 選択問題の一覧を取得するGETハンドラ (こちらも念のため記載)
 export async function GET(request: Request) {

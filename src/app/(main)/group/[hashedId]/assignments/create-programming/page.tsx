@@ -463,13 +463,13 @@ export default function CreateProgrammingQuestionPage() {
         alert('コーディング問題が正常に投稿されました！');
       }
       
-      // 問題投稿成功後、グループの課題ページに遷移し、新しい課題作成エディターを開く
+      // ★ 修正: 問題投稿成功後、グループの課題ページに遷移し、新しい課題作成エディターを開く
       if (hashedId && problemResult) {
         // 作成された問題の情報をURLパラメータとして渡す
         const problemInfo = encodeURIComponent(JSON.stringify({
           id: problemResult.id,
           title: problemResult.title || formData.title,
-          type: selectedCategory === 'itpassport' ? 'selection' : 'programming'
+          type: selectedCategory === 'itpassport' ? 'select' : 'programming'
         }));
         router.push(`/group/${hashedId}/admin?tab=課題&expand=true&problem=${problemInfo}`);
       } else {
@@ -2215,4 +2215,3 @@ export default function CreateProgrammingQuestionPage() {
     </div>
   )
 }
-
