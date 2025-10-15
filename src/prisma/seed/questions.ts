@@ -9,10 +9,12 @@ export async function seedProblems(prisma: PrismaClient) {
   // 既存の問題関連データをクリア
   console.log('🗑️ Clearing old problem data...');
   // 関連の強い順に削除していく
+  await prisma.submissions.deleteMany({});
   await prisma.sampleCase.deleteMany({});
   await prisma.testCase.deleteMany({});
   await prisma.problemFile.deleteMany({});
   await prisma.assignment.deleteMany({}); // AssignmentがProgrammingProblemを参照しているため先に削除
+  await prisma.selectProblem.deleteMany({});
   await prisma.programmingProblem.deleteMany({});
 
   await prisma.userAnswer.deleteMany({});
