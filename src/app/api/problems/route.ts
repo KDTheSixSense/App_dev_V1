@@ -108,7 +108,11 @@ export async function POST(request: NextRequest) {
     const dataToCreate: Prisma.ProgrammingProblemCreateInput = {
       title: body.title,
       problemType: body.problemType,
-      difficulty: difficultyNum,
+      difficulty: {
+        connect: {
+          id: difficultyNum,
+        },
+      },
       timeLimit: timeLimitNum,
       category: body.category,
       topic: body.topic,
