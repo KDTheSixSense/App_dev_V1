@@ -208,7 +208,7 @@ const GroupDetailPage: React.FC = () => {
 
                     {/* タブナビゲーション - お知らせ、課題、メンバーの切り替え */}
                     <div style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#fff', padding: '0 24px' }}>
-                        {(['お知らせ', '課題', 'メンバー', '課題状況一覧'] as const).map(tab => (
+                        {(['お知らせ', '課題', 'メンバー', '提出状況一覧'] as const).map(tab => (
                             <button key={tab} onClick={() => setActiveTab(tab)} style={{
                                 padding: '16px 24px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer',
                                 fontSize: '14px', fontWeight: '500', marginRight: '16px',
@@ -302,7 +302,7 @@ const GroupDetailPage: React.FC = () => {
                             />
                         )}
 
-                        {activeTab === '課題状況一覧' && (
+                        {activeTab === '提出状況一覧' && (
                           <AssignmentStatusList
                             assignments={assignmentsWithSubmissions}
                             loading={submissionsLoading}
