@@ -39,7 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.seedProblems = seedProblems;
 const path_1 = __importDefault(require("path"));
 const XLSX = __importStar(require("xlsx"));
-const problems_1 = require("../app/(main)/issue_list/basic_info_b_problem/data/problems");
+const problems_1 = require("../../app/(main)/issue_list/basic_info_b_problem/data/problems");
 async function seedProblems(prisma) {
     console.log('🌱 Seeding problems...');
     // 既存の問題関連データをクリア
@@ -58,7 +58,7 @@ async function seedProblems(prisma) {
     // 1. localProblems からのシーディング
     console.log('🌱 Seeding questions from local data...');
     for (const p of problems_1.problems) {
-        const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, genreid: 1, difficultyId: 1, answerid: 1, term: "不明" };
+        const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, difficultyId: 1, term: "不明" };
         await prisma.questions.create({ data: questionDataForDB });
     }
     console.log(`✅ Created ${problems_1.problems.length} questions from local data.`);
@@ -68,12 +68,15 @@ async function seedProblems(prisma) {
     // 3. スプレッドシートからのプログラミング問題のシーディング
     console.log('🌱 Seeding programming problems from spreadsheet data...');
     await seedSampleProgrammingProblems(prisma);
+    // 4. 選択問題のシーディング
+    console.log('🌱 Seeding selection problems...');
+    await seedSampleSelectionProblems(prisma);
 }
 async function seedProblemsFromExcel(prisma) {
     const excelFileName = 'PBL2 科目B問題.xlsx';
     const filePath = path_1.default.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'basic_info_b_problem', 'data', excelFileName);
     const lastLocalQuestion = await prisma.questions.findFirst({ orderBy: { id: 'desc' } });
-    let nextId = (lastLocalQuestion?.id || 0) + 1;
+    let nextId = ((lastLocalQuestion === null || lastLocalQuestion === void 0 ? void 0 : lastLocalQuestion.id) || 0) + 1;
     console.log(`   Starting Excel questions from ID: ${nextId}`);
     try {
         const workbook = XLSX.readFile(filePath);
@@ -124,7 +127,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'A + B',
             problemType: 'コーディング問題',
-            difficulty: 1,
+            difficultyId: 1,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '標準入出力',
@@ -145,7 +148,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '複数行の入力',
             problemType: 'コーディング問題',
-            difficulty: 1,
+            difficultyId: 1,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '標準入出力',
@@ -166,7 +169,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'N個の整数の和',
             problemType: 'コーディング問題',
-            difficulty: 2,
+            difficultyId: 2,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: 'ループ',
@@ -187,7 +190,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '奇数か偶数か',
             problemType: 'コーディング問題',
-            difficulty: 2,
+            difficultyId: 2,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '条件分岐',
@@ -209,7 +212,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '文字列の連結',
             problemType: 'コーディング問題',
-            difficulty: 2,
+            difficultyId: 2,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '文字列操作',
@@ -230,7 +233,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '最大値の発見',
             problemType: 'コーディング問題',
-            difficulty: 3,
+            difficultyId: 3,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '配列',
@@ -251,7 +254,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'FizzBuzz',
             problemType: 'コーディング問題',
-            difficulty: 3,
+            difficultyId: 3,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: 'ループと条件分岐',
@@ -271,7 +274,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '配列の逆順',
             problemType: 'コーディング問題',
-            difficulty: 3,
+            difficultyId: 3,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '配列',
@@ -291,7 +294,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '文字のカウント',
             problemType: 'コーディング問題',
-            difficulty: 4,
+            difficultyId: 4,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '文字列操作',
@@ -312,7 +315,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '階乗の計算',
             problemType: 'コーディング問題',
-            difficulty: 4,
+            difficultyId: 4,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '再帰',
@@ -333,7 +336,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '素数判定',
             problemType: 'コーディング問題',
-            difficulty: 5,
+            difficultyId: 5,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '数学',
@@ -355,7 +358,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '二分探索',
             problemType: 'コーディング問題',
-            difficulty: 6,
+            difficultyId: 6,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '探索',
@@ -376,7 +379,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'ユークリッドの互除法',
             problemType: 'コーディング問題',
-            difficulty: 6,
+            difficultyId: 6,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '数学',
@@ -397,7 +400,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'バブルソート',
             problemType: 'コーディング問題',
-            difficulty: 5,
+            difficultyId: 5,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: 'ソート',
@@ -417,7 +420,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '累積和',
             problemType: 'コーディング問題',
-            difficulty: 6,
+            difficultyId: 6,
             timeLimit: 2,
             category: 'データ構造',
             topic: '累積和',
@@ -437,7 +440,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '深さ優先探索 (DFS)',
             problemType: 'コーディング問題',
-            difficulty: 7,
+            difficultyId: 7,
             timeLimit: 3,
             category: 'グラフ理論',
             topic: '探索',
@@ -457,7 +460,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '幅優先探索 (BFS)',
             problemType: 'コーディング問題',
-            difficulty: 7,
+            difficultyId: 7,
             timeLimit: 3,
             category: 'グラフ理論',
             topic: '探索',
@@ -477,7 +480,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '動的計画法 (DP): Fibonacci',
             problemType: 'コーディング問題',
-            difficulty: 6,
+            difficultyId: 6,
             timeLimit: 2,
             category: 'アルゴリズム',
             topic: '動的計画法',
@@ -497,7 +500,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'ナップサック問題',
             problemType: 'コーディング問題',
-            difficulty: 8,
+            difficultyId: 8,
             timeLimit: 3,
             category: 'アルゴリズム',
             topic: '動的計画法',
@@ -517,7 +520,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'ダイクストラ法',
             problemType: 'コーディング問題',
-            difficulty: 8,
+            difficultyId: 8,
             timeLimit: 3,
             category: 'グラフ理論',
             topic: '最短経路',
@@ -537,7 +540,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'カレンダーの計算',
             problemType: 'コーディング問題',
-            difficulty: 4,
+            difficultyId: 4,
             timeLimit: 2,
             category: 'シミュレーション',
             topic: '日付計算',
@@ -558,7 +561,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '括弧の整合性',
             problemType: 'コーディング問題',
-            difficulty: 6,
+            difficultyId: 6,
             timeLimit: 2,
             category: 'データ構造',
             topic: 'スタック',
@@ -580,7 +583,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '座標圧縮',
             problemType: 'コーディング問題',
-            difficulty: 7,
+            difficultyId: 7,
             timeLimit: 3,
             category: 'アルゴリズム',
             topic: '座標圧縮',
@@ -600,7 +603,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '平均点の計算',
             problemType: 'コーディング問題',
-            difficulty: 2,
+            difficultyId: 2,
             timeLimit: 2,
             category: '数学',
             topic: '算術演算',
@@ -621,7 +624,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'ROT13',
             problemType: 'コーディング問題',
-            difficulty: 5,
+            difficultyId: 5,
             timeLimit: 2,
             category: '文字列',
             topic: '暗号',
@@ -642,7 +645,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'カードゲームシミュレーション',
             problemType: 'コーディング問題',
-            difficulty: 5,
+            difficultyId: 5,
             timeLimit: 2,
             category: 'シミュレーション',
             topic: 'シミュレーション',
@@ -662,7 +665,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '約数の列挙',
             problemType: 'コーディング問題',
-            difficulty: 4,
+            difficultyId: 4,
             timeLimit: 2,
             category: '数学',
             topic: '約数',
@@ -682,7 +685,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '回文判定',
             problemType: 'コーディング問題',
-            difficulty: 4,
+            difficultyId: 4,
             timeLimit: 2,
             category: '文字列',
             topic: '回文',
@@ -703,7 +706,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: '行列の積',
             problemType: 'コーディング問題',
-            difficulty: 7,
+            difficultyId: 7,
             timeLimit: 3,
             category: '線形代数',
             topic: '行列',
@@ -723,7 +726,7 @@ async function seedSampleProgrammingProblems(prisma) {
         {
             title: 'ビット演算: XOR',
             problemType: 'コーディング問題',
-            difficulty: 5,
+            difficultyId: 5,
             timeLimit: 2,
             category: 'ビット演算',
             topic: 'XOR',
@@ -745,4 +748,103 @@ async function seedSampleProgrammingProblems(prisma) {
         await prisma.programmingProblem.create({ data: p });
     }
     console.log(`✅ Created ${spreadsheetProblems.length} programming problems from spreadsheet.`);
+}
+async function seedSampleSelectionProblems(prisma) {
+    // Sample selection problems (4択問題)
+    const selectionProblems = [
+        {
+            title: 'Pythonの変数宣言について',
+            description: 'Pythonで変数を宣言する際の正しい記述はどれですか？',
+            explanation: 'Pythonでは変数の型を明示的に宣言する必要がありません。値を代入するだけで変数が作成されます。',
+            answerOptions: ['int x = 5', 'var x = 5', 'x = 5', 'declare x = 5'],
+            correctAnswer: 'x = 5',
+            difficultyId: 1,
+            subjectId: 4, // プログラミング選択問題
+        },
+        {
+            title: 'JavaScriptの関数定義',
+            description: 'JavaScriptで関数を定義する正しい方法はどれですか？',
+            explanation: 'JavaScriptでは function キーワードを使って関数を定義します。',
+            answerOptions: ['def myFunction():', 'function myFunction() {}', 'void myFunction() {}', 'func myFunction() {}'],
+            correctAnswer: 'function myFunction() {}',
+            difficultyId: 2,
+            subjectId: 4,
+        },
+        {
+            title: 'HTMLの基本構造',
+            description: 'HTMLドキュメントの基本的な構造で必須の要素はどれですか？',
+            explanation: 'HTMLドキュメントには<!DOCTYPE html>、<html>、<head>、<body>要素が必要です。',
+            answerOptions: ['<div>', '<span>', '<html>', '<section>'],
+            correctAnswer: '<html>',
+            difficultyId: 1,
+            subjectId: 4,
+        },
+        {
+            title: 'CSSのセレクタ',
+            description: 'CSSでクラス名を指定するセレクタはどれですか？',
+            explanation: 'CSSでクラスを指定する際は、クラス名の前にドット(.)を付けます。',
+            answerOptions: ['#className', '.className', '@className', '*className'],
+            correctAnswer: '.className',
+            difficultyId: 2,
+            subjectId: 4,
+        },
+        {
+            title: 'データベースの正規化',
+            description: '第1正規形の条件として正しいものはどれですか？',
+            explanation: '第1正規形では、各属性が原子値（分割できない値）を持つ必要があります。',
+            answerOptions: ['重複する行がない', '部分関数従属がない', '推移関数従属がない', '各属性が原子値を持つ'],
+            correctAnswer: '各属性が原子値を持つ',
+            difficultyId: 3,
+            subjectId: 4,
+        },
+        {
+            title: 'アルゴリズムの計算量',
+            description: 'バブルソートの最悪時間計算量はどれですか？',
+            explanation: 'バブルソートは最悪の場合、すべての要素を比較・交換するため O(n²) の時間計算量になります。',
+            answerOptions: ['O(n)', 'O(n log n)', 'O(n²)', 'O(2^n)'],
+            correctAnswer: 'O(n²)',
+            difficultyId: 4,
+            subjectId: 4,
+        },
+        {
+            title: 'オブジェクト指向プログラミング',
+            description: 'カプセル化の主な目的はどれですか？',
+            explanation: 'カプセル化は、データと処理を一つにまとめ、外部からの直接アクセスを制限することで、データの整合性を保つことが主な目的です。',
+            answerOptions: ['処理速度の向上', 'メモリ使用量の削減', 'データの隠蔽と保護', 'コードの短縮'],
+            correctAnswer: 'データの隠蔽と保護',
+            difficultyId: 3,
+            subjectId: 4,
+        },
+        {
+            title: 'ネットワークプロトコル',
+            description: 'HTTPSで使用される暗号化プロトコルはどれですか？',
+            explanation: 'HTTPSはHTTPにTLS/SSL暗号化を追加したプロトコルです。',
+            answerOptions: ['FTP', 'SSH', 'TLS/SSL', 'SMTP'],
+            correctAnswer: 'TLS/SSL',
+            difficultyId: 4,
+            subjectId: 4,
+        },
+        {
+            title: 'データ構造：スタック',
+            description: 'スタックのデータ取得方式として正しいものはどれですか？',
+            explanation: 'スタックはLIFO（Last In, First Out）方式で、最後に入れたデータを最初に取り出します。',
+            answerOptions: ['FIFO', 'LIFO', 'Random Access', 'Sequential Access'],
+            correctAnswer: 'LIFO',
+            difficultyId: 3,
+            subjectId: 4,
+        },
+        {
+            title: 'SQLの基本操作',
+            description: 'データベースからデータを取得するSQLコマンドはどれですか？',
+            explanation: 'SELECT文はデータベースからデータを検索・取得するために使用されます。',
+            answerOptions: ['INSERT', 'UPDATE', 'DELETE', 'SELECT'],
+            correctAnswer: 'SELECT',
+            difficultyId: 2,
+            subjectId: 4,
+        }
+    ];
+    for (const problem of selectionProblems) {
+        await prisma.selectProblem.create({ data: problem });
+    }
+    console.log(`✅ Created ${selectionProblems.length} selection problems.`);
 }

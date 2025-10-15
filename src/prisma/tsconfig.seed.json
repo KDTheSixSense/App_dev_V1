@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": ".", // ★ ソースのルートディレクトリを指定
+    "rootDir": ".",
     "module": "CommonJS",
     "target": "es2017",
     "strict": true,
@@ -9,7 +9,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  // ★ prismaディレクトリ以下のすべての.tsファイルを対象にする
   "include": [
     "**/*.ts"
   ]

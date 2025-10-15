@@ -20,10 +20,7 @@ CREATE TABLE "User" (
     "continuouslogin" INTEGER,
     "totallogin" INTEGER DEFAULT 0,
     "lastlogin" TIMESTAMP(3),
-<<<<<<<< HEAD:src/prisma/migrations/20250910011104_init/migration.sql
-========
     "aiAdviceCredits" INTEGER NOT NULL DEFAULT 5,
->>>>>>>> main:src/prisma/migrations/20250916010934_/migration.sql
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -116,9 +113,7 @@ CREATE TABLE "Questions" (
     "language_id" INTEGER NOT NULL,
     "genre_id" INTEGER NOT NULL,
     "title" TEXT NOT NULL,
-    "genreid" INTEGER NOT NULL,
     "question" TEXT NOT NULL,
-    "answerid" INTEGER NOT NULL,
     "term" TEXT NOT NULL,
     "year" TIMESTAMP(3),
     "explain" TEXT,
@@ -150,7 +145,7 @@ CREATE TABLE "ProgrammingProblem" (
     "id" SERIAL NOT NULL,
     "title" TEXT NOT NULL,
     "problemType" TEXT NOT NULL DEFAULT 'コーディング問題',
-    "difficulty" INTEGER NOT NULL DEFAULT 4,
+    "difficultyId" INTEGER NOT NULL DEFAULT 4,
     "timeLimit" INTEGER NOT NULL DEFAULT 10,
     "category" TEXT NOT NULL DEFAULT 'プログラミング基礎',
     "topic" TEXT NOT NULL DEFAULT '標準入力',
@@ -341,10 +336,7 @@ CREATE TABLE "Assignment" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "programmingProblemId" INTEGER,
-<<<<<<<< HEAD:src/prisma/migrations/20250910011104_init/migration.sql
-========
     "selectProblemId" INTEGER,
->>>>>>>> main:src/prisma/migrations/20250916010934_/migration.sql
 
     CONSTRAINT "Assignment_pkey" PRIMARY KEY ("id")
 );
@@ -441,12 +433,9 @@ CREATE UNIQUE INDEX "Groups_invite_code_key" ON "Groups"("invite_code");
 CREATE UNIQUE INDEX "Assignment_programmingProblemId_key" ON "Assignment"("programmingProblemId");
 
 -- CreateIndex
-<<<<<<<< HEAD:src/prisma/migrations/20250910011104_init/migration.sql
-========
 CREATE UNIQUE INDEX "Assignment_selectProblemId_key" ON "Assignment"("selectProblemId");
 
 -- CreateIndex
->>>>>>>> main:src/prisma/migrations/20250916010934_/migration.sql
 CREATE UNIQUE INDEX "Status_Kohaku_user_id_key" ON "Status_Kohaku"("user_id");
 
 -- CreateIndex
@@ -510,6 +499,9 @@ ALTER TABLE "SelectProblem" ADD CONSTRAINT "SelectProblem_createdBy_fkey" FOREIG
 ALTER TABLE "ProgrammingProblem" ADD CONSTRAINT "ProgrammingProblem_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ProgrammingProblem" ADD CONSTRAINT "ProgrammingProblem_difficultyId_fkey" FOREIGN KEY ("difficultyId") REFERENCES "Difficulty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "SampleCase" ADD CONSTRAINT "SampleCase_problemId_fkey" FOREIGN KEY ("problemId") REFERENCES "ProgrammingProblem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -540,11 +532,13 @@ ALTER TABLE "Groups_User" ADD CONSTRAINT "Groups_User_group_id_fkey" FOREIGN KEY
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_programmingProblemId_fkey" FOREIGN KEY ("programmingProblemId") REFERENCES "ProgrammingProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_selectProblemId_fkey" FOREIGN KEY ("selectProblemId") REFERENCES "SelectProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_groupid_fkey" FOREIGN KEY ("groupid") REFERENCES "Groups"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Submissions" ADD CONSTRAINT "Submissions_userid_fkey" FOREIGN KEY ("userid") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Submissions" ADD CONSTRAINT "Submissions_assignment_id_fkey" FOREIGN KEY ("assignment_id") REFERENCES "Assignment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

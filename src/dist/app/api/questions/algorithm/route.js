@@ -1,0 +1,47 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.POST = POST;
+const server_1 = require("next/server");
+const client_1 = require("@prisma/client");
+const session_1 = require("@/lib/session"); // iron-sessionのセッション取得関数
+const prisma = new client_1.PrismaClient();
+async function POST(req) {
+    try {
+        // 1. セッションを確認し、ログイン中のユーザー情報を取得
+        const session = await (0, session_1.getSession)();
+        if (!session.user) {
+            return server_1.NextResponse.json({ message: '認証が必要です' }, { status: 401 });
+        }
+        // 2. リクエストボディから問題データを取得
+        const body = await req.json();
+        const { title, description, explanation, answerOptions, correctAnswer, language_id, subjectId, difficultyId, } = body;
+        // 3. バリデーション
+        if (!title || !description || !answerOptions || !correctAnswer) {
+            return server_1.NextResponse.json({ message: '必須フィールドが不足しています' }, { status: 400 });
+        }
+        // 4. Prismaを使ってデータベースに新しい問題を作成
+        const newQuestion = await prisma.questions_Algorithm.create({
+            data: {
+                title,
+                description,
+                explanation,
+                answerOptions, // JSON文字列として受け取る
+                correctAnswer,
+                language_id,
+                subjectId,
+                difficultyId,
+                // デフォルト値や固定値が必要なカラム
+                initialVariable: {},
+                logictype: 'MULTIPLE_CHOICE',
+                options: {},
+            },
+        });
+        // 5. 成功レスポンスを返す
+        return server_1.NextResponse.json(newQuestion, { status: 201 });
+    }
+    catch (error) {
+        console.error('Error creating question:', error);
+        // エラーがPrisma関連か、それ以外かでメッセージを分けることも可能
+        return server_1.NextResponse.json({ message: '問題の作成中にエラーが発生しました' }, { status: 500 });
+    }
+}

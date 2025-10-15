@@ -137,9 +137,7 @@ model Questions {
   language_id  Int
   genre_id     Int
   title        String
-  genreid      Int
   question     String
-  answerid     Int
   term         String
   year         DateTime?
   explain      String?
@@ -187,7 +185,7 @@ model ProgrammingProblem {
   // --- 基本情報 ---
   title             String                                 // タイトル
   problemType       String   @default("コーディング問題")    // 問題タイプ
-  difficulty        Int      @default(4)                   // 難易度 (1-10)
+  difficultyId      Int      @default(4)                   // 難易度 (1-10)
   timeLimit         Int      @default(10)                  // 制限時間 (分)
   category          String   @default("プログラミング基礎")   // カテゴリ
   topic             String   @default("標準入力")           // トピック
@@ -212,6 +210,7 @@ model ProgrammingProblem {
   updatedAt         DateTime @updatedAt                    // 更新日時
   
   // --- リレーション ---
+  difficulty        Difficulty @relation(fields: [difficultyId], references: [id])
   sampleCases       SampleCase[]                           // サンプルケース
   testCases         TestCase[]                             // テストケース
   files             ProblemFile[]                          // 添付ファイル
@@ -358,6 +357,7 @@ model Difficulty {
   Questions_Algorithm Questions_Algorithm[]
   Questions           Questions[]
   SelectProblem       SelectProblem[]
+  ProgrammingProblem  ProgrammingProblem[]
 }
 
 model Groups {
