@@ -83,6 +83,9 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
 
     // 課題詳細表示の場合
     if (viewMode === 'detail' && selectedAssignment) {
+        // 課題に紐づく問題のタイトルを取得
+        const problemTitle = selectedAssignment.programmingProblem?.title || selectedAssignment.selectProblem?.title;
+
         return (
             <div style={{ display: 'flex', gap: '24px' }}>
                 {/* メインコンテンツ */}

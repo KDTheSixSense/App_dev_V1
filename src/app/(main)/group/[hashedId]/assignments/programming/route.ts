@@ -21,8 +21,8 @@ export async function POST(req: NextRequest, { params }: { params: { hashedId: s
 
     try {
         const body = await req.json();
-        // selectProblemId も受け取る
-        const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
+        // フロントエンドから送られてくるデータ構造に合わせて修正
+        const { assignmentTitle, assignmentDescription, dueDate, problemData } = body;
 
     const group = await prisma.groups.findUnique({ where: { hashedId: params.hashedId } });
     if (!group) {
@@ -63,8 +63,8 @@ export async function POST(req: NextRequest, { params }: { params: { hashedId: s
         title: assignmentTitle,
         description: assignmentDescription,
         due_date: new Date(dueDate),
-        groupid: group.id,
-        programmingProblemId: newProblem.id, // 作成した問題のIDをセット
+        group: { connect: { id: group.id } },
+        programmingProblem: { connect: { id: newProblem.id } }, // 作成した問題に接続
       },
     });
 

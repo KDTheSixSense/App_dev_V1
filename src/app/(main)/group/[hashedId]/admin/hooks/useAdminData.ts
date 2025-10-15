@@ -28,6 +28,10 @@ export const useAdminData = (hashedId: string) => {
     
     // 課題関連のstate
     const [assignments, setAssignments] = useState<Assignment[]>([]);
+    // 提出状況関連のstate
+    const [assignmentsWithSubmissions, setAssignmentsWithSubmissions] = useState<Assignment[]>([]);
+    const [submissionsLoading, setSubmissionsLoading] = useState(false);
+
     
     // プログラミング問題関連のstate
     const [availableProblems, setAvailableProblems] = useState<ProgrammingProblem[]>([]);
@@ -118,6 +122,23 @@ export const useAdminData = (hashedId: string) => {
             }
         } catch (error) {
             console.error('課題の取得に失敗しました:', error);
+        }
+    };
+
+    // 提出状況付きの課題一覧を取得
+    const fetchAssignmentsWithSubmissions = async () => {
+        setSubmissionsLoading(true);
+        try {
+            // このAPIエンドポイントは、課題とその提出状況を返すことを想定しています
+            const response = await fetch(`/api/groups/${hashedId}/assignments/submissions`);
+            if (response.ok) {
+                const data = await response.json();
+                setAssignmentsWithSubmissions(data.data);
+            }
+        } catch (error) {
+            console.error('提出状況一覧の取得に失敗しました:', error);
+        } finally {
+            setSubmissionsLoading(false);
         }
     };
 
@@ -356,6 +377,7 @@ export const useAdminData = (hashedId: string) => {
             fetchGroupMembers();
             fetchPosts();
             fetchAssignments();
+            fetchAssignmentsWithSubmissions();
         }
     }, [hashedId]);
 
@@ -370,6 +392,8 @@ export const useAdminData = (hashedId: string) => {
         membersError,
         posts,
         assignments,
+        assignmentsWithSubmissions, // 追加
+        submissionsLoading,         // 追加
         availableProblems,
         isLoadingProblems,
         availableSelectionProblems,
@@ -389,6 +413,7 @@ export const useAdminData = (hashedId: string) => {
         copyInviteCode,
         fetchAvailableProblems,
         fetchAvailableSelectionProblems,
+        fetchAssignmentsWithSubmissions, // 追加
 
         // Refresh functions
         refreshData: () => {
@@ -396,6 +421,7 @@ export const useAdminData = (hashedId: string) => {
             fetchGroupMembers();
             fetchPosts();
             fetchAssignments();
+            fetchAssignmentsWithSubmissions();
         }
     };
 };
