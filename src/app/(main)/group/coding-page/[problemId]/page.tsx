@@ -1,7 +1,7 @@
 // /workspaces/my-next-app/src/app/(main)/group/coding-page/[problemId]/page.tsx
 
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, useSearchParams } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import ProblemSolverClient from './ProblemSolverClient';
 import type { Problem as SerializableProblem } from '@/lib/types';
@@ -10,9 +10,16 @@ interface PageProps {
   params: {
     problemId: string;
   };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export default async function ProblemSolverPage({ params }: PageProps) {
+export default async function ProblemSolverPage({ params, searchParams }: PageProps) {
+  const assignmentId = searchParams?.assignmentId as string | undefined;
+  const hashedId = searchParams?.hashedId as string | undefined;
+  const assignmentInfo = {
+    assignmentId: assignmentId || null,
+    hashedId: hashedId || null,
+  };
   const problemId = parseInt(params.problemId, 10);
 
   if (isNaN(problemId)) {
@@ -33,5 +40,5 @@ export default async function ProblemSolverPage({ params }: PageProps) {
   // PrismaのDateオブジェクトなどをシリアライズ可能な形式に変換
   const plainProblem = JSON.parse(JSON.stringify(problem));
 
-  return <ProblemSolverClient problem={plainProblem} />;
+  return <ProblemSolverClient problem={plainProblem} assignmentInfo={assignmentInfo} />;
 }

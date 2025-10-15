@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
@@ -13,7 +13,17 @@ type ActiveTab = 'input' | 'output';
 
 interface ProblemSolverClientProps {
     problem: SerializableProblem;
+    assignmentInfo: { assignmentId: string | null; hashedId: string | null; };
 }
+
+// テキストリソースを定義
+const textResources = {
+    ja: {
+        problemStatement: {
+            nextProblemButton: '次の問題へ'
+        }
+    }
+};
 
 const CustomAlertModal: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
@@ -127,8 +137,10 @@ const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: 
     );
 };
 
-const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem }) => {
+const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assignmentInfo }) => {
     const router = useRouter();
+    const searchParams = useSearchParams(); // クエリパラメータを取得
+    const t = textResources['ja'].problemStatement;
 
     // problemはpropsから直接受け取るので、useStateは不要
     const [isAnswered, setIsAnswered] = useState(false);
@@ -141,6 +153,8 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem }) =>
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const [onCloseAction, setOnCloseAction] = useState<(() => void) | null>(null);
+
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -181,14 +195,31 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem }) =>
             const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: problem?.sampleCases?.[0]?.input || '' }), });
             const data = await response.json();
             const output = (data.program_output?.stdout || '').trim();
-            const expectedOutput = (problem?.correctAnswer || 'UNSET').trim();
-            if (expectedOutput === 'UNSET' || expectedOutput === '') { setSubmitResult({ success: false, message: '問題に正解が設定されていません。' }); setIsSubmitting(false); return; }
+            const expectedOutput = (problem?.sampleCases?.[0]?.expectedOutput || '').trim();
+            setExecutionResult(''); // 提出処理が終わったので「提出中...」の表示をクリア
+            if (expectedOutput === '') { setSubmitResult({ success: false, message: '問題に正解（期待する出力）が設定されていません。' }); return; }
             if (output === expectedOutput) {
                 setSubmitResult({ success: true, message: '正解です！おめでとうございます！' });
                 setIsAnswered(true);
+                // 正解した場合、提出APIを呼び出す
+                if (assignmentInfo.assignmentId) {
+                    try {
+                        await fetch('/api/submissions', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ assignmentId: Number(assignmentInfo.assignmentId), status: '提出済み', description: '正解しました', codingId: problem.id }),
+                        });
+                        // アラートメッセージとOKボタン押下時のアクションを設定
+                        setAlertMessage('課題が提出できました');
+                        setOnCloseAction(() => () => router.push(`/group/${assignmentInfo.hashedId}/member`));
+                        setShowAlert(true);
+                    } catch (submissionError) {
+                        console.error('提出状況の更新に失敗しました:', submissionError);
+                    }
+                }
             }
             else { setSubmitResult({ success: false, message: '不正解です。出力が異なります。', yourOutput: output, expected: expectedOutput }); }
-        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '提出処理中にエラーが発生しました。' }); }
+        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '提出処理中にエラーが発生しました。' }); setExecutionResult(''); }
         finally { setIsSubmitting(false); }
     };
 
@@ -200,10 +231,40 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem }) =>
         }, 1000);
     };
 
+    const handleNextProblem = async () => {
+        try {
+          // 課題から遷移してきた場合は、課題詳細ページに戻る
+          if (assignmentInfo.hashedId) {
+            router.push(`/group/${assignmentInfo.hashedId}/member`);
+            return;
+          }
+    
+          const res = await fetch(`/group/select-page/${problem.id}`);
+          const data = await res.json();
+          if (data.nextProblemId) {
+            router.push(`/group/select-page/${data.nextProblemId}`);
+          } else {
+            setAlertMessage("最後の問題です！お疲れ様でした。");
+            setShowAlert(true);
+          }
+        } catch (error) {
+          console.error("次の問題の取得に失敗しました:", error);
+          alert("次の問題の取得に失敗しました。");
+        }
+      };
+
     return (
         <div className="h-screen bg-gray-100 p-4 overflow-hidden">
-            {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
-            <PanelGroup direction="horizontal">
+            {showAlert && (
+                <CustomAlertModal 
+                    message={alertMessage} 
+                    onClose={() => {
+                        setShowAlert(false);
+                        if (onCloseAction) onCloseAction();
+                        setOnCloseAction(null); // アクションをリセット
+                    }} 
+                />
+            )}            <PanelGroup direction="horizontal">
                 <Panel defaultSize={35} minSize={20}>
                     <ProblemDescriptionPanel problem={problem} />
                 </Panel>
@@ -231,6 +292,13 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem }) =>
                     </PanelGroup>
                 </Panel>
             </PanelGroup>
+            {isAnswered && (
+                <div className="w-full max-w-lg mt-8 flex justify-center">
+                <button onClick={handleNextProblem} className="w-full py-4 px-8 text-xl font-semibold text-white bg-green-500 rounded-lg shadow-lg hover:bg-green-600">
+                    {assignmentInfo.hashedId ? '課題一覧へ戻る' : t.nextProblemButton}
+                </button>
+                </div>
+            )}
         </div>
     );
 };

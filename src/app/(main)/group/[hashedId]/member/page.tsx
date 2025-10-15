@@ -102,7 +102,7 @@ const MemberGroupPage: React.FC = () => {
                             description: kadai.description,
                             dueDate: kadai.due_date,       // due_date -> dueDate
                             createdAt: kadai.created_at,   // created_at -> createdAt
-                            completed: false,              // ダミーデータ
+                            completed: kadai.Submissions && kadai.Submissions.length > 0, // 提出済みかどうかを判定
                             programmingProblemId: kadai.programmingProblem?.id, // 関連データからIDを取得
                             selectProblemId: kadai.selectProblem?.id,           // 関連データからIDを取得
                         }));
