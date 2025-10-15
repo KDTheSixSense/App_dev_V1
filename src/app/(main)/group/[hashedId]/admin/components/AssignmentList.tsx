@@ -221,7 +221,7 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                     </div>
                 </div>
 
-                {/* サイドバー */}
+                {/* サイドバー
                 <div style={{
                     width: '300px',
                     backgroundColor: '#fff',
@@ -353,7 +353,7 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                     }}>
                         管理者 先生へのコメントを追加する
                     </div>
-                </div>
+                </div> */}
             </div>
         );
     }
