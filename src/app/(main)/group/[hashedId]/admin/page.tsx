@@ -110,8 +110,8 @@ const GroupDetailPage: React.FC = () => {
     };
 
     // 課題作成 - タイトル、説明、期限、問題IDを指定して課題を作成
-    const handleAssignmentCreate = async (title: string, description: string, dueDate: string, problem: ProgrammingProblem | null) => {
-        await createAssignment(title, description, dueDate, problem);
+    const handleAssignmentCreate = async (assignmentData: { title: string, description: string, dueDate: string, problem: ProgrammingProblem | null }) => {
+        await createAssignment(assignmentData.title, assignmentData.description, assignmentData.dueDate, assignmentData.problem);
         handleAssignmentEditorCollapse(); // 作成後にエディターを閉じる
         alert('課題を作成しました。');
     };
@@ -208,7 +208,7 @@ const GroupDetailPage: React.FC = () => {
 
                     {/* タブナビゲーション - お知らせ、課題、メンバーの切り替え */}
                     <div style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#fff', padding: '0 24px' }}>
-                        {(['お知らせ', '課題', 'メンバー', '課題状況一覧'] as const).map(tab => (
+                        {(['お知らせ', '課題', 'メンバー', '提出状況一覧'] as const).map(tab => (
                             <button key={tab} onClick={() => setActiveTab(tab)} style={{
                                 padding: '16px 24px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer',
                                 fontSize: '14px', fontWeight: '500', marginRight: '16px',
@@ -302,7 +302,7 @@ const GroupDetailPage: React.FC = () => {
                             />
                         )}
 
-                        {activeTab === '課題状況一覧' && (
+                        {activeTab === '提出状況一覧' && (
                           <AssignmentStatusList
                             assignments={assignmentsWithSubmissions}
                             loading={submissionsLoading}

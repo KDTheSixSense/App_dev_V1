@@ -5,8 +5,10 @@ import { sessionOptions } from './session';
 
 // APIルート用の型定義
 export type ApiHandler = (
-  req: NextRequest,
-  session: IronSession<IronSessionData>
+  req: NextRequest, 
+  session: IronSession<IronSessionData>,
+  // params を受け取れるように context を追加
+  context: { params: { [key: string]: string | string[] | undefined } }
 ) => Promise<NextResponse | Response>;
 
 /**
@@ -15,11 +17,12 @@ export type ApiHandler = (
  * @returns ラップされたAPIルート
  */
 export function withApiSession(handler: ApiHandler) {
-  return async function (req: NextRequest): Promise<NextResponse | Response> {
+  // context を受け取れるように引数を変更
+  return async function (req: NextRequest, context: { params: { [key: string]: string } }): Promise<NextResponse | Response> {
     const session = await getIronSession<IronSessionData>(
       await cookies(),
       sessionOptions
     );
-    return handler(req, session);
+    return handler(req, session, context);
   };
 }

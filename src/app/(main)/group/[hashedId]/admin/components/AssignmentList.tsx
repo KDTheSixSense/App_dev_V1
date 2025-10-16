@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Assignment, Comment, AssignmentViewMode } from '../types/AdminTypes';
 
 interface AssignmentListProps {
+    // hashedId: string; // これはuseParamsで取得するため不要になります
     assignments: Assignment[];
     viewMode: AssignmentViewMode;
     selectedAssignment: Assignment | null;
@@ -29,6 +31,7 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
     onEditComment,
     onDeleteComment
 }) => {
+    const params = useParams();
     const [commentInputs, setCommentInputs] = useState<{[assignmentId: number]: string}>({});
     const [editingComments, setEditingComments] = useState<{[commentId: number]: string}>({});
     const [showKadaiOptions, setShowKadaiOptions] = useState(false);
@@ -80,17 +83,9 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
 
     // 課題詳細表示の場合
     if (viewMode === 'detail' && selectedAssignment) {
-        // ★ 修正点 1: 問題の種類に応じたリンク先を格納する変数を定義
-        let problemLink = '';
+        // 課題に紐づく問題のタイトルを取得
+        const problemTitle = selectedAssignment.programmingProblem?.title || selectedAssignment.selectProblem?.title;
 
-        if (selectedAssignment.programmingProblemId) {
-            // プログラミング問題の場合のリンクを生成
-            problemLink = `/issue_list/programming_problem/${selectedAssignment.programmingProblemId}?assignmentId=${selectedAssignment.id}`;
-        } else if (selectedAssignment.selectProblemId) {
-            // 選択問題の場合のリンクを生成
-            problemLink = `/issue_list/selects_problems/${selectedAssignment.selectProblemId}?assignmentId=${selectedAssignment.id}`;
-        }
-        
         return (
             <div style={{ display: 'flex', gap: '24px' }}>
                 {/* メインコンテンツ */}
@@ -188,21 +183,36 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                         />
 
                         <div style={{ marginTop: '24px' }}>
-                            {problemLink ? (
-                                <Link 
-                                    href={problemLink}
+                            {selectedAssignment.selectProblemId ? (
+                                <Link
+                                    href={{
+                                        pathname: `/group/select-page/${selectedAssignment.selectProblemId}`, // 修正: 正しいパスとIDを使用
+                                        query: { assignmentId: selectedAssignment.id, hashedId: params.hashedId as string },
+                                    }}
                                     style={{ 
                                         display: 'inline-block', 
                                         padding: '10px 20px', 
-                                        backgroundColor: '#28a745', 
+                                        backgroundColor: '#58A8fdff', 
                                         color: 'white', 
                                         textDecoration: 'none', 
                                         borderRadius: '5px' 
                                     }}
                                 >
+                                    {problemTitle ? ` ${problemTitle}` : ''}
+                                </Link>
+                            ) : selectedAssignment.programmingProblemId ? (
+                                <Link
+                                    href={{
+                                        pathname: `/group/coding-page/${selectedAssignment.programmingProblemId}`, // 修正: 正しいパスとIDを使用
+                                        query: { assignmentId: selectedAssignment.id, hashedId: params.hashedId as string },
+                                    }}
+                                    style={{ 
+                                        display: 'inline-block', padding: '10px 20px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' 
+                                    }}
+                                >
                                     問題に挑戦する
                                 </Link>
-                            ) : (
+                            ) :  (
                                 <p style={{
                                     fontSize: '14px',
                                     color: '#718096',
@@ -218,7 +228,7 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                     </div>
                 </div>
 
-                {/* サイドバー */}
+                {/* サイドバー
                 <div style={{
                     width: '300px',
                     backgroundColor: '#fff',
@@ -350,7 +360,7 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                     }}>
                         管理者 先生へのコメントを追加する
                     </div>
-                </div>
+                </div> */}
             </div>
         );
     }

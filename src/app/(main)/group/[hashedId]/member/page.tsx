@@ -96,15 +96,15 @@ const MemberGroupPage: React.FC = () => {
                     if (assignmentsRes.ok) {
                         const assignmentsData = await assignmentsRes.json();
                         // APIからのデータ(スネークケース)をフロントエンドの型(キャメルケース)に変換
-                        const formattedKadai: Kadai[] = assignmentsData.data.map((kadai: any, index: number) => ({
+                        const formattedKadai: Kadai[] = assignmentsData.data.map((kadai: any) => ({
                             id: kadai.id,
                             title: kadai.title,
                             description: kadai.description,
                             dueDate: kadai.due_date,       // due_date -> dueDate
                             createdAt: kadai.created_at,   // created_at -> createdAt
-                            completed: false,              // ダミーデータ
-                            programmingProblemId: kadai.programmingProblemId,
-                            selectProblemId: kadai.selectProblemId,
+                            completed: kadai.Submissions && kadai.Submissions.length > 0, // 提出済みかどうかを判定
+                            programmingProblemId: kadai.programmingProblem?.id, // 関連データからIDを取得
+                            selectProblemId: kadai.selectProblem?.id,           // 関連データからIDを取得
                         }));
                         setKadaiList(formattedKadai);
                     }
@@ -265,15 +265,27 @@ const MemberGroupPage: React.FC = () => {
                                                  {selectedKadai.description && <div dangerouslySetInnerHTML={{ __html: selectedKadai.description }} style={{ lineHeight: '1.6' }} />}
                                                  {(selectedKadai.programmingProblemId || selectedKadai.selectProblemId) && (
                                                     <div style={{ marginTop: '24px' }}>
-                                                        <Link
-                                                            href={selectedKadai.programmingProblemId 
-                                                                ? `/issue_list/programming_problem/${selectedKadai.programmingProblemId}` 
-                                                                : `/select-problems/${selectedKadai.selectProblemId}`
-                                                            }
-                                                            style={{ display: 'inline-block', padding: '10px 20px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}
-                                                        >
-                                                            問題に挑戦する
-                                                        </Link>
+                                                        {selectedKadai.selectProblemId ? (
+                                                            <Link
+                                                                href={{
+                                                                    pathname: `/group/select-page/${selectedKadai.selectProblemId}`, // 修正: パス名を 'selects_page' から 'select-page' へ
+                                                                    query: { assignmentId: selectedKadai.id, hashedId: hashedId },
+                                                                }}
+                                                                style={{ display: 'inline-block', padding: '10px 20px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}
+                                                            >
+                                                                問題に挑戦する
+                                                            </Link>
+                                                        ) : selectedKadai.programmingProblemId ? (
+                                                            <Link
+                                                                href={{
+                                                                    pathname: `/group/coding-page/${selectedKadai.programmingProblemId}`,
+                                                                    query: { assignmentId: selectedKadai.id, hashedId: hashedId },
+                                                                }}
+                                                                style={{ display: 'inline-block', padding: '10px 20px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}
+                                                            >
+                                                                問題に挑戦する
+                                                            </Link>
+                                                        ) : null}
                                                     </div>
                                                 )}
                                              </div>

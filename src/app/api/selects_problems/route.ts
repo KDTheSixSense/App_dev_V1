@@ -1,11 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { IronSession, IronSessionData } from 'iron-session';
-import { withApiSession } from '@/lib/session-api';
+import { withApiSession, ApiHandler } from '@/lib/session-api';
 import { prisma } from '@/lib/prisma';
 
-async function getHandler(req: NextRequest, session: IronSession<IronSessionData>) {
+const getHandler: ApiHandler = async (req, session) => {
   try {
-    if (!session.user) {
+    if (!session.user?.id) {
       return NextResponse.json({ message: '認証が必要です' }, { status: 401 });
     }
 
@@ -50,10 +49,10 @@ async function getHandler(req: NextRequest, session: IronSession<IronSessionData
     return NextResponse.json({ message: '選択問題の取得中にエラーが発生しました' }, { status: 500 });
   }
 }
-
-async function postHandler(req: NextRequest, session: IronSession<IronSessionData>) {
+const postHandler: ApiHandler = async (req, session) => {
   try {
-    if (!session.user) {
+    // ログインしていない場合はエラーを返す
+    if (!session.user || !session.user.id) {
       return NextResponse.json({ message: '認証が必要です' }, { status: 401 });
     }
     const userId = parseInt(String(session.user.id), 10);

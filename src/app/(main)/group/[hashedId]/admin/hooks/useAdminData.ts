@@ -8,8 +8,7 @@ import {
     Post, 
     Assignment, 
     ProgrammingProblem,
-    Comment,
-    AssignmentWithSubmissions 
+    Comment 
 } from '../types/AdminTypes';
 
 export const useAdminData = (hashedId: string) => {
@@ -29,6 +28,10 @@ export const useAdminData = (hashedId: string) => {
     
     // 課題関連のstate
     const [assignments, setAssignments] = useState<Assignment[]>([]);
+    // 提出状況関連のstate
+    const [assignmentsWithSubmissions, setAssignmentsWithSubmissions] = useState<Assignment[]>([]);
+    const [submissionsLoading, setSubmissionsLoading] = useState(false);
+
     
     // プログラミング問題関連のstate
     const [availableProblems, setAvailableProblems] = useState<ProgrammingProblem[]>([]);
@@ -37,25 +40,6 @@ export const useAdminData = (hashedId: string) => {
     // 選択問題関連のstate
     const [availableSelectionProblems, setAvailableSelectionProblems] = useState<any[]>([]);
     const [isLoadingSelectionProblems, setIsLoadingSelectionProblems] = useState(false);
-
-    const [assignmentsWithSubmissions, setAssignmentsWithSubmissions] = useState<AssignmentWithSubmissions[]>([]);
-    const [submissionsLoading, setSubmissionsLoading] = useState(false);
-
-    // 課題と提出状況を取得する関数
-    const fetchAssignmentsWithSubmissions = async () => {
-      setSubmissionsLoading(true);
-      try {
-        const response = await fetch(`/api/groups/${hashedId}/assignments-with-submissions`);
-        if (response.ok) {
-          const data = await response.json();
-          setAssignmentsWithSubmissions(data.data);
-        }
-      } catch (error) {
-        console.error('課題状況の取得に失敗しました:', error);
-      } finally {
-        setSubmissionsLoading(false);
-      }
-    };
 
     // === API関数 ===
     // グループ詳細を取得
@@ -129,10 +113,32 @@ export const useAdminData = (hashedId: string) => {
             const response = await fetch(`/api/groups/${hashedId}/assignments`);
             if (response.ok) {
                 const data = await response.json();
-                setAssignments(data.data);
+                const formattedAssignments = data.data.map((assignment: any) => ({
+                    ...assignment,
+                    programmingProblemId: assignment.programmingProblem?.id,
+                    selectProblemId: assignment.selectProblem?.id,
+                }));
+                setAssignments(formattedAssignments);
             }
         } catch (error) {
             console.error('課題の取得に失敗しました:', error);
+        }
+    };
+
+    // 提出状況付きの課題一覧を取得
+    const fetchAssignmentsWithSubmissions = async () => {
+        setSubmissionsLoading(true);
+        try {
+            // このAPIエンドポイントは、課題とその提出状況を返すことを想定しています
+            const response = await fetch(`/api/groups/${hashedId}/assignments/submissions`);
+            if (response.ok) {
+                const data = await response.json();
+                setAssignmentsWithSubmissions(data.data);
+            }
+        } catch (error) {
+            console.error('提出状況一覧の取得に失敗しました:', error);
+        } finally {
+            setSubmissionsLoading(false);
         }
     };
 
@@ -160,7 +166,7 @@ export const useAdminData = (hashedId: string) => {
             if (response.ok) {
                 const data = await response.json();
                 // APIからのデータに 'type' プロパティを追加して型を統一
-                const typedProblems = data.map((p: any) => ({ ...p, type: 'selection' }));
+                const typedProblems = data.map((p: any) => ({ ...p, type: 'select' }));
                 setAvailableSelectionProblems(typedProblems);
             }
         } catch (error) {
@@ -273,21 +279,35 @@ export const useAdminData = (hashedId: string) => {
 
     // 課題作成
     const createAssignment = async (title: string, description: string, dueDate: string, problem: ProgrammingProblem | null) => {
-        const body: any = {
-            title,
-            description,
-            dueDate: new Date(dueDate).toISOString(),
-        };
+        let endpoint = '';
+        let body: any = { assignmentTitle: title, assignmentDescription: description, dueDate };
 
-        if (problem) {
-            if (problem.type === 'selection') {
-                body.selectProblemId = problem.id;
-            } else {
-                body.programmingProblemId = problem.id;
+        if (problem && 'isNew' in problem) { // 新規作成の場合
+            body.problemData = { ...problem };
+            delete body.problemData.isNew;
+            delete body.problemData.id; // 新規作成なのでIDは不要
+
+            if (problem.type === 'programming') {
+            endpoint = `/api/groups/${hashedId}/assignments/programming`;
+            } else if (problem.type === 'select') {
+            endpoint = `/api/groups/${hashedId}/assignments/select`;
+            }
+        } else {
+            // 既存の問題を選択した場合
+            endpoint = `/api/groups/${hashedId}/assignments`;
+            body.title = title;
+            body.description = description;
+            body.dueDate = dueDate;
+            if (problem) {
+                if (problem.type === 'select') {
+                    body.selectProblemId = problem.id;
+                } else {
+                    body.programmingProblemId = problem.id;
+                }
             }
         }
-        
-        const response = await fetch(`/api/groups/${hashedId}/assignments`, {
+
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
@@ -372,12 +392,12 @@ export const useAdminData = (hashedId: string) => {
         membersError,
         posts,
         assignments,
+        assignmentsWithSubmissions, // 追加
+        submissionsLoading,         // 追加
         availableProblems,
         isLoadingProblems,
         availableSelectionProblems,
         isLoadingSelectionProblems,
-        assignmentsWithSubmissions,
-        submissionsLoading,
 
         // Actions
         createPost,
@@ -393,6 +413,7 @@ export const useAdminData = (hashedId: string) => {
         copyInviteCode,
         fetchAvailableProblems,
         fetchAvailableSelectionProblems,
+        fetchAssignmentsWithSubmissions, // 追加
 
         // Refresh functions
         refreshData: () => {
