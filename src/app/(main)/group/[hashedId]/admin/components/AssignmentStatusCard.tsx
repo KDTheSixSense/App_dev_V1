@@ -1,7 +1,21 @@
 'use client';
 
 import React from 'react';
-import { AssignmentWithSubmissions } from '../types/AdminTypes';
+
+type Submission = {
+  status: string;
+  user: {
+    id: string | number;
+    username?: string;
+  };
+};
+
+export type AssignmentWithSubmissions = {
+  title: string;
+  created_at: string;
+  due_date: string;
+  Submissions: Submission[];
+};
 
 interface AssignmentStatusCardProps {
   assignment: AssignmentWithSubmissions;
