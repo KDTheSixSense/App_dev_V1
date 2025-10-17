@@ -7,13 +7,15 @@ import { getAppSession } from '@/lib/auth';
 
 import { getAppliedInfoMorningProblemById } from '@/lib/issue_list/applied_info_morning_problem/problem';
 import ProblemClient from './ProblemClient';
+import type { SerializableProblem } from '@/lib/data';
 
 interface PageProps {
-  params: { problemId: string };
+  params: Promise<{ problemId: string }>;
 }
 
 const AppliedInfoMorningProblemPage = async ({ params }: PageProps) => {
-  const { problemId } = params;
+  const resolvedParams = await params;
+  const { problemId } = resolvedParams;
   const session = await getAppSession();
   const problem = getAppliedInfoMorningProblemById(problemId);
 
@@ -26,6 +28,14 @@ const AppliedInfoMorningProblemPage = async ({ params }: PageProps) => {
       notFound();
     }
 
+  const problemForClient: SerializableProblem = {
+    ...problem,
+    answerOptions: problem.answerOptions,
+    programLines: problem.programLines || { ja: [], en: [] },
+    explanationText: problem.explanationText || { ja: '', en: '' },
+    initialVariables: problem.initialVariables || {},
+  };
+
   let userCredits = 0;
   if (session?.user) {
     const user = await prisma.user.findUnique({
@@ -37,7 +47,7 @@ const AppliedInfoMorningProblemPage = async ({ params }: PageProps) => {
     }
   }
 
-  return <ProblemClient initialProblem={problem} initialCredits={userCredits} />;
+  return <ProblemClient initialProblem={problemForClient} initialCredits={userCredits} />;
 };
 
 export default AppliedInfoMorningProblemPage;

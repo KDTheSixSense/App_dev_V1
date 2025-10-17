@@ -1,6 +1,6 @@
 import React from "react";
 import User from "./user/UserDetail";
-import Ranking from "./ranking/page";
+import Ranking from "./ranking/Ranking";
 import Pet from "./Pet/PetStatus";
 // --- ▼▼▼ セッション取得用のライブラリをインポート ▼▼▼ ---
 import { getIronSession } from 'iron-session';

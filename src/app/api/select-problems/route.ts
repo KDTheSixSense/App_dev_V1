@@ -1,10 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { withApiSession } from '@/lib/session-api';
+import { getIronSession } from 'iron-session';
+import { sessionOptions } from '@/lib/session';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
-export const POST = withApiSession(async (req, session) => {
+interface SessionData {
+  user?: { id: number | string; email: string };
+}
+
+export async function POST(req: NextRequest) {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     try {
         // セッションからユーザー情報を取得
         const user = session.user;
@@ -52,7 +59,7 @@ export const POST = withApiSession(async (req, session) => {
         }
         return NextResponse.json({ success: false, message: 'An unknown error occurred' }, { status: 500 });
     }
-});
+}
 
 // 選択問題の一覧を取得するGETハンドラ (こちらも念のため記載)
 export async function GET(request: Request) {
