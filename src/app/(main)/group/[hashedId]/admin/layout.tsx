@@ -18,7 +18,7 @@ interface SessionData {
 // このレイアウトがadminディレクトリ配下のすべてのページを保護します
 interface AdminLayoutProps {
   children: React.ReactNode;
-  params: any; // 型を any に変更
+  params: { hashedId: string }; 
 }
 
 export default async function AdminLayout({
