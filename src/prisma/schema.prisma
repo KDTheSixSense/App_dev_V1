@@ -36,9 +36,12 @@ model User {
   groups_User              Groups_User[]
   createdProblems          ProgrammingProblem[] @relation("ProblemCreator")
   createdSelectProblems SelectProblem[]      @relation("SelectProblemCreator") // SelectProblemとのリレーション
+  createdEvents            Create_event[]              @relation("CreatedEvents")
   posts Post[]
   loginHistory LoginHistory[]
   submissions         Submissions[]
+  eventParticipants       Event_Participants[]   // このユーザーのイベント参加情報（EventParticipantとの対向リレーション）
+  eventSubmissions        Event_Submission[]    // このユーザーのイベントでの提出（EventSubmissionとの対向リレーション）
   aiAdviceCredits            Int      @default(5)
 }
 
@@ -215,6 +218,7 @@ model ProgrammingProblem {
   sampleCases       SampleCase[]                           // サンプルケース
   testCases         TestCase[]                             // テストケース
   files             ProblemFile[]                          // 添付ファイル
+  eventIssues       Event_Issue_List[]                     // イベントで出題される問題とのリレーション（EventIssueモデルの対向フィールド）
   assignment Assignment?                                   // 課題との関連 (オプショナル) 
 }
 
@@ -300,7 +304,7 @@ model Coding {
   image       String
   explain     String
   difficulty  String
-  xpid        Int
+  xpid        Int?    // イベントのXPでヌル許容対応のため
 }
 
 model Test_Case {
@@ -471,4 +475,79 @@ model UserUnlockedTitle {
 enum TitleType {
   USER_LEVEL
   SUBJECT_LEVEL
+}
+
+// イベントを作成するテーブル
+model Create_event {
+  id                Int      @id @default(autoincrement())
+  title             String
+  description       String   @db.Text
+  inviteCode        String   @unique
+  publicStatus      Boolean  @default(true)
+  startTime         DateTime
+  endTime           DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // --- リレーション ---
+  creatorId         Int
+  creator           User     @relation("CreatedEvents", fields: [creatorId], references: [id])
+  
+  participants      Event_Participants[]
+  issues            Event_Issue_List[]
+}
+
+// イベントの参加者情報を管理するテーブル
+model Event_Participants {
+  id        Int      @id @default(autoincrement())
+  isAdmin   Boolean  @default(false)
+  
+  // 将来的に使用する可能性があるためコメントアウト
+  // joinedAt  DateTime @default(now())
+  // status    String?
+
+  // --- リレーション ---
+  eventId   Int
+  event     Create_event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId], name: "eventId_userId_unique")
+}
+
+
+// イベントで出題される問題のリスト
+model Event_Issue_List {
+  id        Int      @id @default(autoincrement())
+
+  // --- リレーション ---
+  eventId   Int
+  event     Create_event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  // 既存のCodingモデル、もしくはProgrammingProblemモデルと関連付けます
+  // ここではProgrammingProblemを想定しています
+  problemId Int
+  problem   ProgrammingProblem @relation(fields: [problemId], references: [id])
+  
+  submissions Event_Submission[]
+
+  @@unique([eventId, problemId], name: "eventId_problemId_unique")
+}
+
+// イベント問題への提出情報を管理するテーブル
+model Event_Submission {
+  id                Int      @id @default(autoincrement())
+  status            Boolean
+  score             Int
+  codeLog           String   @db.Text
+  startedAt         DateTime
+  submittedAt       DateTime @default(now())
+
+  // --- リレーション ---
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventIssueId      Int
+  eventIssue        Event_Issue_List @relation(fields: [eventIssueId], references: [id], onDelete: Cascade)
 }

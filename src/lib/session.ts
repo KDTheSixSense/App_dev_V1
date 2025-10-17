@@ -31,7 +31,6 @@ declare module 'iron-session' {
  * サーバーコンポーネント、Server Actions、APIルートで現在のセッションを取得するためのヘルパー関数です。
  */
 export async function getSession(): Promise<IronSession<IronSessionData>> {
-  // ▼▼▼【修正】再度 as any を追加して、頑固な型エラーを回避します ▼▼▼
-  const session = await getIronSession(cookies() as any, sessionOptions);
+  const session = await getIronSession(await cookies() as any, sessionOptions);
   return session;
 }
