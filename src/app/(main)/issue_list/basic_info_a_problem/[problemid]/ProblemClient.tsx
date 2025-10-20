@@ -15,6 +15,7 @@ import { getHintFromAI } from '@/lib/actions/hintactions';
 import { useNotification } from '@/app/contexts/NotificationContext';
 
 import type { SerializableProblem } from '@/lib/data';
+import KohakuChat from '@/components/KohakuChat';
 
 
 // --- 多言語対応テキストリソース ---
