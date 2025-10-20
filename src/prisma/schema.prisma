@@ -79,6 +79,7 @@ model UserAnswer {
   // --- リレーション定義 ---
   user     User      @relation(fields: [userId], references: [id])
   question Questions @relation(fields: [questionId], references: [id])
+  problems  Basc_Info_A_Question[]
 }
 
 //科目テーブル
@@ -89,7 +90,8 @@ model Subject {
 
   userProgresses      UserSubjectProgress[] // この科目を学習しているユーザーの進捗リスト
   Questions_Algorithm Questions_Algorithm[]
-   SelectProblem       SelectProblem[]      // SelectProblemとのリレーション
+  SelectProblem       SelectProblem[]      // SelectProblemとのリレーション
+  problems  Basc_Info_A_Question[]
 }
 
 model Language {
@@ -110,6 +112,46 @@ model Answer_Algorithm {
   // --- リレーション定義 ---
   user     User                @relation(fields: [userId], references: [id])
   question Questions_Algorithm @relation(fields: [questionId], references: [id])
+}
+
+// 問題のカテゴリを管理するマスターテーブル (例: "ストラテジ", "マネジメント")
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  
+  // このカテゴリに属する問題のリスト
+  problems  Basc_Info_A_Question[]
+}
+
+model Basc_Info_A_Question {
+  id            Int      @id @default(autoincrement())
+  title         String   // 問題タイトル
+  description   String   @db.Text // 問題文
+  explanation   String   @db.Text // 解説
+  
+  // 解答群 (例: ["選択肢ア", "選択肢イ", "選択肢ウ", "選択肢エ"])
+  answerOptions Json     
+  
+  // 正解のインデックス (例: 0, 1, 2, 3)
+  correctAnswer Int      
+  
+  sourceYear    String?  // 出典の年/区分 (例: "令和5年度")
+  sourceNumber  String?  // 出典の問題番号 (例: "問1")
+
+  // --- リレーションのためのフィールド ---
+  difficultyId  Int
+  subjectId     Int
+  assignmentId  Int?      // 課題は任意なのでオプショナル
+  categoryId    Int
+
+  // --- リレーション定義 ---
+  difficulty    Difficulty @relation(fields: [difficultyId], references: [id])
+  subject       Subject    @relation(fields: [subjectId], references: [id])
+  assignment    Assignment? @relation(fields: [assignmentId], references: [id])
+  category      Category   @relation(fields: [categoryId], references: [id])
+
+  // この問題に対するユーザーの解答履歴
+  userAnswers   UserAnswer[]
 }
 
 model Questions_Algorithm {
@@ -362,6 +404,7 @@ model Difficulty {
   Questions_Algorithm Questions_Algorithm[]
   Questions           Questions[]
   SelectProblem       SelectProblem[]
+  problems  Basc_Info_A_Question[]
 }
 
 model Groups {
@@ -414,6 +457,7 @@ model Assignment {
   // --- リレーション定義 ---
   group       Groups        @relation(fields: [groupid], references: [id])
   Submissions Submissions[]
+  problems  Basc_Info_A_Question[]
 }
 
 model Submissions {
