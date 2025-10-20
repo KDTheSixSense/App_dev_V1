@@ -14,7 +14,8 @@ import { getHintFromAI } from '@/lib/actions/hintactions';
 import { useNotification } from '@/app/contexts/NotificationContext';
 
 import type { SerializableProblem } from '@/lib/data';
-
+// 1. A問題用の AnswerOption 型をインポートする
+import type { AnswerOption } from '@/lib/data';
 
 // --- 多言語対応テキストリソース ---
 const textResources = {
@@ -65,6 +66,7 @@ type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 interface ProblemClientProps {
   initialProblem: SerializableProblem;
   initialCredits: number;
+
 }
 
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits }) => {
@@ -173,7 +175,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           <ProblemStatement
             description={problem.description[currentLang]}
             programText={problem.programLines?.[currentLang]?.join('\n') || ''}
-            answerOptions={problem.answerOptions?.[currentLang] || []}
+            answerOptions={(problem.answerOptions?.[currentLang] || []) as AnswerOption[]}
             onSelectAnswer={handleSelectAnswer}
             selectedAnswer={selectedAnswer}
             correctAnswer={problem.correctAnswer}

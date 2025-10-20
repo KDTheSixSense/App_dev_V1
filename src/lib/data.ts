@@ -6,8 +6,16 @@ import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 
+export interface AnswerOption {
+  label: string; // 解答の表示ラベル（例: 'ア'）
+  value: string; // 解答の実際の値（正誤判定用）
+}
+
 // クライアントに渡すことができる、シリアライズ可能な問題の型
-export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'>;
+export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'> & {
+  sourceYear?: string;
+  sourceNumber?: string;
+};
 
 // --- ▼▼▼ セッションの型定義を追加します ▼▼▼ ---
 interface SessionData {
