@@ -932,3 +932,276 @@ export async function updateSelectProblemAction(formData: FormData) {
     return { error: '問題の更新中にエラーが発生しました。' };
   }
 }
+
+/**
+ * イベント作成フォームの入力データ型
+ */
+interface CreateEventFormData {
+  title: string;
+  description: string;
+  startTime: string; // ISO 8601 形式の文字列を期待
+  endTime: string;   // ISO 8601 形式の文字列を期待
+  publicTime: string; // ISO 8601 形式の文字列を期待
+  selectedProblemIds: number[]; // 選択された問題IDの配列
+}
+
+/**
+ * 新規イベントを作成するサーバーアクション
+ * @param data CreateEventFormData
+ */
+export async function createEventAction(data: CreateEventFormData) {
+  // 1. ユーザーセッションを取得
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  const { title, description, startTime, endTime, publicTime, selectedProblemIds } = data;
+
+  // 2. サーバーサイドでのバリデーション
+  if (!title || !description || !startTime || !endTime || !publicTime) {
+    return { error: '必須項目（基本設定）が不足しています。' };
+  }
+  if (selectedProblemIds.length === 0) {
+    return { error: 'プログラミング問題を1つ以上選択してください。' };
+  }
+
+  try {
+    const inviteCode = nanoid(10); // 10桁のランダムな招待コードを生成
+
+    // 3. データベースへの書き込み（トランザクション）
+    const newEvent = await prisma.$transaction(async (tx) => {
+      // a. イベント本体を作成
+      const event = await tx.create_event.create({
+        data: {
+          title: title,
+          description: description,
+          startTime: new Date(startTime),
+          endTime: new Date(endTime),
+          publicTime: new Date(publicTime), // ※スキーマに publicTime が必要
+          inviteCode: inviteCode,
+          publicStatus: true, // デフォルトで公開（画像からは設定項目がなかったため）
+          creatorId: userId,
+        },
+      });
+
+      // b. 選択された問題を Event_Issue_List に登録
+      const issueListData = selectedProblemIds.map(problemId => ({
+        eventId: event.id,
+        problemId: problemId,
+      }));
+      await tx.event_Issue_List.createMany({
+        data: issueListData,
+      });
+
+      // c. 作成者を参加者（管理者）として登録
+      await tx.event_Participants.create({
+        data: {
+          eventId: event.id,
+          userId: userId,
+          isAdmin: true,
+        },
+      });
+
+      return event;
+    });
+
+    // 4. キャッシュのクリアと成功レスポンス
+    revalidatePath('/event'); // イベント一覧ページなどのキャッシュをクリア
+    return { success: true, eventId: newEvent.id };
+
+  } catch (error) {
+    console.error('イベント作成に失敗しました:', error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return { error: 'データベースエラーが発生しました。' };
+    }
+    return { error: 'イベントの作成に失敗しました。' };
+  }
+}
+
+/**
+ * イベント下書き保存フォームの入力データ型
+ * (createEventAction と同じ型を流用)
+ */
+interface EventFormData {
+  title: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+  publicTime: string;
+  selectedProblemIds: number[];
+}
+
+/**
+ * 新規イベントを下書きとして保存するサーバーアクション
+ * @param data EventFormData
+ */
+export async function saveEventDraftAction(data: EventFormData) {
+  // 1. ユーザーセッションを取得
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  const { title, description, startTime, endTime, publicTime, selectedProblemIds } = data;
+
+  // 2. サーバーサイドでの「下書き用」バリデーション
+  if (!title) {
+    return { error: '下書きを保存するには、イベントタイトル名が必須です。' };
+  }
+
+  try {
+    const inviteCode = nanoid(10); // 下書きでも招待コードはユニークに発行
+
+    // 3. データベースへの書き込み（トランザクション）
+    const newDraftEvent = await prisma.$transaction(async (tx) => {
+      // a. イベント本体を作成
+      const event = await tx.create_event.create({
+        data: {
+          title: title,
+          description: description || '', // 説明が空でもOK
+          // 日付が空文字列
+          startTime: startTime ? new Date(startTime) : null,
+          endTime: endTime ? new Date(endTime) : null,
+          publicTime: publicTime ? new Date(publicTime) : null,
+          inviteCode: inviteCode,
+          publicStatus: false, // 下書き保存
+          creator: {
+            connect: {
+              id: userId
+            }
+          }
+        },
+      });
+
+      // b. 選択された問題も保存 (もしあれば)
+      if (selectedProblemIds.length > 0) {
+        const issueListData = selectedProblemIds.map(problemId => ({
+          eventId: event.id,
+          problemId: problemId,
+        }));
+        await tx.event_Issue_List.createMany({
+          data: issueListData,
+        });
+      }
+
+      // c. 作成者を参加者（管理者）として登録
+      await tx.event_Participants.create({
+        data: {
+          eventId: event.id,
+          userId: userId,
+          isAdmin: true,
+        },
+      });
+
+      return event;
+    });
+
+    // 4. 成功レスポンス
+    return { success: true, message: '下書きを保存しました。' };
+
+  } catch (error) {
+    console.error('下書き保存に失敗しました:', error);
+    return { error: '下書きの保存に失敗しました。' };
+  }
+}
+
+/**
+ * ログイン中のユーザーが作成した下書きイベントの一覧を取得する
+ */
+export async function getMyDraftEventsAction() {
+  'use server';
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  try {
+    const drafts = await prisma.create_event.findMany({
+      where: {
+        creatorId: userId,
+        publicStatus: false, // 
+      },
+      select: {
+        id: true,
+        title: true,
+      },
+      orderBy: {
+        updatedAt: 'desc', // 
+      },
+    });
+    return { data: drafts };
+  } catch (error) {
+    console.error('下書き一覧の取得に失敗:', error);
+    return { error: '下書きの読み込みに失敗しました。' };
+  }
+}
+
+/**
+ * 日付オブジェクトを datetime-local 
+ * @param date
+ */
+const formatDateTimeForInput = (date: Date | null | undefined): string => {
+  if (!date) return '';
+  try {
+    // 
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  } catch (e) {
+    return '';
+  }
+};
+
+/**
+ * 特定の下書きイベントの詳細を取得する
+ * @param eventId 読み込む下書きのID
+ */
+export async function getDraftEventDetailsAction(eventId: number) {
+  'use server';
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  try {
+    const event = await prisma.create_event.findFirst({
+      where: {
+        id: eventId,
+        creatorId: userId, // 
+        publicStatus: false,
+      },
+      include: {
+        issues: { // 
+          select: {
+            problemId: true,
+          },
+        },
+      },
+    });
+
+    if (!event) {
+      return { error: '指定された下書きが見つかりません。' };
+    }
+
+    // 
+    const formattedEvent = {
+      title: event.title,
+      description: event.description,
+      startTime: formatDateTimeForInput(event.startTime),
+      endTime: formatDateTimeForInput(event.endTime),
+      publicTime: formatDateTimeForInput(event.publicTime),
+      selectedProblemIds: event.issues.map((issue) => issue.problemId),
+    };
+
+    return { data: formattedEvent };
+
+  } catch (error) {
+    console.error('下書き詳細の取得に失敗:', error);
+    return { error: '下書きの読み込みに失敗しました。' };
+  }
+}
