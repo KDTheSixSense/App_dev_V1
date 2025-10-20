@@ -484,8 +484,9 @@ model Create_event {
   description       String   @db.Text
   inviteCode        String   @unique
   publicStatus      Boolean  @default(true)
-  startTime         DateTime
-  endTime           DateTime
+  startTime         DateTime?
+  endTime           DateTime?
+  publicTime        DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
