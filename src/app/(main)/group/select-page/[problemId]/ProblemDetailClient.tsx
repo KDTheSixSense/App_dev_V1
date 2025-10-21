@@ -110,7 +110,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
     try {
       // 課題から遷移してきた場合は、課題詳細ページに戻る
       if (assignmentInfo.hashedId) {
-        router.push(`/group/${assignmentInfo.hashedId}/admin`);
+        router.push(`/group/${assignmentInfo.hashedId}/member`);
         return;
       }
 
@@ -149,12 +149,37 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
     return t.hintGenericQuestion;
   };
 
-  const handleSelectAnswer = (selectedValue: string) => {
+  const handleSelectAnswer = async (selectedValue: string) => {
     if (isAnswered) return;
     setSelectedAnswer(selectedValue);
     setIsAnswered(true);
+
+    const isCorrect = isCorrectAnswer(selectedValue, problem.correctAnswer);
     const hint = generateKohakuResponse(true, selectedValue);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
+
+    // 正解かつ、課題として出題されている場合のみ提出処理を行う
+    if (isCorrect && assignmentInfo.assignmentId) {
+      try {
+        const response = await fetch('/api/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            assignmentId: Number(assignmentInfo.assignmentId),
+            description: selectedValue, // 選択した回答をdescriptionとして送信
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('提出に失敗しました。');
+        }
+        setAlertMessage('課題を提出しました！');
+        setShowAlert(true);
+      } catch (error) {
+        setAlertMessage(error instanceof Error ? error.message : '提出処理中にエラーが発生しました。');
+        setShowAlert(true);
+      }
+    }
   };
 
   const handleUserMessage = (message: string) => {

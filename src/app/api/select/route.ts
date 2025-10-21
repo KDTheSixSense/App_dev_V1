@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withApiSession } from '@/lib/session-api';
 
-export const POST = withApiSession(async (req, session, { params }) => {
+type RouteContext = {
+  params: { [key: string]: string | string[] | undefined };
+};
+
+export const POST = withApiSession(async (req, session, context: RouteContext) => {
   const sessionUserId = session.user?.id;
 
   if (!sessionUserId) {
@@ -16,7 +20,7 @@ export const POST = withApiSession(async (req, session, { params }) => {
     // フロントエンドから送られてくるデータ構造を想定
     const { assignmentTitle, assignmentDescription, dueDate, problemData } = body;
 
-    const hashedId = params.hashedId;
+    const { hashedId } = context.params;
     if (typeof hashedId !== 'string') {
       return NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });
     }

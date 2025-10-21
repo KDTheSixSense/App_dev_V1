@@ -10,16 +10,17 @@ interface SessionData {
 }
 
 // お知らせ一覧を取得 (GET)
-export async function GET(req: NextRequest, { params }: any) {
+export async function GET(req: NextRequest, { params }: { params: { hashedId: string } }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
 
   try {
+    const { hashedId } = params;
     // hashedIdからグループのIDを取得
     const group = await prisma.groups.findUnique({
-      where: { hashedId: params.hashedId },
+      where: { hashedId: hashedId },
       select: { id: true },
     });
 
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest, { params }: any) {
 }
 
 // ✨【ここから追加】お知らせを投稿 (POST)
-export async function POST(req: NextRequest, { params }: any) {
+export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
   
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest, { params }: any) {
   const userId = Number(sessionUserId);
 
   try {
+    const { hashedId } = params;
     const body = await req.json();
     const { content } = body;
 
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest, { params }: any) {
     }
 
     const group = await prisma.groups.findUnique({
-      where: { hashedId: params.hashedId },
+      where: { hashedId },
       select: { id: true },
     });
 

@@ -473,6 +473,8 @@ model Submissions {
   updated_at    DateTime @updatedAt
 
   assignment Assignment @relation(fields: [assignment_id], references: [id])
+  // 課題IDとユーザーIDの組み合わせをユニークにする
+  @@unique([assignment_id, userid])
 }
 
 model Status_Kohaku {
