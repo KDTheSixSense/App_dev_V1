@@ -154,7 +154,7 @@ export function CreateEventClient({ problems }: Props) {
       if (result.success) {
         alert('イベントを作成しました！');
         // イベント詳細ページや一覧ページにリダイレクト
-        router.push(`/event`); // TODO: 適切なパスに変更
+        router.push(`/event/event_list`); // TODO: 適切なパスに変更
       } else {
         setError(result.error || '不明なエラーが発生しました。');
       }

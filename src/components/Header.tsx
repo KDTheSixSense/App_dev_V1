@@ -115,7 +115,7 @@ export default function Header({ userWithPet }: HeaderProps) {
     { href: '/group', icon: '/images/group_slateblue.png', label: 'グループ' },
     //提出機能とイベント機能はまだ完成してないから一旦コメントアウトで隠しておく
     { href: '/unsubmitted-assignments', icon: '/images/assignment_slateblue.png', label: '課題' },
-    { href: '/', icon: '/images/event_slateblue.png', label: 'イベント' },
+    { href: '/event/event_list', icon: '/images/event_slateblue.png', label: 'イベント' },
   ];
 
   return (

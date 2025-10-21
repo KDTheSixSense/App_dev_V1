@@ -33,7 +33,7 @@ export interface Problem {
   title: { ja: string; en: string }; // 問題のタイトル (日本語/英語)
   description: { ja: string; en: string }; // 問題文
   programLines: { ja: string[]; en: string[] }; // 擬似言語プログラムの各行
-  answerOptions: { ja: AnswerOption[]; en: AnswerOption[] }; // 解答群の選択肢
+  answerOptions?: { ja: AnswerOption[]; en: AnswerOption[] }; // 解答群の選択肢をオプションに修正
   correctAnswer: string; // この問題の正解の値
   explanationText: { ja: string; en: string }; // 解答後に表示される解説文
   initialVariables: VariablesState; // トレース開始時の変数の初期状態

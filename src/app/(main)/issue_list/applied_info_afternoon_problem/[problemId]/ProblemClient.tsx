@@ -241,7 +241,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem }) => {
           <ProblemStatement
             description={problem.description[language]}
             programText={problem.programLines[language].join('\n')}
-            answerOptions={problem.answerOptions[language]}
+            answerOptions={problem.answerOptions ? problem.answerOptions[language] : []}
             onSelectAnswer={handleSelectAnswer}
             selectedAnswer={selectedAnswer}
             correctAnswer={problem.correctAnswer}

@@ -204,14 +204,18 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
                 // 正解した場合、提出APIを呼び出す
                 if (assignmentInfo.assignmentId) {
                     try {
-                        await fetch('/api/submissions', {
+                        await fetch('/api/submissions', { // エンドポイントを修正
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ assignmentId: Number(assignmentInfo.assignmentId), status: '提出済み', description: '正解しました', codingId: problem.id }),
+                            body: JSON.stringify({
+                                assignmentId: Number(assignmentInfo.assignmentId),
+                                description: userCode, // ユーザーのコードをdescriptionとして送信
+                                status: '提出済み', // statusを明示的に指定
+                            }),
                         });
                         // アラートメッセージとOKボタン押下時のアクションを設定
                         setAlertMessage('課題が提出できました');
-                        setOnCloseAction(() => () => router.push(`/group/${assignmentInfo.hashedId}/member`));
+                        setOnCloseAction(() => handleNextProblem);
                         setShowAlert(true);
                     } catch (submissionError) {
                         console.error('提出状況の更新に失敗しました:', submissionError);
@@ -234,14 +238,14 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
     const handleNextProblem = async () => {
         try {
           // 課題から遷移してきた場合は、課題詳細ページに戻る
-          if (assignmentInfo.hashedId) {
+          if (assignmentInfo.hashedId && assignmentInfo.assignmentId) {
             router.push(`/group/${assignmentInfo.hashedId}/member`);
             return;
           }
     
           const res = await fetch(`/group/select-page/${problem.id}`);
           const data = await res.json();
-          if (data.nextProblemId) {
+          if (data.nextProblemId) { // 修正: 正しいパスへ遷移
             router.push(`/group/select-page/${data.nextProblemId}`);
           } else {
             setAlertMessage("最後の問題です！お疲れ様でした。");

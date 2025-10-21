@@ -70,7 +70,6 @@ export async function registerUserAction(data: { username: string, email: string
  */
 export async function getNextProblemId(currentId: number, category: string): Promise<number | null> {
   try {
-    // ▼▼▼【ここから修正】▼▼▼
     // 変数を一つに統一し、型を明示的に指定することで、以降の型エラーをすべて解消します
     let problemIds: { id: number }[] = [];
 
@@ -88,14 +87,17 @@ export async function getNextProblemId(currentId: number, category: string): Pro
       ]);
       // 取得したIDを結合
       problemIds = [...staticIds, ...algoIds];
+    } else if (category === 'basic_info_a_problem') {
+      // Basc_Info_A_Question テーブルからIDを取得
+      problemIds = await prisma.basc_Info_A_Question.findMany({
+        select: { id: true },
+      });
     } else {
-      // その他のカテゴリの場合も、同じ変数に代入します
       problemIds = await prisma.questions_Algorithm.findMany({
         where: { subject: { name: category } },
         select: { id: true },
       });
     }
-    // ▲▲▲【ここまで修正】▲▲▲
 
     // `problemIds` が正しく型付けされているため、以降の処理で型エラーは発生しません
     const allIds = problemIds.map(p => p.id);
@@ -137,8 +139,8 @@ export async function awardXpForCorrectAnswer(problemId: number, subjectid?: num
     throw new Error('セッション内のユーザーIDが無効です。');
   }
 
-  let problemDetails: { subjectId: number; difficultyId: number; type: 'ALGO' | 'STATIC' } | null = null;
-  let alreadyCorrect = false;
+  let problemDetails: { subjectId: number; difficultyId: number; type: 'ALGO' | 'STATIC' | 'BASIC_A' } | null = null; 
+  let alreadyCorrect = false;
 
   // 1. まずアルゴリズム問題テーブル(Questions_Algorithm)から問題を探す
   const algoProblem = await prisma.questions_Algorithm.findUnique({
@@ -169,11 +171,21 @@ export async function awardXpForCorrectAnswer(problemId: number, subjectid?: num
         difficultyId: staticProblem.difficultyId,
         type: 'STATIC',
       };
-      // 解答履歴をチェック
-      const existingAnswer = await prisma.userAnswer.findFirst({
-        where: { userId, questionId: problemId, isCorrect: true },
+      } else {
+      // 3. なければ基本情報A問題テーブル(Basc_Info_A_Question)を探す
+      const basicAProblem = await prisma.basc_Info_A_Question.findUnique({
+        where: { id: problemId },
+        select: { subjectId: true, difficultyId: true },
       });
-      if (existingAnswer) alreadyCorrect = true;
+
+      if (basicAProblem) {
+        problemDetails = { ...basicAProblem, type: 'BASIC_A' };
+        // 解答履歴をチェック (UserAnswerモデルを共有)
+        const existingAnswer = await prisma.userAnswer.findFirst({
+          where: { userId, questionId: problemId, isCorrect: true },
+        });
+        if (existingAnswer) alreadyCorrect = true;
+      }
     }
   }
 
@@ -1008,7 +1020,7 @@ export async function createEventAction(data: CreateEventFormData) {
     });
 
     // 4. キャッシュのクリアと成功レスポンス
-    revalidatePath('/event'); // イベント一覧ページなどのキャッシュをクリア
+    revalidatePath('/event/event_list'); // イベント一覧ページなどのキャッシュをクリア
     return { success: true, eventId: newEvent.id };
 
   } catch (error) {

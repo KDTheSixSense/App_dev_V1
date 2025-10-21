@@ -6,61 +6,71 @@ import { prisma } from '@/lib/prisma'; // データベース接続(Prisma)をイ
 // import { basicInfoAProblems } from '@/lib/issue_list/basic_info_a_problem/problem';
 
 interface ProblemListRowProps {
-  problemId: string;
+  problemId: number;
   title: string;
+  sourceText: string;
 }
 
-/**
- * 問題リストの各行を表示するコンポーネント
- */
-const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => {
+// Component for a single row in the problem list
+const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, sourceText }) => {
   return (
-    <Link href={`/issue_list/basic_info_a_problem/${problemId}`} className="block w-full">
-      <li className="p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200 cursor-pointer">
-        <span className="font-medium text-blue-600 hover:text-blue-800">
-          問{problemId}: {title}
-        </span>
-      </li>
-    </Link>
+    // Use li for semantic list structure, but Link handles click and navigation
+    <li className="border-b border-gray-200 flex-shrink-0"> {/* Add flex-shrink-0 */}
+      <Link 
+        href={`/issue_list/basic_info_a_problem/${problemId}`} 
+        // Apply styling directly to the Link for better click area control
+        className="block p-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer w-full"
+      >
+        <div className="flex justify-between items-center"> {/* Use flex for alignment */}
+          <span className="font-medium text-blue-600 hover:text-blue-800">
+            {sourceText}: {title}
+          </span>
+        </div>
+      </Link>
+    </li>
   );
 };
 
-/**
- * 問題一覧ページ (サーバーコンポーネント)
- */
-// 'async' を追加して、コンポーネント内で 'await' を使えるようにします
+// The main page component (Server Component)
 const ProblemsListPage = async () => {
-  
-  // データベースから基本情報A問題のリストを取得します
+  // Fetch the list of Basic Info A problems from the database
   const problems = await prisma.basc_Info_A_Question.findMany({
-    // 必要なデータ（id と title）のみを選択します
     select: {
       id: true,
-      title: true
+      title: true,
+      sourceYear: true,
+      sourceNumber: true,
     },
-    // IDの昇順で並び替えます
-    orderBy: {
-      id: 'asc'
-    }
+    orderBy: [
+      { id: 'asc' },          // Then by ID ascending
+    ]
   });
 
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">問題一覧</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
+          基本情報A問題 問題一覧
+        </h1>
+        {/* Container for the list with width constraint and centering */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-2xl mx-auto">
-          <ul>
-            {/* 取得した 'problems' 配列を map します */}
-            {problems.map((problem) => (
-              <ProblemListRow
-                key={problem.id}
-                // DBの 'id' (数値) を 'String' (文字列) に変換します
-                problemId={String(problem.id)}
-                // DBの 'title' (文字列) を渡します ( .ja は不要)
-                title={problem.title}
-              />
-            ))}
-          </ul>
+          {problems.length > 0 ? (
+            <ul>
+              {/* Map over the fetched problems and render a row for each */}
+              {problems.map((problem) => (
+                <ProblemListRow
+                  key={problem.id}
+                  problemId={problem.id}
+                  title={problem.title}
+                  // Combine year and number for display
+                  sourceText={`${problem.sourceYear || '年度不明'} ${problem.sourceNumber || ''}`.trim()}
+                />
+              ))}
+            </ul>
+          ) : (
+             // Display a message if no problems are found
+             <p className="p-4 text-center text-gray-500">問題が見つかりませんでした。</p>
+          )}
         </div>
       </div>
     </div>

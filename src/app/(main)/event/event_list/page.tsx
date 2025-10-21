@@ -1,36 +1,32 @@
 // イベントリスト（参加・作成を選択する初期ページ）
 // app/(main)/event/event_list/page.tsx
 
+import { getEvents, type Event as BaseEvent } from "@/lib/event";
 import ProblemClient from "./ProblemClient";
-import { headers } from "next/headers";
 
-// イベントの型定義
-interface Event {
-  id: string;
-  name: string;
-}
-
-// サーバーサイドでAPIを呼び出すためのヘルパー関数
-const getBaseUrl = async () => {
-  const h = await headers();
-  const host = h.get("host");
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  return `${protocol}://${host}`;
+// ProblemClientで期待される型に合わせて拡張
+type Event = BaseEvent & {
+  startTime: Date;
+  endTime: Date;
+  _count?: { participants: number };
 };
 
 const EventListPage = async () => {
   let initialEvents: Event[] = [];
-  const baseUrl = await getBaseUrl();
+
   try {
-    // サーバーサイドで参加中のイベントリストを取得
-    const res = await fetch(`${baseUrl}/api/event/event_list`, {
-      cache: "no-store", // 常に最新のデータを取得
-    });
-    if (res.ok) {
-      initialEvents = await res.json();
-    }
+    // getEventsが正しいデータを返すようになったので、型アサーションは不要
+    const eventsFromDb = await getEvents();
+    
+    initialEvents = eventsFromDb.map(event => ({
+      ...event,
+      // startTimeやendTimeがnullの場合、無効な日付にならないように現在時刻で代替
+      startTime: new Date(event.startTime || Date.now()),
+      endTime: new Date(event.endTime || Date.now()),
+    }));
   } catch (error) {
     console.error("Failed to fetch initial events:", error);
+    
   }
 
   return <ProblemClient initialEvents={initialEvents} />;

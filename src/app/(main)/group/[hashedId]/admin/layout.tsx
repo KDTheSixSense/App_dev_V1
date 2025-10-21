@@ -15,16 +15,17 @@ interface SessionData {
   };
 }
 
-// このレイアウトがadminディレクトリ配下のすべてのページを保護します
-interface AdminLayoutProps {
+type AdminLayoutProps = {
   children: React.ReactNode;
-  params: { hashedId: string }; 
-}
+  params: Promise<{ hashedId: string }>; // params が Promise の場合
+};
 
 export default async function AdminLayout({
   children,
   params,
 }: AdminLayoutProps) {
+  const resolvedParams = await params; // params を await する
+  const { hashedId } = resolvedParams;
   // --- 1. セッションとユーザーIDを正しく取得 ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? Number(session.user.id) : null;
@@ -36,7 +37,7 @@ export default async function AdminLayout({
 
   // --- 2. URLのhashedIdから、対象のグループの整数IDを取得 ---
   const group = await prisma.groups.findUnique({
-      where: { hashedId: params.hashedId },
+      where: { hashedId: hashedId },
       select: { id: true }, // 必要なのは整数のIDだけ
   });
 
@@ -61,7 +62,7 @@ export default async function AdminLayout({
   // --- 4. メンバーでない、または管理者でない場合、メンバーページへリダイレクト ---
   // これにより、管理者以外のユーザーが悪意を持ってURLにアクセスするのを防ぎます
   if (!membership?.admin_flg) {
-    redirect(`/group/${params.hashedId}/member?error=not_admin`);
+    redirect(`/group/${hashedId}/member?error=not_admin`);
   }
 
   // 5. 管理者であれば、子ページ（{children}）の表示を許可

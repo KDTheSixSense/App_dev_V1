@@ -4,13 +4,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+// サーバーから渡されるEvent型をインポート
+// APIレスポンスには inviteCode が含まれる可能性があるため、型を拡張します
+import type { Event as BaseEvent } from "@/lib/event";
 
-// イベントの型定義
-interface Event {
-  id: string;
-  name: string;
-  code?: string; // APIからのレスポンスに含まれる可能性がある
-}
+type Event = BaseEvent & {
+  inviteCode?: string;
+  startTime: Date; // startTimeプロパティを追加
+  endTime: Date; // endTimeプロパティを追加
+  _count?: { participants: number }; // 参加人数を保持するプロパティ
+};
+
 
 interface ProblemClientProps {
   initialEvents: Event[];
@@ -35,13 +39,6 @@ const ProblemClient = ({ initialEvents }: ProblemClientProps) => {
       return;
     }
     
-    // 既にリストにあるイベントへの参加を防ぐ
-    const isAlreadyJoined = events.some(event => event.id === eventCode || (event.code && event.code === eventCode));
-    if (isAlreadyJoined) {
-      setError("既に参加しているイベントです。");
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const response = await fetch('/api/event/event_list', {
@@ -58,8 +55,14 @@ const ProblemClient = ({ initialEvents }: ProblemClientProps) => {
       }
 
       const newEvent: Event = data;
+
+      // 既に参加済みのイベントかどうかを、APIからのレスポンスを受け取った後にチェックします
+      if (events.some(event => event.id === newEvent.id)) {
+        throw new Error("既に参加しているイベントです。");
+      }
+
       setEvents(prevEvents => [...prevEvents, newEvent]);
-      setJoinMessage(`「${newEvent.name}」に参加しました！`);
+      setJoinMessage(`「${newEvent.title}」に参加しました！`);
       setEventCode("");
 
     } catch (err) {
@@ -73,6 +76,23 @@ const ProblemClient = ({ initialEvents }: ProblemClientProps) => {
   const handleCreateEvent = () => {
     router.push("/event/admin/create_event");
   };
+
+  // 日付と時間をフォーマットするヘルパー関数
+  const formatEventDate = (start: string | Date) => {
+    const date = new Date(start);
+    return date.toLocaleDateString('ja-JP');
+  };
+
+  const formatEventTime = (start: string | Date) => {
+    // タイムゾーンを 'Asia/Tokyo' に固定して、サーバーとクライアントでの表示の差異をなくします。
+    const options: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+
+    const startTime = new Date(start).toLocaleTimeString('ja-JP', options);
+
+    return startTime;
+  };
+
+
 
   return (
     <div className="container mx-auto p-4">
@@ -105,11 +125,24 @@ const ProblemClient = ({ initialEvents }: ProblemClientProps) => {
 
       <div>
         <h2 className="text-xl font-semibold mb-2">参加中のイベント一覧</h2>
-        <ul className="list-disc list-inside">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {events.map((event) => (
-            <li key={event.id}>{event.name}</li>
+            <button
+              key={event.id}
+              onClick={() => router.push(`/event/event_detail/${event.id}`)}
+              className="btn btn-outline h-auto text-left flex flex-col items-start p-4 normal-case"
+            >
+              <div className="font-bold text-lg mb-2">{event.title}</div>
+              <div className="text-sm">
+                開催日: {formatEventDate(event.startTime)}
+              </div>
+              <div className="text-sm">
+                開催時間: {formatEventTime(event.startTime)}
+              </div>
+              <div className="text-sm">参加人数: {event._count?.participants ?? 'N/A'}</div>
+            </button>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   );
