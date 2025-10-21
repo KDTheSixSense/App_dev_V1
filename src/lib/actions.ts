@@ -122,7 +122,7 @@ export async function getNextProblemId(currentId: number, category: string): Pro
 /**
  * 正解時に経験値を付与し、解答履歴を保存するサーバーアクション
  */
-export async function awardXpForCorrectAnswer(problemId: number) {
+export async function awardXpForCorrectAnswer(problemId: number, subjectid?: number) {
   'use server';
 
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
