@@ -4,19 +4,25 @@ import * as XLSX from 'xlsx';
 import { problems as localProblems } from '../../app/(main)/issue_list/basic_info_b_problem/data/problems';
 
 export async function seedProblems(prisma: PrismaClient) {
+
   console.log('🌱 Seeding problems...');
 
   // 既存の問題関連データをクリア
   console.log('🗑️ Clearing old problem data...');
-  // 関連の強い順に削除していく
   await prisma.sampleCase.deleteMany({});
   await prisma.testCase.deleteMany({});
   await prisma.problemFile.deleteMany({});
-  await prisma.assignment.deleteMany({}); // AssignmentがProgrammingProblemを参照しているため先に削除
-  await prisma.programmingProblem.deleteMany({});
-
+  // Basc_Info_A_Question が UserAnswer を参照しているため、UserAnswer を先に削除
   await prisma.userAnswer.deleteMany({});
   await prisma.answer_Algorithm.deleteMany({});
+  
+  // Basc_Info_A_Question を削除リストに追加
+  await prisma.basc_Info_A_Question.deleteMany({});
+  
+  await prisma.assignment.deleteMany({}); 
+  await prisma.programmingProblem.deleteMany({});
+  await prisma.selectProblem.deleteMany({}); // SelectProblem もクリア対象に
+
   await prisma.questions.deleteMany({});
   await prisma.questions_Algorithm.deleteMany({});
 
@@ -825,66 +831,181 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
   console.log(`✅ Created ${selectionProblems.length} selection problems.`);
 }
 
-async function seedBasicInfoAProblems(prisma: PrismaClient) {
-  console.log('🌱 Seeding Basic Information Technology Engineer Examination (Part A) problems...');
-
-  // ここに基本情報A問題のデータ配列を定義します
-  const basicAProblems = [
-    {
-      title: '情報セキュリティの三要素',
-      description: '情報セキュリティにおいて、情報の「機密性」「完全性」「可用性」を維持することが重要です。このうち、「完全性（Integrity）」に関する説明として最も適切なものはどれですか？',
-      explanation: '完全性（Integrity）は、情報が破壊、改ざん、または消去されていない、正確かつ完全な状態を維持する特性を指します。',
-      answerOptions: [
-        '許可された者だけが情報にアクセスできること。',
-        '情報が破壊、改ざん、または消去されていないこと。',
-        '情報へのアクセスが認可されていること。',
-        '必要なときにいつでも情報にアクセスできること。'
-      ],
-      correctAnswer: 1, // 0から始まるインデックス
-      sourceYear: '令和5年',
-      sourceNumber: '問15',
-      difficultyId: 6, // 難易度ID (※事前にDifficultyテーブルに存在する必要があります)
-      subjectId: 2,    // 科目ID (※事前にSubjectテーブルに「基本情報A問題」のような科目が存在する必要があります)
-      categoryId: 1    // カテゴリID (※事前にCategoryテーブルに「テクノロジ系」などが存在する必要があります)
-    },
-    {
-      title: 'プロジェクトマネジメントの知識エリア',
-      description: 'プロジェクトマネジメントの活動を、10の知識エリアに分類したフレームワークはどれですか？',
-      explanation: 'PMBOK（Project Management Body of Knowledge）は、プロジェクトマネジメントの知識を10のエリア（統合、スコープ、スケジュール、コスト、品質、資源、コミュニケーション、リスク、調達、ステークホルダー）に体系化したものです。',
-      answerOptions: [
-        'ITIL',
-        'PMBOK',
-        'COBIT',
-        'SWOT分析'
-      ],
-      correctAnswer: 1,
-      difficultyId: 6,
-      subjectId: 2,
-      categoryId: 2 // カテゴリID (※事前にCategoryテーブルに「マネジメント系」などが存在する必要があります)
-    },
-    {
-      title: '経営戦略手法',
-      description: '企業の内部環境と外部環境を分析し、自社の「強み（Strengths）」「弱み（Weaknesses）」「機会（Opportunities）」「脅威（Threats）」を評価する経営戦略手法はどれですか？',
-      explanation: 'SWOT分析は、企業の戦略策定や意思決定のために、内部要因（強み・弱み）と外部要因（機会・脅威）を体系的に分析するフレームワークです。',
-      answerOptions: [
-        'バランススコアカード',
-        'ファイブフォース分析',
-        'プロダクトポートフォリオマネジメント',
-        'SWOT分析'
-      ],
-      correctAnswer: 3,
-      difficultyId: 6, // 難易度ID
-      subjectId: 2,
-      categoryId: 3 // カテゴリID (※事前にCategoryテーブルに「ストラテジ系」などが存在する必要があります)
-    },
-  ];
-
-  // データをデータベースに作成します
-  for (const problem of basicAProblems) {
-    await prisma.basc_Info_A_Question.create({
-      data: problem,
-    });
+/**
+ * answerOptions のテキスト ("アX イY ウZ エW") を ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数
+ */
+function parseAnswerOptionsText(text: string): string[] | null {
+  if (!text || typeof text !== 'string') {
+    return null;
+  }
+  const options: string[] = [];
+  // 正規表現を使って選択肢マーカー（ア、イ、ウ、エ）とそれに続くテキストを抽出
+  const matches = text.matchAll(/([アイウエ])([^アイウエ]+)/g);
+  
+  const tempOptions: { [key: string]: string } = {};
+  for (const match of matches) {
+      // match[1] は 'ア', 'イ', 'ウ', 'エ'
+      // match[2] は選択肢のテキスト (前後の空白をトリム)
+      tempOptions[match[1]] = match[2].trim();
   }
 
-  console.log(`✅ Created ${basicAProblems.length} Basic Info A problems.`);
+  // ア->イ->ウ->エ の順で配列に追加
+  if (tempOptions['ア']) options.push(tempOptions['ア']);
+  if (tempOptions['イ']) options.push(tempOptions['イ']);
+  if (tempOptions['ウ']) options.push(tempOptions['ウ']);
+  if (tempOptions['エ']) options.push(tempOptions['エ']);
+
+  // 4つの選択肢が正しく抽出できたか確認
+  if (options.length === 4) {
+    return options;
+  } else {
+    console.warn(` ⚠️ Could not parse 4 options from text: "${text}"`);
+    return null; // パース失敗
+  }
+}
+
+
+/**
+ * 基本情報A問題（PBL3基本A問題.xlsx）をデータベースにシードする
+ * [修正版] id 列が空になったらループを終了する
+ */
+async function seedBasicInfoAProblems(prisma: PrismaClient) {
+  console.log('🌱 Seeding Basic Info A problems from Excel file...');
+
+  const excelFileName = 'PBL3基本A問題.xlsx';
+  const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
+
+  try {
+    const workbook = XLSX.readFile(filePath);
+    const sheetName = '基本情報 A 問題';
+    const sheet = workbook.Sheets[sheetName];
+
+    if (!sheet) {
+      console.warn(` ⚠️ Sheet "${sheetName}" not found in ${excelFileName}. Skipping.`);
+      return;
+    }
+
+    const headers = [
+      'id',             // A列
+      'title',          // B列
+      'description',    // C列
+      'explanation',    // D列
+      'answerOptions',  // E列
+      'correctAnswer',  // F列
+      'difficultyId',   // G列
+      'difficulty',     // H列
+      'subjectId',      // I列
+      'subject',        // J列
+      'assignment',     // K列
+      'category',       // L列
+      'source',         // M列
+      'sourceYear'      // N列
+    ];
+
+    const records = XLSX.utils.sheet_to_json(sheet, {
+        header: headers,
+        range: 2
+    }) as any[];
+
+    console.log(` 🔍 Found ${records.length} records in sheet "${sheetName}".`);
+    if (records.length === 0) {
+      console.warn(' ⚠️ No data records found.');
+      return;
+    }
+
+
+    const categories = await prisma.category.findMany();
+    const defaultDifficulty = await prisma.difficulty.findUnique({ where: { name: '基本資格A問題' } });
+    const defaultSubject = await prisma.subject.findUnique({ where: { name: '基本情報A問題' } });
+
+    console.log(' 🔍 DB Categories:', categories.map(c => c.name));
+    if (!defaultDifficulty || !defaultSubject) {
+        console.error('❌ Master data error: Default Difficulty or Subject not found.');
+        return;
+    }
+
+
+    const answerMap: { [key: string]: number } = { 'ア': 0, 'イ': 1, 'ウ': 2, 'エ': 3 };
+    let createdCount = 0;
+    let processedRowCount = 0; // 処理した行数をカウント
+
+    for (const record of records) {
+      processedRowCount++; // 処理行数をインクリメント
+
+      // id が存在しない、null、undefined、または空文字の場合はループを終了
+      const problemId = parseInt(String(record.id).trim(), 10);
+      if (isNaN(problemId)) {
+          console.log(` ⏹️ Found invalid or empty ID at row ${processedRowCount + 2}. Stopping import.`);
+          break;
+      }
+
+      // title がない、または空文字の場合はスキップ (idはあるがデータがない行)
+      if (!record.title || String(record.title).trim() === '') {
+          console.log(` ⏩ Skipping row ${processedRowCount + 2} due to empty title.`);
+          continue;
+      }
+
+      const recordCategory = record.category ? String(record.category).trim() : undefined;
+      const category = categories.find(c => c.name === recordCategory);
+
+      if (!category) {
+        console.warn(` ⚠️ [Category mismatch] Row ${processedRowCount + 2}: Excel value: "${recordCategory}". Skipping: "${record.title}"`);
+        continue;
+      }
+
+      const difficulty = defaultDifficulty;
+      const subject = defaultSubject;
+
+      const parsedOptions = parseAnswerOptionsText(record.answerOptions);
+      if (!parsedOptions) {
+        console.warn(` ⚠️ Failed to parse answerOptions text for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
+        continue;
+      }
+
+      const correctAnswerIndex = answerMap[String(record.correctAnswer).trim()];
+      if (correctAnswerIndex === undefined) {
+         console.warn(` ⚠️ Invalid correct answer "${String(record.correctAnswer).trim()}" for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
+         continue;
+      }
+
+      const sourceNumber = record.source ? String(record.source).trim() : '不明';
+      const sourceYear = record.sourceYear ? String(record.sourceYear).trim() : '不明';
+
+      //   Excelに画像ファイル名列を追加して record.imageFileName のように参照する方が確実
+      const imagePath = `/images/basic_a/${problemId}.png`;
+
+      const dataToSave = {
+          title: record.title,
+          description: record.description || "",
+          explanation: record.explanation || "",
+          answerOptions: parsedOptions,
+          correctAnswer: correctAnswerIndex,
+          sourceYear: sourceYear,
+          sourceNumber: sourceNumber,
+          difficultyId: difficulty.id,
+          subjectId: subject.id,
+          categoryId: category.id,
+          imagePath: imagePath
+      };
+
+      try {
+          await prisma.basc_Info_A_Question.create({
+            data: dataToSave
+          });
+          createdCount++;
+      } catch (error: any) {
+          // ユニーク制約違反など、特定の行でエラーが発生した場合のログ
+          console.error(`❌ Error saving record for Row ${processedRowCount + 2}, Title: "${record.title}". Error: ${error.message}`);
+          // エラーがあっても処理を続ける場合は continue を使う
+          // continue;
+          // エラーが発生したら処理全体を停止する場合は break を使う
+          // break;
+      }
+    } // End of for loop
+
+    console.log(` ✅ Processed ${processedRowCount} rows. Created ${createdCount} Basic Info A questions.`);
+
+  } catch (error) {
+    console.error(`❌ Failed to read or process ${excelFileName}:`, error);
+  }
 }

@@ -126,6 +126,7 @@ model Category {
 model Basc_Info_A_Question {
   id            Int      @id @default(autoincrement())
   title         String   // 問題タイトル
+  imagePath     String?  // 問題画像のパス（Null許容）
   description   String   @db.Text // 問題文
   explanation   String   @db.Text // 解説
   

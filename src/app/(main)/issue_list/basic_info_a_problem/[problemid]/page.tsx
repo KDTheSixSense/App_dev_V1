@@ -2,50 +2,59 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { getAppSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-
-// --- データ取得とコンポーネント ---
-import { basicInfoAProblems } from '@/lib/issue_list/basic_info_a_problem/problem';
+import { getBasicInfoAProblem } from '@/lib/data';
 import ProblemClient from './ProblemClient';
-
-// --- 型定義 ---
 import type { SerializableProblem } from '@/lib/data';
 
 interface PageProps {
-  params: { problemId: string };
+  params: { problemid: string }; // lowercase matches folder
 }
 
-/**
- * 基本情報技術者試験 科目A の問題詳細ページ (サーバーコンポーネント)
- */
-const BasicInfoAProblemDetailPage = async ({ params }: PageProps) => {
-  const { problemId } = await (params as unknown as Promise<{ problemId: string }>);  
-  const session = await getAppSession();
-  const problem = basicInfoAProblems.find(p => p.id === problemId);
-  
-  // 問題が見つからない、またはanswerOptionsが存在しない場合は404ページを表示
-  if (!problem || !problem.answerOptions) {
+const BasicInfoAProblemDetailPage = async ({ params: asyncParams }: PageProps) => {
+  // Await the params object itself
+  const params = await asyncParams;
+
+  const problemIdNum = parseInt(params.problemid, 10); // Use lowercase
+
+  if (isNaN(problemIdNum)) {
+    console.log(`[Page] Invalid problem ID received: ${params.problemid}. Calling notFound().`);
     notFound();
   }
-  
-  // ログインしているユーザーの現在のクレジット数を取得
-  let userCredits = 0;
-  if (session?.user) {
-    const user = await prisma.user.findUnique({
-      where: { id: Number(session.user.id) },
-      select: { aiAdviceCredits: true }
-    });
-    if (user) {
-      userCredits = user.aiAdviceCredits;
-    }
+
+  const session = await getAppSession(); // Use getAppSession here
+
+  console.log(`[Page] Fetching problem for ID: ${problemIdNum}`);
+  const problem = await getBasicInfoAProblem(problemIdNum);
+  console.log(`[Page] Fetched problem data:`, problem ? `Title: ${problem.title.ja}` : 'null or undefined');
+
+  if (!problem) {
+    console.log(`[Page] Problem not found for ID: ${problemIdNum}. Calling notFound().`);
+    notFound();
   }
-  
+
+  let userCredits = 0;
+  if (session?.user?.id) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: Number(session.user.id) },
+        select: { aiAdviceCredits: true }
+      });
+      if (user) {
+        userCredits = user.aiAdviceCredits;
+      }
+    } catch (error) {
+       console.error("[Page] Error fetching user credits:", error);
+    }
+  } else {
+     console.log("[Page] No user session found, credits will be 0.");
+  }
+
   return (
     <ProblemClient
-      initialProblem={problem as SerializableProblem}
+      initialProblem={problem} // problem is guaranteed not null here
       initialCredits={userCredits}
     />
   );
 };
 
 export default BasicInfoAProblemDetailPage;
-
