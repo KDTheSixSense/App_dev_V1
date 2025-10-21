@@ -1,3 +1,5 @@
+// src/app/(main)/issue_list/basic_info_a_problem/[problemId]/page.tsx
+
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { getAppSession } from '@/lib/auth';

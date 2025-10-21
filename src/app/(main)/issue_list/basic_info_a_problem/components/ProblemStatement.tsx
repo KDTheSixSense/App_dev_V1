@@ -2,15 +2,14 @@
 import React from 'react';
 import Image from 'next/image';
 
+// ローカルの AnswerOption 型定義（@/lib/data に存在しないためここで定義）
+type AnswerOption = {
+  label: string;
+  value: string;
+};
+
 // --- プロップスの型定義 ---
 
-/**
- * 解答の選択肢のデータ構造を定義するインターフェース。
- */
-interface AnswerOption {
-  label: string; // 解答の表示ラベル（例: 'ア', 'A'）
-  value: string; // 解答の実際の値（例: '1,2'）。正誤判定に使用。
-}
 
 /**
  * ProblemStatement コンポーネントが受け取るプロップスの型を定義するインターフェース。

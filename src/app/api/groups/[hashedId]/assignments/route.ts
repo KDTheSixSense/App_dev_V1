@@ -12,14 +12,13 @@ interface SessionData {
 }
 
 // 課題一覧を取得 (GET)
-export async function GET(req: NextRequest, context: any) {
-  const { params } = context;
+export async function GET(req: NextRequest, { params }: { params: { hashedId: string } }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
 
-    const hashedId = params.hashedId;
+  const { hashedId } = params;
 
     if (!hashedId) {
         return NextResponse.json({ success: false, message: 'Invalid group ID format.' }, { status: 400 });
@@ -68,8 +67,7 @@ export async function GET(req: NextRequest, context: any) {
 }
 
 // 課題を作成 (POST)
-export async function POST(req: NextRequest, context: any) {
-  const { params } = context;
+export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
 
@@ -80,6 +78,7 @@ export async function POST(req: NextRequest, context: any) {
   const userId = Number(sessionUserId);
 
   try {
+    const { hashedId } = params;
     const body = await req.json();
     const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
 
@@ -90,7 +89,6 @@ export async function POST(req: NextRequest, context: any) {
       return NextResponse.json({ success: false, message: '課題となる問題が指定されていません。' }, { status: 400 });
     }
 
-    const hashedId = params.hashedId;
     if (typeof hashedId !== 'string') {
       return NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });
     }
@@ -125,6 +123,27 @@ export async function POST(req: NextRequest, context: any) {
           ...(selectProblemId && { selectProblem: { connect: { id: Number(selectProblemId) } } }),
         },
       });
+
+      // グループの全メンバーを取得
+      const members = await tx.groups_User.findMany({
+        where: { group_id: group.id },
+        select: { user_id: true },
+      });
+
+      // 全メンバーに対して「未提出」の提出レコードを作成
+      const submissionData = members.map(member => ({
+        assignment_id: createdAssignment.id,
+        userid: member.user_id,
+        status: '未提出',
+        description: '', // 初期値は空
+        codingid: 0,     // 初期値は0
+      }));
+
+      if (submissionData.length > 0) {
+        await tx.submissions.createMany({
+          data: submissionData,
+        });
+      }
 
       return createdAssignment;
     });

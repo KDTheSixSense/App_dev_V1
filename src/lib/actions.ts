@@ -1020,7 +1020,7 @@ export async function createEventAction(data: CreateEventFormData) {
     });
 
     // 4. キャッシュのクリアと成功レスポンス
-    revalidatePath('/event'); // イベント一覧ページなどのキャッシュをクリア
+    revalidatePath('/event/event_list'); // イベント一覧ページなどのキャッシュをクリア
     return { success: true, eventId: newEvent.id };
 
   } catch (error) {

@@ -5,10 +5,10 @@ import type { UnsubmittedAssignment } from '@/lib/data'; // 型定義をイン�
 // リンク先を決定するヘルパー関数
 const getAssignmentLink = (assignment: UnsubmittedAssignment): string => {
   if (assignment.programmingProblemId) {
-    return `/select-page/${assignment.programmingProblemId}`; //後でここのURLを変更する
+    return `/group/coding-page/${assignment.programmingProblemId}?assignmentId=${assignment.id}&hashedId=${assignment.groupHashedId}`;
   }
   if (assignment.selectProblemId) {
-    return `/coding-page/${assignment.selectProblemId}`; //後でここのURLを変更する
+    return `/group/select-page/${assignment.selectProblemId}?assignmentId=${assignment.id}&hashedId=${assignment.groupHashedId}`;
   }
   // どちらのIDもない場合のフォールバック（グループの課題タブへ）
   return `/group/${assignment.groupHashedId}?tab=課題`;
@@ -73,4 +73,3 @@ const UnsubmittedAssignmentsPage = async () => {
 };
 
 export default UnsubmittedAssignmentsPage;
-

@@ -75,6 +75,7 @@ type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 interface ProblemClientProps {
   initialProblem: SerializableProblem; // Keep receiving initialProblem
   initialCredits: number;
+
 }
 
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits }) => {

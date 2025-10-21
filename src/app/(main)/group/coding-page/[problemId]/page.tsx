@@ -20,7 +20,8 @@ export default async function ProblemSolverPage({ params, searchParams }: PagePr
     assignmentId: assignmentId || null,
     hashedId: hashedId || null,
   };
-  const problemId = parseInt(params.problemId, 10);
+  const { problemId: problemIdString } = params;
+  const problemId = parseInt(problemIdString, 10);
 
   if (isNaN(problemId)) {
     notFound();
