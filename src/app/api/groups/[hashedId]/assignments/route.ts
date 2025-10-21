@@ -12,13 +12,14 @@ interface SessionData {
 }
 
 // 課題一覧を取得 (GET)
-export async function GET(req: NextRequest, { params }: { params: { hashedId: string } }) {
+export async function GET(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
 
-  const { hashedId } = params;
+  const urlParts = req.url.split('/');
+  const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
 
     if (!hashedId) {
         return NextResponse.json({ success: false, message: 'Invalid group ID format.' }, { status: 400 });
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest, { params }: { params: { hashedId: st
 }
 
 // 課題を作成 (POST)
-export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
+export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
 
@@ -78,7 +79,8 @@ export async function POST(req: NextRequest, { params }: { params: { hashedId: s
   const userId = Number(sessionUserId);
 
   try {
-    const { hashedId } = params;
+    const urlParts = req.url.split('/');
+    const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
     const body = await req.json();
     const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
 

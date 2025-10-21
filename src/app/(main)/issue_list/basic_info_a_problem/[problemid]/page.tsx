@@ -8,18 +8,18 @@ import { getBasicInfoAProblem } from '@/lib/data';
 import ProblemClient from './ProblemClient';
 import type { SerializableProblem } from '@/lib/data';
 
-interface PageProps {
-  params: { problemid: string }; // lowercase matches folder
-}
+type BasicInfoAProblemDetailPageProps = {
+  params: Promise<{ problemid: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
-const BasicInfoAProblemDetailPage = async ({ params: asyncParams }: PageProps) => {
-  // Await the params object itself
-  const params = await asyncParams;
-
-  const problemIdNum = parseInt(params.problemid, 10); // Use lowercase
+const BasicInfoAProblemDetailPage = async ({ params, searchParams }: BasicInfoAProblemDetailPageProps) => {
+  const resolvedParams = await params;
+  const problemIdNum = parseInt(resolvedParams.problemid, 10); // Use lowercase
+  const resolvedSearchParams = searchParams ? await searchParams : undefined; // searchParams を await する
 
   if (isNaN(problemIdNum)) {
-    console.log(`[Page] Invalid problem ID received: ${params.problemid}. Calling notFound().`);
+    console.log(`[Page] Invalid problem ID received: ${resolvedParams.problemid}. Calling notFound().`);
     notFound();
   }
 

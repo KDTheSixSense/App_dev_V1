@@ -1,14 +1,15 @@
-// /app/(main)/group/[hashedId]/assignments/select/route.ts (新規作成)
-
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withApiSession } from '@/lib/session-api';
+import { getIronSession } from 'iron-session';
+import { sessionOptions } from '@/lib/session';
+import { cookies } from 'next/headers';
 
-type RouteContext = {
-  params: { [key: string]: string | string[] | undefined };
-};
+interface SessionData {
+  user?: { id: number | string; email: string };
+}
 
-export const POST = withApiSession(async (req, session, context: RouteContext) => {
+export async function POST(req: NextRequest) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
 
   if (!sessionUserId) {
@@ -17,18 +18,16 @@ export const POST = withApiSession(async (req, session, context: RouteContext) =
 
   try {
     const body = await req.json();
-    // フロントエンドから送られてくるデータ構造を想定
-    const { assignmentTitle, assignmentDescription, dueDate, problemData } = body;
+    const { assignmentTitle, assignmentDescription, dueDate, problemData, groupId } = body;
 
-    const { hashedId } = context.params;
-    if (typeof hashedId !== 'string') {
-      return NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });
+    if (!assignmentTitle || !dueDate || !problemData || !groupId) {
+      return NextResponse.json({ success: false, message: '必須項目が不足しています。' }, { status: 400 });
     }
 
     const newAssignment = await prisma.$transaction(async (tx) => {
       // グループの存在と管理者の権限をチェック
       const group = await tx.groups.findUnique({
-        where: { hashedId: hashedId },
+        where: { id: Number(groupId) },
       });
       if (!group) {
         throw new Error('グループが見つかりません');
@@ -96,4 +95,4 @@ export const POST = withApiSession(async (req, session, context: RouteContext) =
       { status: 500 }
     );
   }
-});
+}

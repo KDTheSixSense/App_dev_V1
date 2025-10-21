@@ -10,7 +10,7 @@ interface SessionData {
   user?: { id: number | string; email: string };
 }
 
-export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
+export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
 
@@ -20,19 +20,19 @@ export async function POST(req: NextRequest, { params }: { params: { hashedId: s
   const userId = Number(sessionUserId);
 
   try {
-    const { hashedId } = params;
+    // const { hashedId } = req.params as { hashedId: string };
     const body = await req.json();
     // フロントエンドから送られてくるデータ構造に合わせて修正
-    const { assignmentTitle, assignmentDescription, dueDate, problemData } = body;
+    const { assignmentTitle, assignmentDescription, dueDate, problemData, groupId } = body;
 
     // 必須項目のバリデーション
-    if (!assignmentTitle || !dueDate || !problemData) {
+    if (!assignmentTitle || !dueDate || !problemData || !groupId) {
       return NextResponse.json({ success: false, message: '必須項目が不足しています。' }, { status: 400 });
     }
 
     const newAssignment = await prisma.$transaction(async (tx) => {
       // グループの存在と管理者の権限をチェック
-      const group = await tx.groups.findUnique({ where: { hashedId } });
+      const group = await tx.groups.findUnique({ where: { id: Number(groupId) } });
       if (!group) {
         throw new Error('グループが見つかりません');
       }
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: { hashedId: s
         data: {
           title: assignmentTitle,
           description: assignmentDescription,
-          due_date: new Date(dueDate),
+          due_date: new Date(dueDate), // due_dateをDateオブジェクトに変換
           group: { connect: { id: group.id } },
           programmingProblem: { connect: { id: newProblem.id } }, // 作成した問題に接続
         },

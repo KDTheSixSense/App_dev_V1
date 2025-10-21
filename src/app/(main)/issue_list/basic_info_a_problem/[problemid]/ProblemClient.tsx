@@ -102,7 +102,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setIsAnswered(false);
     setChatMessages([{ sender: 'kohaku', text: textResources[language].problemStatement.hintInit }]); // Reset chat if needed
     console.log('[ProblemClient useEffect] Resetting state with new initialProblem:', initialProblem);
-    console.log('[ProblemClient useEffect] Image path in new initialProblem:', initialProblem?.imagePath);
+    console.log('[ProblemClient useEffect] Image path in new initialProblem:', (initialProblem as any)?.imagePath);
   }, [initialProblem]); // 依存配列を initialProblem のみにする
 
   const t = textResources[language].problemStatement;
@@ -155,7 +155,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     return <div>問題を読み込み中...</div>;
   }
   // この時点での problem.imagePath をログに出力
-  console.log(`[ProblemClient] Rendering ProblemStatement. Current problem state imagePath: "${problem.imagePath}"`);
+  console.log(`[ProblemClient] Rendering ProblemStatement. Current problem state imagePath: "${(problem as any).imagePath}"`);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
@@ -172,7 +172,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             correctAnswer={problem.correctAnswer}
             isAnswered={isAnswered}
             explanation={problem.explanationText?.[currentLang] || ''}
-            imagePath={problem.imagePath} // ここで渡す値を確認
+            imagePath={(problem as any).imagePath} // ここで渡す値を確認
             language={language}
             textResources={t}
           />

@@ -1,20 +1,25 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { withApiSession } from '@/lib/session-api';
+import { getIronSession } from 'iron-session';
+import { sessionOptions } from '@/lib/session';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
-export const POST = withApiSession(async (req, session) => {
+interface SessionData {
+  user?: { id: number | string; email: string };
+}
+
+export async function POST(req: NextRequest) {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    const user = session.user;
+
+    if (!user || !user.id) {
+        return NextResponse.json({ success: false, message: '認証されていません。' }, { status: 401 });
+    }
+    const userId = Number(user.id);
+
     try {
-        // セッションからユーザー情報を取得
-        const user = session.user;
-
-        // ログインしていない場合はエラーを返す
-        if (!user || !user.id) {
-            return NextResponse.json({ success: false, message: '認証されていません。' }, { status: 401 });
-        }
-        const userId = Number(user.id);
-
         const body = await req.json();
         const {
             title,
@@ -52,7 +57,7 @@ export const POST = withApiSession(async (req, session) => {
         }
         return NextResponse.json({ success: false, message: 'An unknown error occurred' }, { status: 500 });
     }
-});
+}
 
 // 選択問題の一覧を取得するGETハンドラ (こちらも念のため記載)
 export async function GET(request: Request) {

@@ -17,13 +17,10 @@ export interface AnswerOption {
 
 // クライアントに渡すことができる、シリアライズ可能な問題の型
 export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'> & {
+  answerOptions?: { ja: AnswerOption[]; en: AnswerOption[] }; // answerOptions をオプションに修正
   sourceYear?: string;
   sourceNumber?: string;
-};
-
-// --- ▼▼▼ セッションの型定義を追加します ▼▼▼ ---
-export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'> & {
-    imagePath?: string; // Optional image path
+  imagePath?: string; // Optional image path
 };
 
 interface SessionData {
