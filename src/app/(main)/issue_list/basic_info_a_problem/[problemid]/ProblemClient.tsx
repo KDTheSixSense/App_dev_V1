@@ -7,7 +7,8 @@ import Link from 'next/link';
 
 // --- コンポーネントのインポート ---
 import ProblemStatement from '../components/ProblemStatement';
-// 
+// import KohakuChat from '@/components/KohakuChat';
+
 // --- データと型、アクションのインポート ---
 import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
 import { getHintFromAI } from '@/lib/actions/hintactions';
@@ -24,15 +25,15 @@ const textResources = {
       programTitle: "（プログラム）",
       answerGroup: "解答群",
       explanationTitle: "解説",
-      // hintInit: "こんにちは！何かわからないことはありますか？",
-      // hintCorrect: "正解です！解説も読んで理解を深めましょう！",
-      // hintIncorrect: (correctValue: string) => `残念、正解は「${correctValue}」でした。解説を読んでみましょう。`,
-      // kohakuChatTitle: "コハクに質問",
-      // chatInputPlaceholder: "コハクに質問する...",
-      // sendButton: "質問",
+      hintInit: "こんにちは！何かわからないことはありますか？",
+      hintCorrect: "正解です！解説も読んで理解を深めましょう！",
+      hintIncorrect: (correctValue: string) => `残念、正解は「${correctValue}」でした。解説を読んでみましょう。`,
+      kohakuChatTitle: "コハクに質問",
+      chatInputPlaceholder: "コハクに質問する...",
+      sendButton: "質問",
       nextProblemButton: "次の問題へ",
-      // noCreditsMessage: "アドバイス回数が残っていません。プロフィールページでXPと交換できます。",
-      // noCreditsPlaceholder: "アドバイス回数がありません",
+      noCreditsMessage: "アドバイス回数が残っていません。プロフィールページでXPと交換できます。",
+      noCreditsPlaceholder: "アドバイス回数がありません",
     },
   },
   en: {
@@ -41,15 +42,15 @@ const textResources = {
       programTitle: "(Program)",
       answerGroup: "Answer Choices",
       explanationTitle: "Explanation",
-      // hintInit: "Hello! Is there anything I can help you with?",
-      // hintCorrect: "That's correct! Let's read the explanation to deepen your understanding!",
-      // hintIncorrect: (correctValue: string) => `Unfortunately, the correct answer was "${correctValue}". Let's read the explanation.`,
-      // kohakuChatTitle: "Ask Kohaku",
-      // chatInputPlaceholder: "Ask Kohaku...",
-      // sendButton: "Ask",
+      hintInit: "Hello! Is there anything I can help you with?",
+      hintCorrect: "That's correct! Let's read the explanation to deepen your understanding!",
+      hintIncorrect: (correctValue: string) => `Unfortunately, the correct answer was "${correctValue}". Let's read the explanation.`,
+      kohakuChatTitle: "Ask Kohaku",
+      chatInputPlaceholder: "Ask Kohaku...",
+      sendButton: "Ask",
       nextProblemButton: "Next Problem",
-      // noCreditsMessage: "No advice credits remaining. You can exchange XP for credits on your profile page.",
-      // noCreditsPlaceholder: "No credits remaining",
+      noCreditsMessage: "No advice credits remaining. You can exchange XP for credits on your profile page.",
+      noCreditsPlaceholder: "No credits remaining",
     },
   },
 } as const;
@@ -87,9 +88,9 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setCredits(initialCredits);
     setSelectedAnswer(null);
     setIsAnswered(false);
-    // setChatMessages([
-    //   { sender: 'kohaku', text: textResources[language].problemStatement.hintInit },
-    // ]);
+    setChatMessages([
+      { sender: 'kohaku', text: textResources[language].problemStatement.hintInit },
+    ]);
   }, [initialProblem, initialCredits, language]);
 
   const t = textResources[language].problemStatement;
@@ -117,8 +118,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       }
     }
 
-  //   const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
-  //   setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
+    const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
+    setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
   };
 
   const handleNextProblem = async () => {
@@ -131,34 +132,34 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     }
   };
 
-  // const handleUserMessage = async (message: string) => {
-  //     if (credits <= 0) {
-  //       setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
-  //       return;
-  //     }
+  const handleUserMessage = async (message: string) => {
+      if (credits <= 0) {
+        setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
+        return;
+      }
   
-  //     setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
-  //     setIsAiLoading(true);
+      setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
+      setIsAiLoading(true);
   
-  //     try {
-  //       const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
-  //       const data = await res.json();
-  //       if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
-  //       setCredits(data.newCredits);
+      try {
+        const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
+        setCredits(data.newCredits);
   
-  //       const context = { 
-  //         problemTitle: problem.title[currentLang], 
-  //         problemDescription: problem.description[currentLang],
-  //         userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムを文字列として渡す
-  //       };
-  //       const hint = await getHintFromAI(message, context);
-  //       setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
-  //     } catch (error: any) {
-  //       setChatMessages(prev => [...prev, { sender: 'kohaku', text: error.message }]);
-  //     } finally {
-  //       setIsAiLoading(false);
-  //     }
-  //   };
+        const context = { 
+          problemTitle: problem.title[currentLang], 
+          problemDescription: problem.description[currentLang],
+          userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムを文字列として渡す
+        };
+        const hint = await getHintFromAI(message, context);
+        setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
+      } catch (error: any) {
+        setChatMessages(prev => [...prev, { sender: 'kohaku', text: error.message }]);
+      } finally {
+        setIsAiLoading(false);
+      }
+    };
 
   const currentLang = language;
 
@@ -184,7 +185,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           />
         </div>
 
-        {/* <div className="fixed bottom-4 right-4 lg:col-span-8 lg:col-start-3 w-full max-w-md lg:max-w-none mx-auto lg:w-full mt-8">
+        <div className="fixed bottom-4 right-4 lg:col-span-8 lg:col-start-3 w-full max-w-md lg:max-w-none mx-auto lg:w-full mt-8">
            <div className="bg-white p-3 rounded-t-lg shadow-lg border-b text-center">
               <p className="text-sm text-gray-600">
                 AIアドバイス残り回数: <span className="font-bold text-lg text-blue-600">{credits}</span> 回
@@ -203,7 +204,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             isLoading={isPending}
             isDisabled={credits <= 0}
           />
-        </div> */}
+        </div>
       </div>
 
       {isAnswered && (

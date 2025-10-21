@@ -42,4 +42,17 @@ export async function seedMasterData(prisma: PrismaClient) {
   ];
   for (const t of titlesToSeed) { await prisma.title.upsert({ where: { id: t.id }, update: {}, create: t }); }
   console.log('✅ Titles seeded.');
+
+  // 既存のカテゴリをクリアする場合（必要に応じて）
+  const categories = [
+    { id: 1, name: 'テクノロジ系' },
+    { id: 2, name: 'マネジメント系' },
+    { id: 3, name: 'ストラテジ系' },
+  ];
+
+  for (const category of categories) {
+    await prisma.category.create({
+      data: category,
+    });
+  }
 }
