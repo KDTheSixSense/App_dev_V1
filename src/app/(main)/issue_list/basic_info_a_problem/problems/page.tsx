@@ -34,7 +34,7 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, sourc
 // The main page component (Server Component)
 const ProblemsListPage = async () => {
   // Fetch the list of Basic Info A problems from the database
-  const problems = await prisma.basc_Info_A_Question.findMany({
+  const problems = await prisma.basic_Info_A_Question.findMany({
     select: {
       id: true,
       title: true,

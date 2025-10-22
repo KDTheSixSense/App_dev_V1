@@ -17,7 +17,7 @@ export async function seedProblems(prisma: PrismaClient) {
   await prisma.answer_Algorithm.deleteMany({});
   
   // Basc_Info_A_Question を削除リストに追加
-  await prisma.basc_Info_A_Question.deleteMany({});
+  await prisma.basic_Info_A_Question.deleteMany({});
   
   await prisma.assignment.deleteMany({}); 
   await prisma.programmingProblem.deleteMany({});
@@ -989,7 +989,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
       };
 
       try {
-          await prisma.basc_Info_A_Question.create({
+          await prisma.basic_Info_A_Question.create({
             data: dataToSave
           });
           createdCount++;

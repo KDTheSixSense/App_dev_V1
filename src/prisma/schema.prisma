@@ -79,7 +79,7 @@ model UserAnswer {
   // --- リレーション定義 ---
   user     User      @relation(fields: [userId], references: [id])
   question Questions @relation(fields: [questionId], references: [id])
-  problems  Basc_Info_A_Question[]
+  problems  Basic_Info_A_Question[]
 }
 
 //科目テーブル
@@ -91,7 +91,7 @@ model Subject {
   userProgresses      UserSubjectProgress[] // この科目を学習しているユーザーの進捗リスト
   Questions_Algorithm Questions_Algorithm[]
   SelectProblem       SelectProblem[]      // SelectProblemとのリレーション
-  problems  Basc_Info_A_Question[]
+  problems  Basic_Info_A_Question[]
 }
 
 model Language {
@@ -120,10 +120,10 @@ model Category {
   name      String   @unique
   
   // このカテゴリに属する問題のリスト
-  problems  Basc_Info_A_Question[]
+  problems  Basic_Info_A_Question[]
 }
 
-model Basc_Info_A_Question {
+model Basic_Info_A_Question {
   id            Int      @id @default(autoincrement())
   title         String   // 問題タイトル
   imagePath     String?  // 問題画像のパス（Null許容）
@@ -405,7 +405,7 @@ model Difficulty {
   Questions_Algorithm Questions_Algorithm[]
   Questions           Questions[]
   SelectProblem       SelectProblem[]
-  problems  Basc_Info_A_Question[]
+  problems  Basic_Info_A_Question[]
 }
 
 model Groups {
@@ -458,7 +458,7 @@ model Assignment {
   // --- リレーション定義 ---
   group       Groups        @relation(fields: [groupid], references: [id])
   Submissions Submissions[]
-  problems  Basc_Info_A_Question[]
+  problems  Basic_Info_A_Question[]
 }
 
 model Submissions {

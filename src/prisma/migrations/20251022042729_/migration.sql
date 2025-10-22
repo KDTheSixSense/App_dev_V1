@@ -96,7 +96,7 @@ CREATE TABLE "Category" (
 );
 
 -- CreateTable
-CREATE TABLE "Basc_Info_A_Question" (
+CREATE TABLE "Basic_Info_A_Question" (
     "id" SERIAL NOT NULL,
     "title" TEXT NOT NULL,
     "imagePath" TEXT,
@@ -111,7 +111,7 @@ CREATE TABLE "Basc_Info_A_Question" (
     "assignmentId" INTEGER,
     "categoryId" INTEGER NOT NULL,
 
-    CONSTRAINT "Basc_Info_A_Question_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Basic_Info_A_Question_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -476,11 +476,11 @@ CREATE TABLE "Event_Submission" (
 );
 
 -- CreateTable
-CREATE TABLE "_Basc_Info_A_QuestionToUserAnswer" (
+CREATE TABLE "_Basic_Info_A_QuestionToUserAnswer" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL,
 
-    CONSTRAINT "_Basc_Info_A_QuestionToUserAnswer_AB_pkey" PRIMARY KEY ("A","B")
+    CONSTRAINT "_Basic_Info_A_QuestionToUserAnswer_AB_pkey" PRIMARY KEY ("A","B")
 );
 
 -- CreateIndex
@@ -547,7 +547,7 @@ CREATE UNIQUE INDEX "Event_Participants_eventId_userId_key" ON "Event_Participan
 CREATE UNIQUE INDEX "Event_Issue_List_eventId_problemId_key" ON "Event_Issue_List"("eventId", "problemId");
 
 -- CreateIndex
-CREATE INDEX "_Basc_Info_A_QuestionToUserAnswer_B_index" ON "_Basc_Info_A_QuestionToUserAnswer"("B");
+CREATE INDEX "_Basic_Info_A_QuestionToUserAnswer_B_index" ON "_Basic_Info_A_QuestionToUserAnswer"("B");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_selectedTitleId_fkey" FOREIGN KEY ("selectedTitleId") REFERENCES "Title"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -574,16 +574,16 @@ ALTER TABLE "Answer_Algorithm" ADD CONSTRAINT "Answer_Algorithm_userId_fkey" FOR
 ALTER TABLE "Answer_Algorithm" ADD CONSTRAINT "Answer_Algorithm_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Questions_Algorithm"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Basc_Info_A_Question" ADD CONSTRAINT "Basc_Info_A_Question_difficultyId_fkey" FOREIGN KEY ("difficultyId") REFERENCES "Difficulty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Basic_Info_A_Question" ADD CONSTRAINT "Basic_Info_A_Question_difficultyId_fkey" FOREIGN KEY ("difficultyId") REFERENCES "Difficulty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Basc_Info_A_Question" ADD CONSTRAINT "Basc_Info_A_Question_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Basic_Info_A_Question" ADD CONSTRAINT "Basic_Info_A_Question_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Basc_Info_A_Question" ADD CONSTRAINT "Basc_Info_A_Question_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "Assignment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Basic_Info_A_Question" ADD CONSTRAINT "Basic_Info_A_Question_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "Assignment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Basc_Info_A_Question" ADD CONSTRAINT "Basc_Info_A_Question_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Basic_Info_A_Question" ADD CONSTRAINT "Basic_Info_A_Question_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Questions_Algorithm" ADD CONSTRAINT "Questions_Algorithm_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -688,7 +688,7 @@ ALTER TABLE "Event_Submission" ADD CONSTRAINT "Event_Submission_userId_fkey" FOR
 ALTER TABLE "Event_Submission" ADD CONSTRAINT "Event_Submission_eventIssueId_fkey" FOREIGN KEY ("eventIssueId") REFERENCES "Event_Issue_List"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_Basc_Info_A_QuestionToUserAnswer" ADD CONSTRAINT "_Basc_Info_A_QuestionToUserAnswer_A_fkey" FOREIGN KEY ("A") REFERENCES "Basc_Info_A_Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_Basic_Info_A_QuestionToUserAnswer" ADD CONSTRAINT "_Basic_Info_A_QuestionToUserAnswer_A_fkey" FOREIGN KEY ("A") REFERENCES "Basic_Info_A_Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_Basc_Info_A_QuestionToUserAnswer" ADD CONSTRAINT "_Basc_Info_A_QuestionToUserAnswer_B_fkey" FOREIGN KEY ("B") REFERENCES "UserAnswer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_Basic_Info_A_QuestionToUserAnswer" ADD CONSTRAINT "_Basic_Info_A_QuestionToUserAnswer_B_fkey" FOREIGN KEY ("B") REFERENCES "UserAnswer"("id") ON DELETE CASCADE ON UPDATE CASCADE;

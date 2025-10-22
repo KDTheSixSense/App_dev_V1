@@ -89,7 +89,7 @@ export async function getNextProblemId(currentId: number, category: string): Pro
       problemIds = [...staticIds, ...algoIds];
     } else if (category === 'basic_info_a_problem') {
       // Basc_Info_A_Question テーブルからIDを取得
-      problemIds = await prisma.basc_Info_A_Question.findMany({
+      problemIds = await prisma.basic_Info_A_Question.findMany({
         select: { id: true },
       });
     } else {
@@ -173,7 +173,7 @@ export async function awardXpForCorrectAnswer(problemId: number, subjectid?: num
       };
       } else {
       // 3. なければ基本情報A問題テーブル(Basc_Info_A_Question)を探す
-      const basicAProblem = await prisma.basc_Info_A_Question.findUnique({
+      const basicAProblem = await prisma.basic_Info_A_Question.findUnique({
         where: { id: problemId },
         select: { subjectId: true, difficultyId: true },
       });
