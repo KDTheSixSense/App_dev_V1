@@ -1,149 +1,123 @@
-// イベントリスト（参加・作成を選択する初期ページ　UI関係コンポーネント）
 // app/(main)/event/event_list/ProblemClient.tsx
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-// サーバーから渡されるEvent型をインポート
-// APIレスポンスには inviteCode が含まれる可能性があるため、型を拡張します
-import type { Event as BaseEvent } from "@/lib/event";
+import { useState, Fragment } from 'react';
+import { useRouter } from 'next/navigation';
+import { Transition, Dialog } from '@headlessui/react';
+import type { Event as 基本イベント } from "@/lib/event";
+import { EventActions } from './components/EventActions';
+import { EventList } from './components/EventList';
 
-type Event = BaseEvent & {
-  inviteCode?: string;
-  startTime: Date; // startTimeプロパティを追加
-  endTime: Date; // endTimeプロパティを追加
-  _count?: { participants: number }; // 参加人数を保持するプロパティ
+// --- 型定義 ---
+type イベント = 基本イベント & {
+  startTime: Date;
+  endTime: Date;
+  _count?: { participants: number };
 };
 
-
 interface ProblemClientProps {
-  initialEvents: Event[];
+  initialEvents: イベント[];
 }
 
-const ProblemClient = ({ initialEvents }: ProblemClientProps) => {
-  const router = useRouter();
-  const [eventCode, setEventCode] = useState("");
-  const [events, setEvents] = useState<Event[]>(initialEvents);
-  const [error, setError] = useState("");
-  const [joinMessage, setJoinMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+// --- モーダルコンポーネント ---
+const 参加モーダル = ({ 表示中, 閉じる処理, 参加処理 }: {
+  表示中: boolean;
+  閉じる処理: () => void;
+  参加処理: (code: string) => Promise<void>;
+}) => {
+  const [参加コード, set参加コード] = useState('');
+  const [処理中, set処理中] = useState(false);
+  const [エラー, setエラー] = useState('');
 
-  // イベント参加フォームの送信処理
-  const handleJoinEvent = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
-    setJoinMessage("");
-
-    if (!eventCode.trim()) {
-      setError("イベントコードを入力してください。");
+  const 送信処理 = async () => {
+    if (!参加コード.trim()) {
+      setエラー('参加コードを入力してください。');
       return;
     }
-    
-    setIsSubmitting(true);
+    set処理中(true);
+    setエラー('');
     try {
-      const response = await fetch('/api/event/event_list', {
+      await 参加処理(参加コード);
+    } catch (err) {
+      setエラー(err instanceof Error ? err.message : "不明なエラーが発生しました。");
+    } finally {
+      set処理中(false);
+    }
+  };
+  
+  const 閉じる = () => {
+    if (処理中) return;
+    setエラー('');
+    set参加コード('');
+    閉じる処理();
+  };
+
+  return (
+    <Transition appear show={表示中} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={閉じる}>
+        <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0"><div className="fixed inset-0 bg-black bg-opacity-50" /></Transition.Child>
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-gray-900">イベントに参加</Dialog.Title>
+                <div className="mt-2"><p className="text-sm text-gray-500">管理者から共有された参加コードを入力してください。</p></div>
+                <div className="mt-4">
+                  <input type="text" value={参加コード} onChange={(e) => set参加コード(e.target.value)} placeholder="イベントコード" className={`w-full rounded-md border px-3 py-2 text-gray-900 shadow-sm focus:outline-none focus:ring-2 ${エラー ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-indigo-500'}`} />
+                  {エラー && <p className="mt-2 text-sm text-red-600">{エラー}</p>}
+                </div>
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button type="button" onClick={閉じる} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">キャンセル</button>
+                  <button type="button" onClick={送信処理} disabled={処理中} className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed">{処理中 ? '処理中...' : '参加する'}</button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  );
+};
+
+/**
+ * タスク：イベントページのクライアントサイド全体の動作を統括します。
+ */
+const ProblemClient = ({ initialEvents }: ProblemClientProps) => {
+  const router = useRouter();
+  const [モーダル表示中, setモーダル表示中] = useState(false);
+
+  const イベント参加処理 = async (eventCode: string) => {
+    try {
+      const response = await fetch('/api/event/join', {
         method: 'POST',
-        body: JSON.stringify({ eventCode }),
+        body: JSON.stringify({ inviteCode: eventCode }),
         headers: { 'Content-Type': 'application/json' },
       });
-
       const data = await response.json();
-
       if (!response.ok) {
-        // APIからのエラーメッセージを表示
         throw new Error(data.message || 'イベントへの参加に失敗しました。');
       }
-
-      const newEvent: Event = data;
-
-      // 既に参加済みのイベントかどうかを、APIからのレスポンスを受け取った後にチェックします
-      if (events.some(event => event.id === newEvent.id)) {
-        throw new Error("既に参加しているイベントです。");
-      }
-
-      setEvents(prevEvents => [...prevEvents, newEvent]);
-      setJoinMessage(`「${newEvent.title}」に参加しました！`);
-      setEventCode("");
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "不明なエラーが発生しました。");
-    } finally {
-      setIsSubmitting(false);
+      setモーダル表示中(false);
+      router.push(`/event/event_detail/${data.eventId}`);
+    } catch (error) {
+      throw error;
     }
   };
 
-  // イベント作成ページへ遷移
-  const handleCreateEvent = () => {
-    router.push("/event/admin/create_event");
-  };
-
-  // 日付と時間をフォーマットするヘルパー関数
-  const formatEventDate = (start: string | Date) => {
-    const date = new Date(start);
-    return date.toLocaleDateString('ja-JP');
-  };
-
-  const formatEventTime = (start: string | Date) => {
-    // タイムゾーンを 'Asia/Tokyo' に固定して、サーバーとクライアントでの表示の差異をなくします。
-    const options: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
-
-    const startTime = new Date(start).toLocaleTimeString('ja-JP', options);
-
-    return startTime;
-  };
-
-
-
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">イベント</h1>
+    <div className="bg-gray-50 min-h-screen">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-4">イベント</h1>
+        
+        <EventActions onJoinClick={() => setモーダル表示中(true)} />
+        <EventList events={initialEvents} />
 
-      <div className="mb-8 p-4 border rounded-lg">
-        <h2 className="text-xl font-semibold mb-2">イベントに参加する</h2>
-        <form onSubmit={handleJoinEvent} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={eventCode}
-            onChange={(e) => setEventCode(e.target.value)}
-            placeholder="イベントコードを入力"
-            className="input input-bordered w-full max-w-xs"
-          />
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-            参加
-          </button>
-        </form>
-        {error && <p className="text-red-500 mt-2">{error}</p>}
-        {joinMessage && <p className="text-green-500 mt-2">{joinMessage}</p>}
-      </div>
-
-      <div className="mb-8 p-4 border rounded-lg">
-        <h2 className="text-xl font-semibold mb-2">イベントを作成する</h2>
-        <button onClick={handleCreateEvent} className="btn btn-secondary">
-          イベント作成ページへ
-        </button>
-      </div>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-2">参加中のイベント一覧</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {events.map((event) => (
-            <button
-              key={event.id}
-              onClick={() => router.push(`/event/event_detail/${event.id}`)}
-              className="btn btn-outline h-auto text-left flex flex-col items-start p-4 normal-case"
-            >
-              <div className="font-bold text-lg mb-2">{event.title}</div>
-              <div className="text-sm">
-                開催日: {formatEventDate(event.startTime)}
-              </div>
-              <div className="text-sm">
-                開催時間: {formatEventTime(event.startTime)}
-              </div>
-              <div className="text-sm">参加人数: {event._count?.participants ?? 'N/A'}</div>
-            </button>
-          ))}
-        </div>
-      </div>
+        <参加モーダル
+          表示中={モーダル表示中}
+          閉じる処理={() => setモーダル表示中(false)}
+          参加処理={イベント参加処理}
+        />
+      </main>
     </div>
   );
 };
