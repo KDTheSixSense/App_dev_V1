@@ -171,7 +171,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     if (correct) {
       try {
         const problemId = parseInt(problem.id, 10);
-        const result = await awardXpForCorrectAnswer(problemId);
+        const result = await awardXpForCorrectAnswer(problemId, 3); // 科目Bの問題なのでsubjectidに3を渡す
         // 処理が成功し、エラーでなければヘッダーのペットゲージを更新する
         if (result.message === '経験値を獲得しました！') {
             window.dispatchEvent(new CustomEvent('petStatusUpdated'));

@@ -1,35 +1,35 @@
-// イベントリスト（参加・作成を選択する初期ページ）
 // app/(main)/event/event_list/page.tsx
 
-import { getEvents, type Event as BaseEvent } from "@/lib/event";
+import { getEvents, type Event as 基本イベント } from "@/lib/event";
 import ProblemClient from "./ProblemClient";
 
-// ProblemClientで期待される型に合わせて拡張
-type Event = BaseEvent & {
+// クライアントコンポーネントが期待する型に合わせます
+type イベント = 基本イベント & {
   startTime: Date;
   endTime: Date;
   _count?: { participants: number };
 };
 
-const EventListPage = async () => {
-  let initialEvents: Event[] = [];
+/**
+ * タスク：サーバーサイドで初期表示に必要なイベントデータを取得します。
+ */
+const イベントリストページ = async () => {
+  let initialEvents: イベント[] = [];
 
   try {
-    // getEventsが正しいデータを返すようになったので、型アサーションは不要
     const eventsFromDb = await getEvents();
     
     initialEvents = eventsFromDb.map(event => ({
       ...event,
-      // startTimeやendTimeがnullの場合、無効な日付にならないように現在時刻で代替
-      startTime: new Date(event.startTime || Date.now()),
-      endTime: new Date(event.endTime || Date.now()),
+      startTime: event.startTime ? new Date(event.startTime) : new Date(),
+      // この行を完成させます 
+      endTime: event.endTime ? new Date(event.endTime) : new Date(),
     }));
   } catch (error) {
-    console.error("Failed to fetch initial events:", error);
-    
+    console.error("初期イベントの取得に失敗しました:", error);
   }
 
   return <ProblemClient initialEvents={initialEvents} />;
 };
 
-export default EventListPage;
+export default イベントリストページ;

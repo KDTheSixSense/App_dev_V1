@@ -1,8 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma'; // Make sure prisma client is imported
+import { prisma } from '@/lib/prisma'; // データベース接続(Prisma)をインポート
 
-// Interface for props passed to the list row component
+// 削除: ローカルファイルからのインポートは不要になります
+// import { basicInfoAProblems } from '@/lib/issue_list/basic_info_a_problem/problem';
+
 interface ProblemListRowProps {
   problemId: number;
   title: string;
