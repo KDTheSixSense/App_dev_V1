@@ -1,3 +1,5 @@
+//app/(main)/group/coding-page/[problemId]/ProblemSolverClient.tsx
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -25,9 +27,22 @@ const textResources = {
     }
 };
 
-const CustomAlertModal: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => (
+const CustomAlertModal: React.FC<{
+    message: string;
+    onClose: () => void;
+    actionButton?: {
+        text: string;
+        onClick: () => void;
+    };
+}> = ({ message, onClose, actionButton }) => (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
-        <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4"><p className="text-lg text-gray-800 mb-4">{message}</p><button onClick={onClose} className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">OK</button></div>
+        <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
+            <p className="text-lg text-gray-800 mb-6">{message}</p>
+            <div className="flex flex-col gap-2">
+                {actionButton && <button onClick={actionButton.onClick} className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">{actionButton.text}</button>}
+                <button onClick={onClose} className={`w-full py-2 px-4 rounded-md transition-colors ${actionButton ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>閉じる</button>
+            </div>
+        </div>
     </div>
 );
 
@@ -106,7 +121,17 @@ const CodeEditorPanel: React.FC<{
                     {activeTab === 'output' && (
                         <div>
                             {props.executionResult && (<div className="bg-gray-800 text-white p-3 rounded-md font-mono text-xs"><div className="text-gray-400 mb-1">実行結果:</div><pre className="whitespace-pre-wrap">{props.executionResult}</pre></div>)}
-                            {props.submitResult && (<div className={`border p-4 rounded-md mt-2 ${props.submitResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}><div className="flex items-center gap-2 mb-2"><CheckCircle className={`h-5 w-5 ${props.submitResult.success ? 'text-green-600' : 'text-red-600'}`} /><h4 className={`font-semibold ${props.submitResult.success ? 'text-green-800' : 'text-red-800'}`}>{props.submitResult.success ? '正解' : '不正解'}</h4></div><p className="text-sm">{props.submitResult.message}</p>{!props.submitResult.success && props.submitResult.yourOutput !== undefined && (<><p className="text-sm mt-2 font-semibold">あなたの出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-red-700">{props.submitResult.yourOutput || '(空の出力)'}</pre><p className="text-sm mt-2 font-semibold">期待する出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-green-700">{props.submitResult.expected}</pre></>)}</div>)}
+                            {props.submitResult && (
+                                <div className={`border p-4 rounded-md mt-2 ${props.submitResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <CheckCircle className={`h-5 w-5 ${props.submitResult.success ? 'text-green-600' : 'text-red-600'}`} />
+                                            <h4 className={`font-semibold ${props.submitResult.success ? 'text-green-800' : 'text-red-800'}`}>{props.submitResult.success ? '正解' : '不正解'}</h4>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm mt-1">{props.submitResult.message}</p>
+                                    {!props.submitResult.success && props.submitResult.yourOutput !== undefined && (<><p className="text-sm mt-2 font-semibold">あなたの出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-red-700">{props.submitResult.yourOutput || '(空の出力)'}</pre><p className="text-sm mt-2 font-semibold">期待する出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-green-700">{props.submitResult.expected}</pre></>)}
+                                </div>)}
                         </div>
                     )}
                 </div>
@@ -154,7 +179,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
     const [alertMessage, setAlertMessage] = useState('');
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [onCloseAction, setOnCloseAction] = useState<(() => void) | null>(null);
-
+    const [alertAction, setAlertAction] = useState<{ text: string; onClick: () => void; } | undefined>(undefined);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -213,9 +238,8 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
                                 status: '提出済み', // statusを明示的に指定
                             }),
                         });
-                        // アラートメッセージとOKボタン押下時のアクションを設定
-                        setAlertMessage('課題が提出できました');
-                        setOnCloseAction(() => handleNextProblem);
+                        // 提出成功のアラートメッセージを設定し、ポップアップを表示
+                        setAlertMessage('課題を提出しました。');
                         setShowAlert(true);
                     } catch (submissionError) {
                         console.error('提出状況の更新に失敗しました:', submissionError);
@@ -258,47 +282,53 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
       };
 
     return (
-        <div className="h-screen bg-gray-100 p-4 overflow-hidden">
+        <div className="h-screen bg-gray-100 p-4 flex flex-col">
             {showAlert && (
                 <CustomAlertModal 
-                    message={alertMessage} 
+                    message={alertMessage}
+                    actionButton={alertAction}
                     onClose={() => {
                         setShowAlert(false);
                         if (onCloseAction) onCloseAction();
                         setOnCloseAction(null); // アクションをリセット
+                        setAlertAction(undefined); // アクションボタンをリセット
                     }} 
                 />
-            )}            <PanelGroup direction="horizontal">
-                <Panel defaultSize={35} minSize={20}>
-                    <ProblemDescriptionPanel problem={problem} />
-                </Panel>
-                <PanelResizeHandle className="w-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
-                    <GripVertical className="h-4 w-4 text-gray-600" />
-                </PanelResizeHandle>
-                <Panel minSize={30}>
-                    <PanelGroup direction="vertical">
-                        <Panel defaultSize={70} minSize={25}>
-                            <CodeEditorPanel
-                                userCode={userCode} setUserCode={setUserCode}
-                                stdin={stdin} setStdin={setStdin}
-                                selectedLanguage={selectedLanguage} languages={languages}
-                                onLanguageSelect={setSelectedLanguage}
-                                onExecute={handleExecute} onSubmit={handleSubmit}
-                                isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
-                            />
-                        </Panel>
-                        <PanelResizeHandle className="h-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
-                             <div className="w-8 h-1 bg-gray-400 rounded-full" />
-                        </PanelResizeHandle>
-                        <Panel defaultSize={30} minSize={15}>
-                             <AiChatPanel messages={chatMessages} onSendMessage={handleUserMessage} />
-                        </Panel>
-                    </PanelGroup>
-                </Panel>
-            </PanelGroup>
-            {isAnswered && (
-                <div className="w-full max-w-lg mt-8 flex justify-center">
-                <button onClick={handleNextProblem} className="w-full py-4 px-8 text-xl font-semibold text-white bg-green-500 rounded-lg shadow-lg hover:bg-green-600">
+            )}
+            <div className="flex-grow min-h-0">
+                <PanelGroup direction="horizontal">
+                    <Panel defaultSize={35} minSize={20}>
+                        <ProblemDescriptionPanel problem={problem} />
+                    </Panel>
+                    <PanelResizeHandle className="w-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
+                        <GripVertical className="h-4 w-4 text-gray-600" />
+                    </PanelResizeHandle>
+                    <Panel minSize={30}>
+                        <PanelGroup direction="vertical">
+                            <Panel defaultSize={70} minSize={25}>
+                                <CodeEditorPanel
+                                    userCode={userCode} setUserCode={setUserCode}
+                                    stdin={stdin} setStdin={setStdin}
+                                    selectedLanguage={selectedLanguage} languages={languages}
+                                    onLanguageSelect={setSelectedLanguage}
+                                    onExecute={handleExecute} onSubmit={handleSubmit} // onReturnToList を削除
+                                    isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
+                                />
+                            </Panel>
+                            <PanelResizeHandle className="h-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
+                                 <div className="w-8 h-1 bg-gray-400 rounded-full" />
+                            </PanelResizeHandle>
+                            <Panel defaultSize={30} minSize={15}>
+                                 <AiChatPanel messages={chatMessages} onSendMessage={handleUserMessage} />
+                            </Panel>
+                        </PanelGroup>
+                    </Panel>
+                </PanelGroup>
+            </div>
+            {isAnswered && ( // isAnswered が true の場合にのみボタンを表示
+                <div className="flex-shrink-0 pt-4 flex justify-center">
+                <button onClick={handleNextProblem} className="w-full max-w-lg py-3 px-6 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-lg hover:bg-green-600">
+                    {/* assignmentInfo.hashedId があれば「課題一覧へ戻る」、なければ「次の問題へ」 */}
                     {assignmentInfo.hashedId ? '課題一覧へ戻る' : t.nextProblemButton}
                 </button>
                 </div>
