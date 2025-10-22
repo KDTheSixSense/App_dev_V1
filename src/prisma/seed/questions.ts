@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import * as XLSX from 'xlsx';
 import { problems as localProblems } from '../../app/(main)/issue_list/basic_info_b_problem/data/problems';
+import fs from 'fs';
 
 export async function seedProblems(prisma: PrismaClient) {
 
@@ -832,6 +833,52 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
 }
 
 /**
+ * 画像ディレクトリをスキャンし、IDをキーとしたファイル名のマップを作成します。
+ * (例: '1' => 'basic-a-examption-7-7-1.png')
+ * @returns Map<string, string>
+ */
+function createImageFileMap(): Map<string, string> {
+  // 1. /src/public/images/basic_a/ の絶対パスを取得
+  const imageDir = path.join(
+    __dirname, // 現在のディレクトリ (seed/)
+    '..',      // prisma/
+    '..',      // src/
+    'public',
+    'images',
+    'basic_a'
+  );
+  console.log(` 🔍 Scanning for images in: ${imageDir}`);
+
+  const fileNameMap = new Map<string, string>();
+  
+  try {
+    // 2. ディレクトリ内の全ファイル名を同期的に読み込む
+    const files = fs.readdirSync(imageDir);
+    
+    // 3. ファイル名からIDを抽出するための正規表現 (末尾の "-数字.png" にマッチ)
+    const idRegex = /-(\d+)\.png$/;
+
+    for (const fileName of files) {
+      const match = fileName.match(idRegex);
+      
+      if (match && match[1]) {
+        // match[1] にはキャプチャされた数字(ID)が入る
+        const fileId = match[1];
+        // マップに登録 (例: '1' => 'basic-a-examption-7-7-1.png')
+        fileNameMap.set(fileId, fileName);
+      }
+    }
+    console.log(` ✅ Found and mapped ${fileNameMap.size} image files.`);
+  } catch (error: any) {
+    // ディレクトリが存在しない場合などのエラー
+    console.error(`❌ Error scanning image directory: ${error.message}`);
+    console.warn(' ⚠️ Image path generation will fail. Make sure the directory exists: /src/public/images/basic_a/');
+  }
+
+  return fileNameMap;
+}
+
+/**
  * answerOptions のテキスト ("アX イY ウZ エW") を ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数
  */
 function parseAnswerOptionsText(text: string): string[] | null {
@@ -867,10 +914,12 @@ function parseAnswerOptionsText(text: string): string[] | null {
 
 /**
  * 基本情報A問題（PBL3基本A問題.xlsx）をデータベースにシードする
- * [修正版] id 列が空になったらループを終了する
+ * ファイルシステムをスキャンして画像パスを自動生成
  */
 async function seedBasicInfoAProblems(prisma: PrismaClient) {
   console.log('🌱 Seeding Basic Info A problems from Excel file...');
+
+  const imageFileMap = createImageFileMap();
 
   const excelFileName = 'PBL3基本A問題.xlsx';
   const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
@@ -899,20 +948,13 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
       'assignment',     // K列
       'category',       // L列
       'source',         // M列
-      'sourceYear'      // N列
+      'sourceYear',     // N列
     ];
 
     const records = XLSX.utils.sheet_to_json(sheet, {
         header: headers,
         range: 2
     }) as any[];
-
-    console.log(` 🔍 Found ${records.length} records in sheet "${sheetName}".`);
-    if (records.length === 0) {
-      console.warn(' ⚠️ No data records found.');
-      return;
-    }
-
 
     const categories = await prisma.category.findMany();
     const defaultDifficulty = await prisma.difficulty.findUnique({ where: { name: '基本資格A問題' } });
@@ -924,44 +966,36 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
         return;
     }
 
-
     const answerMap: { [key: string]: number } = { 'ア': 0, 'イ': 1, 'ウ': 2, 'エ': 3 };
     let createdCount = 0;
-    let processedRowCount = 0; // 処理した行数をカウント
+    let processedRowCount = 0; 
 
     for (const record of records) {
-      processedRowCount++; // 処理行数をインクリメント
+      processedRowCount++; 
 
-      // id が存在しない、null、undefined、または空文字の場合はループを終了
       const problemId = parseInt(String(record.id).trim(), 10);
       if (isNaN(problemId)) {
           console.log(` ⏹️ Found invalid or empty ID at row ${processedRowCount + 2}. Stopping import.`);
           break;
       }
-
-      // title がない、または空文字の場合はスキップ (idはあるがデータがない行)
+      
       if (!record.title || String(record.title).trim() === '') {
           console.log(` ⏩ Skipping row ${processedRowCount + 2} due to empty title.`);
           continue;
       }
-
       const recordCategory = record.category ? String(record.category).trim() : undefined;
       const category = categories.find(c => c.name === recordCategory);
-
       if (!category) {
         console.warn(` ⚠️ [Category mismatch] Row ${processedRowCount + 2}: Excel value: "${recordCategory}". Skipping: "${record.title}"`);
         continue;
       }
-
       const difficulty = defaultDifficulty;
       const subject = defaultSubject;
-
       const parsedOptions = parseAnswerOptionsText(record.answerOptions);
       if (!parsedOptions) {
         console.warn(` ⚠️ Failed to parse answerOptions text for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
         continue;
       }
-
       const correctAnswerIndex = answerMap[String(record.correctAnswer).trim()];
       if (correctAnswerIndex === undefined) {
          console.warn(` ⚠️ Invalid correct answer "${String(record.correctAnswer).trim()}" for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
@@ -970,9 +1004,22 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
 
       const sourceNumber = record.source ? String(record.source).trim() : '不明';
       const sourceYear = record.sourceYear ? String(record.sourceYear).trim() : '不明';
+      
+      // 1. ExcelのIDを文字列に変換
+      const idString = String(problemId);
+      
+      // 2. 事前に作成したマップからファイル名を検索
+      const foundFileName = imageFileMap.get(idString);
 
-      //   Excelに画像ファイル名列を追加して record.imageFileName のように参照する方が確実
-      const imagePath = `/images/basic_a/${problemId}.png`;
+      let imagePath = null;
+      if (foundFileName) {
+        // 3. ファイル名が見つかったら、publicパスを構築
+        imagePath = `/images/basic_a/${foundFileName}`;
+      } else {
+        // 4. 見つからなければ null のまま (画像なし)
+        // (警告ログは、画像がない問題が多い場合はコメントアウト推奨)
+        console.warn(` ⚠️ No image file found for ID: ${idString}`);
+      }
 
       const dataToSave = {
           title: record.title,
@@ -985,7 +1032,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
           difficultyId: difficulty.id,
           subjectId: subject.id,
           categoryId: category.id,
-          imagePath: imagePath
+          imagePath: imagePath // 構築したパスまたはnullを保存
       };
 
       try {
@@ -994,12 +1041,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
           });
           createdCount++;
       } catch (error: any) {
-          // ユニーク制約違反など、特定の行でエラーが発生した場合のログ
           console.error(`❌ Error saving record for Row ${processedRowCount + 2}, Title: "${record.title}". Error: ${error.message}`);
-          // エラーがあっても処理を続ける場合は continue を使う
-          // continue;
-          // エラーが発生したら処理全体を停止する場合は break を使う
-          // break;
       }
     } // End of for loop
 
