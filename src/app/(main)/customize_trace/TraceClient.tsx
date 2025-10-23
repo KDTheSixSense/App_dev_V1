@@ -74,6 +74,10 @@ const TraceClient = () => {
   const evaluateExpression = (expression: string, currentVars: Record<string, any>): any => {
     expression = expression.trim();
 
+    expression = expression.replace(/[０-９]/g, (char) => {
+        return String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
+    });
+
     // 1. 数値リテラル
     if (!isNaN(Number(expression))) return Number(expression);
 
@@ -225,6 +229,7 @@ const TraceClient = () => {
       const declarationMatch = line.match(/^(整数型|文字列型|配列型):\s*(.+)/);
       const assignmentMatch = line.match(/^(.+?)\s*←\s*(.+)/);
       const outputMatch = line.match(/^出力する\s+(.+)/);
+      const specificOutputMatch = line.match(/^(\w+)の値\s+と\s+(\w+)の値\s+をこの順にコンマ区切りで出力する$/);
       const ifMatch = line.match(/^if\s*\((.+)\)/);
       const elseMatch = line.match(/^else$/);
       const endifMatch = line.match(/^endif$/);
@@ -240,19 +245,42 @@ const TraceClient = () => {
         jumped = false; // 次の行へ
       } else if (declarationMatch) {
           const varType = declarationMatch[1];
-          const declaredVars = declarationMatch[2].split(',').map(v => v.trim());
-          declaredVars.forEach(v => {
-              if (!(v in tempVariables)) {
-                   if (varType.startsWith('配列型')) {
-                       // 配列型の宣言 (サイズ指定は無視し、空配列またはnullで初期化)
-                       // 厳密にはサイズ指定に基づいて初期化すべきだが、JSON初期化を推奨
-                       tempVariables[v] = [];
-                   } else {
-                       tempVariables[v] = null;
-                   }
-              }
-          });
-          jumped = false;
+        const declarationPart = declarationMatch[2];
+        const declaredItems = declarationPart.split(',').map(item => item.trim());
+
+        declaredItems.forEach(item => {
+            // "x ← 1" のような代入部分を分離
+            const assignmentParts = item.split('←');
+            let varName = assignmentParts[0].trim(); // 変数名部分を取得
+            let isArray = varType.startsWith('配列型');
+            let initialValue = null; // デフォルト初期値
+
+            // 配列サイズ指定 (例: arr[5]) があっても変数名だけを取得
+            if (isArray) {
+                 const nameMatch = varName.match(/^([a-zA-Z_]\w*)/);
+                 if (nameMatch) varName = nameMatch[1];
+                 initialValue = []; // 配列は空で初期化
+            }
+
+            // 宣言行で代入が行われている場合 (例: "整数型: x ← 1")
+            if (assignmentParts.length > 1) {
+                const valueExpr = assignmentParts[1].trim();
+                // 宣言行での初期値を評価して設定
+                initialValue = evaluateExpression(valueExpr, tempVariables);
+            }
+
+            // 変数テーブル (tempVariables) を更新
+            // - まだ存在しない変数なら初期化
+            // - または、宣言行で値が代入されていればその値で更新
+            // - ただし、配列が既に存在する場合に null で上書きしないようにする
+            if (!(varName in tempVariables) || assignmentParts.length > 1) {
+                 if(!(isArray && assignmentParts.length == 1 && Array.isArray(tempVariables[varName]))) {
+                    tempVariables[varName] = initialValue;
+                 }
+            }
+        });
+        // 宣言行自体の実行はこれで完了。次の行へ。
+        jumped = false;
       } else if (assignmentMatch) {
           const target = assignmentMatch[1].trim();
           const expression = assignmentMatch[2].trim();
@@ -284,6 +312,16 @@ const TraceClient = () => {
               tempVariables[target] = value;
           }
           jumped = false;
+      } else if (specificOutputMatch) {
+          const varName1 = specificOutputMatch[1]; // 例: "y"
+          const varName2 = specificOutputMatch[2]; // 例: "z"
+          // 変数が存在するかチェック
+          if (!(varName1 in tempVariables)) throw new Error(`変数 "${varName1}" が見つかりません。`);
+          if (!(varName2 in tempVariables)) throw new Error(`変数 "${varName2}" が見つかりません。`);
+          // カンマ区切りで出力
+          const outputValue = `${tempVariables[varName1]},${tempVariables[varName2]}`;
+          tempOutput.push(outputValue);
+          jumped = false; // 次の行へ
       } else if (outputMatch) {
           const expression = outputMatch[1].trim();
           const value = evaluateExpression(expression, tempVariables);
@@ -617,22 +655,21 @@ const TraceClient = () => {
         {/* 変数表示 */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2 text-gray-700">変数</h3>
-          {/*  grid-cols-2 から grid-cols-1 md:grid-cols-2 へ変更 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 p-4 bg-gray-50 border rounded-md min-h-[96px]">
             {Object.keys(variables).length > 0 ? (
-                Object.entries(variables).map(([name, value]) => (
-                <div key={name} className="flex items-center text-sm"> {/*  text-sm 追加 */}
-                    {/*  変数名を太字に */}
+                // Object.entries を使用 
+                Object.entries(variables).map(([name, value]) => ( // nameとvalueを正しく取得
+                <div key={name} className="flex items-center text-sm">
+                    {/* name (変数名) を表示 */}
                     <span className="font-semibold mr-2">{name}:</span>
-                    {/*  値の表示を調整 */}
+                    {/* value (変数値) を表示 */}
                     <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 break-all">
-                        {/* 配列の場合、見やすく表示 */}
                         {Array.isArray(value) ? `[${value.map(v => JSON.stringify(v)).join(', ')}]` : JSON.stringify(value)}
                     </span>
                 </div>
                 ))
             ) : (
-                <p className="text-gray-500 text-sm col-span-1 md:col-span-2">トレースが開始されていません。</p> //  col-span 調整
+                <p className="text-gray-500 text-sm col-span-1 md:col-span-2">トレースが開始されていません。</p> // col-span 調整
             )}
           </div>
         </div>
