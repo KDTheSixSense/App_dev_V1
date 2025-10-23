@@ -879,130 +879,179 @@ function createImageFileMap(): Map<string, string> {
 }
 
 /**
- * answerOptions のテキスト ("アX イY ウZ エW" や改行を含む形式) を
- * ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数 [修正版 V7 - Robust Splitting and Pairing]
+ * answerOptions のテキスト ("アX イY ウZ エW") を ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数
  */
-function parseAnswerOptionsText(text: string | null | undefined): string[] | null {
-    if (text == null) return null;
-    let inputText = String(text).trim();
-    if (!inputText) return null;
+function parseAnswerOptionsText(text: string): string[] | null {
+  if (!text || typeof text !== 'string') {
+    return null;
+  }
+  const options: string[] = [];
+  // 正規表現を使って選択肢マーカー（ア、イ、ウ、エ）とそれに続くテキストを抽出
+  const matches = text.matchAll(/([アイウエ])([^アイウエ]+)/g);
+  
+  const tempOptions: { [key: string]: string } = {};
+  for (const match of matches) {
+      // match[1] は 'ア', 'イ', 'ウ', 'エ'
+      // match[2] は選択肢のテキスト (前後の空白をトリム)
+      tempOptions[match[1]] = match[2].trim();
+  }
 
-    // intermediateMap: マーカーに対する生の抽出テキストを保持（trim前）
-    const intermediateMap: { [key: string]: string } = {};
-    const markers = ['ア', 'イ', 'ウ', 'エ'];
-    const finalOptionsMap: { [key: string]: string } = {}; // ★ trim後のテキストを格納
+  // ア->イ->ウ->エ の順で配列に追加
+  if (tempOptions['ア']) options.push(tempOptions['ア']);
+  if (tempOptions['イ']) options.push(tempOptions['イ']);
+  if (tempOptions['ウ']) options.push(tempOptions['ウ']);
+  if (tempOptions['エ']) options.push(tempOptions['エ']);
 
-    try {
-        // --- ▼▼▼ 新しいパースロジック (Robust Splitting and Pairing V7) ▼▼▼ ---
-
-        // 1. マーカーで文字列を分割 (マーカー自身も保持、空要素を除去)
-        const parts = inputText.split(/([アイウエ])/).filter(part => part && part.trim() !== '');
-
-        // 2. 分割されたパーツを処理して マーカー -> テキスト のペアを作る
-        for (let i = 0; i < parts.length; i++) {
-            const currentPartTrimmed = parts[i].trim(); // ★ 比較用にトリム
-
-            // 現在のパーツがマーカーかどうかチェック
-            if (markers.includes(currentPartTrimmed)) {
-                const currentMarker = currentPartTrimmed;
-
-                // このマーカーに対応するテキストがまだ記録されていない場合のみ処理
-                if (!intermediateMap.hasOwnProperty(currentMarker)) {
-                    // マーカーの *次* の要素が存在し、かつそれがマーカー *ではない* 場合、
-                    // それをテキストとして採用する
-                    if (i + 1 < parts.length && !markers.includes(parts[i + 1].trim())) {
-                         // 生のテキスト(trim前)を格納
-                        intermediateMap[currentMarker] = parts[i + 1];
-                    } else {
-                        // マーカーの直後が別のマーカーか、配列の終端だった場合
-                        intermediateMap[currentMarker] = ''; // テキストなし（空文字列）
-                        // console.warn(` ⚠️ No text found immediately after marker "${currentMarker}" in text: "${inputText.substring(0,50)}..."`);
-                    }
-                }
-                // else: すでに記録済みのマーカーは無視 (最初の出現を優先)
-            }
-        }
-
-        // 3. 抽出したテキストの前後の空白を最終的に除去し、finalOptionsMapを作成
-        let parsedCount = 0;
-        for (const marker of markers) {
-            if (intermediateMap.hasOwnProperty(marker)) {
-                const trimmedText = intermediateMap[marker].trim();
-                if (trimmedText) { // 空文字でなければ採用
-                    finalOptionsMap[marker] = trimmedText;
-                    parsedCount++;
-                } else {
-                     // console.warn(` ⚠️ Option text for marker "${marker}" was empty after trimming for text: "${inputText.substring(0,50)}..."`);
-                }
-            } else {
-                 // console.warn(` ⚠️ Marker "${marker}" was not found in text: "${inputText.substring(0,50)}..."`);
-            }
-        }
-        // --- ▲▲▲ 新しいパースロジックここまで ▲▲▲ ---
-
-
-        // 4. ア->イ->ウ->エ の順で配列に追加
-        const finalOptions: string[] = [];
-        if (finalOptionsMap['ア']) finalOptions.push(finalOptionsMap['ア']);
-        if (finalOptionsMap['イ']) finalOptions.push(finalOptionsMap['イ']);
-        if (finalOptionsMap['ウ']) finalOptions.push(finalOptionsMap['ウ']);
-        if (finalOptionsMap['エ']) finalOptions.push(finalOptionsMap['エ']);
-
-
-        // 5. 最終チェック (parsedCountで実際にテキストが抽出できた数を確認)
-        if (parsedCount === 4 && finalOptions.length === 4) {
-            return finalOptions;
-        } else {
-            console.warn(` ⚠️ Could not parse exactly 4 non-empty options (parsed ${parsedCount}) from text: "${inputText.substring(0, 100)}..."`);
-            // console.warn(`    -> Split Parts: ${JSON.stringify(parts)}`); // デバッグ用
-            // console.warn(`    -> Intermediate Map (Raw): ${JSON.stringify(intermediateMap)}`); // デバッグ用
-            console.warn(`    -> Final Parsed Map (Trimmed): ${JSON.stringify(finalOptionsMap)}`);
-            return null; // パース失敗
-        }
-    } catch (e) {
-        console.error(` ❌ Error during parsing answer options: ${e} for text: "${inputText.substring(0, 100)}..."`);
-        return null;
-    }
+  // 4つの選択肢が正しく抽出できたか確認
+  if (options.length === 4) {
+    return options;
+  } else {
+    console.warn(` ⚠️ Could not parse 4 options from text: "${text}"`);
+    return null; // パース失敗
+  }
 }
 
+
 /**
- * 基本情報A問題（PBL3基本A問題.xlsx）をデータベースにシードする
- * [修正版] 複数のシートからデータを読み込む
+ * 基本情報A問題（PBL3基本Aデータ使用.xlsx - 基本情報A問題統合用シート）をデータベースにシードする
+ * [修正版] 新しいExcelファイル/シートに対応 + createに戻す
  */
 async function seedBasicInfoAProblems(prisma: PrismaClient) {
   console.log('🌱 Seeding Basic Info A problems from Excel file...');
 
-  // 1: 画像マップの作成 (変更なし、ループの外で実行)
-  const imageFileMap = createImageFileMap();
+  //const imageFileMap = createImageFileMap();
 
-  const excelFileName = 'PBL3基本A問題.xlsx';
+  // --- ★変更点 1: Excelファイル名とシート名を更新 ---
+  const excelFileName = 'PBL3基本Aデータ使用.xlsx'; // 新しいファイル名
+  const sheetName = '基本情報A問題統合用シート';   // 新しいシート名
+  // --- ▲▲▲ ---
+
   const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
-
-  // 2: 読み込むシート名のリストを定義
-  const sheetNamesToRead = [
-    // ユーザー指定のシート名 (全角/半角スペースも正確に反映)
-    '(令和 7年度7月) 基本情報技術者試験 科目A 公開問題',
-    '(令和７年度)  基本情報技術者試験 科目A  公開問題',
-    '（令和7年度6月）基本情報科目A午前免除公開問題',
-    '令和5年度基本情報科目A公開問題',
-    // '基本情報 A 問題' 
-  ];
 
   try {
     const workbook = XLSX.readFile(filePath);
+    const sheet = workbook.Sheets[sheetName];
 
-    // カテゴリ、難易度、科目のマスタデータはループの「外」で一度だけ取得
-    // 1. DBからカテゴリマスタを取得 (ID順でソートして取得)
-    const categories = await prisma.category.findMany({
-      orderBy: { id: 'asc' },
-    });
-    
-    // 2. 数値 (文字列) からカテゴリ名へのマッピングを定義
-    // (seedMasterData の { id: 1, name: 'テクノロジ系' } ... に対応)
+    if (!sheet) {
+      console.warn(` ⚠️ Sheet "${sheetName}" not found in ${excelFileName}. Skipping.`);
+      return;
+    }
+
+    // 2: ヘッダー配列を新しいシートの列に合わせる (CSV内容から推測)
+    //    Excelの実際の列と順番が合っているか確認してください。
+    const headers = [
+      'id',             // A列
+      'title',          // B列
+      'description',    // C列
+      'explanation',    // D列
+      'answerOptions',  // E列
+      'correctAnswer',  // F列
+      'difficultyId',   // G列
+      'difficulty',     // H列
+      'subjectId',      // I列
+      'subject',        // J列
+      'assignment',     // K列
+      'category',       // L列
+      'source',         // M列
+      'sourceYear',     // N列
+      'imageFileName',  // O列
+    ];
+
+
+    const records = XLSX.utils.sheet_to_json(sheet, {
+        header: headers,
+        range: 2 // データ開始行 (0-indexed なので3行目は 2)
+    }) as any[];
+
+    console.log(` 🔍 Found ${records.length} records in sheet "${sheetName}".`);
+    if (records.length === 0) {
+      console.warn(' ⚠️ No data records found.');
+      return;
+    }
+
+    // --- カテゴリ、難易度、科目のマスタデータ取得とマッピング定義 (変更なし) ---
+    const categories = await prisma.category.findMany({ orderBy: { id: 'asc' } });
     const numericCategoryMap: { [key: string]: string } = {
       '1': 'テクノロジ系',
       '2': 'マネジメント系',
       '3': 'ストラテジ系',
+    };
+     const categoryNameToDbNameMap: { [key: string]: string } = {
+      // 数値マッピング
+      '1': 'テクノロジ系',
+      '2': 'マネジメント系',
+      '3': 'ストラテジ系',
+      // 文字列マッピング (Excelの値 -> DBのカテゴリ名)
+      '基礎理論': 'テクノロジ系',
+      'コンピュータシステム': 'テクノロジ系',
+      '開発技術': 'テクノロジ系',
+      'ネットワーク': 'テクノロジ系',
+      'セキュリティ': 'テクノロジ系',
+      'データベース': 'テクノロジ系',
+      'プロジェクトマネジメント': 'マネジメント系',
+      'サービスマネジメント': 'マネジメント系',
+      'システム監査': 'マネジメント系',
+      'システム戦略': 'ストラテジ系',
+      '企業と法務': 'ストラテジ系',
+      '経営戦略': 'ストラテジ系',
+      'AIとディープラーニング': 'テクノロジ系',
+      'モータの回転速度の制御方法': 'テクノロジ系',
+      'オブジェクト指向プログラミング（オーバーライド）': 'テクノロジ系',
+      'USB3.0の技術': 'テクノロジ系',
+      'メモリリーク': 'テクノロジ系',
+      'APIについて': 'テクノロジ系',
+      'DBMSとスキーマ': 'テクノロジ系',
+      'E-R図の説明': 'テクノロジ系',
+      'SQL文の条件式': 'テクノロジ系',
+      'Javaとデータベース、API': 'テクノロジ系',
+      'TCP/IPとプロトコル': 'テクノロジ系',
+      'Webサーバとネット中継': 'テクノロジ系',
+      'リバースブルートフォース攻撃の説明': 'テクノロジ系',
+      'メッセージのハッシュ値とデジタル署名': 'テクノロジ系',
+      'サイバー情報共有イニシアチブ': 'テクノロジ系',
+      'VDIのセキュリティと保護動作': 'テクノロジ系',
+      'オブジェクト指向とカプセル化': 'テクノロジ系',
+      'プログラムのテストとデータ': 'テクノロジ系',
+      'ソフトウェアとリバースエンジニアリング': 'テクノロジ系',
+      'スクラムと生産量': 'マネジメント系',
+      'エクストリームプログラミングとリファクタリング': 'マネジメント系',
+      'オペレーションサービスと必要人数': 'マネジメント系',
+      'システム監査と真正性の検証': 'マネジメント系',
+      'エンタープライスアーキテクチャと業務と情報システム': 'ストラテジ系',
+      'ハイブリッドクラウドとは？': 'ストラテジ系', // CSVに合わせて ? を削除
+      'CSRの調達': 'ストラテジ系',
+      'プロダクトポートフォリオマネジメントと4つの分類': 'ストラテジ系',
+      '戦略遂行と施策を策定する経営管理手法': 'ストラテジ系',
+      '３PLの説明': 'ストラテジ系', // 全角数字対応
+      'セル生産方式の利点': 'ストラテジ系',
+      'マトリックス組織について': 'ストラテジ系',
+      '定量発注方式と発注点計算': 'ストラテジ系',
+      '売上原価の計算': 'ストラテジ系',
+      '著作権とクリエイティブコモンズ': 'ストラテジ系',
+      '真理値表': 'テクノロジ系', // 追加
+      'ASCIIコード': 'テクノロジ系', // 追加
+      'アクセス時間の計算': 'テクノロジ系', // 追加
+      '稼働率': 'テクノロジ系', // 追加
+      'ロジックマッシュアップ': 'テクノロジ系', // 追加
+      '液晶ディスプレイなどの表示装置': 'テクノロジ系', // 追加
+      'DBMS に実装すべき原子性': 'テクノロジ系', // 追加
+      'LAN 間接続装置': 'テクノロジ系', // 追加
+      'ペネトレーションテスト': 'テクノロジ系', // 追加
+      'SQL インジェクションの対策': 'テクノロジ系', // 追加
+      'ソフトウェアの結合テスト': 'テクノロジ系', // 追加
+      'アジャイル開発手法': 'マネジメント系', // 追加
+      'アローダイアグラム': 'マネジメント系', // 追加
+      '新規サービスの設計及び移行を進めるための方法': 'マネジメント系', // 追加
+      'ビッグデータ分析': 'ストラテジ系', // 追加
+      'コアコンピタンス': 'ストラテジ系', // 追加
+      'ブルーオーシャン': 'ストラテジ系', // 追加
+      'HR テック': 'ストラテジ系', // 追加
+      '散布図': 'ストラテジ系', // 追加
+      '産業財産権': 'ストラテジ系', // 追加
+      // 既存のDB名もそのままマッピング
+      'テクノロジ系': 'テクノロジ系',
+      'マネジメント系': 'マネジメント系',
+      'ストラテジ系': 'ストラテジ系',
     };
     const defaultDifficulty = await prisma.difficulty.findUnique({ where: { name: '基本資格A問題' } });
     const defaultSubject = await prisma.subject.findUnique({ where: { name: '基本情報A問題' } });
@@ -1013,236 +1062,141 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
         return;
     }
     const answerMap: { [key: string]: number } = { 'ア': 0, 'イ': 1, 'ウ': 2, 'エ': 3 };
-    
-    // 3: 合計カウント用の変数をループの外で初期化
-    let totalCreatedCount = 0;
-    let totalProcessedRowCount = 0;
 
-    // 4: シート名のリストでループ処理を実行 ---
-    for (const sheetName of sheetNamesToRead) {
-      console.log(`\n--- Processing sheet: "${sheetName}" ---`);
-      
-      // ループ内でシート名を使ってシートを取得
-      const sheet = workbook.Sheets[sheetName];
+    let createdCount = 0;
+    let processedRowCount = 0;
 
-      // シートが存在しない場合は警告を出し、次のシートへ
-      if (!sheet) {
-        console.warn(` ⚠️ Sheet "${sheetName}" not found in ${excelFileName}. Skipping.`);
-        continue; // 次のシートの処理に進む
+    for (const record of records) {
+      processedRowCount++;
+
+      const problemId = parseInt(String(record.id).trim(), 10);
+      if (isNaN(problemId)) {
+          console.log(` ⏹️ Found invalid or empty ID at row ${processedRowCount + 2}. Stopping import.`);
+          break;
       }
 
-      // headers 配列の定義を確認
-      const headers = [
-        'id',             // A列
-        'title',          // B列
-        'description',    // C列 <--- これが問題文
-        'explanation',    // D列 <--- これが解説
-        'answerOptions',  // E列
-        'correctAnswer',  // F列
-        'difficultyId',   // G列
-        'difficulty',     // H列 (未使用)
-        'subjectId',      // I列
-        'subject',        // J列 (未使用)
-        'assignment',     // K列
-        'category',       // L列
-        'source',         // M列 <--- これが出典番号 (例: 問〇)
-        'sourceYear',     // N列 <--- これが出典年 (例: 令和〇年度)
-      ];
+      if (!record.title || String(record.title).trim() === '') {
+          console.log(` ⏩ Skipping row ${processedRowCount + 2} due to empty title.`);
+          continue;
+      }
 
-      const records = XLSX.utils.sheet_to_json(sheet, {
-          header: headers,
-          range: 2 // 3行目からデータ開始 (0-indexed)
-      }) as any[];
-      
-      console.log(` 🔍 Found ${records.length} records in this sheet.`);
-      if (records.length === 0) {
-        console.warn(' ⚠️ No data records found in this sheet.');
+      // --- カテゴリマッピング (変更なし、マッピングテーブルは上で更新) ---
+      const rawCategoryValue = record.category ? String(record.category).trim() : undefined;
+      let mappedDbCategoryName: string | undefined = undefined;
+      if (rawCategoryValue && categoryNameToDbNameMap[rawCategoryValue]) {
+           mappedDbCategoryName = categoryNameToDbNameMap[rawCategoryValue];
+      }
+      let category = categories.find(c => c.name === mappedDbCategoryName);
+      if (!category && !rawCategoryValue) {
+          console.warn(` ⚠️ Category is undefined for Row ${processedRowCount + 2}. Assigning default category 'テクノロジ系'.`);
+          category = categories.find(c => c.name === 'テクノロジ系');
+      }
+      if (!category) {
+        console.warn(` ⚠️ [Category mismatch/unmapped] Row ${processedRowCount + 2}: Excel value: "${rawCategoryValue}". Skipping: "${record.title}"`);
         continue;
       }
+      // --- カテゴリマッピングここまで ---
+
+
+      // --- ★変更点 4: 難易度と科目をExcelから読み込み、無効ならデフォルト値 ---
+      let difficultyId = defaultDifficulty.id; // デフォルト値
+      const excelDifficultyId = record.difficultyId ? parseInt(String(record.difficultyId).trim(), 10) : NaN;
+      if (!isNaN(excelDifficultyId)) {
+          // TODO: 存在する難易度IDかチェックする方がより安全
+          difficultyId = excelDifficultyId;
+      } else if (record.difficultyId) { // G列に何か入っていたが無効な数値だった場合
+          console.warn(` ⚠️ Invalid difficultyId "${record.difficultyId}" found in Excel Row ${processedRowCount + 2}. Using default ID ${defaultDifficulty.id}.`);
+      }
+
+      let subjectId = defaultSubject.id; // デフォルト値
+      const excelSubjectId = record.subjectId ? parseInt(String(record.subjectId).trim(), 10) : NaN;
+       if (!isNaN(excelSubjectId)) {
+           // TODO: 存在する科目IDかチェックする方がより安全
+           subjectId = excelSubjectId;
+       } else if (record.subjectId) { // I列に何か入っていたが無効な数値だった場合
+           console.warn(` ⚠️ Invalid subjectId "${record.subjectId}" found in Excel Row ${processedRowCount + 2}. Using default ID ${defaultSubject.id}.`);
+       }
+      // --- ▲▲▲ ---
+
+
+      // --- 選択肢パース (V7 - 変更なし) ---
+      const parsedOptions = parseAnswerOptionsText(record.answerOptions);
+      if (!parsedOptions) {
+        console.warn(` ⚠️ Failed to parse answerOptions text for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
+        continue;
+      }
+      // --- 選択肢パースここまで ---
+
+
+      // --- 正解インデックス (変更なし) ---
+      const correctAnswerIndex = answerMap[String(record.correctAnswer).trim()];
+      if (correctAnswerIndex === undefined) {
+         console.warn(` ⚠️ Invalid correct answer "${String(record.correctAnswer).trim()}" for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
+         continue;
+      }
+      // --- 正解インデックスここまで ---
+
+
+      // --- ★変更点 5: 出典情報の列を調整 (M列=番号, N列=年/区分) ---
+      const sourceNumber = record.source ? String(record.source).trim() : '不明';      // M列
+      const sourceYear = record.sourceYear ? String(record.sourceYear).trim() : '不明'; // N列
+      // --- ▲▲▲ ---
+
+
+      const rawImageName = record.imageFileName ? String(record.imageFileName).trim() : null;
+      let imagePath = null;
       
-      let createdCountInSheet = 0; // このシートでの作成数
+      if (rawImageName && rawImageName.length > 0) {
+        // Excelにファイル名の記述があった場合、パスを構築
+        imagePath = `/images/basic_a/${rawImageName}`;
+      } else {
+        // Excelにファイル名の記述がなかった場合
+        // imagePath は null のまま (警告は任意で出す)
+        console.warn(` ⚠️ No image file specified in Excel for ID: ${problemId}, Title: "${record.title}"`);
+      }
 
-      const categoryNameToDbNameMap: { [key: string]: string } = {
-        // 数値マッピング
-        '1': 'テクノロジ系',
-        '2': 'マネジメント系',
-        '3': 'ストラテジ系',
-        '基礎理論': 'テクノロジ系',
-        'コンピュータシステム': 'テクノロジ系',
-        '開発技術': 'テクノロジ系',
-        'ネットワーク': 'テクノロジ系',
-        'セキュリティ': 'テクノロジ系',
-        'データベース': 'テクノロジ系',
-        'プロジェクトマネジメント': 'マネジメント系',
-        'サービスマネジメント': 'マネジメント系',
-        'システム監査': 'マネジメント系',
-        'システム戦略': 'ストラテジ系',
-        '企業と法務': 'ストラテジ系',
-        '経営戦略': 'ストラテジ系',
-        'AIとディープラーニング': 'テクノロジ系', // 例
-        'モータの回転速度の制御方法': 'テクノロジ系', // 例
-        'オブジェクト指向プログラミング（オーバーライド）': 'テクノロジ系', // 例
-        'USB3.0の技術': 'テクノロジ系', // 例
-        'メモリリーク': 'テクノロジ系', // 例
-        'APIについて': 'テクノロジ系', // 例
-        'DBMSとスキーマ': 'テクノロジ系', // 例
-        'E-R図の説明': 'テクノロジ系', // 例
-        'SQL文の条件式': 'テクノロジ系', // 例
-        'Javaとデータベース、API': 'テクノロジ系', // 例
-        'TCP/IPとプロトコル': 'テクノロジ系', // 例
-        'Webサーバとネット中継': 'テクノロジ系', // 例
-        'リバースブルートフォース攻撃の説明': 'テクノロジ系', // 例
-        'メッセージのハッシュ値とデジタル署名': 'テクノロジ系', // 例
-        'サイバー情報共有イニシアチブ': 'テクノロジ系', // 例
-        'VDIのセキュリティと保護動作': 'テクノロジ系', // 例
-        'オブジェクト指向とカプセル化': 'テクノロジ系', // 例
-        'プログラムのテストとデータ': 'テクノロジ系', // 例
-        'ソフトウェアとリバースエンジニアリング': 'テクノロジ系', // 例
-        'スクラムと生産量': 'マネジメント系', // 例
-        'エクストリームプログラミングとリファクタリング': 'マネジメント系', // 例
-        'オペレーションサービスと必要人数': 'マネジメント系', // 例
-        'システム監査と真正性の検証': 'マネジメント系', // 例
-        'エンタープライスアーキテクチャと業務と情報システム': 'ストラテジ系', // 例
-        'ハイブリッドクラウドとは？': 'ストラテジ系', // 例
-        'CSRの調達': 'ストラテジ系', // 例
-        'プロダクトポートフォリオマネジメントと4つの分類': 'ストラテジ系', // 例
-        '戦略遂行と施策を策定する経営管理手法': 'ストラテジ系', // 例
-        '３PLの説明': 'ストラテジ系', // 例
-        'セル生産方式の利点': 'ストラテジ系', // 例
-        'マトリックス組織について': 'ストラテジ系', // 例
-        '定量発注方式と発注点計算': 'ストラテジ系', // 例
-        '売上原価の計算': 'ストラテジ系', // 例
-        '著作権とクリエイティブコモンズ': 'ストラテジ系', // 例
-        // 既存のDB名もそのままマッピング
-        'テクノロジ系': 'テクノロジ系',
-        'マネジメント系': 'マネジメント系',
-        'ストラテジ系': 'ストラテジ系',
-    };
 
-      // 各シートのレコードをループ処理
-      for (const record of records) {
-        totalProcessedRowCount++; // 全体の処理行数をカウント
+      // --- dataToSave オブジェクト (文字列変換は維持) ---
+      const dataToSave = {
+          // id: problemId, // create では不要
+          title: String(record.title || ""),
+          description: String(record.description || ""),
+          explanation: String(record.explanation || ""),
+          answerOptions: parsedOptions,
+          correctAnswer: correctAnswerIndex,
+          sourceYear: sourceYear,
+          sourceNumber: sourceNumber,
+          difficultyId: difficultyId, // ★ 更新
+          subjectId: subjectId,       // ★ 更新
+          categoryId: category.id,
+          imagePath: imagePath
+      };
+      // --- dataToSave ここまで ---
 
-        const problemId = parseInt(String(record.id).trim(), 10);
-        if (isNaN(problemId)) {
-            // IDがない行はデータ終了とみなし、このシートの処理を終了
-            console.log(` ⏹️ Found invalid or empty ID at row ${totalProcessedRowCount + 2}. Stopping this sheet.`);
-            break; 
-        }
-        
-        if (!record.title || String(record.title).trim() === '') {
-            console.log(` ⏩ Skipping row ${totalProcessedRowCount + 2} due to empty title.`);
-            continue;
-        }
 
-        
-
-        // 1. ExcelのL列から生のカテゴリ値を取得
-        // --- カテゴリのマッピングロジックを修正 ---
-        const rawCategoryValue = record.category ? String(record.category).trim() : undefined;
-        let mappedDbCategoryName: string | undefined = undefined;
-
-        if (rawCategoryValue && categoryNameToDbNameMap[rawCategoryValue]) {
-             mappedDbCategoryName = categoryNameToDbNameMap[rawCategoryValue];
-        }
-        let foundCategoryName: string | undefined = undefined;
-
-        // 1. 生のカテゴリ値が存在する場合のみ処理
-        if (rawCategoryValue) {
-          // 2. まず、数値マッピング ('1', '2', '3') を試す
-          if (numericCategoryMap[rawCategoryValue]) {
-            foundCategoryName = numericCategoryMap[rawCategoryValue];
-          } else {
-            // 3. 次に、名前での直接一致 ('テクノロジ系'など) を試す
-            const directMatch = categories.find(c => c.name === rawCategoryValue);
-            if (directMatch) {
-              foundCategoryName = directMatch.name;
+      try {
+          // --- ★変更点 3: upsert を create に戻す ---
+          //   シートが1つになったので、ID重複はExcelデータのエラーとして検出する
+          await prisma.basc_Info_A_Question.create({
+            data: {
+              id: problemId, // ★ create では id を明示的に指定
+              ...dataToSave
             }
+          });
+          createdCount++;
+      } catch (error: any) {
+          // ★ ID重複エラー (P2002) の場合のログを追加
+          if (error.code === 'P2002' && error.meta?.target?.includes('id')) {
+              console.error(`❌ Error saving record for Row ${processedRowCount + 2}: Duplicate ID ${problemId} found in Excel sheet "${sheetName}". Skipping this row. Title: "${record.title}"`);
+          } else {
+              console.error(`❌ Error saving record for Row ${processedRowCount + 2}, ID: ${problemId}, Title: "${record.title}". Error: ${error.message}`);
+              // 詳細なエラー内容を出力
+              // console.error(error);
           }
-        }
+      }
+    } // End of records loop
 
-        // マッピングされたDBカテゴリ名で検索
-        let category = categories.find(c => c.name === mappedDbCategoryName);
-            
-        // フォールバック処理 (非推奨)
-        if (!category && !rawCategoryValue) { // カテゴリが見つからず、Excelの値も空(undefined)の場合
-            console.warn(` ⚠️ Category is undefined for Row ${totalProcessedRowCount + 2}. Assigning default category 'テクノロジ系'.`);
-            category = categories.find(c => c.name === 'テクノロジ系'); // デフォルトカテゴリを指定
-        }
-        // フォールバックここまで
-        
-        if (!category) {
-          // 'undefined' (フォールバックしない場合) やマッピングにない値は警告
-          console.warn(` ⚠️ [Category mismatch/unmapped] Row ${totalProcessedRowCount + 2}: Excel value: "${rawCategoryValue}". Skipping: "${record.title}"`);
-          continue;
-        }
-
-        // 難易度と科目はDBから取得したデフォルト値を使用
-        const difficulty = defaultDifficulty;
-        const subject = defaultSubject;
-
-        // 選択肢のパース
-        const parsedOptions = parseAnswerOptionsText(record.answerOptions);
-        if (!parsedOptions) {
-          console.warn(` ⚠️ Failed to parse answerOptions text for Row ${totalProcessedRowCount + 2}, problem: "${record.title}". Skipping.`);
-          continue;
-        }
-
-        // 正解インデックスのマッピング
-        const correctAnswerIndex = answerMap[String(record.correctAnswer).trim()];
-        if (correctAnswerIndex === undefined) {
-           console.warn(` ⚠️ Invalid correct answer "${String(record.correctAnswer).trim()}" for Row ${totalProcessedRowCount + 2}, problem: "${record.title}". Skipping.`);
-           continue;
-        }
-
-        // 出典情報
-        const sourceNumber = record.source ? String(record.source).trim() : '不明';
-        const sourceYear = record.sourceYear ? String(record.sourceYear).trim() : '不明'; // N列目を読み込む
-
-        // 画像パスの生成 (ファイルスキャン方式)
-        const idString = String(problemId);
-        const foundFileName = imageFileMap.get(idString);
-        let imagePath = null;
-        if (foundFileName) {
-          imagePath = `/images/basic_a/${foundFileName}`;
-        }
-
-        // ★ dataToSave オブジェクトの割り当てを修正
-        const dataToSave = {
-            id: problemId,                         // A列から取得したID
-            title: String(record.title || ""),     // ★ String() で囲む
-            description: String(record.description || ""), // ★ String() で囲む
-            explanation: String(record.explanation || ""), // ★ String() で囲む
-            answerOptions: parsedOptions,          // E列からパース
-            correctAnswer: correctAnswerIndex,     // F列からマッピング
-            sourceYear: sourceYear,                // N列から取得した変数
-            sourceNumber: sourceNumber,            // M列から取得した変数
-            difficultyId: difficulty.id,           // G列からマッピング
-            subjectId: subject.id,                 // I列からマッピング
-            categoryId: category.id,               // L列からマッピング
-            imagePath: imagePath                   // スキャン結果から取得
-        };
-
-        try {
-            await prisma.basc_Info_A_Question.upsert({
-              where: { id: problemId }, // 検索条件 (このIDが存在するか)
-              update: dataToSave,      // 存在した場合: 更新するデータ
-              create: dataToSave       // 存在しない場合: 作成するデータ
-            });
-            createdCountInSheet++;
-        } catch (error: any) {
-            console.error(`❌ Error saving record for Row ${totalProcessedRowCount + 2}, ID: ${problemId}, Title: "${record.title}". Error: ${error.message}`);
-        }
-      } // End of records loop (1シート分)
-      
-      console.log(` ✅ Processed ${records.length} rows. Created/Updated ${createdCountInSheet} questions from this sheet.`);
-      totalCreatedCount += createdCountInSheet;
-
-    } // End of sheetName loop (全シート分)
-
-    console.log(`\n--- Total Results ---`);
-    console.log(` ✅ Processed ${totalProcessedRowCount} rows across all sheets.`);
-    console.log(` ✅ Created/Updated ${totalCreatedCount} total Basic Info A questions.`);
+    console.log(` ✅ Processed ${records.length} rows. Created ${createdCount} Basic Info A questions.`);
 
   } catch (error) {
     console.error(`❌ Failed to read or process ${excelFileName}:`, error);
