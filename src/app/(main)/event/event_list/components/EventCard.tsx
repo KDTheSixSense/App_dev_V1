@@ -1,6 +1,7 @@
 // app/(main)/event/event_list/components/EventCard.tsx
 'use client';
 
+import ClientFormattedDate from './ClientFormattedDate';
 import { useRouter } from 'next/navigation';
 // useEffect と useState をインポートします 
 import { useState, useEffect } from 'react';
@@ -9,8 +10,8 @@ import { useState, useEffect } from 'react';
 type イベントデータ = {
   id: number;
   title: string;
-  startTime: Date;
-  endTime: Date;
+  startTime: Date | string | null;
+  endTime: Date | string | null;
   _count?: { participants: number };
 };
 
@@ -51,7 +52,7 @@ export const EventCard = ({ event }: { event: イベントデータ }) => {
     setIsClient(true);
   }, []);
 
-  const ステータス = イベントステータスを取得する(event.startTime, event.endTime);
+  const ステータス = イベントステータスを取得する(new Date(event.startTime ?? ''), new Date(event.endTime ?? ''));
 
   return (
     <div
@@ -72,17 +73,22 @@ export const EventCard = ({ event }: { event: イベントデータ }) => {
       <div className="p-5 space-y-4">
         <div className="flex items-center text-sm text-gray-600">
           <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-          {/* 日付は通常、タイムゾーンに依存しないため、そのまま表示しても安全です */}
-          <span>{日付を整形する(event.startTime )}</span>
+          {/* isClient が true になるまで日付と時刻を表示しない */}
+          {isClient ? (
+            <ClientFormattedDate date={event.startTime} />
+          ) : (
+            // サーバー上、またはハイドレーション前はプレースホルダーを表示
+            <span>----年--月--日</span>
+          )}
         </div>
         <div className="flex items-center text-sm text-gray-600">
           <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          {/*  isClient が true になるまで時間を表示しない  */}
           {isClient ? (
-            <span>{時刻を整形する(event.startTime )} ～ {時刻を整形する(event.endTime)}</span>
+            // 終了時刻も表示するように修正
+            <span>{時刻を整形する(new Date(event.startTime ?? ''))}</span>
           ) : (
             // サーバー上、またはハイドレーション前はプレースホルダーを表示
-            <span>--:-- ～ --:--</span>
+            <span>--:--</span>
           )}
         </div>
         <div className="flex items-center text-sm text-gray-600">
