@@ -8,7 +8,7 @@ import Link from 'next/link';
 import ProblemStatement from '../components/ProblemStatement';
 import TraceScreen from '../components/TraceScreen';
 import VariableTraceControl from '../components/VariableTraceControl';
-import KohakuChat from '@/components/KohakuChat';
+import KohakuChat from '@/components/KohakuChat'; // KohakuChat コンポーネントをインポート
 import { getHintFromAI } from '@/lib/actions/hintactions';
 import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
 import { useNotification } from '@/app/contexts/NotificationContext';
@@ -42,6 +42,9 @@ const textResources = {
       traceCompletedButton: "トレース完了",
       noCreditsMessage: "アドバイス回数が残っていません。プロフィールページでXPと交換できます。",
       noCreditsPlaceholder: "アドバイス回数がありません",
+      creditsLabel: "AIアドバイス残り:", // ★ クレジット表示用ラベル追加
+      creditsUnit: "回", // ★ クレジット表示用単位追加
+      increaseCreditsLink: "(XPで増やす)", // ★ クレジット増加リンクテキスト追加
     },
   },
   en: {
@@ -64,10 +67,11 @@ const textResources = {
       resetTraceButton: "Trace Again",
       nextTraceButton: "Next Trace",
       traceCompletedButton: "Trace Complete",
-      // ★★★ エラー修正箇所 ★★★
-      // 日本語側と型を一致させるため、クレジット関連の英語テキストを追加します。
       noCreditsMessage: "No advice credits remaining. You can exchange XP for credits on your profile page.",
       noCreditsPlaceholder: "No credits remaining",
+      creditsLabel: "AI Advice Credits:", // ★ クレジット表示用ラベル追加 (EN)
+      creditsUnit: "left", // ★ クレジット表示用単位追加 (EN)
+      increaseCreditsLink: "(Increase with XP)", // ★ クレジット増加リンクテキスト追加 (EN)
     },
   },
 } as const;
@@ -90,7 +94,7 @@ interface ProblemClientProps {
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits }) => {
   const router = useRouter();
   const { showNotification } = useNotification();
-  
+
   // --- 状態管理 ---
   const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -102,6 +106,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [language, setLanguage] = useState<Language>('ja');
   const [isPresetSelected, setIsPresetSelected] = useState<boolean>(false);
   const [credits, setCredits] = useState(initialCredits);
+  const [isChatOpen, setIsChatOpen] = useState(false); // ★ チャット開閉stateを追加
 
   useEffect(() => {
     let problemData = initialProblem;
@@ -189,23 +194,30 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
   const handleNextTrace = () => {
     if (!problem || !problem.programLines) return;
-    
-    if (currentTraceLine < problem.programLines[language].length) {
+
+    if (currentTraceLine < problem.programLines[language].length) { // ★修正: 行数チェックを programLines の長さに変更
       const logic = problemLogicsMap[problem.logicType as keyof typeof problemLogicsMap];
       if (!logic) return;
 
-      const traceStepFunction = logic.traceLogic[currentTraceLine];
+      // ★修正: calculateNextLineが先に呼ばれるように変更
+      let nextLine = currentTraceLine + 1; // デフォルトは次の行
+      if ('calculateNextLine' in logic && logic.calculateNextLine) {
+        nextLine = logic.calculateNextLine(currentTraceLine, variables);
+      }
+
+      // ★修正: traceLogic は calculateNextLine の *後* で実行されるようにする (行番号に対応する状態変化)
+      const traceStepFunction = logic.traceLogic[currentTraceLine]; // 現在の行に対応するロジック
       const nextVariables = traceStepFunction ? traceStepFunction(variables) : { ...variables };
 
-      let nextLine = currentTraceLine + 1;
-      if ('calculateNextLine' in logic && logic.calculateNextLine) {
-        nextLine = logic.calculateNextLine(currentTraceLine, nextVariables);
-      }
-      
-      setVariables(nextVariables);
-      setCurrentTraceLine(nextLine);
+      setVariables(nextVariables); // 状態を更新
+      setCurrentTraceLine(nextLine); // 次の行番号をセット
+    } else {
+        // ★追加: トレースがプログラムの最終行を超えた場合（無限ループ防止）
+        console.warn("Trace attempted beyond program lines length.");
+        // 必要に応じてトレース完了の処理を追加
     }
   };
+
 
   const handleResetTrace = () => {
     setVariables(problem.initialVariables);
@@ -213,19 +225,19 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setIsPresetSelected(false);
     setChatMessages(prev => [...prev, { sender: 'kohaku', text: "トレースをリセットしました。" }]);
   };
-  
+
   const handleSetData = (dataToSet: Record<string, any>) => {
-    setVariables({ ...problem.initialVariables, ...dataToSet, initialized: false });
+    setVariables({ ...problem.initialVariables, ...dataToSet, initialized: false }); // initializedをfalseにリセット
     setCurrentTraceLine(0);
     setIsPresetSelected(true);
   };
 
  const handleSetNum = (num: number) => {
-    setVariables({ ...problem.initialVariables, num: num }); // 選択された数値で変数を初期化
+    setVariables({ ...problem.initialVariables, num: num, initialized: false }); // initializedをfalseにリセット
     setCurrentTraceLine(0); // トレース行をリセット
     setIsPresetSelected(true); // プリセットが選択されたことを示すフラグを立てる
  };
-  
+
   const handleNextProblem = async () => {
     const nextId = await getNextProblemId(parseInt(problem.id, 10), 'basic_info_b_problem');
     if (nextId) {
@@ -251,8 +263,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
       setCredits(data.newCredits);
 
-      const context = { 
-        problemTitle: problem.title[currentLang], 
+      const context = {
+        problemTitle: problem.title[currentLang],
         problemDescription: problem.description[currentLang],
         userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムを文字列として渡す
       };
@@ -264,7 +276,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       setIsAiLoading(false);
     }
   };
-  
+
   const showTraceUI = problem.logicType !== 'STATIC_QA';
   const currentLang = language;
 
@@ -272,12 +284,13 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-6 sm:py-10">
       <div className="container mx-auto px-4 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-          <div className={`bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 min-h-[calc(100vh-120px)] flex flex-col ${showTraceUI ? 'lg:col-span-7' : 'lg:col-span-8'}`}>
+
+          {/* 問題文エリア (変更なし) */}
+          <div className={`bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 min-h-[calc(100vh-120px)] flex flex-col ${showTraceUI ? 'lg:col-span-7' : 'lg:col-span-10 lg:col-start-2'}`}>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 text-center">
               問{problem.id}: {problem.title[currentLang]}
             </h1>
-            <ProblemStatement 
+            <ProblemStatement
               description={problem.description[currentLang]}
               programText={problem.programLines?.[currentLang]?.join('\n') || ''}
               answerOptions={problem.answerOptions?.[currentLang] || []}
@@ -290,40 +303,65 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
               textResources={{...t, title: problem.title[currentLang]}}
             />
           </div>
-          
+
+          {/* 右カラム (トレース画面とAIチャット) */}
           {showTraceUI && (
             <div className="lg:col-span-5 flex flex-col gap-8 sticky top-10">
+              {/* トレース画面 (変更なし) */}
               <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
                 <TraceScreen programLines={problem.programLines?.[currentLang] || []} currentLine={currentTraceLine} language={language} textResources={t} />
               </div>
+              {/* 変数・トレース制御 (変更なし) */}
               <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                <VariableTraceControl problem={problem} variables={variables} onNextTrace={handleNextTrace} isTraceFinished={problem.programLines ? currentTraceLine >= problem.programLines[currentLang].length : true} onResetTrace={handleResetTrace} currentTraceLine={currentTraceLine} language={language} textResources={t} onSetData={handleSetData} isPresetSelected={isPresetSelected} onSetNum={handleSetNum} />
+                <VariableTraceControl problem={problem} variables={variables} onNextTrace={handleNextTrace} isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)} onResetTrace={handleResetTrace} currentTraceLine={currentTraceLine} language={language} textResources={t} onSetData={handleSetData} isPresetSelected={isPresetSelected} onSetNum={handleSetNum} />
               </div>
+
+              {/* ★ AIチャット (アコーディオン形式に変更) */}
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setIsChatOpen(!isChatOpen)}
+                  className="w-full p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors flex justify-between items-center cursor-pointer" // cursor-pointer を追加
+                >
+                  <span className="font-semibold text-gray-700">{t.kohakuChatTitle}</span>
+                  {/* クレジット表示 */}
+                  <div className="text-sm text-gray-600 flex items-center gap-1"> {/* flexとgapを追加 */}
+                    {t.creditsLabel} {/* ラベルを使用 */}
+                    <span className="font-bold text-lg text-blue-600">{credits}</span>
+                    {t.creditsUnit} {/* 単位を使用 */}
+                    {credits <= 0 && (
+                      <Link href="/profile" className="text-xs text-blue-500 hover:underline ml-1">
+                        {t.increaseCreditsLink} {/* リンクテキストを使用 */}
+                      </Link>
+                    )}
+                  </div>
+                   {/* 開閉アイコン */}
+                  <span className={`transform transition-transform duration-200 ${isChatOpen ? 'rotate-180' : 'rotate-0'}`}>▼</span> {/* durationを追加 */}
+                </button>
+
+                {/* チャット本体 (isChatOpenがtrueの時だけ表示) */}
+                {isChatOpen && (
+                  <div className="p-0"> {/* KohakuChat側でpaddingを持つ想定 */}
+                    <KohakuChat
+                      messages={chatMessages}
+                      onSendMessage={handleUserMessage}
+                      language={language}
+                      textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
+                      isLoading={isAiLoading}
+                      isDisabled={credits <= 0}
+                    />
+                  </div>
+                )}
+              </div>
+              {/* ★ AIチャットここまで */}
+
             </div>
           )}
 
-          <div className="fixed bottom-4 right-4 lg:relative lg:bottom-auto lg:right-auto lg:col-span-12 w-full max-w-md lg:max-w-none mx-auto lg:w-full lg:col-start-9 lg:col-end-13 lg:sticky lg:top-10">
-            <div className="bg-white p-3 rounded-t-lg shadow-lg border-b text-center">
-              <p className="text-sm text-gray-600">
-                AIアドバイス残り回数: <span className="font-bold text-lg text-blue-600">{credits}</span> 回
-              </p>
-              {credits <= 0 && (
-                <Link href="/profile" className="text-xs text-blue-500 hover:underline">
-                  (XPを消費して増やす)
-                </Link>
-              )}
-            </div>
-            <KohakuChat
-              messages={chatMessages}
-              onSendMessage={handleUserMessage}
-              language={language}
-              textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
-              isLoading={isAiLoading}
-              isDisabled={credits <= 0}
-            />
-          </div>
+          {/* ★ 画面右下固定の要素は削除 */}
+
         </div>
 
+        {/* 次の問題へボタン (変更なし) */}
         {isAnswered && (
           <div className="w-full max-w-2xl mx-auto mt-8 flex justify-center">
             <button onClick={handleNextProblem} className="w-full py-4 px-8 text-lg font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:scale-105">
@@ -337,4 +375,3 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 };
 
 export default ProblemClient;
-
