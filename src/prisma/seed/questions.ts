@@ -879,35 +879,56 @@ function createImageFileMap(): Map<string, string> {
 }
 
 /**
- * answerOptions のテキスト ("アX イY ウZ エW") を ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数
+ * answerOptions のテキスト ("アX イY ウZ エW" など、多様な形式に対応) を
+ * ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数 [さらに改善版]
  */
 function parseAnswerOptionsText(text: string): string[] | null {
   if (!text || typeof text !== 'string') {
     return null;
   }
-  const options: string[] = [];
-  // 正規表現を使って選択肢マーカー（ア、イ、ウ、エ）とそれに続くテキストを抽出
-  const matches = text.matchAll(/([アイウエ])([^アイウエ]+)/g);
-  
-  const tempOptions: { [key: string]: string } = {};
-  for (const match of matches) {
-      // match[1] は 'ア', 'イ', 'ウ', 'エ'
-      // match[2] は選択肢のテキスト (前後の空白をトリム)
-      tempOptions[match[1]] = match[2].trim();
+
+  // 前処理: 改行をスペースに、連続するスペース（全角含む）を単一の半角スペースに
+  const cleanedText = text
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/[\s　]+/g, ' ')
+    .trim();
+
+  const markers = ['ア', 'イ', 'ウ', 'エ'];
+  const markerPositions: { [key: string]: number } = {};
+  let searchStartIndex = 0;
+
+  // --- ▼▼▼ 改善点: 全マーカーの位置を先に特定 ▼▼▼ ---
+  for (const marker of markers) {
+    const index = cleanedText.indexOf(marker, searchStartIndex);
+    if (index === -1) {
+      console.warn(` ⚠️ Marker "${marker}" not found in cleaned text (starting search from index ${searchStartIndex}): "${cleanedText}"`);
+      return null; // マーカーが1つでも見つからなければ失敗
+    }
+    markerPositions[marker] = index;
+    // 次のマーカー検索開始位置を、見つかったマーカーの直後に設定
+    // これにより、選択肢テキスト内に同じマーカー文字があっても影響されにくくなる
+    searchStartIndex = index + 1;
   }
+  // --- ▲▲▲ マーカー位置特定ここまで ▲▲▲ ---
 
-  // ア->イ->ウ->エ の順で配列に追加
-  if (tempOptions['ア']) options.push(tempOptions['ア']);
-  if (tempOptions['イ']) options.push(tempOptions['イ']);
-  if (tempOptions['ウ']) options.push(tempOptions['ウ']);
-  if (tempOptions['エ']) options.push(tempOptions['エ']);
+  const options: string[] = [];
+  try {
+    // マーカー位置に基づいてテキストを抽出
+    options.push(cleanedText.substring(markerPositions['ア'] + 1, markerPositions['イ']).trim());
+    options.push(cleanedText.substring(markerPositions['イ'] + 1, markerPositions['ウ']).trim());
+    options.push(cleanedText.substring(markerPositions['ウ'] + 1, markerPositions['エ']).trim());
+    options.push(cleanedText.substring(markerPositions['エ'] + 1).trim()); // 最後のエから末尾まで
 
-  // 4つの選択肢が正しく抽出できたか確認
-  if (options.length === 4) {
-    return options;
-  } else {
-    console.warn(` ⚠️ Could not parse 4 options from text: "${text}"`);
-    return null; // パース失敗
+    // すべての選択肢が空文字列でないことを確認
+    if (options.length === 4 && options.every(opt => opt && opt.length > 0)) {
+      return options;
+    } else {
+      console.warn(` ⚠️ Failed to extract 4 non-empty options from cleaned text: "${cleanedText}"`, options);
+      return null;
+    }
+  } catch (e) {
+    console.error(` ❌ Error during option extraction from text: "${text}"`, e);
+    return null;
   }
 }
 

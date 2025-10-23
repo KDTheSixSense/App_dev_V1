@@ -4,7 +4,7 @@ import { prisma } from './prisma';
 import type { 
   Questions as DbStaticProblem,
   Questions_Algorithm as DbAlgoProblem,
-  Basc_Info_A_Question as DbBasicInfoAProblem 
+  Basic_Info_A_Question as DbBasicInfoAProblem 
 } from '@prisma/client';
 import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
@@ -261,7 +261,7 @@ function transformBasicInfoAProblem(dbProblem: DbBasicInfoAProblem): Serializabl
 export async function getBasicInfoAProblem(id: number): Promise<SerializableProblem | null> {
   console.log(`[getBasicInfoAProblem] Attempting to fetch problem with ID: ${id}`);
   try {
-    const basicInfoAProblem = await prisma.basc_Info_A_Question.findUnique({
+    const basicInfoAProblem = await prisma.basic_Info_A_Question.findUnique({
       where: { id }
     });
 
