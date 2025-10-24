@@ -124,7 +124,7 @@ export async function getNextProblemId(currentId: number, category: string): Pro
 /**
  * 正解時に経験値を付与し、解答履歴を保存するサーバーアクション
  */
-export async function awardXpForCorrectAnswer(problemId: number, subjectid?: number) {
+export async function awardXpForCorrectAnswer(problemId: number, subjectid?: number, problemStartedAt?: string | number) {
   'use server';
 
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -199,6 +199,37 @@ export async function awardXpForCorrectAnswer(problemId: number, subjectid?: num
     console.log(`ユーザーID:${userId} は既に問題ID:${problemId}に正解済みです。`);
     return { message: '既に正解済みです。' };
   }
+
+  // 5. XP量と学習時間を計算
+  let xpAmount = 0;
+  let timeSpentMs = 0;
+
+  // 5a. XP量を取得
+  const difficulty = await prisma.difficulty.findUnique({
+    where: { id: problemDetails.difficultyId },
+  });
+  if (difficulty) {
+    xpAmount = difficulty.xp;
+  }
+
+  // 5b. 学習時間（ミリ秒）を計算（開始時刻が渡された場合のみ計算）
+  if (typeof problemStartedAt !== 'undefined' && problemStartedAt !== null) {
+    try {
+      const parsedStart = typeof problemStartedAt === 'number'
+        ? problemStartedAt
+        : Date.parse(String(problemStartedAt));
+      if (!isNaN(parsedStart)) {
+        const startTime = parsedStart;
+        const endTime = Date.now();
+        timeSpentMs = endTime - startTime;
+      }
+    } catch (e) {
+      console.warn('学習時間の計算に失敗しました。', e);
+    }
+  }
+
+  // 5c. 日次サマリーテーブルを更新（非同期で実行し、待たない）
+  upsertDailyActivity(userId, xpAmount, timeSpentMs);
 
   //ユーザーの回答数を数える
   const userAnswerCount = await prisma.userAnswer.count({ where: { userId } });
@@ -1215,5 +1246,52 @@ export async function getDraftEventDetailsAction(eventId: number) {
   } catch (error) {
     console.error('下書き詳細の取得に失敗:', error);
     return { error: '下書きの読み込みに失敗しました。' };
+  }
+}
+
+/**
+ * 日々の活動を集計・更新するヘルパー関数
+ */
+async function upsertDailyActivity(
+  userId: number,
+  xpAmount: number,
+  timeSpentMs: number
+) {
+  // 1. 「今日の日付」を取得します（JSTを考慮）
+  // タイムゾーンをJST（UTC+9）に設定
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const todayJST = new Date(Date.now() + jstOffset);
+  
+  // JSTでの「YYYY-MM-DD」の文字列を元に、UTCの「日付」オブジェクトを作成
+  // (例: '2025-10-25' -> 2025-10-25 00:00:00 UTC)
+  // これにより、@db.Date 型に正しく保存されます
+  const todayDate = new Date(todayJST.toISOString().split('T')[0]);
+
+  try {
+    await prisma.dailyActivitySummary.upsert({
+      where: {
+        userId_date: {
+          userId: userId,
+          date: todayDate,
+        },
+      },
+      // 該当する日付のデータがなければ、新しいレコードを作成
+      create: {
+        userId: userId,
+        date: todayDate,
+        totalXpGained: xpAmount,
+        totalTimeSpentMs: BigInt(timeSpentMs),
+        problemsCompleted: 1,
+      },
+      // 該当する日付のデータがあれば、既存の値に加算
+      update: {
+        totalXpGained: { increment: xpAmount },
+        totalTimeSpentMs: { increment: BigInt(timeSpentMs) },
+        problemsCompleted: { increment: 1 },
+      },
+    });
+    console.log(`[ActivitySummary] ユーザーID:${userId} の ${todayDate.toISOString().split('T')[0]} の活動を更新しました。`);
+  } catch (error) {
+    console.error(`[ActivitySummary] ユーザーID:${userId} の活動更新に失敗:`, error);
   }
 }
