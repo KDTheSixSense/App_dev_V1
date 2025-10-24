@@ -42,6 +42,7 @@ model User {
   submissions         Submissions[]
   eventParticipants       Event_Participants[]   // このユーザーのイベント参加情報（EventParticipantとの対向リレーション）
   eventSubmissions        Event_Submission[]    // このユーザーのイベントでの提出（EventSubmissionとの対向リレーション）
+  dailyActivitySummaries   DailyActivitySummary[] // 日別アクティビティのサマリ（DailyActivitySummaryとの対向リレーション）
   aiAdviceCredits            Int      @default(5)
 }
 
@@ -604,4 +605,20 @@ model Event_Submission {
 
   eventIssueId      Int
   eventIssue        Event_Issue_List @relation(fields: [eventIssueId], references: [id], onDelete: Cascade)
+}
+
+model DailyActivitySummary {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  date              DateTime @db.Date // 重要な点: 時間を含まない「日付」のみを保存
+  totalXpGained     Int      @default(0) // その日に獲得した総XP
+  totalTimeSpentMs  BigInt   @default(0) // その日に学習した総時間 (ミリ秒)
+  problemsCompleted Int      @default(0) // その日に完了した問題数
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 1人のユーザーが同じ日付に複数のレコードを持てないようにするユニーク制約
+  @@unique([userId, date])
+  // 日付とユーザーIDでの検索を高速化するインデックス
+  @@index([userId, date])
 }

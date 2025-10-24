@@ -1077,7 +1077,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
     const defaultDifficulty = await prisma.difficulty.findUnique({ where: { name: '基本資格A問題' } });
     const defaultSubject = await prisma.subject.findUnique({ where: { name: '基本情報A問題' } });
 
-    console.log(' 🔍 DB Categories:', categories.map(c => c.name));
+    // console.log(' 🔍 DB Categories:', categories.map(c => c.name));
     if (!defaultDifficulty || !defaultSubject) {
         console.error('❌ Master data error: Default Difficulty or Subject not found.');
         return;
@@ -1109,7 +1109,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
       }
       let category = categories.find(c => c.name === mappedDbCategoryName);
       if (!category && !rawCategoryValue) {
-          console.warn(` ⚠️ Category is undefined for Row ${processedRowCount + 2}. Assigning default category 'テクノロジ系'.`);
+          // console.warn(` ⚠️ Category is undefined for Row ${processedRowCount + 2}. Assigning default category 'テクノロジ系'.`);
           category = categories.find(c => c.name === 'テクノロジ系');
       }
       if (!category) {
