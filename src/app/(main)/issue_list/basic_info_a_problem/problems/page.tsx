@@ -8,11 +8,11 @@ import { prisma } from '@/lib/prisma'; // データベース接続(Prisma)をイ
 interface ProblemListRowProps {
   problemId: number;
   title: string;
-  sourceText: string;
+  //sourceText: string;
 }
 
 // Component for a single row in the problem list
-const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, sourceText }) => {
+const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, /*sourceText*/ }) => {
   return (
     // Use li for semantic list structure, but Link handles click and navigation
     <li className="border-b border-gray-200 flex-shrink-0"> {/* Add flex-shrink-0 */}
@@ -23,7 +23,7 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, sourc
       >
         <div className="flex justify-between items-center"> {/* Use flex for alignment */}
           <span className="font-medium text-blue-600 hover:text-blue-800">
-            {sourceText}: {title}
+            {title}
           </span>
         </div>
       </Link>
@@ -63,7 +63,7 @@ const ProblemsListPage = async () => {
                   problemId={problem.id}
                   title={problem.title}
                   // Combine year and number for display
-                  sourceText={`${problem.sourceYear || '年度不明'} ${problem.sourceNumber || ''}`.trim()}
+                  // sourceText={`${problem.sourceYear || '年度不明'} ${problem.sourceNumber || ''}`.trim()}
                 />
               ))}
             </ul>

@@ -7,6 +7,7 @@ import Chart from './Chart/Chart';
 import PetStatusView from '../home/Pet/PetStatusView';
 import Advice from './Advice/Advice';
 import { updateUserProfileAction } from './actions';
+import DailyActivityChart from './Chart/DailyActivityChart';
 
 // --- 型定義 ---
 type SerializedUserUnlockedTitle = Omit<UserUnlockedTitle, 'unlockedAt'> & {
@@ -226,11 +227,20 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
             </div>
           </div>
 
-          {/* 右カラム：ペット、チャート、アドバイス */}
+          {/* --- 右カラム：ペット、(古い)チャート、アドバイス --- */}
           <div className="lg:col-span-1 space-y-8">
             <PetStatusView initialHunger={initialUser.Status_Kohaku?.[0]?.hungerlevel ?? 200} maxHunger={200} />
-            <Chart stats={initialStats} />
+            
+            {/*  古いレーダーチャートをこちらに移動  */}
+            <Chart stats={initialStats} /> 
+            
             <Advice advice={aiAdvice} />
+          </div>
+
+          {/* ---  新しい行：中央に配置するグラフ  --- */}
+          <div className="lg:col-span-3">
+            {/*  新しいチャートコンポーネントを配置  */}
+            <DailyActivityChart />
           </div>
         </div>
       </div>
