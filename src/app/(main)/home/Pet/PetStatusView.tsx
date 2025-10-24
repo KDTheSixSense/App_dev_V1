@@ -1,101 +1,56 @@
-'use client'; // ボタン操作やルーターを使うので、クライアントコンポーネントにする
+'use client';
 
+import React from 'react'; // useEffect, useState を削除 (今回は不要)
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { Lightbulb } from 'lucide-react'; // アイコンをインポート
 
-// 親コンポーネントから渡されるPropsの型を定義
+// Props に adviceText を追加
 interface PetStatusViewProps {
-  initialHunger: number;
-  maxHunger: number;
+  initialHunger: number; // 画像表示のために残す
+  adviceText?: string | null; // AIアドバイスを受け取る (オプショナル)
+  maxHunger: number; // Props としては受け取るが今回は表示に使わない
 }
 
-/**
- * 満腹度に応じて、表示するコハクの画像パスとステータステキストを返すヘルパー関数
- * @param hungerLevel 現在の満腹度
- * @returns { image: string, statusText: string }
- */
+// 満腹度に応じた画像パスを返すヘルパー関数 (変更なし)
 const getPetDisplayInfo = (hungerLevel: number) => {
-  if (hungerLevel >= 150) {
-    return {
-      image: '/images/Kohaku/kohaku-full.png',      // 満腹の画像
-      statusText: '満腹',
-      colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
-    };
-  } else if (hungerLevel >= 100) {
-    return {
-      image: '/images/Kohaku/kohaku-normal.png',    // 普通の画像
-      statusText: '普通',
-      colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
-    };
-  } else if (hungerLevel >= 50) {
-    return {
-      image: '/images/Kohaku/kohaku-hungry.png',    // 空腹の画像
-      statusText: '空腹',
-      colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
-    };
-  } else {
-    return {
-      image: '/images/Kohaku/kohaku-starving.png',  // 死にかけの画像
-      statusText: '死にかけ…',
-      colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
-    };
-  }
-
+    if (hungerLevel >= 150) {
+    return { image: '/images/Kohaku/kohaku-full.png' };
+  } else if (hungerLevel >= 100) {
+    return { image: '/images/Kohaku/kohaku-normal.png' };
+  } else if (hungerLevel >= 50) {
+    return { image: '/images/Kohaku/kohaku-hungry.png' };
+  } else {
+    return { image: '/images/Kohaku/kohaku-starving.png' };
+  }
 };
 
-export default function PetStatusView({ initialHunger, maxHunger }: PetStatusViewProps) {
+export default function PetStatusView({ initialHunger, maxHunger, adviceText }: PetStatusViewProps) {
   const router = useRouter();
-
-  // ヘルパー関数を呼び出して、現在の状態を取得
   const petInfo = getPetDisplayInfo(initialHunger);
 
-  // プログレスバーのパーセンテージを計算
-  const fullnessPercentage = (initialHunger / maxHunger) * 100;
+  // useEffect による外部更新検知は削除 (今回は不要)
 
   return (
-    <div className="flex flex-col items-center h-100 gap-2 p-5 bg-white rounded-2xl shadow-lg">
+    // 全体の Paddinng や背景色などを調整
+    <div className="flex flex-col h-full justify-between items-center p-6 bg-white rounded-lg shadow-lg">
 
-      {/* 1. キャラクター画像 */}
-      <div>
+      {/* 1. キャラクター画像 (変更なし) */}
+      <div className="w-60 h-60 relative">
         <Image
-          src={petInfo.image} 
+          src={petInfo.image}
           alt="コハク"
-          width={200}
-          height={200}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-contain"
         />
       </div>
-
-      {/* 2. ラベルテキスト */}
-      <div className="text-center">
-        <p className="text-lg font-semibold text-gray-700">
-          コハクの満腹度
-        </p>
-      </div>
-
-      {/* 3. プログレスバー（満腹度バー） */}
-      <div className="w-full">
-        <div className="h-5 bg-gray-200 rounded-full overflow-hidden relative">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ease-out ${petInfo.colorClass}`}
-            style={{ width: `${fullnessPercentage}%` }} 
-          ></div>
+        <div className="w-full bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md text-base text-gray-700 h-24 overflow-y-auto">
+          <div className="flex items-start">
+            <Lightbulb className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0 mt-0.5" />
+            <p>{adviceText}</p>
+          </div>
         </div>
-        <div className="text-right text-sm font-mono text-gray-500 mt-1">
-            {initialHunger} / {maxHunger}
-        </div>
-      </div>
-
-      {/* 4. アクションボタン */}
-      <div className="w-full mt-2">
-        <button 
-          className="w-full py-3 px-6 rounded-full bg-[#68F3FF] text-[#fff] font-bold text-xl shadow-md hover:bg-[#83F7FF] transition-colors"
-          onClick={() => router.push('/issue_list')} // useRouterを使ってページ遷移
-        >
-          餌を探しに行く
-        </button>
-      </div>
-
     </div>
   );
 }

@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
-import Chart from './Chart/Chart';
 import PetStatusView from '../home/Pet/PetStatusView';
-import Advice from './Advice/Advice';
 import { updateUserProfileAction } from './actions';
 import DailyActivityChart from './Chart/DailyActivityChart';
 
@@ -227,16 +225,14 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
             </div>
           </div>
 
-          {/* --- 右カラム：ペット、(古い)チャート、アドバイス --- */}
-          <div className="lg:col-span-1 space-y-8">
-            <PetStatusView initialHunger={initialUser.Status_Kohaku?.[0]?.hungerlevel ?? 200} maxHunger={200} />
-            
-            {/*  古いレーダーチャートをこちらに移動  */}
-            <Chart stats={initialStats} /> 
-            
-            <Advice advice={aiAdvice} />
-          </div>
-
+          {/* 右カラム：ペットステータスとグラフ */}
+            <div className="lg:col-span-1 space-y-8">
+              <PetStatusView 
+              initialHunger={initialUser.Status_Kohaku?.[0]?.hungerlevel ?? 200} 
+              maxHunger={200} 
+              adviceText={aiAdvice} 
+            />
+            </div>
           {/* ---  新しい行：中央に配置するグラフ  --- */}
           <div className="lg:col-span-3">
             {/*  新しいチャートコンポーネントを配置  */}

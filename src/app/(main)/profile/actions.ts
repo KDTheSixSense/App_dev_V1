@@ -53,9 +53,9 @@ export async function getDailyActivityAction(timeframeDays: 7 | 14 | 30) {
     return { error: '認証されていません。' };
   }
   const userId = Number(session.user.id);
-  console.log(`[getDailyActivityAction] userId: ${userId}`); // ★ 追加
+  console.log(`[getDailyActivityAction] userId: ${userId}`);
 
-  if (isNaN(userId)) { // ★ userId が NaN でないかチェックを追加
+  if (isNaN(userId)) { // userId が NaN でないかチェックを追加
      console.error('[getDailyActivityAction] Error: Invalid userId.');
      return { error: '無効なユーザーIDです。' };
   }
@@ -75,7 +75,7 @@ export async function getDailyActivityAction(timeframeDays: 7 | 14 | 30) {
     console.log('[getDailyActivityAction] Checking prisma object:', typeof prisma);
     console.log('[getDailyActivityAction] Checking prisma.dailyActivitySummary:', typeof prisma.dailyActivitySummary);
 
-    // 2. データベースから期間内の活動データを取得
+    // 2. DBから取得 (problemsCompleted も select に追加)
     const dbData = await prisma.dailyActivitySummary.findMany({
       where: {
         userId: userId,
@@ -83,6 +83,13 @@ export async function getDailyActivityAction(timeframeDays: 7 | 14 | 30) {
           gte: startDateQuery,
           lte: endDateQuery,
         },
+      },
+      // problemsCompleted を追加
+      select: {
+        date: true,
+        totalXpGained: true,
+        totalTimeSpentMs: true,
+        problemsCompleted: true,
       },
       orderBy: {
         date: 'asc',
@@ -96,15 +103,14 @@ export async function getDailyActivityAction(timeframeDays: 7 | 14 | 30) {
         d.date.toISOString().split('T')[0], // (例: '2025-10-24')
         {
           totalXpGained: d.totalXpGained,
-          // BigIntをnumberに変換（JSONでシリアライズ可能にするため）
-          // Avoid bigint literal (60000n) for older TS targets by converting BigInt to number first.
-          totalTimeSpentMin: Math.floor(Number(d.totalTimeSpentMs) / 60000), // ミリ秒 -> 分
+          totalTimeSpentMin: Number(d.totalTimeSpentMs / BigInt(60000)),
+          problemsCompleted: d.problemsCompleted,
         },
       ])
     );
     console.log(`[getDailyActivityAction] activityMap size: ${activityMap.size}`);
 
-    // 4. 0埋めした完全なデータ配列を作成
+    // 4. 0埋めデータ作成 ( problemsCompleted も含める)
     const chartData = [];
     for (let i = 0; i < timeframeDays; i++) {
       const currentDate = new Date(startDate);
@@ -114,14 +120,14 @@ export async function getDailyActivityAction(timeframeDays: 7 | 14 | 30) {
       const data = activityMap.get(dateString) || {
         totalXpGained: 0,
         totalTimeSpentMin: 0,
+        problemsCompleted: 0,
       };
-      console.log(`[getDailyActivityAction] chartData generated count: ${chartData.length}`);
 
       chartData.push({
-        // グラフ用に日付をフォーマット (例: '10/24')
         date: `${currentDate.getMonth() + 1}/${currentDate.getDate()}`,
         '総獲得XP': data.totalXpGained,
         '総学習時間 (分)': data.totalTimeSpentMin,
+        '完了問題数': data.problemsCompleted,
       });
     }
 

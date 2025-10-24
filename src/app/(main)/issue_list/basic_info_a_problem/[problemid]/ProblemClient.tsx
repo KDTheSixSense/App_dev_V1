@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useTransition } from 'react'; // ★ useTransition をインポート
+import React, { useState, useEffect, useTransition } from 'react'; // useTransition をインポート
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProblemStatement from '../components/ProblemStatement';
-// ★★★ KohakuChat のインポートパスを確認 ★★★
+// KohakuChat のインポートパスを確認
 import KohakuChat from '@/components/KohakuChat'; // '@/' から始まるパスに変更 (B問題のコード例より)
 import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
-import { getHintFromAI } from '@/lib/actions/hintactions'; // ★ インポート
+import { getHintFromAI } from '@/lib/actions/hintactions'; // インポート
 import { useNotification } from '@/app/contexts/NotificationContext';
 import type { SerializableProblem } from '@/lib/data';
 
@@ -71,7 +71,7 @@ const isCorrectAnswer = (selected: string | null, correct: string): boolean => {
 };
 
 type Language = 'ja' | 'en';
-// ★ ChatMessage 型を定義
+// ChatMessage 型を定義
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 
 interface ProblemClientProps {
@@ -181,11 +181,6 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       };
 
       // AIヒント取得 (Server Action呼び出し)
-      // startTransition を使う場合はここでラップする
-       startTransition(async () => {
-         const hint = await getHintFromAI(message, context);
-         setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
-       });
       // useTransitionを使わない場合は直接呼び出す
       const hint = await getHintFromAI(message, context);
       setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
@@ -243,14 +238,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           {/* KohakuChat コンポーネントを表示 */}
           <KohakuChat
             messages={chatMessages}
-            onSendMessage={handleUserMessage} // ★ 実装したハンドラを渡す
+            onSendMessage={handleUserMessage} // 実装したハンドラを渡す
             language={language}
             textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
-            isLoading={isAiLoading} // ★ AIローディング状態を渡す
-            isDisabled={credits <= 0 || isAiLoading} // ★ 無効化条件
+            isLoading={isAiLoading} // AIローディング状態を渡す
+            isDisabled={credits <= 0 || isAiLoading} // 無効化条件
           />
         </div>
-        {/* ★★★ コハクチャットエリアここまで ★★★ */}
+        {/* コハクチャットエリアここまで */}
 
       </div>
 

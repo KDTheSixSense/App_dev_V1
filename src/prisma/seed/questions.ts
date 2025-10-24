@@ -893,7 +893,7 @@ function parseAnswerOptionsText(text: string): string[] | null {
     .replace(/[\s　]+/g, ' ')
     .trim();
 
-  const markers = ['ア', 'イ', 'ウ', 'エ'];
+  const markers = ['ア：', 'イ：', 'ウ：', 'エ：'];
   const markerPositions: { [key: string]: number } = {};
   let searchStartIndex = 0;
 
@@ -913,11 +913,16 @@ function parseAnswerOptionsText(text: string): string[] | null {
 
   const options: string[] = [];
   try {
-    // マーカー位置に基づいてテキストを抽出
-    options.push(cleanedText.substring(markerPositions['ア'] + 1, markerPositions['イ']).trim());
-    options.push(cleanedText.substring(markerPositions['イ'] + 1, markerPositions['ウ']).trim());
-    options.push(cleanedText.substring(markerPositions['ウ'] + 1, markerPositions['エ']).trim());
-    options.push(cleanedText.substring(markerPositions['エ'] + 1).trim()); // 最後のエから末尾まで
+    // テキスト本体のみを正しく抽出するように substring の開始位置を調整します。
+    const offsetA = markerPositions['ア：'] + 'ア：'.length;
+    const offsetI = markerPositions['イ：'] + 'イ：'.length;
+    const offsetU = markerPositions['ウ：'] + 'ウ：'.length;
+    const offsetE = markerPositions['エ：'] + 'エ：'.length;
+
+    options.push(cleanedText.substring(offsetA, markerPositions['イ：']).trim());
+    options.push(cleanedText.substring(offsetI, markerPositions['ウ：']).trim());
+    options.push(cleanedText.substring(offsetU, markerPositions['エ：']).trim());
+    options.push(cleanedText.substring(offsetE).trim());
 
     // すべての選択肢が空文字列でないことを確認
     if (options.length === 4 && options.every(opt => opt && opt.length > 0)) {
