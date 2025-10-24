@@ -544,6 +544,9 @@ model Create_event {
   
   participants      Event_Participants[]
   issues            Event_Issue_List[]
+
+  //イベント開始の判別フラグ
+  isStarted Boolean @default(false)
 }
 
 // イベントの参加者情報を管理するテーブル
@@ -563,6 +566,9 @@ model Event_Participants {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId], name: "eventId_userId_unique")
+
+  //イベント受容の判別フラグ
+  hasAccepted Boolean @default(false)
 }
 
 
