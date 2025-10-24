@@ -1,72 +1,66 @@
-// /app/api/event/join/route.ts
-
+// /workspaces/my-next-app/src/app/api/event/join/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-// Prisma Clientをインポートします。
 import { prisma } from '@/lib/prisma';
-import { getAppSession } from '@/lib/auth';
-import { z } from 'zod';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import { sessionOptions } from '@/lib/session';
 
-// APIが受け取るリクエストボディの型を定義します。
-const joinEventSchema = z.object({
-  inviteCode: z.string().min(1, "参加コードは必須です"),
-});
+interface SessionData {
+  user?: {
+    id: string;
+  };
+}
 
-// Next.js 13+ App RouterでのAPIルートの標準的な書き方です。
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return NextResponse.json({ error: '認証されていません。' }, { status: 401 });
+  }
+  const userId = Number(session.user.id);
+
   try {
-    // セッションからユーザーIDを取得
-    const session = await getAppSession();
-    const user = session.user;
+    const body = await request.json();
+    const { inviteCode } = body;
 
-    if (!user) {
-      return NextResponse.json({ message: '認証が必要です。' }, { status: 401 });
+    if (!inviteCode) {
+      return NextResponse.json({ error: '招待コードが必要です。' }, { status: 400 });
     }
 
-    const userId = user.id;
-
-    const body = await req.json();
-    const validation = joinEventSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json({ message: 'リクエスト情報が不足しています', errors: validation.error.flatten().fieldErrors }, { status: 400 });
-    }
-
-    const { inviteCode } = validation.data;
-
-    // 参加コードに一致するイベントを検索
-    const targetEvent = await prisma.create_event.findUnique({
+    // 1. 招待コードに一致するイベントを検索
+    const event = await prisma.create_event.findUnique({
       where: { inviteCode: inviteCode },
     });
 
-    if (!targetEvent) {
-      return NextResponse.json({ message: '参加コードが無効です。' }, { status: 404 });
+    if (!event) {
+      return NextResponse.json({ error: '無効な招待コードです。' }, { status: 404 });
     }
 
-    // ユーザーが既に参加済みか確認
-    const existingParticipant = await prisma.event_Participants.findFirst({
+    // 2. 既に参加済みか確認
+    const existingParticipant = await prisma.event_Participants.findUnique({
       where: {
-        eventId: targetEvent.id,
-        userId: userId,
+        eventId_userId_unique: {
+          eventId: event.id,
+          userId: userId,
+        },
       },
     });
 
     if (existingParticipant) {
-      return NextResponse.json({ message: '既にこのイベントに参加しています。' }, { status: 409 });
+      return NextResponse.json({ error: '既にこのイベントに参加しています。' }, { status: 409 });
     }
 
-    // 参加者を追加
-    await prisma.event_Participants.create({
+    // 3. 参加者として登録
+    const newParticipant = await prisma.event_Participants.create({
       data: {
-        eventId: targetEvent.id,
+        eventId: event.id,
         userId: userId,
-        isAdmin: false,
+        isAdmin: false, // 通常の参加者は管理者ではない
       },
     });
 
-    return NextResponse.json({ message: 'イベントへの参加が完了しました！', eventId: targetEvent.id }, { status: 201 });
-
+    return NextResponse.json({ success: true, data: newParticipant });
   } catch (error) {
     console.error('イベント参加APIエラー:', error);
-    return NextResponse.json({ message: 'サーバー内部でエラーが発生しました' }, { status: 500 });
+    return NextResponse.json({ error: 'サーバーエラーが発生しました。' }, { status: 500 });
   }
 }
