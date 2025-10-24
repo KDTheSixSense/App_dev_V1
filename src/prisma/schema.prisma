@@ -404,6 +404,7 @@ model Difficulty {
   Questions           Questions[]
   SelectProblem       SelectProblem[]
   problems  Basc_Info_A_Question[]
+  programmingProblems ProgrammingProblem[]
 }
 
 model Groups {
