@@ -54,6 +54,10 @@ CREATE TABLE "UserAnswer" (
     "answer" TEXT NOT NULL,
     "isCorrect" BOOLEAN NOT NULL,
     "answeredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "programingProblem_id" INTEGER,
+    "basic_A_Info_Question_id" INTEGER,
+    "questions_id" INTEGER,
+    "selectProblem_id" INTEGER,
 
     CONSTRAINT "UserAnswer_pkey" PRIMARY KEY ("id")
 );
@@ -475,19 +479,26 @@ CREATE TABLE "Event_Submission" (
     CONSTRAINT "Event_Submission_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "_Basic_Info_A_QuestionToUserAnswer" (
-    "A" INTEGER NOT NULL,
-    "B" INTEGER NOT NULL,
-
-    CONSTRAINT "_Basic_Info_A_QuestionToUserAnswer_AB_pkey" PRIMARY KEY ("A","B")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_selectedTitleId_key" ON "User"("selectedTitleId");
+
+-- CreateIndex
+CREATE INDEX "UserAnswer_userId_idx" ON "UserAnswer"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserAnswer_programingProblem_id_idx" ON "UserAnswer"("programingProblem_id");
+
+-- CreateIndex
+CREATE INDEX "UserAnswer_basic_A_Info_Question_id_idx" ON "UserAnswer"("basic_A_Info_Question_id");
+
+-- CreateIndex
+CREATE INDEX "UserAnswer_questions_id_idx" ON "UserAnswer"("questions_id");
+
+-- CreateIndex
+CREATE INDEX "UserAnswer_selectProblem_id_idx" ON "UserAnswer"("selectProblem_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Subject_name_key" ON "Subject"("name");
@@ -546,9 +557,6 @@ CREATE UNIQUE INDEX "Event_Participants_eventId_userId_key" ON "Event_Participan
 -- CreateIndex
 CREATE UNIQUE INDEX "Event_Issue_List_eventId_problemId_key" ON "Event_Issue_List"("eventId", "problemId");
 
--- CreateIndex
-CREATE INDEX "_Basic_Info_A_QuestionToUserAnswer_B_index" ON "_Basic_Info_A_QuestionToUserAnswer"("B");
-
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_selectedTitleId_fkey" FOREIGN KEY ("selectedTitleId") REFERENCES "Title"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -565,7 +573,16 @@ ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") 
 ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Questions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_programingProblem_id_fkey" FOREIGN KEY ("programingProblem_id") REFERENCES "ProgrammingProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_basic_A_Info_Question_id_fkey" FOREIGN KEY ("basic_A_Info_Question_id") REFERENCES "Basic_Info_A_Question"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_questions_id_fkey" FOREIGN KEY ("questions_id") REFERENCES "Questions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_selectProblem_id_fkey" FOREIGN KEY ("selectProblem_id") REFERENCES "SelectProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Answer_Algorithm" ADD CONSTRAINT "Answer_Algorithm_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -686,9 +703,3 @@ ALTER TABLE "Event_Submission" ADD CONSTRAINT "Event_Submission_userId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "Event_Submission" ADD CONSTRAINT "Event_Submission_eventIssueId_fkey" FOREIGN KEY ("eventIssueId") REFERENCES "Event_Issue_List"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_Basic_Info_A_QuestionToUserAnswer" ADD CONSTRAINT "_Basic_Info_A_QuestionToUserAnswer_A_fkey" FOREIGN KEY ("A") REFERENCES "Basic_Info_A_Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_Basic_Info_A_QuestionToUserAnswer" ADD CONSTRAINT "_Basic_Info_A_QuestionToUserAnswer_B_fkey" FOREIGN KEY ("B") REFERENCES "UserAnswer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
