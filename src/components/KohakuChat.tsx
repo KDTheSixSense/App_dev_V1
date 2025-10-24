@@ -116,4 +116,3 @@ const KohakuChat: React.FC<KohakuChatProps> = ({
 };
 
 export default KohakuChat;
-

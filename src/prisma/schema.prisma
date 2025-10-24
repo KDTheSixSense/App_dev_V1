@@ -464,7 +464,6 @@ model UserUnlockedTitle {
   // --- リレーション ---
   user  User  @relation(fields: [userId], references: [id])
   title Title @relation(fields: [titleId], references: [id])
-
   @@id([userId, titleId])
 }
 
