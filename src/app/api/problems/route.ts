@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ★★★ 修正の核心: データベースに渡すデータを明示的に構築（ホワイトリスト方式） ★★★
-    const dataToCreate: Prisma.ProgrammingProblemCreateInput = {
+    const dataToCreate: any = {
       title: body.title,
       problemType: body.problemType,
       difficulty: {

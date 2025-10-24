@@ -26,11 +26,26 @@ export async function seedProblems(prisma: PrismaClient) {
 
   // 1. localProblems からのシーディング
   console.log('🌱 Seeding questions from local data...');
-  for (const p of localProblems) {
-    const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, difficultyId: 1, term: "不明" };
-    await prisma.questions.create({ data: questionDataForDB });
-  }
-  console.log(`✅ Created ${localProblems.length} questions from local data.`);
+  // for (const p of localProblems) {
+  //   const questionDataForDB = {
+  //     id: parseInt(p.id, 10),
+  //     title: p.title.ja,
+  //     question: p.description.ja,
+  //     explain: p.explanationText.ja,
+  //     language_id: 1,
+  //     genre_id: 1,
+  //     difficultyId: 1,
+  //     term: "不明",
+  //     Answers: {
+  //       create: {
+  //         answer: "dummy answer",
+  //         isCorrect: true,
+  //       },
+  //     },
+  //   };
+  //   await prisma.questions.create({ data: questionDataForDB });
+  // }
+  // console.log(`✅ Created ${localProblems.length} questions from local data.`);
 
   // 2. Excel からのシーディング
   console.log('🌱 Seeding problems from Excel file...');
