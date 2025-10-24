@@ -7,20 +7,22 @@ import ProblemSolverClient from './ProblemSolverClient';
 import type { Problem as SerializableProblem } from '@/lib/types';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     problemId: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
+  }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function ProblemSolverPage({ params, searchParams }: PageProps) {
-  const assignmentId = searchParams?.assignmentId as string | undefined;
-  const hashedId = searchParams?.hashedId as string | undefined;
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const assignmentId = resolvedSearchParams?.assignmentId as string | undefined;
+  const hashedId = resolvedSearchParams?.hashedId as string | undefined;
   const assignmentInfo = {
     assignmentId: assignmentId || null,
     hashedId: hashedId || null,
   };
-  const problemId = parseInt(params.problemId, 10);
+  const problemId = parseInt(resolvedParams.problemId, 10);
 
   if (isNaN(problemId)) {
     notFound();

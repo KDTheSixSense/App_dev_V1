@@ -88,6 +88,32 @@ CREATE TABLE "Answer_Algorithm" (
 );
 
 -- CreateTable
+CREATE TABLE "Category" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+
+    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Basc_Info_A_Question" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "explanation" TEXT NOT NULL,
+    "answerOptions" JSONB NOT NULL,
+    "correctAnswer" INTEGER NOT NULL,
+    "sourceYear" TEXT,
+    "sourceNumber" TEXT,
+    "difficultyId" INTEGER NOT NULL,
+    "subjectId" INTEGER NOT NULL,
+    "assignmentId" INTEGER,
+    "categoryId" INTEGER NOT NULL,
+
+    CONSTRAINT "Basc_Info_A_Question_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Questions_Algorithm" (
     "id" SERIAL NOT NULL,
     "title" TEXT NOT NULL,
@@ -247,7 +273,7 @@ CREATE TABLE "Coding" (
     "image" TEXT NOT NULL,
     "explain" TEXT NOT NULL,
     "difficulty" TEXT NOT NULL,
-    "xpid" INTEGER NOT NULL,
+    "xpid" INTEGER,
 
     CONSTRAINT "Coding_pkey" PRIMARY KEY ("id")
 );
@@ -406,6 +432,64 @@ CREATE TABLE "UserUnlockedTitle" (
     CONSTRAINT "UserUnlockedTitle_pkey" PRIMARY KEY ("userId","titleId")
 );
 
+-- CreateTable
+CREATE TABLE "Create_event" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "inviteCode" TEXT NOT NULL,
+    "publicStatus" BOOLEAN NOT NULL DEFAULT true,
+    "startTime" TIMESTAMP(3),
+    "endTime" TIMESTAMP(3),
+    "publicTime" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "creatorId" INTEGER NOT NULL,
+
+    CONSTRAINT "Create_event_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Event_Participants" (
+    "id" SERIAL NOT NULL,
+    "isAdmin" BOOLEAN NOT NULL DEFAULT false,
+    "eventId" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
+
+    CONSTRAINT "Event_Participants_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Event_Issue_List" (
+    "id" SERIAL NOT NULL,
+    "eventId" INTEGER NOT NULL,
+    "problemId" INTEGER NOT NULL,
+
+    CONSTRAINT "Event_Issue_List_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Event_Submission" (
+    "id" SERIAL NOT NULL,
+    "status" BOOLEAN NOT NULL,
+    "score" INTEGER NOT NULL,
+    "codeLog" TEXT NOT NULL,
+    "startedAt" TIMESTAMP(3) NOT NULL,
+    "submittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userId" INTEGER NOT NULL,
+    "eventIssueId" INTEGER NOT NULL,
+
+    CONSTRAINT "Event_Submission_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "_Basc_Info_A_QuestionToUserAnswer" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL,
+
+    CONSTRAINT "_Basc_Info_A_QuestionToUserAnswer_AB_pkey" PRIMARY KEY ("A","B")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -417,6 +501,9 @@ CREATE UNIQUE INDEX "Subject_name_key" ON "Subject"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Language_name_key" ON "Language"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
 
 -- CreateIndex
 CREATE INDEX "SampleCase_problemId_idx" ON "SampleCase"("problemId");
@@ -454,6 +541,18 @@ CREATE UNIQUE INDEX "Degree_degree_key" ON "Degree"("degree");
 -- CreateIndex
 CREATE UNIQUE INDEX "Title_name_key" ON "Title"("name");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Create_event_inviteCode_key" ON "Create_event"("inviteCode");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Event_Participants_eventId_userId_key" ON "Event_Participants"("eventId", "userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Event_Issue_List_eventId_problemId_key" ON "Event_Issue_List"("eventId", "problemId");
+
+-- CreateIndex
+CREATE INDEX "_Basc_Info_A_QuestionToUserAnswer_B_index" ON "_Basc_Info_A_QuestionToUserAnswer"("B");
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_selectedTitleId_fkey" FOREIGN KEY ("selectedTitleId") REFERENCES "Title"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -477,6 +576,18 @@ ALTER TABLE "Answer_Algorithm" ADD CONSTRAINT "Answer_Algorithm_userId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "Answer_Algorithm" ADD CONSTRAINT "Answer_Algorithm_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Questions_Algorithm"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Basc_Info_A_Question" ADD CONSTRAINT "Basc_Info_A_Question_difficultyId_fkey" FOREIGN KEY ("difficultyId") REFERENCES "Difficulty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Basc_Info_A_Question" ADD CONSTRAINT "Basc_Info_A_Question_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Basc_Info_A_Question" ADD CONSTRAINT "Basc_Info_A_Question_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "Assignment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Basc_Info_A_Question" ADD CONSTRAINT "Basc_Info_A_Question_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Questions_Algorithm" ADD CONSTRAINT "Questions_Algorithm_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -564,3 +675,30 @@ ALTER TABLE "UserUnlockedTitle" ADD CONSTRAINT "UserUnlockedTitle_userId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "UserUnlockedTitle" ADD CONSTRAINT "UserUnlockedTitle_titleId_fkey" FOREIGN KEY ("titleId") REFERENCES "Title"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Create_event" ADD CONSTRAINT "Create_event_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Event_Participants" ADD CONSTRAINT "Event_Participants_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Create_event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Event_Participants" ADD CONSTRAINT "Event_Participants_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Event_Issue_List" ADD CONSTRAINT "Event_Issue_List_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Create_event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Event_Issue_List" ADD CONSTRAINT "Event_Issue_List_problemId_fkey" FOREIGN KEY ("problemId") REFERENCES "ProgrammingProblem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Event_Submission" ADD CONSTRAINT "Event_Submission_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Event_Submission" ADD CONSTRAINT "Event_Submission_eventIssueId_fkey" FOREIGN KEY ("eventIssueId") REFERENCES "Event_Issue_List"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_Basc_Info_A_QuestionToUserAnswer" ADD CONSTRAINT "_Basc_Info_A_QuestionToUserAnswer_A_fkey" FOREIGN KEY ("A") REFERENCES "Basc_Info_A_Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_Basc_Info_A_QuestionToUserAnswer" ADD CONSTRAINT "_Basc_Info_A_QuestionToUserAnswer_B_fkey" FOREIGN KEY ("B") REFERENCES "UserAnswer"("id") ON DELETE CASCADE ON UPDATE CASCADE;

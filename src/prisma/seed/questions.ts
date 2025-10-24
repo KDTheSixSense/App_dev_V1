@@ -43,6 +43,9 @@ export async function seedProblems(prisma: PrismaClient) {
   // 4. 選択問題のシーディング
   console.log('🌱 Seeding selection problems...');
   await seedSampleSelectionProblems(prisma);
+
+  // 5.基本A問題のシーディング
+  await seedBasicInfoAProblems(prisma);
 }
 
 async function seedProblemsFromExcel(prisma: PrismaClient) {
@@ -822,4 +825,68 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
     await prisma.selectProblem.create({ data: problem });
   }
   console.log(`✅ Created ${selectionProblems.length} selection problems.`);
+}
+
+async function seedBasicInfoAProblems(prisma: PrismaClient) {
+  console.log('🌱 Seeding Basic Information Technology Engineer Examination (Part A) problems...');
+
+  // ここに基本情報A問題のデータ配列を定義します
+  const basicAProblems = [
+    {
+      title: '情報セキュリティの三要素',
+      description: '情報セキュリティにおいて、情報の「機密性」「完全性」「可用性」を維持することが重要です。このうち、「完全性（Integrity）」に関する説明として最も適切なものはどれですか？',
+      explanation: '完全性（Integrity）は、情報が破壊、改ざん、または消去されていない、正確かつ完全な状態を維持する特性を指します。',
+      answerOptions: [
+        '許可された者だけが情報にアクセスできること。',
+        '情報が破壊、改ざん、または消去されていないこと。',
+        '情報へのアクセスが認可されていること。',
+        '必要なときにいつでも情報にアクセスできること。'
+      ],
+      correctAnswer: 1, // 0から始まるインデックス
+      sourceYear: '令和5年',
+      sourceNumber: '問15',
+      difficultyId: 6, // 難易度ID (※事前にDifficultyテーブルに存在する必要があります)
+      subjectId: 2,    // 科目ID (※事前にSubjectテーブルに「基本情報A問題」のような科目が存在する必要があります)
+      categoryId: 1    // カテゴリID (※事前にCategoryテーブルに「テクノロジ系」などが存在する必要があります)
+    },
+    {
+      title: 'プロジェクトマネジメントの知識エリア',
+      description: 'プロジェクトマネジメントの活動を、10の知識エリアに分類したフレームワークはどれですか？',
+      explanation: 'PMBOK（Project Management Body of Knowledge）は、プロジェクトマネジメントの知識を10のエリア（統合、スコープ、スケジュール、コスト、品質、資源、コミュニケーション、リスク、調達、ステークホルダー）に体系化したものです。',
+      answerOptions: [
+        'ITIL',
+        'PMBOK',
+        'COBIT',
+        'SWOT分析'
+      ],
+      correctAnswer: 1,
+      difficultyId: 6,
+      subjectId: 2,
+      categoryId: 2 // カテゴリID (※事前にCategoryテーブルに「マネジメント系」などが存在する必要があります)
+    },
+    {
+      title: '経営戦略手法',
+      description: '企業の内部環境と外部環境を分析し、自社の「強み（Strengths）」「弱み（Weaknesses）」「機会（Opportunities）」「脅威（Threats）」を評価する経営戦略手法はどれですか？',
+      explanation: 'SWOT分析は、企業の戦略策定や意思決定のために、内部要因（強み・弱み）と外部要因（機会・脅威）を体系的に分析するフレームワークです。',
+      answerOptions: [
+        'バランススコアカード',
+        'ファイブフォース分析',
+        'プロダクトポートフォリオマネジメント',
+        'SWOT分析'
+      ],
+      correctAnswer: 3,
+      difficultyId: 6, // 難易度ID
+      subjectId: 2,
+      categoryId: 3 // カテゴリID (※事前にCategoryテーブルに「ストラテジ系」などが存在する必要があります)
+    },
+  ];
+
+  // データをデータベースに作成します
+  for (const problem of basicAProblems) {
+    await prisma.basc_Info_A_Question.create({
+      data: problem,
+    });
+  }
+
+  console.log(`✅ Created ${basicAProblems.length} Basic Info A problems.`);
 }

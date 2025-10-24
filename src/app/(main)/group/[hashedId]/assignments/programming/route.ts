@@ -10,7 +10,8 @@ interface SessionData {
   user?: { id: number | string; email: string };
 }
 
-export async function POST(req: NextRequest, { params }: { params: { hashedId: string } }) {
+export async function POST(req: NextRequest, context: any) {
+  const { params } = context;
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
 

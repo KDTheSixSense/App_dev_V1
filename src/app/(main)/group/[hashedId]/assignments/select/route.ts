@@ -2,10 +2,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withApiSession } from '@/lib/session-api';
+import { getIronSession } from 'iron-session';
+import { sessionOptions } from '@/lib/session';
+import { cookies } from 'next/headers';
 
-export const POST = withApiSession(async (req, session, { params }) => {
+interface SessionData {
+  user?: { id: number | string; email: string };
+}
+
+export async function POST(req: NextRequest, context: any) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
+  const { params } = context;
 
   if (!sessionUserId) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
@@ -92,4 +100,4 @@ export const POST = withApiSession(async (req, session, { params }) => {
       { status: 500 }
     );
   }
-});
+}

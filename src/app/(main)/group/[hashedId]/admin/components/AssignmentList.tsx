@@ -207,10 +207,10 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                                         query: { assignmentId: selectedAssignment.id, hashedId: params.hashedId as string },
                                     }}
                                     style={{ 
-                                        display: 'inline-block', padding: '10px 20px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' 
+                                        display: 'inline-block', padding: '10px 20px', backgroundColor: '#58A8fdff', color: 'white', textDecoration: 'none', borderRadius: '5px' 
                                     }}
                                 >
-                                    問題に挑戦する
+                                    {problemTitle ? ` ${problemTitle}` : ''}
                                 </Link>
                             ) :  (
                                 <p style={{

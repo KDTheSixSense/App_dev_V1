@@ -1493,42 +1493,15 @@ export default function CreateProgrammingQuestionPage() {
 
             {/* タブ */}
             <div className="tabs">
-              <button
-                className={`tab ${activeTab === 'basic' ? 'active' : ''}`}
-                onClick={() => setActiveTab('basic')}
-              >
-                基本情報
-              </button>
-              <button
-                className={`tab ${activeTab === 'description' ? 'active' : ''}`}
-                onClick={() => setActiveTab('description')}
-              >
-                問題文
-              </button>
-              <button
-                className={`tab ${activeTab === 'sample-cases' ? 'active' : ''}`}
-                onClick={() => setActiveTab('sample-cases')}
-              >
-                サンプルケース
-              </button>
-              <button
-                className={`tab ${activeTab === 'test-cases' ? 'active' : ''}`}
-                onClick={() => setActiveTab('test-cases')}
-              >
-                テストケース
-              </button>
-              <button
-                className={`tab ${activeTab === 'files' ? 'active' : ''}`}
-                onClick={() => setActiveTab('files')}
-              >
-                ファイル
-              </button>
-              <button
-                className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
-                onClick={() => setActiveTab('settings')}
-              >
-                設定
-              </button>
+              {tabsToRender.map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`tab ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             <form onSubmit={isEditMode ? handleUpdateProblem : handlePublishProblem}>
@@ -1569,7 +1542,6 @@ export default function CreateProgrammingQuestionPage() {
                                       <option value={3}>3 (ふつう)</option>
                                       <option value={4}>4 (むずかしい)</option>
                                       <option value={5}>5 (鬼むず)</option>
-                                      <option value={6}>6 (基本資格A問題)</option>
                                   </select>
                               </div>
                           </div>
