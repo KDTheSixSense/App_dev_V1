@@ -13,7 +13,7 @@ interface PageProps {
 
 /**
  * 基本情報技術者試験 科目B の問題詳細ページ (サーバーコンポーネント)
- * ★ 修正点: ユーザーのクレジット数を取得し、クライアントに渡します
+ * ユーザーのクレジット数を取得し、クライアントに渡します
  */
 const BasicInfoBProblemDetailPage = async ({ params }: PageProps) => {
   const problemId = parseInt(params.problemId, 10);
@@ -44,7 +44,7 @@ const BasicInfoBProblemDetailPage = async ({ params }: PageProps) => {
   return (
     <ProblemClient
       initialProblem={problem}
-      // ★ 修正点: 取得したユーザー情報をPropsとして渡す
+      // 取得したユーザー情報をPropsとして渡す
       initialCredits={userCredits}
     />
   );

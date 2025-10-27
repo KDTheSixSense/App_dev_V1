@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useTransition } from 'react'; // ★ useTransition をインポート
+import React, { useState, useEffect, useTransition, useRef } from 'react'; // useTransition をインポート
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProblemStatement from '../components/ProblemStatement';
-// ★★★ KohakuChat のインポートパスを確認 ★★★
+// KohakuChat のインポートパスを確認
 import KohakuChat from '@/components/KohakuChat'; // '@/' から始まるパスに変更 (B問題のコード例より)
-import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
-import { getHintFromAI } from '@/lib/actions/hintactions'; // ★ インポート
+import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
+import { getHintFromAI } from '@/lib/actions/hintactions'; // インポート
 import { useNotification } from '@/app/contexts/NotificationContext';
 import type { SerializableProblem } from '@/lib/data';
 
@@ -71,7 +71,7 @@ const isCorrectAnswer = (selected: string | null, correct: string): boolean => {
 };
 
 type Language = 'ja' | 'en';
-// ★ ChatMessage 型を定義
+// ChatMessage 型を定義
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 
 interface ProblemClientProps {
@@ -91,6 +91,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
+  const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (initialProblem) {
@@ -100,10 +101,31 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       setIsAnswered(false);
       setChatMessages([{ sender: 'kohaku', text: textResources[language].problemStatement.hintInit }]);
       console.log('[ProblemClient useEffect] State reset. Image path:', initialProblem?.imagePath);
+      startTimeRef.current = Date.now();
+      console.log(`Basic A Problem ${initialProblem.id} mounted at: ${startTimeRef.current}`);
     } else {
       console.error('[ProblemClient useEffect] Received null initialProblem');
     }
-  }, [initialProblem, language]);
+    // 5. アンマウント時に実行されるクリーンアップ関数
+    return () => {
+      if (startTimeRef.current) {
+        const endTime = Date.now();
+        const durationMs = endTime - startTimeRef.current;
+        const problemIdForLog = initialProblem?.id || 'unknown'; // アンマウント時でもIDを参照できるように
+        console.log(`Basic A Problem ${problemIdForLog} unmounted. Duration: ${durationMs}ms`);
+
+        // 短すぎる滞在時間は記録しない (例: 3秒未満)
+        if (durationMs > 3000) {
+          // サーバーアクションを呼び出す (エラーはコンソールに出力)
+          recordStudyTimeAction(durationMs).catch(error => {
+            console.error(`Failed to record study time for Basic A Problem ${problemIdForLog}:`, error);
+          });
+        }
+        startTimeRef.current = null; // リセット
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProblem, language, initialCredits]); // initialCreditsも依存配列に追加 (元のコードに合わせる)
 
   const t = textResources[language].problemStatement;
   const currentLang = language;
@@ -181,11 +203,6 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       };
 
       // AIヒント取得 (Server Action呼び出し)
-      // startTransition を使う場合はここでラップする
-       startTransition(async () => {
-         const hint = await getHintFromAI(message, context);
-         setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
-       });
       // useTransitionを使わない場合は直接呼び出す
       const hint = await getHintFromAI(message, context);
       setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
@@ -243,14 +260,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           {/* KohakuChat コンポーネントを表示 */}
           <KohakuChat
             messages={chatMessages}
-            onSendMessage={handleUserMessage} // ★ 実装したハンドラを渡す
+            onSendMessage={handleUserMessage} // 実装したハンドラを渡す
             language={language}
             textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
-            isLoading={isAiLoading} // ★ AIローディング状態を渡す
-            isDisabled={credits <= 0 || isAiLoading} // ★ 無効化条件
+            isLoading={isAiLoading} // AIローディング状態を渡す
+            isDisabled={credits <= 0 || isAiLoading} // 無効化条件
           />
         </div>
-        {/* ★★★ コハクチャットエリアここまで ★★★ */}
+        {/* コハクチャットエリアここまで */}
 
       </div>
 

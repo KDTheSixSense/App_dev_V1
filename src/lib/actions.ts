@@ -41,7 +41,7 @@ export async function registerUserAction(data: { username: string, email: string
         username: username,
         email: email,
         password: hashedPassword,
-        // --- ▼▼▼ 生年月日を保存するロジックを追加 ▼▼▼ ---
+        // --- 生年月日を保存するロジックを追加 ---
         birth: birth ? new Date(birth) : null,
         // 関連するペットステータスも同時に作成
         status_Kohaku: {
@@ -1310,3 +1310,48 @@ async function upsertDailyActivity(
     console.error(`[ActivitySummary] ユーザーID:${userId} の活動更新に失敗:`, error);
   }
 }
+
+/**
+ * 学習時間を記録するサーバーアクション
+ * @param timeSpentMs ページ滞在時間 (ミリ秒)
+ */
+export async function recordStudyTimeAction(timeSpentMs: number) {
+  'use server'; // サーバーアクションであることを明示
+
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  const user = session.user;
+
+  if (!user?.id) {
+    // ログインしていない場合はエラーを返すか、何もしない
+    console.warn('[recordStudyTimeAction] User not authenticated.');
+    return { error: 'Authentication required.' };
+    // throw new Error('Authentication required.'); // エラーを投げるとクライアント側でcatchが必要
+  }
+
+  const userId = Number(user.id);
+  if (isNaN(userId)) {
+    console.error('[recordStudyTimeAction] Invalid user ID in session.');
+    return { error: 'Invalid user session.' };
+    // throw new Error('Invalid user session.');
+  }
+
+  // 時間が有効な数値か基本的なチェック
+  if (typeof timeSpentMs !== 'number' || timeSpentMs <= 0 || isNaN(timeSpentMs)) {
+    console.warn(`[recordStudyTimeAction] Invalid timeSpentMs received: ${timeSpentMs}`);
+    return { error: 'Invalid time value.' };
+    // throw new Error('Invalid time value.');
+  }
+
+  console.log(`[recordStudyTimeAction] Recording ${timeSpentMs}ms for UserID:${userId}`);
+
+    try {
+    // upsertDailyActivityを呼び出し、時間だけを加算 (XP=0)
+    await upsertDailyActivity(userId, 0, timeSpentMs);
+    return { success: true, message: 'Study time recorded.' };
+  } catch (error) {
+    console.error('[recordStudyTimeAction] Failed to update daily activity:', error);
+    return { error: 'Failed to record study time.' };
+    // throw new Error('Failed to record study time.');
+  }
+}
+
