@@ -51,7 +51,7 @@ function EventProblemList({ eventId, issues }: { eventId: number; issues: EventW
         {issues.map((issue) => (
           <li key={issue.id} className="bg-gray-50 p-3 rounded-md shadow-sm hover:bg-gray-100 transition-colors">
             {/* 問題解答画面へのリンク */}
-            <Link href={`/event/${eventId}/problem/${issue.problem.id}`} className="text-blue-600 hover:underline">
+            <Link href={`${eventId}/problem/${issue.problem.id}`} className="text-blue-600 hover:underline">
               {issue.problem.title} (難易度: {issue.problem.difficulty})
             </Link>
           </li>
