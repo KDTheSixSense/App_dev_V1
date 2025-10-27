@@ -11,7 +11,12 @@ type EventWithDetails = Prisma.Create_eventGetPayload<{
   include: {
     participants: {
       include: {
-        user: true; // `Event_Participants` に紐づく `User` 情報を取得
+        user: {
+          // ユーザーに紐づくイベント提出情報を取得
+          include: {
+            eventSubmissions: true;
+          };
+        };
       };
     };
     issues: {
@@ -28,6 +33,7 @@ interface AdminViewProps {
 
 export default function AdminView({ event: initialEvent }: AdminViewProps) { // Rename event to initialEvent
   const [event, setEvent] = useState(initialEvent); // Use local state for event to allow updates
+  const [copied, setCopied] = useState(false); // 招待コードコピー用の状態
 
   // イベント作成者（isAdminがtrueの参加者）を特定
   const eventCreator = event.participants.find(p => p.isAdmin);
@@ -61,11 +67,33 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
     }
   };
 
+  // 招待コードをクリップボードにコピーするハンドラ
+  const handleCopyInviteCode = () => {
+    navigator.clipboard.writeText(event.inviteCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // 2秒後に表示を元に戻す
+    });
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold text-blue-600">[Admin] {event.title}</h1>
       <p className="mt-2 text-gray-600">{event.description}</p>
       
+      {/* 招待コード表示とコピーボタン */}
+      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+        <div>
+          <span className="text-sm font-medium text-blue-800">招待コード</span>
+          <p className="text-lg font-mono font-semibold text-blue-900">{event.inviteCode}</p>
+        </div>
+        <button
+          onClick={handleCopyInviteCode}
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
+        >
+          {copied ? 'コピーしました！' : 'コピー'}
+        </button>
+      </div>
+
       <div className="mt-8">
         <h2 className="text-2xl font-semibold">イベント作成者</h2>
         {eventCreator ? (
@@ -100,11 +128,17 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
         {otherParticipants.length > 0 ? (
           <ul className="list-disc list-inside mt-2">
             {otherParticipants.map((participant) => (
-              <li key={participant.id} className="mt-1">
-                {participant.user.username} (ID: {participant.user.id})
-                {/* hasAcceptedプロパティが存在することを前提とします */}
-                {participant.hasAccepted && <span className="ml-2 text-sm text-blue-500">(参加承認済み)</span>}
-              </li>
+              (() => {
+                // event_getpointフィールドから合計得点を取得
+                const score = participant.event_getpoint ?? 0;
+                
+                return (
+                  <li key={participant.id} className="mt-1">
+                    {participant.user.username} (ID: {participant.user.id}) - <span className="font-bold text-lg text-indigo-600">{score}点</span>
+                    {participant.hasAccepted && <span className="ml-2 text-sm text-blue-500">(参加承認済み)</span>}
+                  </li>
+                );
+              })()
             ))}
           </ul>
         ) : (

@@ -124,7 +124,7 @@ export async function getNextProblemId(currentId: number, category: string): Pro
 /**
  * 正解時に経験値を付与し、解答履歴を保存するサーバーアクション
  */
-export async function awardXpForCorrectAnswer(problemId: number, subjectid?: number, problemStartedAt?: string | number) {
+export async function awardXpForCorrectAnswer(problemId: number, eventId: number | undefined, subjectid?: number, problemStartedAt?: string | number) {
   'use server';
 
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -240,6 +240,21 @@ export async function awardXpForCorrectAnswer(problemId: number, subjectid?: num
   const { unlockedTitle } = await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
   // 6. コハクの満腹度を回復
   await feedPetAction(problemDetails.difficultyId);
+
+  // 7. イベント参加者の得点を更新 (eventIdが渡された場合のみ)
+  if (eventId !== undefined && xpAmount > 0) {
+    await prisma.event_Participants.updateMany({
+      where: {
+        eventId: eventId,
+        userId: userId,
+      },
+      data: {
+        event_getpoint: { increment: xpAmount },
+      },
+    });
+    console.log(`[EventScore] ユーザーID:${userId} の イベントID:${eventId} での得点を ${xpAmount}点 加算しました。`);
+  }
+
   // ログイン統計を更新
   await updateUserLoginStats(userId);
 

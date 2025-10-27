@@ -11,7 +11,12 @@ import MemberView from './MemberView'; // member用ビュー
 type EventWithDetailsForPage = Prisma.Create_eventGetPayload<{
   include: {
     participants: {
-      include: { user: true };
+      include: {
+        user: {
+          // ユーザーに紐づくイベント提出情報を取得
+          include: { eventSubmissions: true };
+        };
+      };
     };
     issues: {
       include: { problem: true };
@@ -22,7 +27,11 @@ type EventWithDetailsForPage = Prisma.Create_eventGetPayload<{
 // AdminView/MemberViewに渡すために、currentUserParticipantプロパティを追加した拡張型
 type EventForView = EventWithDetailsForPage & {
   currentUserParticipant?: Prisma.Event_ParticipantsGetPayload<{
-    include: { user: true };
+    include: {
+      user: {
+        include: { eventSubmissions: true };
+      };
+    };
   }> | null;
 };
 
@@ -38,7 +47,9 @@ async function getEventAndUserRole(eventId: number, userId: number | null) {
       // 参加者一覧や問題一覧など、必要な情報をここで取得
       participants: {
         include: { // Include user details for participants
-          user: true,
+          user: {
+            include: { eventSubmissions: true },
+          },
         },
       },
       issues: { // Corrected relation name from 'problems' to 'issues'

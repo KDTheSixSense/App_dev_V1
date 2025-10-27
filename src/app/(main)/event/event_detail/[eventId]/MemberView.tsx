@@ -68,6 +68,12 @@ export default function MemberView({ event, role }: MemberViewProps) {
   // State to manage the popup visibility and member's acceptance status
   const [showAcceptPopup, setShowAcceptPopup] = useState(false);
   const [hasMemberAccepted, setHasMemberAccepted] = useState(event.currentUserParticipant?.hasAccepted || false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Hydration Mismatchを避けるため、クライアントサイドでのみisClientをtrueに設定
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     // If event is started, user is a member, and hasn't accepted yet, show popup
@@ -125,8 +131,27 @@ export default function MemberView({ event, role }: MemberViewProps) {
               <p className="mt-8 text-blue-600">イベントが開始されました。問題リストを見るには承認してください。</p>
             )
           ) : (
-            // イベントがまだ開始されていない場合
-            <p className="mt-8 text-gray-600">イベントはまだ開始されていません。開始までお待ちください。</p>
+            // イベントがまだ開始されていない場合、参加人数と開始時刻を表示
+            <div className="mt-8 p-4 bg-gray-100 rounded-lg">
+              <p className="text-lg font-semibold text-gray-800">イベントはまだ開始されていません。</p>
+              <p className="mt-2 text-gray-600">開始までお待ちください。</p>
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">現在の参加者:</span> {event.participants.length}人
+                </p>
+                {event.startTime && (
+                  <p className="text-sm text-gray-700 mt-1">
+                    <span className="font-semibold">開始予定時刻:</span>{' '}
+                    {isClient ? (
+                      new Date(event.startTime).toLocaleString('ja-JP')
+                    ) : (
+                      '----/--/-- --:--:--' // サーバーサイドまたはハイドレーション前のプレースホルダー
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+
           )}
         </>
       ) : (
