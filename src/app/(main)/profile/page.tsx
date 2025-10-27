@@ -14,7 +14,7 @@ type SubjectProgressStats = {
     programming: number;
 };
 
-// ★★★ 2. generateAdvice関数の引数の型を修正 ★★★
+// 2. generateAdvice関数の引数の型を修正
 // progress: any の代わりに、上で定義した SubjectProgressStats 型を使用する
 const generateAdvice = (stats: { loginDays: number; progress: SubjectProgressStats; }, user: User) => {
     if (stats.loginDays < 3) {
@@ -57,7 +57,7 @@ export default async function ProfilePage() {
     include: {
       unlockedTitles: { include: { title: true } },
       selectedTitle: true,
-      status_Kohaku: true, // ★ ペットのステータス情報を追加
+      status_Kohaku: true, // ペットのステータス情報を追加
     },
   });
 

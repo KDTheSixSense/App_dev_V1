@@ -22,7 +22,7 @@ export default async function HomePage({
   searchParams: any; // 型を修正
 }) {
 
-  // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---
+  // --- ここでセッションからユーザーIDを取得する ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? Number(session.user.id) : null;
 

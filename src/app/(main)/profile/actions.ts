@@ -125,8 +125,8 @@ export async function getDailyActivityAction(timeframeDays: 7 | 14 | 30) {
 
       chartData.push({
         date: `${currentDate.getMonth() + 1}/${currentDate.getDate()}`,
-        '総獲得XP': data.totalXpGained,
-        '総学習時間 (分)': data.totalTimeSpentMin,
+        '獲得XP': data.totalXpGained,
+        '学習時間 (分)': data.totalTimeSpentMin,
         '完了問題数': data.problemsCompleted,
       });
     }

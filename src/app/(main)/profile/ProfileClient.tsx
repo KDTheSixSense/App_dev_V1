@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
-import PetStatusView from '../home/Pet/PetStatusView';
+import PetStatusView from '../profile/Pet/PetStatusview';
 import { updateUserProfileAction } from './actions';
 import DailyActivityChart from './Chart/DailyActivityChart';
 
