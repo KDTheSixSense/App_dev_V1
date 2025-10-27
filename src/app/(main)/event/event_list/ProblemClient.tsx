@@ -10,8 +10,8 @@ import { EventList } from './components/EventList';
 
 // --- 型定義 ---
 type イベント = 基本イベント & {
-  startTime: Date;
-  endTime: Date;
+  startTime: Date | string | null;
+  endTime: Date | string | null;
   _count?: { participants: number };
 };
 

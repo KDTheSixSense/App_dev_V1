@@ -879,54 +879,78 @@ function createImageFileMap(): Map<string, string> {
 }
 
 /**
- * answerOptions のテキスト ("アX イY ウZ エW") を ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数
+ * answerOptions のテキスト ("アX イY ウZ エW" など、多様な形式に対応) を
+ * ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数 [さらに改善版]
  */
 function parseAnswerOptionsText(text: string): string[] | null {
   if (!text || typeof text !== 'string') {
     return null;
   }
-  const options: string[] = [];
-  // 正規表現を使って選択肢マーカー（ア、イ、ウ、エ）とそれに続くテキストを抽出
-  const matches = text.matchAll(/([アイウエ])([^アイウエ]+)/g);
-  
-  const tempOptions: { [key: string]: string } = {};
-  for (const match of matches) {
-      // match[1] は 'ア', 'イ', 'ウ', 'エ'
-      // match[2] は選択肢のテキスト (前後の空白をトリム)
-      tempOptions[match[1]] = match[2].trim();
+
+  // 前処理: 改行をスペースに、連続するスペース（全角含む）を単一の半角スペースに
+  const cleanedText = text
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/[\s　]+/g, ' ')
+    .trim();
+
+  const markers = ['ア', 'イ', 'ウ', 'エ'];
+  const markerPositions: { [key: string]: number } = {};
+  let searchStartIndex = 0;
+
+  // --- ▼▼▼ 改善点: 全マーカーの位置を先に特定 ▼▼▼ ---
+  for (const marker of markers) {
+    const index = cleanedText.indexOf(marker, searchStartIndex);
+    if (index === -1) {
+      console.warn(` ⚠️ Marker "${marker}" not found in cleaned text (starting search from index ${searchStartIndex}): "${cleanedText}"`);
+      return null; // マーカーが1つでも見つからなければ失敗
+    }
+    markerPositions[marker] = index;
+    // 次のマーカー検索開始位置を、見つかったマーカーの直後に設定
+    // これにより、選択肢テキスト内に同じマーカー文字があっても影響されにくくなる
+    searchStartIndex = index + 1;
   }
+  // --- ▲▲▲ マーカー位置特定ここまで ▲▲▲ ---
 
-  // ア->イ->ウ->エ の順で配列に追加
-  if (tempOptions['ア']) options.push(tempOptions['ア']);
-  if (tempOptions['イ']) options.push(tempOptions['イ']);
-  if (tempOptions['ウ']) options.push(tempOptions['ウ']);
-  if (tempOptions['エ']) options.push(tempOptions['エ']);
+  const options: string[] = [];
+  try {
+    // マーカー位置に基づいてテキストを抽出
+    options.push(cleanedText.substring(markerPositions['ア'] + 1, markerPositions['イ']).trim());
+    options.push(cleanedText.substring(markerPositions['イ'] + 1, markerPositions['ウ']).trim());
+    options.push(cleanedText.substring(markerPositions['ウ'] + 1, markerPositions['エ']).trim());
+    options.push(cleanedText.substring(markerPositions['エ'] + 1).trim()); // 最後のエから末尾まで
 
-  // 4つの選択肢が正しく抽出できたか確認
-  if (options.length === 4) {
-    return options;
-  } else {
-    console.warn(` ⚠️ Could not parse 4 options from text: "${text}"`);
-    return null; // パース失敗
+    // すべての選択肢が空文字列でないことを確認
+    if (options.length === 4 && options.every(opt => opt && opt.length > 0)) {
+      return options;
+    } else {
+      console.warn(` ⚠️ Failed to extract 4 non-empty options from cleaned text: "${cleanedText}"`, options);
+      return null;
+    }
+  } catch (e) {
+    console.error(` ❌ Error during option extraction from text: "${text}"`, e);
+    return null;
   }
 }
 
 
 /**
- * 基本情報A問題（PBL3基本A問題.xlsx）をデータベースにシードする
- * ファイルシステムをスキャンして画像パスを自動生成
+ * 基本情報A問題（PBL3基本Aデータ使用.xlsx - 基本情報A問題統合用シート）をデータベースにシードする
+ * [修正版] 新しいExcelファイル/シートに対応 + createに戻す
  */
 async function seedBasicInfoAProblems(prisma: PrismaClient) {
   console.log('🌱 Seeding Basic Info A problems from Excel file...');
 
-  const imageFileMap = createImageFileMap();
+  //const imageFileMap = createImageFileMap();
 
-  const excelFileName = 'PBL3基本A問題.xlsx';
+  // --- ★変更点 1: Excelファイル名とシート名を更新 ---
+  const excelFileName = 'PBL3基本Aデータ使用.xlsx'; // 新しいファイル名
+  const sheetName = '基本情報A問題統合用シート';   // 新しいシート名
+  // --- ▲▲▲ ---
+
   const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
 
   try {
     const workbook = XLSX.readFile(filePath);
-    const sheetName = '基本情報 A 問題';
     const sheet = workbook.Sheets[sheetName];
 
     if (!sheet) {
@@ -934,6 +958,8 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
       return;
     }
 
+    // 2: ヘッダー配列を新しいシートの列に合わせる (CSV内容から推測)
+    //    Excelの実際の列と順番が合っているか確認してください。
     const headers = [
       'id',             // A列
       'title',          // B列
@@ -949,91 +975,225 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
       'category',       // L列
       'source',         // M列
       'sourceYear',     // N列
+      'imageFileName',  // O列
     ];
+
 
     const records = XLSX.utils.sheet_to_json(sheet, {
         header: headers,
-        range: 2
+        range: 2 // データ開始行 (0-indexed なので3行目は 2)
     }) as any[];
 
-    const categories = await prisma.category.findMany();
+    console.log(` 🔍 Found ${records.length} records in sheet "${sheetName}".`);
+    if (records.length === 0) {
+      console.warn(' ⚠️ No data records found.');
+      return;
+    }
+
+    // --- カテゴリ、難易度、科目のマスタデータ取得とマッピング定義 (変更なし) ---
+    const categories = await prisma.category.findMany({ orderBy: { id: 'asc' } });
+    const numericCategoryMap: { [key: string]: string } = {
+      '1': 'テクノロジ系',
+      '2': 'マネジメント系',
+      '3': 'ストラテジ系',
+    };
+     const categoryNameToDbNameMap: { [key: string]: string } = {
+      // 数値マッピング
+      '1': 'テクノロジ系',
+      '2': 'マネジメント系',
+      '3': 'ストラテジ系',
+      // 文字列マッピング (Excelの値 -> DBのカテゴリ名)
+      '基礎理論': 'テクノロジ系',
+      'コンピュータシステム': 'テクノロジ系',
+      '開発技術': 'テクノロジ系',
+      'ネットワーク': 'テクノロジ系',
+      'セキュリティ': 'テクノロジ系',
+      'データベース': 'テクノロジ系',
+      'プロジェクトマネジメント': 'マネジメント系',
+      'サービスマネジメント': 'マネジメント系',
+      'システム監査': 'マネジメント系',
+      'システム戦略': 'ストラテジ系',
+      '企業と法務': 'ストラテジ系',
+      '経営戦略': 'ストラテジ系',
+      'AIとディープラーニング': 'テクノロジ系',
+      'モータの回転速度の制御方法': 'テクノロジ系',
+      'オブジェクト指向プログラミング（オーバーライド）': 'テクノロジ系',
+      'USB3.0の技術': 'テクノロジ系',
+      'メモリリーク': 'テクノロジ系',
+      'APIについて': 'テクノロジ系',
+      'DBMSとスキーマ': 'テクノロジ系',
+      'E-R図の説明': 'テクノロジ系',
+      'SQL文の条件式': 'テクノロジ系',
+      'Javaとデータベース、API': 'テクノロジ系',
+      'TCP/IPとプロトコル': 'テクノロジ系',
+      'Webサーバとネット中継': 'テクノロジ系',
+      'リバースブルートフォース攻撃の説明': 'テクノロジ系',
+      'メッセージのハッシュ値とデジタル署名': 'テクノロジ系',
+      'サイバー情報共有イニシアチブ': 'テクノロジ系',
+      'VDIのセキュリティと保護動作': 'テクノロジ系',
+      'オブジェクト指向とカプセル化': 'テクノロジ系',
+      'プログラムのテストとデータ': 'テクノロジ系',
+      'ソフトウェアとリバースエンジニアリング': 'テクノロジ系',
+      'スクラムと生産量': 'マネジメント系',
+      'エクストリームプログラミングとリファクタリング': 'マネジメント系',
+      'オペレーションサービスと必要人数': 'マネジメント系',
+      'システム監査と真正性の検証': 'マネジメント系',
+      'エンタープライスアーキテクチャと業務と情報システム': 'ストラテジ系',
+      'ハイブリッドクラウドとは？': 'ストラテジ系', // CSVに合わせて ? を削除
+      'CSRの調達': 'ストラテジ系',
+      'プロダクトポートフォリオマネジメントと4つの分類': 'ストラテジ系',
+      '戦略遂行と施策を策定する経営管理手法': 'ストラテジ系',
+      '３PLの説明': 'ストラテジ系', // 全角数字対応
+      'セル生産方式の利点': 'ストラテジ系',
+      'マトリックス組織について': 'ストラテジ系',
+      '定量発注方式と発注点計算': 'ストラテジ系',
+      '売上原価の計算': 'ストラテジ系',
+      '著作権とクリエイティブコモンズ': 'ストラテジ系',
+      '真理値表': 'テクノロジ系', // 追加
+      'ASCIIコード': 'テクノロジ系', // 追加
+      'アクセス時間の計算': 'テクノロジ系', // 追加
+      '稼働率': 'テクノロジ系', // 追加
+      'ロジックマッシュアップ': 'テクノロジ系', // 追加
+      '液晶ディスプレイなどの表示装置': 'テクノロジ系', // 追加
+      'DBMS に実装すべき原子性': 'テクノロジ系', // 追加
+      'LAN 間接続装置': 'テクノロジ系', // 追加
+      'ペネトレーションテスト': 'テクノロジ系', // 追加
+      'SQL インジェクションの対策': 'テクノロジ系', // 追加
+      'ソフトウェアの結合テスト': 'テクノロジ系', // 追加
+      'アジャイル開発手法': 'マネジメント系', // 追加
+      'アローダイアグラム': 'マネジメント系', // 追加
+      '新規サービスの設計及び移行を進めるための方法': 'マネジメント系', // 追加
+      'ビッグデータ分析': 'ストラテジ系', // 追加
+      'コアコンピタンス': 'ストラテジ系', // 追加
+      'ブルーオーシャン': 'ストラテジ系', // 追加
+      'HR テック': 'ストラテジ系', // 追加
+      '散布図': 'ストラテジ系', // 追加
+      '産業財産権': 'ストラテジ系', // 追加
+      // 既存のDB名もそのままマッピング
+      'テクノロジ系': 'テクノロジ系',
+      'マネジメント系': 'マネジメント系',
+      'ストラテジ系': 'ストラテジ系',
+    };
     const defaultDifficulty = await prisma.difficulty.findUnique({ where: { name: '基本資格A問題' } });
     const defaultSubject = await prisma.subject.findUnique({ where: { name: '基本情報A問題' } });
 
-    console.log(' 🔍 DB Categories:', categories.map(c => c.name));
+    // console.log(' 🔍 DB Categories:', categories.map(c => c.name));
     if (!defaultDifficulty || !defaultSubject) {
         console.error('❌ Master data error: Default Difficulty or Subject not found.');
         return;
     }
-
     const answerMap: { [key: string]: number } = { 'ア': 0, 'イ': 1, 'ウ': 2, 'エ': 3 };
+
     let createdCount = 0;
-    let processedRowCount = 0; 
+    let processedRowCount = 0;
 
     for (const record of records) {
-      processedRowCount++; 
+      processedRowCount++;
 
       const problemId = parseInt(String(record.id).trim(), 10);
       if (isNaN(problemId)) {
           console.log(` ⏹️ Found invalid or empty ID at row ${processedRowCount + 2}. Stopping import.`);
           break;
       }
-      
+
       if (!record.title || String(record.title).trim() === '') {
           console.log(` ⏩ Skipping row ${processedRowCount + 2} due to empty title.`);
           continue;
       }
-      const recordCategory = record.category ? String(record.category).trim() : undefined;
-      const category = categories.find(c => c.name === recordCategory);
+
+      // --- カテゴリマッピング (変更なし、マッピングテーブルは上で更新) ---
+      const rawCategoryValue = record.category ? String(record.category).trim() : undefined;
+      let mappedDbCategoryName: string | undefined = undefined;
+      if (rawCategoryValue && categoryNameToDbNameMap[rawCategoryValue]) {
+           mappedDbCategoryName = categoryNameToDbNameMap[rawCategoryValue];
+      }
+      let category = categories.find(c => c.name === mappedDbCategoryName);
+      if (!category && !rawCategoryValue) {
+          // console.warn(` ⚠️ Category is undefined for Row ${processedRowCount + 2}. Assigning default category 'テクノロジ系'.`);
+          category = categories.find(c => c.name === 'テクノロジ系');
+      }
       if (!category) {
-        console.warn(` ⚠️ [Category mismatch] Row ${processedRowCount + 2}: Excel value: "${recordCategory}". Skipping: "${record.title}"`);
+        console.warn(` ⚠️ [Category mismatch/unmapped] Row ${processedRowCount + 2}: Excel value: "${rawCategoryValue}". Skipping: "${record.title}"`);
         continue;
       }
-      const difficulty = defaultDifficulty;
-      const subject = defaultSubject;
+      // --- カテゴリマッピングここまで ---
+
+
+      // --- ★変更点 4: 難易度と科目をExcelから読み込み、無効ならデフォルト値 ---
+      let difficultyId = defaultDifficulty.id; // デフォルト値
+      const excelDifficultyId = record.difficultyId ? parseInt(String(record.difficultyId).trim(), 10) : NaN;
+      if (!isNaN(excelDifficultyId)) {
+          // TODO: 存在する難易度IDかチェックする方がより安全
+          difficultyId = excelDifficultyId;
+      } else if (record.difficultyId) { // G列に何か入っていたが無効な数値だった場合
+          console.warn(` ⚠️ Invalid difficultyId "${record.difficultyId}" found in Excel Row ${processedRowCount + 2}. Using default ID ${defaultDifficulty.id}.`);
+      }
+
+      let subjectId = defaultSubject.id; // デフォルト値
+      const excelSubjectId = record.subjectId ? parseInt(String(record.subjectId).trim(), 10) : NaN;
+       if (!isNaN(excelSubjectId)) {
+           // TODO: 存在する科目IDかチェックする方がより安全
+           subjectId = excelSubjectId;
+       } else if (record.subjectId) { // I列に何か入っていたが無効な数値だった場合
+           console.warn(` ⚠️ Invalid subjectId "${record.subjectId}" found in Excel Row ${processedRowCount + 2}. Using default ID ${defaultSubject.id}.`);
+       }
+      // --- ▲▲▲ ---
+
+
+      // --- 選択肢パース (V7 - 変更なし) ---
       const parsedOptions = parseAnswerOptionsText(record.answerOptions);
       if (!parsedOptions) {
         console.warn(` ⚠️ Failed to parse answerOptions text for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
         continue;
       }
+      // --- 選択肢パースここまで ---
+
+
+      // --- 正解インデックス (変更なし) ---
       const correctAnswerIndex = answerMap[String(record.correctAnswer).trim()];
       if (correctAnswerIndex === undefined) {
          console.warn(` ⚠️ Invalid correct answer "${String(record.correctAnswer).trim()}" for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
          continue;
       }
+      // --- 正解インデックスここまで ---
 
-      const sourceNumber = record.source ? String(record.source).trim() : '不明';
-      const sourceYear = record.sourceYear ? String(record.sourceYear).trim() : '不明';
-      
-      // 1. ExcelのIDを文字列に変換
-      const idString = String(problemId);
-      
-      // 2. 事前に作成したマップからファイル名を検索
-      const foundFileName = imageFileMap.get(idString);
 
+      // --- ★変更点 5: 出典情報の列を調整 (M列=番号, N列=年/区分) ---
+      const sourceNumber = record.source ? String(record.source).trim() : '不明';      // M列
+      const sourceYear = record.sourceYear ? String(record.sourceYear).trim() : '不明'; // N列
+      // --- ▲▲▲ ---
+
+
+      const rawImageName = record.imageFileName ? String(record.imageFileName).trim() : null;
       let imagePath = null;
-      if (foundFileName) {
-        // 3. ファイル名が見つかったら、publicパスを構築
-        imagePath = `/images/basic_a/${foundFileName}`;
+      
+      if (rawImageName && rawImageName.length > 0) {
+        // Excelにファイル名の記述があった場合、パスを構築
+        imagePath = `/images/basic_a/${rawImageName}`;
       } else {
-        // 4. 見つからなければ null のまま (画像なし)
-        // (警告ログは、画像がない問題が多い場合はコメントアウト推奨)
-        console.warn(` ⚠️ No image file found for ID: ${idString}`);
+        // Excelにファイル名の記述がなかった場合
+        // imagePath は null のまま (警告は任意で出す)
+        console.warn(` ⚠️ No image file specified in Excel for ID: ${problemId}, Title: "${record.title}"`);
       }
 
+
+      // --- dataToSave オブジェクト (文字列変換は維持) ---
       const dataToSave = {
-          title: record.title,
-          description: record.description || "",
-          explanation: record.explanation || "",
+          // id: problemId, // create では不要
+          title: String(record.title || ""),
+          description: String(record.description || ""),
+          explanation: String(record.explanation || ""),
           answerOptions: parsedOptions,
           correctAnswer: correctAnswerIndex,
           sourceYear: sourceYear,
           sourceNumber: sourceNumber,
-          difficultyId: difficulty.id,
-          subjectId: subject.id,
+          difficultyId: difficultyId, // ★ 更新
+          subjectId: subjectId,       // ★ 更新
           categoryId: category.id,
-          imagePath: imagePath // 構築したパスまたはnullを保存
+          imagePath: imagePath
       };
+      // --- dataToSave ここまで ---
+
 
       try {
           await prisma.basic_Info_A_Question.create({
@@ -1041,11 +1201,18 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
           });
           createdCount++;
       } catch (error: any) {
-          console.error(`❌ Error saving record for Row ${processedRowCount + 2}, Title: "${record.title}". Error: ${error.message}`);
+          // ★ ID重複エラー (P2002) の場合のログを追加
+          if (error.code === 'P2002' && error.meta?.target?.includes('id')) {
+              console.error(`❌ Error saving record for Row ${processedRowCount + 2}: Duplicate ID ${problemId} found in Excel sheet "${sheetName}". Skipping this row. Title: "${record.title}"`);
+          } else {
+              console.error(`❌ Error saving record for Row ${processedRowCount + 2}, ID: ${problemId}, Title: "${record.title}". Error: ${error.message}`);
+              // 詳細なエラー内容を出力
+              // console.error(error);
+          }
       }
-    } // End of for loop
+    } // End of records loop
 
-    console.log(` ✅ Processed ${processedRowCount} rows. Created ${createdCount} Basic Info A questions.`);
+    console.log(` ✅ Processed ${records.length} rows. Created ${createdCount} Basic Info A questions.`);
 
   } catch (error) {
     console.error(`❌ Failed to read or process ${excelFileName}:`, error);

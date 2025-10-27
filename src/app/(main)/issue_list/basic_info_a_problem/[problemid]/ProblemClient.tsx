@@ -130,7 +130,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         }
       }
     }
-    // ★ 正誤メッセージをチャットに追加
+    // 正誤メッセージをチャットに追加
     const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
   };
@@ -205,14 +205,15 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
-      {/* 全体を左右に分割 */}
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start w-full">
-
         {/* 左側: 問題表示エリア */}
         <div className="lg:w-1/2 w-full bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col">
+          {/* h1 を削除 (タイトルは ProblemStatement 内で表示) */}
+          {/*
           <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
             問{problem.id}: {problem.title[currentLang] || t.title}
           </h1>
+          */}
           <ProblemStatement
             description={problem.description[currentLang]}
             answerOptions={problem.answerOptions?.[currentLang] || []}
@@ -223,8 +224,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             explanation={problem.explanationText?.[currentLang] || ''}
             imagePath={problem.imagePath}
             language={language}
-            textResources={t}
-            // programText={''} // programText プロップは削除
+            textResources={{...t, title: problem.sourceYear && problem.sourceNumber ? `${problem.sourceYear} ${problem.sourceNumber}` : t.title }}
           />
         </div>
 

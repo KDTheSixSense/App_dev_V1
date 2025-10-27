@@ -245,7 +245,9 @@ function transformBasicInfoAProblem(dbProblem: DbBasicInfoAProblem): Serializabl
     correctAnswer: correctOptionText,
     initialVariables: {},
     logicType: 'STATIC_QA', // Or a more specific type if needed
-    imagePath: imagePath
+    imagePath: imagePath,
+    sourceYear: dbProblem.sourceYear ?? undefined,
+    sourceNumber: dbProblem.sourceNumber ?? undefined
     // Add other optional fields if necessary, like traceOptions
     // traceOptions: undefined,
   };

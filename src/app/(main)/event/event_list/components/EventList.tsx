@@ -6,8 +6,8 @@ import { EventCard } from './EventCard';
 type イベントデータ = {
   id: number;
   title: string;
-  startTime: Date;
-  endTime: Date;
+  startTime: Date | string | null;
+  endTime: Date | string | null;
   _count?: { participants: number };
 };
 

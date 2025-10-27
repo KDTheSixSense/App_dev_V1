@@ -145,9 +145,9 @@ export function CreateEventClient({ problems }: Props) {
       const result = await createEventAction({
         title,
         description,
-        startTime,
-        endTime,
-        publicTime,
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString(),
+        publicTime: new Date(publicTime).toISOString(),
         selectedProblemIds,
       });
 
@@ -183,9 +183,9 @@ export function CreateEventClient({ problems }: Props) {
       const result = await saveEventDraftAction({
         title,
         description,
-        startTime,
-        endTime,
-        publicTime,
+        startTime: startTime ? new Date(startTime).toISOString() : '',
+        endTime: endTime ? new Date(endTime).toISOString() : '',
+        publicTime: publicTime ? new Date(publicTime).toISOString() : '',
         selectedProblemIds,
       });
 
