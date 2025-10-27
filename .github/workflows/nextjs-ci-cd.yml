@@ -1,5 +1,3 @@
-# .github/workflows/nextjs-ci-cd.yml
-
 name: Next.js CI/CD - Build and Deploy
 
 # ワークフローが実行されるタイミング
@@ -29,8 +27,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # (オプション) ここに npm install と npm test を実行するステップを追加するのもええで
-
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -46,33 +42,36 @@ jobs:
             # Gitのコミットハッシュ (短い形式) をタグとして使う
             type=sha,prefix=,format=short
 
-      - name: Build and push Docker image
+      # --- Runner (アプリ本体) イメージのビルド ---
+      - name: Build and push Docker image (Runner)
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }} # 例: rnagashiro/my-nextjs-app:d65b5c1
           labels: ${{ steps.meta.outputs.labels }}
-          # ▼▼▼ この build-args を追加 ▼▼▼
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
           no-cache: true
+          # ★★★ 修正点 ★★★
+          # "runner" ステージをビルド対象として指定
+          target: runner
 
+      # --- Migrator (DBマイグレーション用) イメージのビルド ---
       - name: Build and push Migrator image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           # タグの末尾に '-migrator' をつける
-          tags: ${{ steps.meta.outputs.tags }}-migrator
+          tags: ${{ steps.meta.outputs.tags }}-migrator # 例: rnagashiro/my-nextjs-app:d65b5c1-migrator
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
           no-cache: true
           # ビルド対象として 'migrator' ステージを指定
           target: migrator
-        
-
+      
   # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
   update-manifest:
     runs-on: ubuntu-latest
