@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useTransition } from 'react';
+import React, { useState, useEffect, useTransition,useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -9,7 +9,7 @@ import ProblemStatement from '@/app/(main)/issue_list/basic_info_b_problem/compo
 import KohakuChat from '@/components/KohakuChat';
 
 // --- データと型、アクションのインポート ---
-import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
+import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
 //import { getHintAction } from '@/lib/actions/hintActions';
 import { useNotification } from '@/app/contexts/NotificationContext';
 import type { SerializableProblem } from '@/lib/data';
@@ -79,15 +79,23 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [language, setLanguage] = useState<Language>('ja');
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     setProblem(initialProblem);
     setCredits(initialCredits);
     setSelectedAnswer(null);
     setIsAnswered(false);
-    setChatMessages([
-      { sender: 'kohaku', text: textResources[language].problemStatement.hintInit },
-    ]);
+    setChatMessages([{ sender: 'kohaku', text: textResources[language].problemStatement.hintInit }]);
+    startTimeRef.current = Date.now();
+    return () => {
+          if (startTimeRef.current) {
+            const endTime = Date.now();
+            const durationMs = endTime - startTimeRef.current;
+            const problemIdForLog = initialProblem?.id || 'unknown'; // アンマウント時でもIDを参照できるように
+            startTimeRef.current = null; // リセット
+          }
+        };
   }, [initialProblem, initialCredits, language]);
 
   const t = textResources[language].problemStatement;

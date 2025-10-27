@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -10,7 +10,7 @@ import TraceScreen from '../components/TraceScreen';
 import VariableTraceControl from '../components/VariableTraceControl';
 import KohakuChat from '@/components/KohakuChat'; // KohakuChat コンポーネントをインポート
 import { getHintFromAI } from '@/lib/actions/hintactions';
-import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions';
+import { getNextProblemId, awardXpForCorrectAnswer,recordStudyTimeAction } from '@/lib/actions';
 import { useNotification } from '@/app/contexts/NotificationContext';
 import { problemLogicsMap } from '../data/problem-logics';
 
@@ -106,7 +106,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [language, setLanguage] = useState<Language>('ja');
   const [isPresetSelected, setIsPresetSelected] = useState<boolean>(false);
   const [credits, setCredits] = useState(initialCredits);
-  const [isChatOpen, setIsChatOpen] = useState(false); // ★ チャット開閉stateを追加
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     let problemData = initialProblem;
@@ -163,7 +164,32 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       { sender: 'kohaku', text: textResources[language].problemStatement.hintInit },
     ]);
     setCredits(initialCredits);
-  }, [initialProblem, language, initialCredits]);
+  // コンポーネントマウント時に開始時刻を記録
+    startTimeRef.current = Date.now();
+    console.log(`Problem ${problemData.id} mounted at: ${startTimeRef.current}`);
+
+    // コンポーネントアンマウント時に実行されるクリーンアップ関数
+    return () => {
+      if (startTimeRef.current) {
+        const endTime = Date.now();
+        const durationMs = endTime - startTimeRef.current;
+        console.log(`Problem ${problemData.id} unmounted. Duration: ${durationMs}ms`);
+
+        // 短すぎる滞在時間は記録しない (例: 3秒未満)
+        if (durationMs > 3000) {
+          // サーバーアクションを呼び出す (エラーはコンソールに出力)
+          // awaitは付けず、バックグラウンドで実行させる (UIをブロックしない)
+          recordStudyTimeAction(durationMs).catch(error => {
+            console.error("Failed to record study time:", error);
+            // 必要であればユーザーに通知 (ただし、ページ離脱時なので難しい場合も)
+            // showNotification({ message: '学習時間の記録に失敗しました。', type: 'error' });
+          });
+        }
+        startTimeRef.current = null; // 念のためリセット
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProblem, language, initialCredits]); // 依存配列は元のまま or 必要に応じて調整
 
   const t = textResources[language].problemStatement;
 
@@ -199,20 +225,20 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       const logic = problemLogicsMap[problem.logicType as keyof typeof problemLogicsMap];
       if (!logic) return;
 
-      // ★修正: calculateNextLineが先に呼ばれるように変更
+      // calculateNextLineが先に呼ばれるように変更
       let nextLine = currentTraceLine + 1; // デフォルトは次の行
       if ('calculateNextLine' in logic && logic.calculateNextLine) {
         nextLine = logic.calculateNextLine(currentTraceLine, variables);
       }
 
-      // ★修正: traceLogic は calculateNextLine の *後* で実行されるようにする (行番号に対応する状態変化)
+      // traceLogic は calculateNextLine の *後* で実行されるようにする (行番号に対応する状態変化)
       const traceStepFunction = logic.traceLogic[currentTraceLine]; // 現在の行に対応するロジック
       const nextVariables = traceStepFunction ? traceStepFunction(variables) : { ...variables };
 
       setVariables(nextVariables); // 状態を更新
       setCurrentTraceLine(nextLine); // 次の行番号をセット
     } else {
-        // ★追加: トレースがプログラムの最終行を超えた場合（無限ループ防止）
+        // トレースがプログラムの最終行を超えた場合（無限ループ防止）
         console.warn("Trace attempted beyond program lines length.");
         // 必要に応じてトレース完了の処理を追加
     }
