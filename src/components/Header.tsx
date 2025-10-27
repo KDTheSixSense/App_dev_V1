@@ -124,7 +124,7 @@ export default function Header({ userWithPet }: HeaderProps) {
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0">
         {/* Linkをaタグに変更 */}
-        <a href="/" className="transition-opacity hover:opacity-80">
+        <a href="/home" className="transition-opacity hover:opacity-80">
           {/* Imageをimgタグに変更 */}
           <img
             src="/images/infopia_logo.png"
