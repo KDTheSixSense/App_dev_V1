@@ -569,11 +569,6 @@ model Create_event {
 
   //イベント開始の判別フラグ
   isStarted Boolean @default(false)
-  creatorId Int
-  creator   User @relation("CreatedEvents", fields: [creatorId], references: [id])
-
-  participants Event_Participants[]
-  issues       Event_Issue_List[]
 }
 
 // イベントの参加者情報を管理するテーブル
