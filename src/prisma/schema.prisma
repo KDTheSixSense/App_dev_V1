@@ -43,6 +43,7 @@ model User {
   eventParticipants        Event_Participants[] // このユーザーのイベント参加情報（EventParticipantとの対向リレーション）
   eventSubmissions         Event_Submission[] // このユーザーのイベントでの提出（EventSubmissionとの対向リレーション）
   aiAdviceCredits          Int                   @default(5)
+  dailyMissionProgresses UserDailyMissionProgress[]
 }
 
 model LoginHistory {
@@ -618,4 +619,58 @@ model Event_Submission {
 
   eventIssueId Int
   eventIssue   Event_Issue_List @relation(fields: [eventIssueId], references: [id], onDelete: Cascade)
+}
+
+// デイリーミッションの種類を定義する列挙型
+enum DailyMissionType {
+  Answer_the_Question // 問題に答える
+  Feed_Them         // コハクに餌を150与える
+  Gain_Xp        // 経験値を1000獲得する
+}
+
+// デイリーミッションのマスターデータ
+model DailyMissionMaster {
+  id          Int      @id @default(autoincrement())
+  title       String   // 例: "ログインしよう！"
+  description String   // 例: "毎日1回のログインで達成"
+  
+  // ミッションの種別 (ロジックでどの行動をカウントするかを判定するために使用)
+  missionType DailyMissionType 
+  
+  // 達成に必要な回数 (例: ログインなら1, 問題を解くなら3)
+  targetCount Int      @default(1)
+  
+  // 達成時に付与するXP
+  xpReward    Int
+
+  // このミッションの進捗を持つユーザーのリスト (中間テーブルへの逆参照)
+  progressEntries UserDailyMissionProgress[]
+}
+
+// ユーザーごとのデイリーミッション進捗
+model UserDailyMissionProgress {
+  
+  // --- リレーション ---
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  
+  missionId  Int
+  mission    DailyMissionMaster @relation(fields: [missionId], references: [id])
+  
+  // --- 進捗データ ---
+
+  // どの「日」のミッションかを記録 (例: 2025-10-24)
+  // これが非常に重要です
+  date       DateTime @db.Date 
+  
+  // 現在の進捗カウント (例: 0, 1, 2...)
+  progress   Int      @default(0)
+  
+  // 達成済みか (報酬を付与済みか)
+  isCompleted Boolean  @default(false)
+
+  // 複合主キー: 
+  // 「ユーザーID」+「ミッションID」+「日付」の組み合わせをユニークにします
+  // (一人のユーザーが、同じ日に同じミッションの進捗を2つ持てないようにする)
+  @@id([userId, missionId, date])
 }
