@@ -67,6 +67,30 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
     }
   };
 
+  const handleEndEvent = async () => {
+    if (confirm('イベントを終了しますか？参加者は問題を見ることができなくなります。')) {
+      try {
+        const response = await fetch(`/api/event/${event.id}/start`, { // 同じAPIエンドポイントを再利用
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ isStarted: false }), // isStartedをfalseに設定
+        });
+
+        if (!response.ok) {
+          throw new Error('イベントの終了に失敗しました。');
+        }
+
+        setEvent(prev => ({ ...prev, isStarted: false }));
+        alert('イベントを終了しました。');
+      } catch (error) {
+        console.error('イベント終了エラー:', error);
+        alert(`イベント終了中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      }
+    }
+  };
+
   // 招待コードをクリップボードにコピーするハンドラ
   const handleCopyInviteCode = () => {
     navigator.clipboard.writeText(event.inviteCode).then(() => {
@@ -107,21 +131,23 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
       </div>
 
       {/* イベント開始ボタン */}
-      {!event.isStarted && ( // isStartedがfalseの場合のみ表示
-        <div className="mt-4">
+      <div className="mt-6">
+        {!event.isStarted ? (
           <button
             onClick={handleStartEvent}
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            className="px-6 py-3 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105"
           >
             イベントを開始する
           </button>
-        </div>
-      )}
-      {event.isStarted && (
-        <>
-          <p className="mt-4 text-green-700 font-semibold">イベントは開始されています。</p>
-        </>
-      )}
+        ) : (
+          <button
+            onClick={handleEndEvent}
+            className="px-6 py-3 text-lg font-semibold text-white bg-red-500 rounded-lg shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 transform hover:scale-105"
+          >
+            イベントを終了する
+          </button>
+        )}
+      </div>
       
       <div className="mt-8">
         <h2 className="text-2xl font-semibold">イベント参加者一覧 ({event.participants.length}人)</h2>
