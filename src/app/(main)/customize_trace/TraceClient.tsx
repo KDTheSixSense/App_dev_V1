@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react'; //  useEffect を追加
+import React, { useState, useCallback, useEffect, useRef } from 'react'; //  useEffect を追加
 // AIコード生成をサーバー側で安全に行うための関数をインポートします
-import { generateTraceCodeFromAI } from '@/lib/actions/traceActions';
+import { generateTraceCodeFromAI} from '@/lib/actions/traceActions';
+import { recordStudyTimeAction } from '@/lib/actions';
 
 // --- サンプルコード ---
 const sampleCode = `整数型: counter
@@ -66,6 +67,10 @@ const TraceClient = () => {
   const [aiPrompt, setAiPrompt] = useState('カウンターが0になるまでデクリメントする');
   const [isGenerating, setIsGenerating] = useState(false);
   const [controlFlowStack, setControlFlowStack] = useState<ControlFlowInfo[]>([]); //  制御フロー用のスタック
+  // トレース開始時刻 (null: 未開始)
+  const [traceStartedAt, setTraceStartedAt] = useState<number | null>(null);
+  // このトレースセッションの時間を記録したか
+  const hasRecordedTime = useRef(false);
 
 
   // --- ヘルパー関数 ---
@@ -204,12 +209,43 @@ const TraceClient = () => {
     return -1; // 見つからなかった
   }, [programLines]); //  依存配列に programLines を追加
 
+  // --- 4. 時間を記録する共通関数を追加 ---
+    /**
+     * 現在のトレースセッションの学習時間を計算し、サーバーに送信する
+     */
+    const recordStudyTime = useCallback(() => {
+        // トレースが開始されていて、まだ記録していない場合のみ
+        if (traceStartedAt !== null && !hasRecordedTime.current) {
+            const endTime = Date.now();
+            const timeSpentMs = endTime - traceStartedAt;
+
+            // 3秒以上の滞在のみを記録 (ノイズ除去)
+            if (timeSpentMs > 3000) {
+                console.log(`Recording ${timeSpentMs}ms for trace session.`);
+                recordStudyTimeAction(timeSpentMs); // サーバーアクションを呼び出し
+                hasRecordedTime.current = true; // 記録済みフラグを立てる
+            }
+        }
+    }, [traceStartedAt]); // traceStartedAt が変わったら関数を再生成
+    // --- 4. ここまで ---
+
+
+    // --- 5. ページを離れる時に時間を記録する Effect を追加 ---
+    useEffect(() => {
+        // コンポーネントがアンマウントされる時に recordStudyTime を呼び出す
+        return () => {
+            recordStudyTime();
+        };
+    }, [recordStudyTime]); // recordStudyTime 関数自体が変わったら再登録
+    // --- 5. ここまで ---
+
   // --- トレース実行エンジン ( 大幅に修正) ---
   const handleNextStep = useCallback(() => {
     if (!isTraceStarted || currentLine < 0 || currentLine >= programLines.length) {
         if (currentLine >= programLines.length) {
              setError('トレースが終了しました。');
              setIsTraceStarted(false);
+             recordStudyTime(); // トレース終了時に時間を記録
         }
         return;
     }
@@ -452,6 +488,7 @@ const TraceClient = () => {
       if (nextLine >= programLines.length) {
           setError('トレースが正常に終了しました。');
           setIsTraceStarted(false);
+          recordStudyTime(); // トレース終了時に時間を記録
           setCurrentLine(nextLine); //  最後の行のハイライトのため >= length でもセット
       } else {
           setCurrentLine(nextLine); // 次に実行する行を設定
@@ -495,6 +532,9 @@ const TraceClient = () => {
       setOutput([]);
       setControlFlowStack([]); //  スタックをリセット
       setIsTraceStarted(true);
+      // --- 7. トレース開始時にタイマー開始 & フラグリセット ---
+      setTraceStartedAt(Date.now());
+      hasRecordedTime.current = false;
       } catch (e) {
       // エラーハンドリングを修正
       if (e instanceof SyntaxError) {
@@ -509,6 +549,8 @@ const TraceClient = () => {
   };
 
   const handleReset = () => {
+    recordStudyTime(); // 現在のセッションの時間を記録
+    setTraceStartedAt(null); // タイマーをリセット
     setIsTraceStarted(false);
     setCurrentLine(-1);
     setProgramLines([]);

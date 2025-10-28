@@ -9,7 +9,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem, SampleCase } from '@/lib/types';
-import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer} from '@/lib/actions';
+import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction} from '@/lib/actions';
 
 // --- 型定義 ---
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
@@ -151,6 +151,8 @@ const ProblemSolverPage = () => {
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const [problemStartedAt, setProblemStartedAt] = useState<number>(Date.now());
+    const hasRecordedTime = useRef(false);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -175,11 +177,40 @@ const ProblemSolverPage = () => {
             if (fetchedProblem) {
                 setUserCode(fetchedProblem.programLines?.ja.join('\n') || '');
                 setChatMessages([{ sender: 'kohaku', text: `問${fetchedProblem.id}について、何かヒントは必要ですか？` }]);
+                setProblemStartedAt(Date.now()); // 開始時刻をリセット
+                hasRecordedTime.current = false;   // 記録フラグをリセット
             }
             setIsLoading(false);
         };
         fetchProblem();
     }, [problemId]);
+
+    /**
+     * 学習時間を計算し、サーバーに送信する
+     */
+    const recordStudyTime = () => {
+      // まだこの問題の時間を記録していない場合のみ実行
+      if (!hasRecordedTime.current) {
+        const endTime = Date.now();
+        const timeSpentMs = endTime - problemStartedAt;
+
+        // 3秒以上の滞在のみを記録
+        if (timeSpentMs > 3000) {
+          console.log(`Recording ${timeSpentMs}ms for problem ${problemId}`);
+          recordStudyTimeAction(timeSpentMs);
+          hasRecordedTime.current = true; // 記録済みフラグを立てる
+        }
+      }
+    };
+
+    // --- 6. ページを離れる時に時間を記録する Effect を追加 ---
+    useEffect(() => {
+      // このEffectは、problemStartedAt（＝新しい問題）が変わるたびに再登録される
+      return () => {
+        // クリーンアップ関数（ページ離脱時）に時間を記録
+        recordStudyTime();
+      };
+    }, [problemStartedAt]); // problemStartedAt が変わるたびにクリーンアップを再設定
 
     const handleExecute = async () => {
         if (!userCode.trim()) { setExecutionResult('コードを入力してください。'); return; }

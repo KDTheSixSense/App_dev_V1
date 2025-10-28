@@ -215,17 +215,23 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   // 5b. 学習時間（ミリ秒）を計算（開始時刻が渡された場合のみ計算）
   if (typeof problemStartedAt !== 'undefined' && problemStartedAt !== null) {
     try {
-      const parsedStart = typeof problemStartedAt === 'number'
-        ? problemStartedAt
-        : Date.parse(String(problemStartedAt));
-      if (!isNaN(parsedStart)) {
-        const startTime = parsedStart;
-        const endTime = Date.now();
-        timeSpentMs = endTime - startTime;
+      // クライアントから渡されるのは Date.now() の数値タイムスタンプのはず
+      const startTime = typeof problemStartedAt === 'number'
+          ? problemStartedAt
+          : Date.parse(String(problemStartedAt)); // 文字列の場合も考慮
+        
+      if (!isNaN(startTime)) {
+          const endTime = Date.now(); // サーバー側で現在時刻を取得
+          timeSpentMs = endTime - startTime;
+          console.log(`[awardXp] Calculated timeSpentMs: ${timeSpentMs}`);
+      } else {
+          console.warn('[awardXp] Invalid problemStartedAt value received:', problemStartedAt);
       }
     } catch (e) {
-      console.warn('学習時間の計算に失敗しました。', e);
+      console.warn('[awardXp] Failed to calculate study time:', e);
     }
+  } else {
+      console.log('[awardXp] problemStartedAt was not provided.');
   }
 
   // 5c. 日次サマリーテーブルを更新（非同期で実行し、待たない）
