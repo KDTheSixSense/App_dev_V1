@@ -39,6 +39,13 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
   const eventCreator = event.participants.find(p => p.isAdmin);
   // その他の参加者（admin_flgがfalseの参加者）をフィルタリング
   const otherParticipants = event.participants.filter(p => !p.isAdmin);
+  
+  // 参加者を獲得点数の降順でソート
+  const sortedParticipants = [...otherParticipants].sort((a, b) => {
+    const scoreA = a.event_getpoint ?? 0;
+    const scoreB = b.event_getpoint ?? 0;
+    return scoreB - scoreA; // 降順
+  });
 
   const handleStartEvent = async () => {
     if (confirm('イベントを開始しますか？開始すると参加者に問題リストが表示されます。')) {
@@ -151,11 +158,11 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
       
       <div className="mt-8">
         <h2 className="text-2xl font-semibold">イベント参加者一覧 ({event.participants.length}人)</h2>
-        {otherParticipants.length > 0 ? (
+        {sortedParticipants.length > 0 ? (
           <ul className="list-disc list-inside mt-2">
-            {otherParticipants.map((participant) => (
+            {sortedParticipants.map((participant) => (
               (() => {
-                // event_getpointフィールドから合計得点を取得
+                // event_getpointフィールドから獲得点数を取得
                 const score = participant.event_getpoint ?? 0;
                 
                 return (

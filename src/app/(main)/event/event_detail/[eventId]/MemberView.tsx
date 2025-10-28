@@ -117,8 +117,18 @@ export default function MemberView({ event, role }: MemberViewProps) {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold">{event.title}</h1>
-      <p className="mt-2 text-gray-600">{event.description}</p>
+      <div className="relative">
+        <h1 className="text-3xl font-bold">{event.title}</h1>
+        <p className="mt-2 text-gray-600">{event.description}</p>
+
+        {/* メンバー個人の獲得点数を表示 */}
+        {role === 'member' && event.currentUserParticipant && (
+          <div className="absolute top-0 right-0 bg-indigo-100 text-indigo-800 text-lg font-semibold px-4 py-2 rounded-lg shadow">
+            あなたのスコア: 
+            <span className="ml-2 font-bold text-2xl">{event.currentUserParticipant.event_getpoint ?? 0}</span>点
+          </div>
+        )}
+      </div>
 
       {role === 'member' ? (
         <>
