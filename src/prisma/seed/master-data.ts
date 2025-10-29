@@ -1,4 +1,4 @@
-import { PrismaClient, TitleType } from '@prisma/client';
+import { PrismaClient, TitleType, DailyMissionType } from '@prisma/client';
 
 // PrismaClientのインスタンスを引数として受け取るように変更
 export async function seedMasterData(prisma: PrismaClient) {
@@ -53,6 +53,49 @@ export async function seedMasterData(prisma: PrismaClient) {
   for (const category of categories) {
     await prisma.category.create({
       data: category,
+    });
+  }
+
+  const missionsToSeed = [
+    {
+      id: 1, // IDを固定すると管理しやすい
+      title: '問題を解こう！',
+      description: '1日1回いずれかの問題を解くと達成',
+      missionType: DailyMissionType.Answer_the_Question,
+      targetCount: 1,
+      xpReward: 100,
+    },
+    {
+      id: 2,
+      title: 'ペットにエサをあげよう！',
+      description: 'ペットに餌を150あげると達成',
+      missionType: DailyMissionType.Feed_Them,
+      targetCount: 150,
+      xpReward: 400,
+    },
+    {
+      id: 3,
+      title: '経験値を獲得しよう！',
+      description: '経験値を1000獲得すると達成',
+      missionType: DailyMissionType.Gain_Xp,
+      targetCount: 1000,
+      xpReward: 500,
+    },
+  ];
+
+// upsert を使ってデータを登録・更新します
+  for (const mission of missionsToSeed) {
+    await prisma.dailyMissionMaster.upsert({
+      where: { id: mission.id },
+      update: {
+        // id 以外を更新 (id は where で使われるため)
+        title: mission.title,
+        description: mission.description,
+        missionType: mission.missionType,
+        targetCount: mission.targetCount,
+        xpReward: mission.xpReward,
+      },
+      create: mission, // 新規作成の場合は mission オブジェクト全体を使用
     });
   }
 }

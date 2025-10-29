@@ -2,6 +2,12 @@
 import { getIronSession, IronSession, IronSessionData, SessionOptions } from 'iron-session';
 import { cookies } from 'next/headers';
 
+export interface SessionData {
+  user?: {
+    id: number;
+    email: string;
+  };
+}
 /**
  * セッションの設定オブジェクト
  */
