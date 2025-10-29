@@ -204,7 +204,7 @@ const ProblemSolverPage = () => {
             if (expectedOutput === 'UNSET' || expectedOutput === '') { setSubmitResult({ success: false, message: '問題に正解が設定されていません。' }); setIsSubmitting(false); return; }
             if (output === expectedOutput) { 
                 setSubmitResult({ success: true, message: '正解です！おめでとうございます！' }); 
-                await awardXpForCorrectAnswer(parseInt(problemId)); //正解判定後にXPを付与.プログラミング問題はsubjectidが1なので1を渡す
+                await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1); //正解判定後にXPを付与.プログラミング問題はsubjectidが1なので1を渡す
                 window.dispatchEvent(new CustomEvent('petStatusUpdated')); //ヘッダーのペットステータス更新を促すイベントを発火
             }
             else { setSubmitResult({ success: false, message: '不正解です。出力が異なります。', yourOutput: output, expected: expectedOutput }); }

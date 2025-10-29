@@ -591,6 +591,9 @@ model Event_Participants {
 
   //イベント受容の判別フラグ
   hasAccepted Boolean @default(false)
+
+  // イベントでの合計得点
+  event_getpoint Int @default(0)
 }
 
 // イベントで出題される問題のリスト
