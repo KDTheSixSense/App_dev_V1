@@ -2,6 +2,7 @@ import React from "react";
 import User from "./user/UserDetail";
 import Ranking from "./ranking/page";
 import Pet from "./Pet/PetStatus";
+import Daily from "./daily/page";
 // --- ▼▼▼ セッション取得用のライブラリをインポート ▼▼▼ ---
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
@@ -41,9 +42,7 @@ export default async function HomePage({
         </div>
         <div className="flex flex-col w-full max-w-150 gap-10">
           <Pet user={user}/>
-          <div className="flex w-full h-120 rounded-lg shadow-lg p-4 justify-center items-center">
-            <img src={"/images/coming_soon.png"} alt="Coming Soon" width={500} height={500}/>
-          </div>
+          <Daily />
         </div>
       </main>
     </div>
