@@ -65,7 +65,7 @@ export async function seedProblems(prisma: PrismaClient) {
 
 async function seedProblemsFromExcel(prisma: PrismaClient) {
   const excelFileName = 'PBL2 科目B問題.xlsx';
-  const filePath = path.join(__dirname, 'data', excelFileName);
+  const filePath = path.join(process.cwd(), 'prisma', 'seed', 'data', excelFileName);
 
   const lastLocalQuestion = await prisma.questions.findFirst({ orderBy: { id: 'desc' } });
   let nextId = (lastLocalQuestion?.id || 0) + 1;
