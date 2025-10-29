@@ -51,8 +51,10 @@ export async function seedMasterData(prisma: PrismaClient) {
   ];
 
   for (const category of categories) {
-    await prisma.category.create({
-      data: category,
+    await prisma.category.upsert({
+      where: { id: category.id },
+      update: category,
+      create: category,
     });
   }
 
