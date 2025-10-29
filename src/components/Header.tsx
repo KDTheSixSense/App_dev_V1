@@ -179,7 +179,7 @@ export default function Header({ userWithPet }: HeaderProps) {
         <div className="flex flex-col">
           <div className="relative group flex items-center gap-2">
             <img src="/images/Rank.png" alt="ランク" width={45} height={15} />
-            <div className='frex ml-auto'>
+            <div className='flex ml-auto'>
               <p className="text-[#5FE943] text-2xl font-bold select-none">{user?.level ?? 1}</p>
             </div>
             {/* ツールチップ */}
@@ -192,7 +192,7 @@ export default function Header({ userWithPet }: HeaderProps) {
             <div className='flex ml-3'>
               <img src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} />
             </div>
-            <div className='frex ml-auto'>
+            <div className='flex ml-auto'>
               <p className="text-[#feb75c] text-2xl font-bold select-none">{user?.continuouslogin ?? 0}</p>
             </div>
             {/* ツールチップ */}

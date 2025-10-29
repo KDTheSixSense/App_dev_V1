@@ -9,17 +9,17 @@ import ProblemClient from './ProblemClient';
 import type { SerializableProblem } from '@/lib/data';
 
 type BasicInfoAProblemDetailPageProps = {
-  params: Promise<{ problemid: string }>;
+  params: Promise<{ problemId: string }>;
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 const BasicInfoAProblemDetailPage = async ({ params, searchParams }: BasicInfoAProblemDetailPageProps) => {
   const resolvedParams = await params;
-  const problemIdNum = parseInt(resolvedParams.problemid, 10); // Use lowercase
+  const problemIdNum = parseInt(resolvedParams.problemId, 10); // Use lowercase
   const resolvedSearchParams = searchParams ? await searchParams : undefined; // searchParams を await する
 
   if (isNaN(problemIdNum)) {
-    console.log(`[Page] Invalid problem ID received: ${resolvedParams.problemid}. Calling notFound().`);
+    console.log(`[Page] Invalid problem ID received: ${resolvedParams.problemId}. Calling notFound().`);
     notFound();
   }
 
