@@ -101,7 +101,7 @@ async function seedProblemsFromExcel(prisma: PrismaClient) {
   } catch (error) { console.error(`❌ Failed to read or process ${excelFileName}:`, error); }
 }
 
-async function seedSampleProgrammingProblems(prisma: PrismaClient) {
+async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: number = 1) {
   // Googleスプレッドシートからエクスポートしたデータ
   const spreadsheetProblems = [
     {
@@ -427,10 +427,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "グラフ", "DFS"]',
         description: '単純な無向グラフが与えられます。頂点1から出発して深さ優先探索（DFS）で到達可能な頂点を、訪れた順に（頂点番号が小さい方を優先）出力してください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '4 3\n1 2\n1 3\n2 4', expectedOutput: '1\n2\n4\n3', description: '頂点1->2->4->3の順に訪問します。', order: 1 }
@@ -447,10 +447,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "グラフ", "BFS"]',
         description: '単純な無向グラフが与えられます。頂点1から出発して幅優先探索（BFS）で到達可能な頂点を、訪れた順に出力してください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '4 3\n1 2\n1 3\n2 4', expectedOutput: '1\n2\n3\n4', description: '頂点1->2->3->4の順に訪問します。', order: 1 }
@@ -487,10 +487,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "DP", "ナップサック"]',
         description: 'N個の品物と容量 W のナップサックがあります。各品物 i は重さ w_i と価値 v_i を持ちます。重さの合計が W を超えないように品物を選んだときの、価値の合計の最大値を求めてください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '3 8\n3 30\n4 50\n5 60', expectedOutput: '90', description: '品物1(重さ3,価値30)と品物3(重さ5,価値60)を選ぶと、重さ合計8で価値合計90となり最大です。', order: 1 }
@@ -507,10 +507,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "グラフ", "最短経路"]',
         description: '重み付き有向グラフと始点 S が与えられます。始点 S から他の全ての頂点への最短経路長を求めてください。到達不可能な場合は `INF` と出力してください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '4 5 0\n0 1 1\n0 2 4\n1 2 2\n2 3 1\n1 3 5', expectedOutput: '0\n1\n3\n4', order: 1 }
@@ -693,10 +693,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "数学", "行列"]',
         description: 'N x M 行列 A と M x L 行列 B が与えられます。これらの積である N x L 行列 C を計算し、出力してください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '2 3 2\n1 2 3\n4 5 6\n7 8\n9 10\n11 12', expectedOutput: '58 64\n139 154', order: 1 }
@@ -726,7 +726,12 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
   ];
 
   for (const p of spreadsheetProblems) {
-    await prisma.programmingProblem.create({ data: p });
+    await prisma.programmingProblem.create({
+      data: {
+        ...p, // 既存のプロパティを展開
+        createdBy: creatorId // この行を追加
+      }
+    });
   }
   console.log(`✅ Created ${spreadsheetProblems.length} programming problems from spreadsheet.`);
 }

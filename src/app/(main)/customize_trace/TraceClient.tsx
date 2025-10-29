@@ -280,43 +280,67 @@ const TraceClient = () => {
         // コメント行や空行は何もしない
         jumped = false; // 次の行へ
       } else if (declarationMatch) {
-          const varType = declarationMatch[1];
-        const declarationPart = declarationMatch[2];
-        const declaredItems = declarationPart.split(',').map(item => item.trim());
+          const varType = declarationMatch[1]; // 例: "整数型"
+          const declarationPart = declarationMatch[2]; // 例: "arr[5], i, target, index"
+          const declaredItems = declarationPart.split(',').map(item => item.trim()); // ["arr[5]", "i", ...]
 
-        declaredItems.forEach(item => {
-            // "x ← 1" のような代入部分を分離
-            const assignmentParts = item.split('←');
-            let varName = assignmentParts[0].trim(); // 変数名部分を取得
-            let isArray = varType.startsWith('配列型');
-            let initialValue = null; // デフォルト初期値
+          declaredItems.forEach(item => {
+              const assignmentParts = item.split('←');
+              let varNameWithIndex = assignmentParts[0].trim(); // "arr[5]" または "i"
+              let varName = varNameWithIndex; // デフォルトは "arr[5]" や "i"
+              let initialValue = null; // デフォルト初期値
+              let isArray = varType.startsWith('配列型'); // "整数型" の場合は false
 
-            // 配列サイズ指定 (例: arr[5]) があっても変数名だけを取得
-            if (isArray) {
-                 const nameMatch = varName.match(/^([a-zA-Z_]\w*)/);
-                 if (nameMatch) varName = nameMatch[1];
-                 initialValue = []; // 配列は空で初期化
-            }
+              // --- START MODIFICATION ---
+            
+              // 1. 型宣言に関わらず、"変数名[サイズ]" の構文を正規表現でチェックします
+              const arraySyntaxMatch = varNameWithIndex.match(/^([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\]$/);
 
-            // 宣言行で代入が行われている場合 (例: "整数型: x ← 1")
-            if (assignmentParts.length > 1) {
-                const valueExpr = assignmentParts[1].trim();
-                // 宣言行での初期値を評価して設定
-                initialValue = evaluateExpression(valueExpr, tempVariables);
-            }
+              if (arraySyntaxMatch) {
+                  // "arr[5]" のような構文が見つかった場合
+                  varName = arraySyntaxMatch[1]; // 変数名を "arr" に修正
+                  const arraySize = parseInt(arraySyntaxMatch[2], 10);
+                  
+                  isArray = true; // これは配列として扱います
+                  
+                  // 既に変数が存在しないか、または配列でない場合のみ、新しい配列で初期化
+                  if (!tempVariables[varName] || !Array.isArray(tempVariables[varName])) {
+                      // ご希望の [0, 0, 0] で初期化する場合は .fill(0) に変更してください
+                      initialValue = new Array(arraySize).fill(null);
+                  } else {
+                      // 既に配列として存在する場合（例: JSONから読み込み済）は、その値を維持
+                      initialValue = tempVariables[varName];
+                  }
 
-            // 変数テーブル (tempVariables) を更新
-            // - まだ存在しない変数なら初期化
-            // - または、宣言行で値が代入されていればその値で更新
-            // - ただし、配列が既に存在する場合に null で上書きしないようにする
-            if (!(varName in tempVariables) || assignmentParts.length > 1) {
-                 if(!(isArray && assignmentParts.length == 1 && Array.isArray(tempVariables[varName]))) {
-                    tempVariables[varName] = initialValue;
-                 }
-            }
-        });
-        // 宣言行自体の実行はこれで完了。次の行へ。
-        jumped = false;
+              } else if (isArray && (!tempVariables[varName] || !Array.isArray(tempVariables[varName]))) {
+                  // "配列型: arr" のようにサイズ指定なしで宣言され、まだ初期化されていない場合
+                  initialValue = []; // 空配列で初期化
+              }
+              // --- END MODIFICATION ---
+
+
+              // 宣言行で代入が行われている場合 (例: "整数型: x ← 1")
+              if (assignmentParts.length > 1) {
+                  const valueExpr = assignmentParts[1].trim();
+                  initialValue = evaluateExpression(valueExpr, tempVariables);
+              }
+
+              // 変数テーブル (tempVariables) を更新
+              // (varName が "arr" に修正されたため、arr[5] ではなく arr が更新されます)
+              const shouldUpdate = 
+                  !(varName in tempVariables) || // 変数が新規
+                  assignmentParts.length > 1 || // 明示的な代入がある
+                  (arraySyntaxMatch && (!tempVariables[varName] || !Array.isArray(tempVariables[varName]))); // 配列として新規初期化
+
+              if (shouldUpdate) {
+                  // 既存の配列を null で上書きしないようにする最後のチェック
+                  if(!(isArray && assignmentParts.length == 1 && Array.isArray(tempVariables[varName]))) {
+                    tempVariables[varName] = initialValue;
+                  }
+              }
+          });
+          // 宣言行自体の実行はこれで完了。次の行へ。
+          jumped = false;
       } else if (assignmentMatch) {
           const target = assignmentMatch[1].trim();
           const expression = assignmentMatch[2].trim();
