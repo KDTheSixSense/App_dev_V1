@@ -158,7 +158,7 @@ export default function Header({ userWithPet }: HeaderProps) {
       
       {/*コハクの情報*/}
       {petStatus && (
-        <div className="flex items-center gap-2 ml-20">
+        <div className="flex items-center gap-2 ml-auto">
             {/* アイコンをStateから動的に設定 */}
             <img src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
             <div className="w-50">
@@ -174,7 +174,7 @@ export default function Header({ userWithPet }: HeaderProps) {
       )}
 
       {/* 右側：ユーザー情報 */}
-      <div className="flex items-center gap-4 ml-auto">
+      <div className="flex items-center gap-4 ml-6">
         {/* ランクとログイン日数 */}
         <div className="flex flex-col">
           <div className="relative group flex items-center gap-2">
