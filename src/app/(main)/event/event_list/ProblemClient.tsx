@@ -95,10 +95,10 @@ const ProblemClient = ({ initialEvents }: ProblemClientProps) => {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || 'イベントへの参加に失敗しました。');
+        throw new Error(data.error || 'イベントへの参加に失敗しました。');
       }
       setモーダル表示中(false);
-      router.push(`/event/event_detail/${data.eventId}`);
+      router.push(`/event/event_detail/${data.data.eventId}`);
     } catch (error) {
       throw error;
     }
