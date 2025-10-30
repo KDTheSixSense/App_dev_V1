@@ -569,6 +569,7 @@ model Create_event {
 
   //イベント開始の判別フラグ
   isStarted Boolean @default(false)
+  hasBeenStarted Boolean  @default(false)
 }
 
 // イベントの参加者情報を管理するテーブル
