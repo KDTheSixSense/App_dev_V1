@@ -1,10 +1,10 @@
 // /workspaces/my-next-app/src/app/(main)/event/event_detail/[eventId]/MemberView.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Prisma } from '@prisma/client';
-import Link from 'next/link';
-import { useParams } from 'next/navigation'; // Import useParams to get eventId for links
+import Link from 'next/link'; // Import useParams to get eventId for links
+import { useParams, useRouter } from 'next/navigation';
 
 // page.tsxから渡されるeventの型を拡張
 // イベントの主体である `Create_event` モデルに対応
@@ -63,11 +63,56 @@ function EventProblemList({ eventId, issues }: { eventId: number; issues: EventW
 
 export default function MemberView({ event, role }: MemberViewProps) {
   const params = useParams();
+  const router = useRouter();
   const eventId = parseInt(params.eventId as string, 10);
 
   // State to manage the popup visibility and member's acceptance status
   const [showAcceptPopup, setShowAcceptPopup] = useState(false);
   const [hasMemberAccepted, setHasMemberAccepted] = useState(event.currentUserParticipant?.hasAccepted || false);
+  
+  // ポーリングでイベントの開始と終了をリアルタイムに検知するための修正
+  const eventRef = useRef(event);
+  useEffect(() => {
+    eventRef.current = event;
+  }, [event]);
+
+  useEffect(() => {
+    if (role !== 'member') {
+      return;
+    }
+
+    const intervalId = setInterval(async () => {
+      // 常に最新のevent propsを参照するためにrefを使用
+      const currentEvent = eventRef.current;
+
+      try {
+        const response = await fetch(`/api/event/${eventId}/status`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        // 開始を検知: 「未開始」から「開始済み」に変わった場合
+        if (!currentEvent.hasBeenStarted && data.hasBeenStarted === true) {
+          clearInterval(intervalId); // ポーリングを停止
+          router.refresh(); // ページをリフレッシュしてサーバーから最新のpropsを取得
+          return;
+        }
+
+        // 終了を検知: 現在の状態が「開始後」で、APIからの状態が「終了後」になった場合
+        if (currentEvent.isStarted && data.isStarted === false) {
+          const score = eventRef.current.currentUserParticipant?.event_getpoint ?? 0;
+          const eventName = encodeURIComponent(currentEvent.title);
+          clearInterval(intervalId); // ポーリングを停止
+          router.replace(`/event/event_list?event_ended=true&score=${score}&eventName=${eventName}`);
+        }
+      } catch (error) {
+        console.error('Polling for event status failed:', error);
+      }
+    }, 5000); // 5秒ごとにチェック
+
+    return () => clearInterval(intervalId);
+  }, [role, eventId, router]); // event.isStartedを依存配列から削除
+
   const [isClient, setIsClient] = useState(false);
 
   // Hydration Mismatchを避けるため、クライアントサイドでのみisClientをtrueに設定
@@ -75,14 +120,18 @@ export default function MemberView({ event, role }: MemberViewProps) {
     setIsClient(true);
   }, []);
 
+  // ★★★ 修正点: イベントが「アクティブ（開催中）」かどうかを判定する変数を追加 ★★★
+  // 「未終了」かつ「一度でも開始された」場合にアクティブとみなす
+  const isEventActive = event.isStarted && event.hasBeenStarted;
+
   useEffect(() => {
-    // If event is started, user is a member, and hasn't accepted yet, show popup
-    if (role === 'member' && event.isStarted && !hasMemberAccepted) {
+    // イベントがアクティブで、メンバーがまだ承認していない場合にポップアップを表示
+    if (role === 'member' && isEventActive && !hasMemberAccepted) {
       setShowAcceptPopup(true);
     } else {
       setShowAcceptPopup(false);
     }
-  }, [event.isStarted, hasMemberAccepted, role]);
+  }, [isEventActive, hasMemberAccepted, role]);
 
   const handleAcceptEventStart = async () => {
     if (!event.currentUserParticipant) {
@@ -132,7 +181,7 @@ export default function MemberView({ event, role }: MemberViewProps) {
 
       {role === 'member' ? (
         <>
-          {event.isStarted ? (
+          {isEventActive ? (
             hasMemberAccepted ? (
               // イベントが開始され、メンバーが承認済みの場合、問題リストを表示
               <EventProblemList eventId={eventId} issues={event.issues} />

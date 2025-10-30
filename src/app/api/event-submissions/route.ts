@@ -119,6 +119,14 @@ export async function POST(req: NextRequest) {
     });
     console.log(`[API] Existing submission found:`, existingSubmission ? `id: ${existingSubmission.id}`: 'null');
 
+    if (existingSubmission && existingSubmission.status === true) {
+      console.log('[API] User has already correctly answered this problem. Preventing score update.');
+      return NextResponse.json({ 
+        ...existingSubmission,
+        message: 'すでに正解済みです。' 
+      });
+    }
+
     let submission;
     if (existingSubmission) {
       console.log('[API] Updating existing submission...');

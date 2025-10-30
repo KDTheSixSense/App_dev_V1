@@ -147,6 +147,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     const [executionResult, setExecutionResult] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitResult, setSubmitResult] = useState<any>(null);
+    const [isReturning, setIsReturning] = useState(false);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -230,13 +231,19 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
             }
 
             // 結果表示
-            if (isCorrect) {
+            // サーバーからのメッセージがあればそれを優先表示する
+            if (submissionData.message) {
+                setSubmitResult({
+                    status: submissionData.status,
+                    message: submissionData.message,
+                    score: submissionData.score
+                });
+            } else if (isCorrect) {
                 setSubmitResult({ 
                     status: true, 
                     message: `正解です！ ${submissionData.score}点を獲得しました！`,
                     score: submissionData.score 
                 });
-                setIsAnswered(true);
             } else {
                 setSubmitResult({ 
                     status: false, 
@@ -245,6 +252,11 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
                     expected: expectedOutput,
                     score: 0
                 });
+            }
+
+            // 正解した場合に「イベント詳細に戻る」ボタンを表示
+            if (submissionData.status === true) {
+                setIsAnswered(true);
             }
 
         } catch (error) {
@@ -260,6 +272,8 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
 
 
     const handleReturnToEvent = () => {
+        if (isReturning) return;
+        setIsReturning(true);
         router.push(`/event/event_detail/${eventId}`);
     };
 
@@ -287,8 +301,8 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
             </div>
             {isAnswered && (
                 <div className="flex-shrink-0 pt-4 flex justify-center">
-                <button onClick={handleReturnToEvent} className="w-full max-w-lg py-3 px-6 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600">
-                    イベント詳細に戻る
+                <button onClick={handleReturnToEvent} disabled={isReturning} className="w-full max-w-lg py-3 px-6 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600 disabled:bg-gray-400">
+                    {isReturning ? 'イベント詳細に戻っています...' : 'イベント詳細に戻る'}
                 </button>
                 </div>
             )}
