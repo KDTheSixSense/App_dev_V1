@@ -2,6 +2,7 @@
 
 import { getEvents, type Event as 基本イベント } from "@/lib/event";
 import ProblemClient from "./ProblemClient";
+import { getAppSession } from "@/lib/auth";
 
 // クライアントコンポーネントが期待する型に合わせます
 // 注意: propsとして渡す際、Dateオブジェクトは文字列にシリアライズされます。
@@ -16,13 +17,14 @@ type イベント = 基本イベント & {
  */
 const イベントリストページ = async () => {
   let initialEvents: イベント[] = [];
+  const session = await getAppSession();
+  const userId = session.user?.id;
 
   try {
-    const eventsFromDb = await getEvents();
-    
-    // Dateオブジェクトを直接渡すとシリアライズされるため、そのままの型で渡します。
-    // クライアント側でDateオブジェクトに変換します。
-    initialEvents = eventsFromDb;
+    if (userId) {
+      const eventsFromDb = await getEvents(userId as number);
+      initialEvents = eventsFromDb;
+    }
   } catch (error) {
     console.error("初期イベントの取得に失敗しました:", error);
   }
