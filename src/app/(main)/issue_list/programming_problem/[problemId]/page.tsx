@@ -215,6 +215,7 @@ const ProblemSolverPage = () => {
     const handleExecute = async () => {
         if (!userCode.trim()) { setExecutionResult('コードを入力してください。'); return; }
         setExecutionResult('実行中...');
+        recordStudyTime();
         try {
             const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: stdin }), });
             const data = await response.json();
@@ -227,6 +228,7 @@ const ProblemSolverPage = () => {
         if (!userCode.trim()) { alert('コードを入力してから提出してください。'); return; }
         setIsSubmitting(true);
         setExecutionResult('提出中...');
+        recordStudyTime();
         try {
             const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: problem?.sampleCases?.[0]?.input || '' }), });
             const data = await response.json();
@@ -245,6 +247,7 @@ const ProblemSolverPage = () => {
     
     const handleNextProblem = async () => {
         if (!problem) return;
+        recordStudyTime();
         const nextId = await getNextProgrammingProblemId(parseInt(problem.id));
         if (nextId) { router.push(`/issue_list/programming_problem/${nextId}`); }
         else { setAlertMessage("これが最後の問題です！お疲れ様でした。"); setShowAlert(true); }
