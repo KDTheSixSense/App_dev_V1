@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
-import { sessionOptions } from '@/lib/session';
+import { sessionOptions, SessionData} from '@/lib/session';
 import { cookies } from 'next/headers';
 
-interface SessionData {
-  // セッションから取得するIDは文字列の可能性があるため、型をstringに想定
-  user?: { id: string; email: string };
-}
+const MAX_HUNGER = 200; // 最大満腹度（ actions.ts と一致させる）
 
 // 現在のペットステータスを取得する (GET)
 export async function GET() {
@@ -16,25 +13,37 @@ export async function GET() {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
 
-  try {
-    // --- ▼▼▼ ここで文字列を数値に変換します ▼▼▼ ---
-    const userId = Number(session.user.id);
-    if (isNaN(userId)) {
-        return NextResponse.json({ success: false, message: '無効なユーザーIDです' }, { status: 400 });
-    }
+  const userId = Number(session.user.id);
 
-    const petStatus = await prisma.status_Kohaku.findFirst({
-      where: { user_id: userId }, // 数値に変換したIDを使用
+  try {
+    // 2. ユーザー情報と、関連するペット情報を一度に取得
+    const userWithPet = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        level: true,           // 1. ランク(レベル)
+        continuouslogin: true, // 2. 連続ログイン日数
+        status_Kohaku: {     // 3. ペット情報
+          select: {
+            hungerlevel: true,
+          }
+        }
+      }
     });
 
-    if (!petStatus) {
-      // データがない場合も空の成功レスポンスを返す
-      return NextResponse.json({ success: true, data: null });
+    if (!userWithPet) {
+      return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: petStatus });
+    // 3. 取得したデータを整形して返す
+    const responseData = {
+      level: userWithPet.level,
+      continuouslogin: userWithPet.continuouslogin ?? 0, // nullの場合は0を返す
+      hungerlevel: userWithPet.status_Kohaku?.hungerlevel ?? MAX_HUNGER // ペット情報がない場合は最大値を返す
+    };
+
+    return NextResponse.json({ data: responseData }, { status: 200 });
+
   } catch (error) {
-    console.error('ペットステータス取得エラー:', error);
-    return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
-  }
-}
+    console.error('API /pet/status error:', error);
+    return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
+  }}

@@ -48,6 +48,13 @@ const getPetDisplayState = (hungerLevel: number) => {
 export default function Header({ userWithPet }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
 
+  // 1. ランク(level)のstate
+  const [rank, setRank] = useState(() => userWithPet?.level ?? 1);
+  
+  // 2. 連続ログイン日数のstate
+  const [continuousLogin, setContinuousLogin] = useState(() => userWithPet?.continuouslogin ?? 0);
+
+  // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
     const initialStatus = userWithPet?.status_Kohaku;
     if (initialStatus) {
@@ -57,8 +64,12 @@ export default function Header({ userWithPet }: HeaderProps) {
         ...displayState,
       };
     }
-    return null;
-  });
+    // ユーザーはいるがペット情報がない場合 (フォールバック)
+    if (userWithPet) {
+        const displayState = getPetDisplayState(MAX_HUNGER);
+        return { hungerlevel: MAX_HUNGER, ...displayState };
+    }
+    return null;  });
 
     // ペットのステータスをAPIから再取得して、Stateを更新する関数
   const refetchPetStatus = async () => {
@@ -72,6 +83,10 @@ export default function Header({ userWithPet }: HeaderProps) {
             hungerlevel: data.hungerlevel,
             ...displayState,
           });
+          setRank(data.level);
+
+          // 3. 連続ログイン日数を更新
+          setContinuousLogin(data.continuouslogin);
           console.log('ヘッダーのペット情報を更新しました。');
         }
       }
@@ -81,6 +96,11 @@ export default function Header({ userWithPet }: HeaderProps) {
   };
 
   useEffect(() => {
+
+        // ページ読み込み時にも最新の情報を取得
+    if (userWithPet) { // ログインしている場合のみ
+      refetchPetStatus();
+    }
     // 'petStatusUpdated' という名前のカスタムイベントをウィンドウで監視します
     window.addEventListener('petStatusUpdated', refetchPetStatus);
 
@@ -179,8 +199,8 @@ export default function Header({ userWithPet }: HeaderProps) {
         <div className="flex flex-col">
           <div className="relative group flex items-center gap-2">
             <img src="/images/Rank.png" alt="ランク" width={45} height={15} />
-            <div className='frex ml-auto'>
-              <p className="text-[#5FE943] text-2xl font-bold select-none">{user?.level ?? 1}</p>
+            <div className='flex ml-auto'>
+              <p className="text-[#5FE943] text-2xl font-bold select-none">{rank}</p>
             </div>
             {/* ツールチップ */}
             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-999">
@@ -192,8 +212,8 @@ export default function Header({ userWithPet }: HeaderProps) {
             <div className='flex ml-3'>
               <img src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} />
             </div>
-            <div className='frex ml-auto'>
-              <p className="text-[#feb75c] text-2xl font-bold select-none">{user?.continuouslogin ?? 0}</p>
+            <div className='flex ml-auto'>
+              <p className="text-[#feb75c] text-2xl font-bold select-none">{continuousLogin}</p>
             </div>
             {/* ツールチップ */}
             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-999">
