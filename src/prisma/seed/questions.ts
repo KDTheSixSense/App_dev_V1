@@ -32,7 +32,7 @@ export async function seedProblems(prisma: PrismaClient) {
   // 1. localProblems からのシーディング
   console.log('🌱 Seeding questions from local data...');
   for (const p of localProblems) {
-    const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, genreid: 1, difficultyId: 1, answerid: 1, term: "不明" };
+    const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, genreid: 1, difficultyId: 7, answerid: 1, term: "不明" };
     await prisma.questions.create({ data: questionDataForDB });
   }
   console.log(`✅ Created ${localProblems.length} questions from local data.`);
@@ -149,7 +149,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'N個の整数の和',
         problemType: 'コーディング問題',
-        difficulty: 2,
+        difficulty: 1,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: 'ループ',
@@ -170,7 +170,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '奇数か偶数か',
         problemType: 'コーディング問題',
-        difficulty: 2,
+        difficulty: 1,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '条件分岐',
@@ -192,7 +192,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '文字列の連結',
         problemType: 'コーディング問題',
-        difficulty: 2,
+        difficulty: 1,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '文字列操作',
@@ -213,7 +213,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '最大値の発見',
         problemType: 'コーディング問題',
-        difficulty: 3,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '配列',
@@ -234,7 +234,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'FizzBuzz',
         problemType: 'コーディング問題',
-        difficulty: 3,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: 'ループと条件分岐',
@@ -254,7 +254,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '配列の逆順',
         problemType: 'コーディング問題',
-        difficulty: 3,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '配列',
@@ -274,7 +274,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '文字のカウント',
         problemType: 'コーディング問題',
-        difficulty: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '文字列操作',
@@ -295,7 +295,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '階乗の計算',
         problemType: 'コーディング問題',
-        difficulty: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '再帰',
@@ -316,7 +316,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '素数判定',
         problemType: 'コーディング問題',
-        difficulty: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '数学',
@@ -338,7 +338,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '二分探索',
         problemType: 'コーディング問題',
-        difficulty: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '探索',
@@ -359,7 +359,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'ユークリッドの互除法',
         problemType: 'コーディング問題',
-        difficulty: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '数学',
@@ -380,7 +380,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'バブルソート',
         problemType: 'コーディング問題',
-        difficulty: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: 'ソート',
@@ -400,7 +400,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '累積和',
         problemType: 'コーディング問題',
-        difficulty: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'データ構造',
         topic: '累積和',
@@ -420,7 +420,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '深さ優先探索 (DFS)',
         problemType: 'コーディング問題',
-        difficulty: 7,
+        difficulty: 4,
         timeLimit: 3,
         category: 'グラフ理論',
         topic: '探索',
@@ -440,7 +440,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '幅優先探索 (BFS)',
         problemType: 'コーディング問題',
-        difficulty: 7,
+        difficulty: 4,
         timeLimit: 3,
         category: 'グラフ理論',
         topic: '探索',
@@ -460,7 +460,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '動的計画法 (DP): Fibonacci',
         problemType: 'コーディング問題',
-        difficulty: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '動的計画法',
@@ -480,7 +480,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'ナップサック問題',
         problemType: 'コーディング問題',
-        difficulty: 8,
+        difficulty: 4,
         timeLimit: 3,
         category: 'アルゴリズム',
         topic: '動的計画法',
@@ -500,7 +500,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'ダイクストラ法',
         problemType: 'コーディング問題',
-        difficulty: 8,
+        difficulty: 4,
         timeLimit: 3,
         category: 'グラフ理論',
         topic: '最短経路',
@@ -520,7 +520,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'カレンダーの計算',
         problemType: 'コーディング問題',
-        difficulty: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: 'シミュレーション',
         topic: '日付計算',
@@ -541,7 +541,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '括弧の整合性',
         problemType: 'コーディング問題',
-        difficulty: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'データ構造',
         topic: 'スタック',
@@ -563,7 +563,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '座標圧縮',
         problemType: 'コーディング問題',
-        difficulty: 7,
+        difficulty: 3,
         timeLimit: 3,
         category: 'アルゴリズム',
         topic: '座標圧縮',
@@ -583,7 +583,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '平均点の計算',
         problemType: 'コーディング問題',
-        difficulty: 2,
+        difficulty: 1,
         timeLimit: 2,
         category: '数学',
         topic: '算術演算',
@@ -604,7 +604,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'ROT13',
         problemType: 'コーディング問題',
-        difficulty: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: '文字列',
         topic: '暗号',
@@ -625,7 +625,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'カードゲームシミュレーション',
         problemType: 'コーディング問題',
-        difficulty: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: 'シミュレーション',
         topic: 'シミュレーション',
@@ -645,7 +645,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '約数の列挙',
         problemType: 'コーディング問題',
-        difficulty: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: '数学',
         topic: '約数',
@@ -665,7 +665,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '回文判定',
         problemType: 'コーディング問題',
-        difficulty: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: '文字列',
         topic: '回文',
@@ -686,7 +686,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: '行列の積',
         problemType: 'コーディング問題',
-        difficulty: 7,
+        difficulty: 4,
         timeLimit: 3,
         category: '線形代数',
         topic: '行列',
@@ -706,7 +706,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
     {
         title: 'ビット演算: XOR',
         problemType: 'コーディング問題',
-        difficulty: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: 'ビット演算',
         topic: 'XOR',

@@ -73,7 +73,6 @@ model Post {
 model UserAnswer {
   id         Int      @id @default(autoincrement())
   userId     Int
-  questionId Int
   answer     String
   isCorrect  Boolean
   answeredAt DateTime @default(now())

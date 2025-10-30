@@ -146,62 +146,101 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     throw new Error('セッション内のユーザーIDが無効です。');
   }
 
-  let problemDetails: { subjectId: number; difficultyId: number; type: 'ALGO' | 'STATIC' | 'BASIC_A' } | null = null; 
-  let alreadyCorrect = false;
+   // --- 2. 必須パラメータのチェック ---
+  if (subjectid === undefined) {
+    throw new Error(`SubjectIDが提供されていません。どの科目の問題か判別できません。`);
+  }
 
-  // 1. まずアルゴリズム問題テーブル(Questions_Algorithm)から問題を探す
-  const algoProblem = await prisma.questions_Algorithm.findUnique({
-    where: { id: problemId },
-    select: { subjectId: true, difficultyId: true },
-  });
+  let difficultyId: number | undefined;
+  let alreadyCorrect = false;
 
-  if (algoProblem) {
-    problemDetails = { ...algoProblem, type: 'ALGO' };
-    // 解答履歴をチェック
-    const existingAnswer = await prisma.answer_Algorithm.findFirst({
-      where: { userId, questionId: problemId, isCorrect: true },
+  if (alreadyCorrect) {
+    console.log(`ユーザーID:${userId} は既に問題ID:${problemId}に正解済みです。`);
+    return { message: '既に正解済みです。' };
+  }
+
+
+  // 解答履歴を保存する際に、どの外部キーにIDをセットするかを格納する変数
+  let userAnswerForeignKeyData: {
+      programingProblem_id?: number;
+      basic_A_Info_Question_id?: number;
+      questions_id?: number;
+      selectProblem_id?: number;
+  } = {};
+  
+  if (subjectid === 1) { // 1: ProgrammingProblem
+    const problem = await prisma.programmingProblem.findUnique({ 
+      where: { id: problemId }, 
+      select: { difficulty: true } 
     });
-    if (existingAnswer) alreadyCorrect = true;
+    difficultyId = problem?.difficulty;
+    userAnswerForeignKeyData = { programingProblem_id: problemId };
+    
+    const existing = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, programingProblem_id: problemId }
+    });
+    if (existing) alreadyCorrect = true;
 
-  } else {
-    // 2. なければ静的な問題テーブル(Questions)から問題を探す
-    const staticProblem = await prisma.questions.findUnique({
+  } else if (subjectid === 2) { // 2: Basic_Info_A_Question
+    const problem = await prisma.basic_Info_A_Question.findUnique({ 
+      where: { id: problemId }, 
+      select: { difficultyId: true } 
+    });
+    difficultyId = problem?.difficultyId;
+    userAnswerForeignKeyData = { basic_A_Info_Question_id: problemId };
+    
+    const existing = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, basic_A_Info_Question_id: problemId }
+    });
+    if (existing) alreadyCorrect = true;
+
+  } else if (subjectid === 3) { // 3: Questions
+    const problem = await prisma.questions.findUnique({ 
+      where: { id: problemId }, 
+      select: { difficultyId: true } 
+    });
+    difficultyId = problem?.difficultyId;
+    userAnswerForeignKeyData = { questions_id: problemId };
+    
+    const existing = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, questions_id: problemId }
+    });
+    if (existing) alreadyCorrect = true;
+
+  } else if (subjectid === 4) { // 4: SelectProblem
+    const problem = await prisma.selectProblem.findUnique({
       where: { id: problemId },
-      select: { difficultyId: true },
+      select: { difficultyId: true }
     });
+    difficultyId = problem?.difficultyId;
+    userAnswerForeignKeyData = { selectProblem_id: problemId };
+    
+    const existing = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, selectProblem_id: problemId }
+    });
+    if (existing) alreadyCorrect = true;
 
-    if (staticProblem) {
-      problemDetails = {
-        // QuestionsテーブルにはsubjectIdがないため、正しい値を設定
-        // seed.tsでこのテーブルに投入されるのは「基本情報B問題」なので、IDである3を設定
-        subjectId: 3,
-        difficultyId: staticProblem.difficultyId,
-        type: 'STATIC',
-      };
-      } else {
-      // 3. なければ基本情報A問題テーブル(Basc_Info_A_Question)を探す
-      const basicAProblem = await prisma.basic_Info_A_Question.findUnique({
-        where: { id: problemId },
-        select: { subjectId: true, difficultyId: true },
-      });
-
-      if (basicAProblem) {
-        problemDetails = { ...basicAProblem, type: 'BASIC_A' };
-        // 解答履歴をチェック (UserAnswerモデルを共有)
-        const existingAnswer = await prisma.userAnswer.findFirst({
-          where: { userId, questionId: problemId, isCorrect: true },
-        });
-        if (existingAnswer) alreadyCorrect = true;
-      }
-    }
+  } else { 
+    // 5: Questions_Algorithm (仮)
+    const problem = await prisma.questions_Algorithm.findUnique({ 
+      where: { id: problemId }, 
+      select: { difficultyId: true } 
+    });
+    difficultyId = problem?.difficultyId;
+    userAnswerForeignKeyData = { questions_id: problemId }; // 暫定でquestions_idに保存
+    
+    const existing = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, questions_id: problemId }
+    });
+    if (existing) alreadyCorrect = true;
   }
 
-  // 3. どちらのテーブルにも問題が見つからなかった場合
-  if (!problemDetails) {
-    throw new Error(`問題ID:${problemId} が見つかりません。`);
+  // --- 4. 問題の存在と難易度IDのチェック ---
+  if (!difficultyId) {
+    throw new Error(`問題ID:${problemId} (科目ID:${subjectid}) が見つかりません、またはdifficultyIdが設定されていません。`);
   }
 
-  // 4. 既に正解済みの場合
+   // --- 5. 正解済みかチェック ---
   if (alreadyCorrect) {
     console.log(`ユーザーID:${userId} は既に問題ID:${problemId}に正解済みです。`);
     return { message: '既に正解済みです。' };
@@ -213,7 +252,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
 
   // 5a. XP量を取得
   const difficulty = await prisma.difficulty.findUnique({
-    where: { id: problemDetails.difficultyId },
+    where: { id: difficultyId },
   });
   if (difficulty) {
     xpAmount = difficulty.xp;
@@ -238,17 +277,20 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   // 5c. 日次サマリーテーブルを更新（非同期で実行し、待たない）
   upsertDailyActivity(userId, xpAmount, timeSpentMs);
 
-  //ユーザーの回答数を数える
-  const userAnswerCount = await prisma.userAnswer.count({ where: { userId } });
-  const algoAnswerCount = await prisma.answer_Algorithm.count({ where: { userId } });
-  const isFirstAnswerEver = (userAnswerCount + algoAnswerCount) === 0; //初めての解答ならtrue,違うならfalse
+  // --- 6. 史上初の解答かどうかの判定 ---
+  const totalAnswerCount = await prisma.userAnswer.count({ where: { userId } });
+  const isFirstAnswerEver = (totalAnswerCount === 0);
+
 
   updateDailyMissionProgress(1, 1); // デイリーミッションの「問題を解く」進捗を1増やす
 
+  if(!subjectid){
+    subjectid = 0;
+  }
   // 5. 経験値を付与
-  const { unlockedTitle } = await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
+  const { unlockedTitle } = await addXp(userId, subjectid, difficultyId);
   // 6. コハクの満腹度を回復
-  await feedPetAction(problemDetails.difficultyId);
+  await feedPetAction(difficultyId);
 
   // 7. イベント参加者の得点を更新 (eventIdが渡された場合のみ)
   if (eventId !== undefined && xpAmount > 0) {
@@ -267,18 +309,19 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   // ログイン統計を更新
   await updateUserLoginStats(userId);
 
-  // 7. 解答履歴を正しいテーブルに保存
-  if (problemDetails.type === 'ALGO') {
-    await prisma.answer_Algorithm.create({
-      data: { userId, questionId: problemId, isCorrect: true, symbol: 'CORRECT', text: '正解' },
-    });
-  } else { // type === 'STATIC'
-    await prisma.userAnswer.create({
-      data: { userId, questionId: problemId, isCorrect: true, answer: 'CORRECT' },
-    });
-  }
-
-  console.log(`ユーザーID:${userId} が問題ID:${problemId} に正解し、XPを獲得しました。`);
+  // --- 9. 統一された解答履歴の保存 ---
+  await prisma.userAnswer.create({
+    data: {
+      userId: userId,
+      isCorrect: true,
+      answer: 'CORRECT',
+      
+      // Step 3で決定した、正しい外部キーにIDをセットする
+      ...userAnswerForeignKeyData 
+    },
+  });
+  
+  console.log(`ユーザーID:${userId} が問題ID:${problemId} (科目ID:${subjectid}) に正解し、XPを獲得しました。`);
 
 
     // 8. もし最初の解答だったら、ペットの満腹度減少タイマーを開始する
@@ -295,7 +338,10 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   return { message: '経験値を獲得しました！', unlockedTitle };
 }
 
-// ... addXp, updateUserLoginStats 関数 (変更なし) ...
+// XPを加算し、レベルアップと称号獲得を処理するサーバーアクション
+// * @param user_id - XPを加算するユーザーのID
+// * @param subject_id - 科目のID
+// * @param difficulty_id - 難易度のID
 export async function addXp(user_id: number, subject_id: number, difficulty_id: number) {
   const difficulty = await prisma.difficulty.findUnique({
     where: { id: difficulty_id },
@@ -590,7 +636,7 @@ export async function grantXpToUser(userId: number, xpAmount: number) {
   });
 
   console.log(`ユーザーID:${userId} に ${xpAmount}XP (ミッション報酬) を付与しました。`);
-  return { unlockedTitle };
+  return { unlockedTitle, xpAmount };
 }
 
 /**
