@@ -10,6 +10,8 @@ export async function seedProblems(prisma: PrismaClient) {
 
   // 既存の問題関連データをクリア
   console.log('🗑️ Clearing old problem data...');
+  // Submissions が Assignment を参照しているので、先に Submissions を削除
+  await prisma.submissions.deleteMany({});
   await prisma.sampleCase.deleteMany({});
   await prisma.testCase.deleteMany({});
   await prisma.problemFile.deleteMany({});
@@ -726,7 +728,20 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
   ];
 
   for (const p of spreadsheetProblems) {
-    await prisma.programmingProblem.create({ data: p });
+    const { difficulty, ...restOfProblemData } = p;
+
+    // ユーザーの指示に基づき eventDifficultyId を決定
+    // 難易度6以上は、eventDifficultyId を 1 にする
+    // それ以外は、元の difficulty の値をそのまま使う
+    const eventDifficultyId = difficulty >= 6 ? 1 : difficulty;
+
+    await prisma.programmingProblem.create({
+      data: {
+        ...restOfProblemData,
+        difficulty: difficulty, // 元の difficulty フィールドも残しておく
+        eventDifficultyId: eventDifficultyId,
+      },
+    });
   }
   console.log(`✅ Created ${spreadsheetProblems.length} programming problems from spreadsheet.`);
 }

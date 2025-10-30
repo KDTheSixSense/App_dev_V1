@@ -12,9 +12,9 @@ async function main() {
 
   // 各シーディング処理を順番に呼び出す
   await seedMasterData(prisma);
+  await seedEventDifficulty(prisma);
   await seedProblems(prisma);
   await seedUsersAndGroups(prisma);
-  await seedEventDifficulty(prisma);
 
   console.log('Verifying EventDifficulty data...');
   const seededEventDifficulties = await prisma.eventDifficulty.findMany();

@@ -285,6 +285,10 @@ model ProgrammingProblem {
   eventIssues Event_Issue_List[] // イベントで出題される問題とのリレーション（EventIssueモデルの対向フィールド）
   assignment  Assignment? // 課題との関連 (オプショナル) 
   userAnswers UserAnswer[]
+
+  // --- イベント難易度との関連付け (追加) ---
+  eventDifficultyId Int?
+  eventDifficulty   EventDifficulty? @relation(fields: [eventDifficultyId], references: [id])
 }
 
 /// サンプルケースモデル
@@ -708,7 +712,11 @@ model EventDifficulty {
   difficultyName       String @unique
   basePoints           Int
   maxBonusPoints       Int
-  maxTotalPoints       Int
-  expectedTimeMinutes  Int
-  bonusPointsPerMinute Int
-}
+    maxTotalPoints       Int
+    expectedTimeMinutes  Int
+    bonusPointsPerMinute Int
+  
+    // --- ProgrammingProblemとのリレーション (追加) ---
+    programmingProblems ProgrammingProblem[]
+  }
+  
