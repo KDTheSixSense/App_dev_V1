@@ -163,7 +163,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         setSubmitResult(null);
         setExecutionResult('');
         setStdin(problem.sampleCases?.[0]?.input || '');
-        setUserCode(problem.codeTemplate || '');
+        setUserCode(((problem as any).codeTemplate) || '');
         setProblemStartTime(new Date()); 
     }, [problem]);
 
