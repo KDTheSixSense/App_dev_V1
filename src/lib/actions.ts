@@ -12,12 +12,19 @@ import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid'; // 招待コード生成に使う
 import { sessionOptions } from '../lib/session';
 import type { Problem as SerializableProblem } from '@/lib/types';
+import { TitleType } from '@prisma/client';
+import { getMissionDate } from './utils';
 
 interface SessionData {
   user?: {
     id: string;
     email: string;
   };
+}
+
+interface LoginCredentials {
+  email: string;
+  password: string;
 }
 
 const MAX_HUNGER = 200; //満腹度の最大値を一括管理
@@ -215,17 +222,23 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   // 5b. 学習時間（ミリ秒）を計算（開始時刻が渡された場合のみ計算）
   if (typeof problemStartedAt !== 'undefined' && problemStartedAt !== null) {
     try {
-      const parsedStart = typeof problemStartedAt === 'number'
-        ? problemStartedAt
-        : Date.parse(String(problemStartedAt));
-      if (!isNaN(parsedStart)) {
-        const startTime = parsedStart;
-        const endTime = Date.now();
-        timeSpentMs = endTime - startTime;
+      // クライアントから渡されるのは Date.now() の数値タイムスタンプのはず
+      const startTime = typeof problemStartedAt === 'number'
+          ? problemStartedAt
+          : Date.parse(String(problemStartedAt)); // 文字列の場合も考慮
+        
+      if (!isNaN(startTime)) {
+          const endTime = Date.now(); // サーバー側で現在時刻を取得
+          timeSpentMs = endTime - startTime;
+          console.log(`[awardXp] Calculated timeSpentMs: ${timeSpentMs}`);
+      } else {
+          console.warn('[awardXp] Invalid problemStartedAt value received:', problemStartedAt);
       }
     } catch (e) {
-      console.warn('学習時間の計算に失敗しました。', e);
+      console.warn('[awardXp] Failed to calculate study time:', e);
     }
+  } else {
+      console.log('[awardXp] problemStartedAt was not provided.');
   }
 
   // 5c. 日次サマリーテーブルを更新（非同期で実行し、待たない）
@@ -235,6 +248,8 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   const userAnswerCount = await prisma.userAnswer.count({ where: { userId } });
   const algoAnswerCount = await prisma.answer_Algorithm.count({ where: { userId } });
   const isFirstAnswerEver = (userAnswerCount + algoAnswerCount) === 0; //初めての解答ならtrue,違うならfalse
+
+  updateDailyMissionProgress(1, 1); // デイリーミッションの「問題を解く」進捗を1増やす
 
   // 5. 経験値を付与
   const { unlockedTitle } = await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
@@ -298,6 +313,8 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
   const xpAmount = difficulty.xp;
   console.log(`${difficulty_id}: ${xpAmount}xp`);
   
+  updateDailyMissionProgress(3, xpAmount); // デイリーミッションの「XPを獲得する」進捗を更新
+
   const result = await prisma.$transaction(async (tx) => {
     const updatedProgress = await tx.userSubjectProgress.upsert({
       where: { user_id_subject_id: { user_id, subject_id } },
@@ -380,6 +397,277 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
   console.log('XP加算処理が完了しました。');
   return result;
 }
+
+/**
+ * 特定のデイリーミッションの進捗を更新するサーバーアクション
+ * * @param missionId - 更新するミッションのID (DailyMissionMaster の ID)
+ * @param incrementAmount - 加算する進捗量 
+ * @returns 更新結果 ({ success: boolean, completed?: boolean, unlockedTitle?: { name: string } | null })
+ */
+export async function updateDailyMissionProgress(
+  missionId: number,
+  incrementAmount: number
+) {
+  'use server';
+
+  // --- 1. ユーザー認証 ---
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const user = session.user;
+  if (!user?.id) {
+    console.error('[updateDailyMissionProgress] Error: User not authenticated.');
+    return { success: false, error: '認証されていません。' };
+  }
+  const userId = Number(user.id);
+  if (isNaN(userId)) {
+    console.error('[updateDailyMissionProgress] Error: Invalid user ID in session.');
+    return { success: false, error: 'セッション情報が無効です。' };
+  }
+
+  // --- 2. 日付の取得 ---
+  const missionDate = getMissionDate();
+
+  try {
+    // --- 3. トランザクション開始 ---
+    // 進捗更新 -> 達成確認 -> 完了フラグ更新 & XP付与 をアトミックに行う
+    const result = await prisma.$transaction(async (tx) => {
+      
+      // --- 3a. 現在の進捗とマスターデータを取得 (ロック) ---
+      // findUniqueOrThrow を使い、レコードがない場合はエラーにする
+      const currentProgress = await tx.userDailyMissionProgress.findUniqueOrThrow({
+        where: {
+          userId_missionId_date: {
+            userId: userId,
+            missionId: missionId,
+            date: missionDate,
+          },
+          // isCompleted: false // ここで false を条件にすると、達成直後の重複呼び出しでエラーになるため外す
+        },
+        include: {
+          mission: true, // targetCount と xpReward を取得
+        },
+      });
+
+      // --- 3b. 既に完了済みかチェック ---
+      if (currentProgress.isCompleted) {
+        console.log(`[updateDailyMissionProgress] Mission ${missionId} for user ${userId} on ${missionDate.toISOString().split('T')[0]} is already completed.`);
+        // 既に完了している場合は、更新せずに成功として終了 (nullを返す)
+        return null; 
+      }
+
+      // --- 3c. 進捗を加算 ---
+      const newProgress = currentProgress.progress + incrementAmount;
+
+      // --- 3d. 進捗を更新 ---
+      await tx.userDailyMissionProgress.update({
+        where: {
+          userId_missionId_date: {
+            userId: userId,
+            missionId: missionId,
+            date: missionDate,
+          },
+        },
+        data: {
+          progress: newProgress,
+        },
+      });
+
+      let unlockedTitle: { name: string } | null = null;
+      let justCompleted = false;
+
+      // --- 3e. 達成したかチェック ---
+      if (newProgress >= currentProgress.mission.targetCount) {
+        console.log(`[updateDailyMissionProgress] Mission ${missionId} completed for user ${userId}!`);
+        justCompleted = true;
+
+        // --- 3f. 完了フラグを立てる ---
+        await tx.userDailyMissionProgress.update({
+           where: {
+            userId_missionId_date: {
+              userId: userId,
+              missionId: missionId,
+              date: missionDate,
+            },
+          },
+          data: {
+            isCompleted: true,
+          },
+        });
+
+        // --- 3g. XPを付与 ---
+        // grantXpToUser を直接呼び出す代わりに、XP加算ロジックをトランザクション内で実行
+        // (注意: grantXpToUser 内の称号付与ロジックもここに含める必要があります)
+        grantXpToUser(userId, currentProgress.mission.xpReward).then(({ unlockedTitle: title }) => {
+          unlockedTitle = title;
+        });
+
+        
+      } 
+
+      // トランザクションの結果を返す
+      return { justCompleted, unlockedTitle };
+
+    }); // --- トランザクション終了 ---
+
+    // トランザクション結果に応じたレスポンスを返す
+    if (result === null) {
+      // 既に完了していた場合
+      return { success: true, completed: true, message: '既に達成済みです。' };
+    } else {
+      // 更新が成功した場合
+      return { success: true, completed: result.justCompleted, unlockedTitle: result.unlockedTitle };
+    }
+
+  } catch (error: any) {
+    // レコードが見つからない場合(findUniqueOrThrow)やその他のエラー
+    if (error.code === 'P2025') { // Prisma の RecordNotFound エラーコード
+        console.error(`[updateDailyMissionProgress] Error: Progress record not found for mission ${missionId}, user ${userId}, date ${missionDate.toISOString().split('T')[0]}. Ensure ensureDailyMissionProgress was called.`);
+        return { success: false, error: '本日のミッション進捗が見つかりません。' };
+    }
+    console.error(`[updateDailyMissionProgress] Error updating progress for mission ${missionId}, user ${userId}:`, error);
+    return { success: false, error: 'ミッション進捗の更新中にエラーが発生しました。' };
+  }
+}
+
+
+/**
+ * ユーザーにXPを直接付与し、レベルアップと称号のチェックを行う。
+ * (ミッション報酬など、科目XPとは無関係なXP付与に使用)
+ * * @param userId - XPを付与するユーザーのID
+ * @param xpAmount - 付与するXPの量
+ * @returns 獲得した称号（あれば）
+ */
+export async function grantXpToUser(userId: number, xpAmount: number) {
+  'use server';
+
+  // 付与するXPが0以下なら何もしない
+  if (xpAmount <= 0) {
+    return { unlockedTitle: null };
+  }
+
+  // 複数のDB操作を安全に行うためトランザクションを使用
+  const { unlockedTitle } = await prisma.$transaction(async (tx) => {
+    
+    // 1. ユーザーの総XPを加算
+    let user = await tx.user.update({
+      where: { id: userId },
+      data: { xp: { increment: xpAmount } },
+    });
+
+    let unlockedTitle: { name: string } | null = null;
+    const oldLevel = user.level;
+    const newAccountLevel = calculateLevelFromXp(user.xp);
+
+    // 2. レベルアップしたかチェック
+    if (newAccountLevel > oldLevel) {
+      
+      // 2a. ユーザーの level を更新
+      user = await tx.user.update({
+        where: { id: userId },
+        data: { level: newAccountLevel },
+      });
+      console.log(`[アカウントレベルアップ!] ユーザーID:${userId} がアカウントレベル ${newAccountLevel} に！`);
+
+      // 2b. 称号付与ロジック (USER_LEVEL)
+      const userTitles = await tx.title.findMany({
+        where: {
+          type: TitleType.USER_LEVEL, // USER_LEVEL の称号のみ
+          requiredLevel: { lte: newAccountLevel }, // 新しいレベルでアンロックされるもの
+        },
+      });
+
+      for (const title of userTitles) {
+        // 既にその称号を持っているか確認
+        const existingUnlock = await tx.userUnlockedTitle.findUnique({
+          where: { userId_titleId: { userId: userId, titleId: title.id } },
+        });
+        
+        // 持っていなければ、新しくアンロックする
+        if (!existingUnlock) {
+          await tx.userUnlockedTitle.create({
+            data: { userId: userId, titleId: title.id },
+          });
+          unlockedTitle = { name: title.name }; // 最後に獲得した称号を返す
+          console.log(`[称号獲得!] ${title.name} を獲得しました！`);
+        }
+      }
+    }
+    
+    return { unlockedTitle };
+  });
+
+  console.log(`ユーザーID:${userId} に ${xpAmount}XP (ミッション報酬) を付与しました。`);
+  return { unlockedTitle };
+}
+
+/**
+ * デイリーミッションの進捗を確実に作成するサーバーアクション
+ * @param userId - 進捗を作成するユーザーのID
+ */
+export async function ensureDailyMissionProgress(userId: number) {
+  'use server';
+
+  // 0. ユーザーの存在を最初に確認
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true }, // IDのみ取得して軽量化
+  });
+
+  if (!user) {
+    console.error(`[ensureDailyMissionProgress] Error: User with ID ${userId} not found. Aborting mission creation.`);
+    return; // ユーザーが存在しない場合は処理を中断
+  }
+
+  // 1. 日付を取得
+  const missionDate = getMissionDate(); // 今日の日付
+
+  try {
+    // 2. 既存のデイリーミッションをカウント
+    const existingProgressCount = await prisma.userDailyMissionProgress.count({
+      where: {
+        userId: userId,
+        date: missionDate,
+      },
+    });
+
+    // 3. デイリーミッションのが既に存在する場合は何もしない
+    if (existingProgressCount > 0) {
+      console.log(`ユーザーID:${userId} の ${missionDate.toISOString().split('T')[0]} 分のデイリーミッションは既に存在します。`);
+      return;
+    }
+
+    // 4. マスターデータから全ミッションを取得
+    const missionMasters = await prisma.dailyMissionMaster.findMany({
+      select: { id: true }, // Only need the IDs
+    });
+
+    if (missionMasters.length === 0) {
+      console.warn('デイリーミッションのマスターデータが見つかりません。');
+      return;
+    }
+
+    // 5. 新しい進捗エントリのデータを準備
+    const newProgressData = missionMasters.map((master) => ({
+      userId: userId,
+      missionId: master.id,
+      date: missionDate,
+      progress: 0,
+      isCompleted: false,
+    }));
+
+    // 6. 新しい進捗エントリを一括作成
+    await prisma.userDailyMissionProgress.createMany({
+      data: newProgressData,
+    });
+
+    console.log(`ユーザーID:${userId} の ${missionDate.toISOString().split('T')[0]} 分のデイリーミッション (${newProgressData.length}件) を作成しました。`);
+
+  } catch (error) {
+    console.error(`ユーザーID:${userId} のデイリーミッション進捗作成中にエラーが発生しました:`, error);
+    // ここでエラーを再スローするか、エラーハンドリングを行うかは要件次第
+    // throw error;
+  }
+}
+
 
 //世界標準時が日本の-9時間なので+3して日本時間で朝6時にリセットされるようにする
 const RESET_HOUR = 3;
@@ -807,6 +1095,7 @@ export async function feedPetAction(difficultyId: number) {
           hungerLastUpdatedAt: now, // 最終更新日時を「今」に設定
         },
       });
+      updateDailyMissionProgress(2, foodAmount); // デイリーミッションの進捗を更新
       console.log(`満腹度を${cappedHungerLevel}に更新しました。`);
     }
 

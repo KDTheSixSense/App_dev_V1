@@ -30,8 +30,19 @@ export default async function ProblemSolverPage({ params }: ProblemSolverPagePro
     notFound();
   }
 
+  const eventIssue = await prisma.event_Issue_List.findFirst({
+    where: {
+      eventId: eventId,
+      problemId: problemId,
+    },
+  });
+
+  if (!eventIssue) {
+    notFound();
+  }
+
   // PrismaのDateオブジェクトなどをシリアライズ可能な形式に変換
   const plainProblem = JSON.parse(JSON.stringify(problem));
 
-  return <ProblemSolverClient problem={plainProblem} eventId={eventId} />;
+  return <ProblemSolverClient problem={plainProblem} eventId={eventId} eventIssueId={eventIssue.id} />;
 }

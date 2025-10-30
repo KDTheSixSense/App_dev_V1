@@ -285,6 +285,10 @@ model ProgrammingProblem {
   eventIssues Event_Issue_List[] // イベントで出題される問題とのリレーション（EventIssueモデルの対向フィールド）
   assignment  Assignment? // 課題との関連 (オプショナル) 
   userAnswers UserAnswer[]
+
+  // --- イベント難易度との関連付け (追加) ---
+  eventDifficultyId Int?
+  eventDifficulty   EventDifficulty? @relation(fields: [eventDifficultyId], references: [id])
 }
 
 /// サンプルケースモデル
@@ -630,6 +634,8 @@ model Event_Submission {
 
   eventIssueId Int
   eventIssue   Event_Issue_List @relation(fields: [eventIssueId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventIssueId])
 }
 
 // デイリーミッションの種類を定義する列挙型
@@ -701,3 +707,17 @@ model DailyActivitySummary {
   // 日付とユーザーIDでの検索を高速化するインデックス
   @@index([userId, date])
 }
+
+model EventDifficulty {
+  id                   Int    @id @default(autoincrement())
+  difficultyName       String @unique
+  basePoints           Int
+  maxBonusPoints       Int
+    maxTotalPoints       Int
+    expectedTimeMinutes  Int
+    bonusPointsPerMinute Int
+  
+    // --- ProgrammingProblemとのリレーション (追加) ---
+    programmingProblems ProgrammingProblem[]
+  }
+  

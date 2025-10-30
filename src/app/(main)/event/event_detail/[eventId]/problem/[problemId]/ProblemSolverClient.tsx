@@ -3,28 +3,19 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Play, Send, CheckCircle, ChevronDown, FileText, Code, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 import type { Problem as SerializableProblem } from '@/lib/types';
-import { awardXpForCorrectAnswer } from '@/lib/actions';
 
 type ActiveTab = 'input' | 'output';
 
 interface ProblemSolverClientProps {
     problem: SerializableProblem;
     eventId: number;
+    eventIssueId: number; // page.tsxから渡される
 }
-
-// テキストリソースを定義
-const textResources = {
-    ja: {
-        problemStatement: {
-            nextProblemButton: '次の問題へ'
-        }
-    }
-};
 
 const CustomAlertModal: React.FC<{
     message: string;
@@ -121,15 +112,20 @@ const CodeEditorPanel: React.FC<{
                         <div>
                             {props.executionResult && (<div className="bg-gray-800 text-white p-3 rounded-md font-mono text-xs"><div className="text-gray-400 mb-1">実行結果:</div><pre className="whitespace-pre-wrap">{props.executionResult}</pre></div>)}
                             {props.submitResult && (
-                                <div className={`border p-4 rounded-md mt-2 ${props.submitResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                <div className={`border p-4 rounded-md mt-2 ${props.submitResult.status ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <CheckCircle className={`h-5 w-5 ${props.submitResult.success ? 'text-green-600' : 'text-red-600'}`} />
-                                            <h4 className={`font-semibold ${props.submitResult.success ? 'text-green-800' : 'text-red-800'}`}>{props.submitResult.success ? '正解' : '不正解'}</h4>
+                                            <CheckCircle className={`h-5 w-5 ${props.submitResult.status ? 'text-green-600' : 'text-red-600'}`} />
+                                            <h4 className={`font-semibold ${props.submitResult.status ? 'text-green-800' : 'text-red-800'}`}>{props.submitResult.status ? '正解' : '不正解'}</h4>
                                         </div>
+                                        { typeof props.submitResult.score === 'number' &&
+                                            <div className="font-bold text-lg">
+                                                獲得スコア: <span className="text-blue-600">{props.submitResult.score}</span>点
+                                            </div>
+                                        }
                                     </div>
-                                    <p className="text-sm mt-1">{props.submitResult.message}</p>
-                                    {!props.submitResult.success && props.submitResult.yourOutput !== undefined && (<><p className="text-sm mt-2 font-semibold">あなたの出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-red-700">{props.submitResult.yourOutput || '(空の出力)'}</pre><p className="text-sm mt-2 font-semibold">期待する出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-green-700">{props.submitResult.expected}</pre></>)}
+                                     <p className="text-sm mt-1">{props.submitResult.message}</p>
+                                    {!props.submitResult.status && props.submitResult.yourOutput !== undefined && (<><p className="text-sm mt-2 font-semibold">あなたの出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-red-700">{props.submitResult.yourOutput || '(空の出力)'}</pre><p className="text-sm mt-2 font-semibold">期待する出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-green-700">{props.submitResult.expected}</pre></>)}
                                 </div>)}
                         </div>
                     )}
@@ -140,11 +136,10 @@ const CodeEditorPanel: React.FC<{
 };
 
 
-const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, eventId }) => {
+const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, eventId, eventIssueId }) => {
     const router = useRouter();
 
-    const [problemStartTime, setProblemStartTime] = useState<number | null>(null);
-    // problemはpropsから直接受け取るので、useStateは不要
+    const [problemStartTime, setProblemStartTime] = useState<Date | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState('python');
     const [userCode, setUserCode] = useState('');
@@ -152,10 +147,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     const [executionResult, setExecutionResult] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitResult, setSubmitResult] = useState<any>(null);
-    const [showAlert, setShowAlert] = useState(false);
-    const [alertMessage, setAlertMessage] = useState('');
-    const [onCloseAction, setOnCloseAction] = useState<(() => void) | null>(null);
-    const [alertAction, setAlertAction] = useState<{ text: string; onClick: () => void; } | undefined>(undefined);
+    const [isReturning, setIsReturning] = useState(false);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -169,12 +161,11 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     ];
 
     useEffect(() => {
-        // problemが変更されたら（＝別の問題ページに遷移したら）状態をリセット
         setSubmitResult(null);
         setExecutionResult('');
-        setStdin('');
-        setUserCode(problem.programLines?.ja.join('\n') || '');
-        setProblemStartTime(Date.now()); // 問題表示時に開始時刻を記録
+        setStdin(problem.sampleCases?.[0]?.input || '');
+        setUserCode(((problem as any).codeTemplate) || '');
+        setProblemStartTime(new Date()); 
     }, [problem]);
 
     const handleExecute = async () => {
@@ -189,46 +180,105 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     };
 
     const handleSubmit = async () => {
-        if (!userCode.trim()) { alert('コードを入力してから提出してください。'); return; }
+        if (!userCode.trim()) {
+            alert('コードを入力してから提出してください。');
+            return;
+        }
         setIsSubmitting(true);
-        setExecutionResult('提出中...');
+        setExecutionResult('採点中...');
+        setSubmitResult(null);
+
+        // --- Start: New Submission Logic ---
         try {
-            const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: problem?.sampleCases?.[0]?.input || '' }), });
-            const data = await response.json();
-            const output = (data.program_output?.stdout || '').trim();
+            // まずコードを実行して出力を得る
+            const executeRes = await fetch('/api/execute_code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    language: selectedLanguage,
+                    source_code: userCode,
+                    // イベント問題の採点は、常に最初のサンプルケースで行う
+                    input: problem?.sampleCases?.[0]?.input || '' 
+                }),
+            });
+
+            if (!executeRes.ok) {
+                throw new Error('コードの実行に失敗しました。');
+            }
+
+            const executeData = await executeRes.json();
+            const output = (executeData.program_output?.stdout || '').trim();
             const expectedOutput = (problem?.sampleCases?.[0]?.expectedOutput || '').trim();
-            setExecutionResult(''); // 提出処理が終わったので「提出中...」の表示をクリア
-            if (expectedOutput === '') { setSubmitResult({ success: false, message: '問題に正解（期待する出力）が設定されていません。' }); return; }
-            if (output === expectedOutput) {
-                setSubmitResult({ success: true, message: '正解です！おめでとうございます！' });
-                // 正解時に得点を加算するアクションを呼び出す
-                await awardXpForCorrectAnswer(parseInt(problem.id, 10), eventId, undefined, problemStartTime ?? undefined);
-                window.dispatchEvent(new CustomEvent('petStatusUpdated')); // ヘッダーのペットステータス更新
+            
+            const isCorrect = output === expectedOutput;
+
+            // イベント提出APIに送信
+            const submissionRes = await fetch('/api/event-submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    eventIssueId: eventIssueId,
+                    codeLog: userCode,
+                    status: isCorrect,
+                    startedAt: problemStartTime,
+                }),
+            });
+
+            const submissionData = await submissionRes.json();
+            
+            if (!submissionRes.ok) {
+                throw new Error(submissionData.error || '提出処理に失敗しました。');
+            }
+
+            // 結果表示
+            // サーバーからのメッセージがあればそれを優先表示する
+            if (submissionData.message) {
+                setSubmitResult({
+                    status: submissionData.status,
+                    message: submissionData.message,
+                    score: submissionData.score
+                });
+            } else if (isCorrect) {
+                setSubmitResult({ 
+                    status: true, 
+                    message: `正解です！ ${submissionData.score}点を獲得しました！`,
+                    score: submissionData.score 
+                });
+            } else {
+                setSubmitResult({ 
+                    status: false, 
+                    message: '不正解です。出力が異なります。', 
+                    yourOutput: output, 
+                    expected: expectedOutput,
+                    score: 0
+                });
+            }
+
+            // 正解した場合に「イベント詳細に戻る」ボタンを表示
+            if (submissionData.status === true) {
                 setIsAnswered(true);
             }
-            else { setSubmitResult({ success: false, message: '不正解です。出力が異なります。', yourOutput: output, expected: expectedOutput }); }
-        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '提出処理中にエラーが発生しました。' }); setExecutionResult(''); }
-        finally { setIsSubmitting(false); }
+
+        } catch (error) {
+            console.error('Error submitting code:', error);
+            const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました。';
+            setSubmitResult({ status: false, message: `提出処理中にエラーが発生しました: ${errorMessage}` });
+        } finally {
+            setIsSubmitting(false);
+            setExecutionResult('');
+        }
+        // --- End: New Submission Logic ---
     };
 
+
     const handleReturnToEvent = () => {
+        if (isReturning) return;
+        setIsReturning(true);
         router.push(`/event/event_detail/${eventId}`);
     };
 
     return (
         <div className="h-screen bg-gray-100 p-4 flex flex-col">
-            {showAlert && (
-                <CustomAlertModal
-                    message={alertMessage}
-                    actionButton={alertAction}
-                    onClose={() => {
-                        setShowAlert(false);
-                        if (onCloseAction) onCloseAction();
-                        setOnCloseAction(null); // アクションをリセット
-                        setAlertAction(undefined); // アクションボタンをリセット
-                    }}
-                />
-            )}
             <div className="flex-grow min-h-0">
                 <PanelGroup direction="horizontal">
                     <Panel defaultSize={35} minSize={20}>
@@ -243,16 +293,16 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
                             stdin={stdin} setStdin={setStdin}
                             selectedLanguage={selectedLanguage} languages={languages}
                             onLanguageSelect={setSelectedLanguage}
-                            onExecute={handleExecute} onSubmit={handleSubmit} // onReturnToList を削除
+                            onExecute={handleExecute} onSubmit={handleSubmit}
                             isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
                         />
                     </Panel>
                 </PanelGroup>
             </div>
-            {isAnswered && ( // isAnswered が true の場合にのみボタンを表示
+            {isAnswered && (
                 <div className="flex-shrink-0 pt-4 flex justify-center">
-                <button onClick={handleReturnToEvent} className="w-full max-w-lg py-3 px-6 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600">
-                    イベント詳細に戻る
+                <button onClick={handleReturnToEvent} disabled={isReturning} className="w-full max-w-lg py-3 px-6 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600 disabled:bg-gray-400">
+                    {isReturning ? 'イベント詳細に戻っています...' : 'イベント詳細に戻る'}
                 </button>
                 </div>
             )}
