@@ -32,6 +32,7 @@ async function main() {
   const seededEventDifficulties = await prisma.eventDifficulty.findMany();
   console.log(seededEventDifficulties);
 
+  await seedEventDifficulty(prisma);
   await runOperations(prisma);
 
   console.log('✅ Seeding finished.');
