@@ -15,11 +15,25 @@ async function main() {
   await seedEventDifficulty(prisma);
   await seedProblems(prisma);
   await seedUsersAndGroups(prisma);
+  
+  // 3. 作成者となるユーザーを取得
+  // (users-groups-data.ts で作成される 'alice@example.com' を使用)
+  const creatorUser = await prisma.user.findUnique({
+    where: { email: 'alice@example.com' },
+  });
+
+  if (!creatorUser) {
+    console.error('❌ Creator user (alice@example.com) not found. Aborting problem seed.');
+    return;
+  }
+  await seedProblems(prisma);  
+  console.log(`👤 Using user "${creatorUser.username}" (ID: ${creatorUser.id}) as creator.`);
 
   console.log('Verifying EventDifficulty data...');
   const seededEventDifficulties = await prisma.eventDifficulty.findMany();
   console.log(seededEventDifficulties);
 
+  await seedEventDifficulty(prisma);
   await runOperations(prisma);
 
   console.log('✅ Seeding finished.');

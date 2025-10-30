@@ -12,7 +12,7 @@ interface ProblemListRowProps {
   authorName: string | null;
 }
 
-// ★ ProblemListRowコンポーネントを修正して作成者名を表示
+// ProblemListRowコンポーネントを修正して作成者名を表示
 const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, authorName }) => {
   return (
     <Link href={`/issue_list/programming_problem/${problemId}`} className="block w-full">
@@ -20,7 +20,6 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, autho
         <span className="font-medium text-blue-600 hover:text-blue-800">
           問{problemId}: {title}
         </span>
-        {/* ★★★ この部分を追加 ★★★ */}
         <span className="text-sm text-gray-500">
           作成者: {authorName}
         </span>
