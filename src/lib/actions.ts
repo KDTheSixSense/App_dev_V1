@@ -606,6 +606,17 @@ export async function grantXpToUser(userId: number, xpAmount: number) {
 export async function ensureDailyMissionProgress(userId: number) {
   'use server';
 
+  // 0. ユーザーの存在を最初に確認
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true }, // IDのみ取得して軽量化
+  });
+
+  if (!user) {
+    console.error(`[ensureDailyMissionProgress] Error: User with ID ${userId} not found. Aborting mission creation.`);
+    return; // ユーザーが存在しない場合は処理を中断
+  }
+
   // 1. 日付を取得
   const missionDate = getMissionDate(); // 今日の日付
 

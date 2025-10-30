@@ -22,7 +22,8 @@ export async function seedProblems(prisma: PrismaClient) {
   // Basc_Info_A_Question を削除リストに追加
   await prisma.basic_Info_A_Question.deleteMany({});
   
-  await prisma.assignment.deleteMany({}); 
+  await prisma.assignment.deleteMany({});
+  await prisma.event_Issue_List.deleteMany({});
   await prisma.programmingProblem.deleteMany({});
   await prisma.selectProblem.deleteMany({}); // SelectProblem もクリア対象に
 
