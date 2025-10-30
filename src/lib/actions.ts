@@ -1329,6 +1329,7 @@ export async function createEventAction(data: CreateEventFormData) {
           publicTime: new Date(publicTime), // ※スキーマに publicTime が必要
           inviteCode: inviteCode,
           publicStatus: true, // デフォルトで公開（画像からは設定項目がなかったため）
+          isStarted: true, // ★★★ イベント作成時は「未終了」状態にする
           creatorId: userId,
         },
       });
@@ -1644,3 +1645,44 @@ export async function recordStudyTimeAction(timeSpentMs: number) {
   }
 }
 
+/**
+ * イベントを開始または終了するサーバーアクション
+ * @param eventId 対象のイベントID
+ * @param start trueで開始、falseで終了
+ */
+export async function toggleEventStatusAction(eventId: number, start: boolean) {
+  'use server';
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  const event = await prisma.create_event.findUnique({ where: { id: eventId } });
+  if (!event || event.creatorId !== userId) {
+    return { error: 'このイベントを操作する権限がありません。' };
+  }
+
+  let dataToUpdate: { isStarted: boolean; startTime?: Date; hasBeenStarted?: boolean } = { isStarted: start };
+
+  // イベントを開始する場合
+  if (start) {
+    // 現在時刻が設定上の開始時刻より前の場合、開始時刻を現在時刻に上書きして強制開始する
+    if (event.startTime && new Date() < new Date(event.startTime)) {
+      dataToUpdate.startTime = new Date();
+    }
+    // 「開始済み」フラグを立てる
+    dataToUpdate.hasBeenStarted = true;
+  }
+
+  try {
+    await prisma.create_event.update({
+      where: { id: eventId },
+      data: dataToUpdate,
+    });
+    revalidatePath(`/event/event_detail/${eventId}`);
+    return { success: true };
+  } catch (error) {
+    return { error: 'イベント状態の更新に失敗しました。' };
+  }
+}

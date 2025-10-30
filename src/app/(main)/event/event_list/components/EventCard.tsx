@@ -12,25 +12,33 @@ type イベントデータ = {
   title: string;
   startTime: Date | string | null;
   endTime: Date | string | null;
+  isStarted: boolean; // isStartedプロパティを追加
   _count?: { participants: number };
 };
 
 // イベントの現在状況（ステータス）を判定する関数
-const イベントステータスを取得する = (開始日時: Date, 終了日時: Date): { テキスト: string; スタイル: string } => {
+const イベントステータスを取得する = (event: イベントデータ): { テキスト: string; スタイル: string } => {
   const 今 = new Date();
-  const 開始 = new Date(開始日時);
-  const 終了 = new Date(終了日時);
-  const 一日後 = new Date(今.getTime() + 24 * 60 * 60 * 1000);
+  const 開始 = event.startTime ? new Date(event.startTime) : null;
+  const 終了 = event.endTime ? new Date(event.endTime) : null;
 
-  if (今 < 開始) {
-    if (開始 < 一日後) {
-      return { テキスト: 'まもなく開始', スタイル: 'bg-orange-100 text-orange-800' };
-    }
+  // 1. isStartedがfalseの場合、日時に関わらず「イベント終了」と確定。これが最優先。
+  if (event.isStarted === false) {
+    return { テキスト: 'イベント終了', スタイル: 'bg-gray-100 text-gray-800' };
+  }
+
+  // 2. isStartedがtrueの場合、日時を比較して状態を判断
+  // 2a. 「開催前」: 開始時刻が設定されており、現在時刻が開始時刻より前
+  if (開始 && 今 < 開始) {
     return { テキスト: '開催前', スタイル: 'bg-blue-100 text-blue-800' };
-  } else if (今 >= 開始 && 今 <= 終了) {
-    return { テキスト: '開催中', スタイル: 'bg-green-100 text-green-800 animate-pulse' };
+  } 
+  // 2b. 「開催中」: 開始・終了時刻が設定されており、現在時刻がその間
+  else if (開始 && 終了 && 今 >= 開始 && 今 <= 終了) {
+    return { テキスト: '開催中', スタイル: 'bg-green-100 text-green-800' };
   } else {
-    return { テキスト: '終了', スタイル: 'bg-gray-100 text-gray-800' };
+    // 2c. isStartedがtrueだが、期間外（終了時刻を過ぎたなど）の場合。
+    // この状態は管理者が手動で終了し忘れたケースなどに該当。
+    return { テキスト: '期間外', スタイル: 'bg-yellow-100 text-yellow-800' };
   }
 };
 
@@ -52,7 +60,7 @@ export const EventCard = ({ event }: { event: イベントデータ }) => {
     setIsClient(true);
   }, []);
 
-  const ステータス = イベントステータスを取得する(new Date(event.startTime ?? ''), new Date(event.endTime ?? ''));
+  const ステータス = イベントステータスを取得する(event);
 
   return (
     <div
