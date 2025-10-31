@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, FileText, Code, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-
+import { recordStudyTimeAction } from '@/lib/actions';
 import type { Problem as SerializableProblem } from '@/lib/types';
 
 type ActiveTab = 'input' | 'output';
@@ -139,7 +139,7 @@ const CodeEditorPanel: React.FC<{
 const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, eventId, eventIssueId }) => {
     const router = useRouter();
 
-    const [problemStartTime, setProblemStartTime] = useState<Date | null>(null);
+    const [problemStartTime, setProblemStartTime] = useState<number | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState('python');
     const [userCode, setUserCode] = useState('');
@@ -148,6 +148,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitResult, setSubmitResult] = useState<any>(null);
     const [isReturning, setIsReturning] = useState(false);
+    const hasRecordedTime = useRef(false);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -160,16 +161,47 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         { value: 'php', label: 'PHP' }
     ];
 
+    /**
+     * 学習時間を計算し、サーバーに送信する (1回だけ実行)
+     */
+    const recordStudyTime = () => {
+        // まだ記録されておらず、開始時刻がセットされている場合のみ
+        if (!hasRecordedTime.current && problemStartTime !== null) {
+            const endTime = Date.now();
+            const timeSpentMs = endTime - problemStartTime;
+
+            // 3秒以上の滞在のみを記録
+            if (timeSpentMs > 3000) {
+                console.log(`Recording ${timeSpentMs}ms for event problem ${problem.id}`);
+                // サーバーアクション (0 XP, timeSpentMs) を呼び出す
+                recordStudyTimeAction(timeSpentMs); 
+                hasRecordedTime.current = true; // 記録済みフラグを立てる
+            }
+        }
+    };
+
     useEffect(() => {
         setSubmitResult(null);
         setExecutionResult('');
         setStdin(problem.sampleCases?.[0]?.input || '');
         setUserCode(((problem as any).codeTemplate) || '');
-        setProblemStartTime(new Date()); 
+        setProblemStartTime(Date.now()); // Date オブジェクトではなくタイムスタンプを保存
+        hasRecordedTime.current = false;   // 記録フラグをリセット
     }, [problem]);
+
+    // --- 7. ページ離脱時の Effect---
+    useEffect(() => {
+        // この Effect は problemStartTime が変わるたびに（＝新しい問題がロードされるたびに）
+        // 再セットアップされます。
+        return () => {
+            // クリーンアップ関数（ページ離脱時）に時間を記録
+            recordStudyTime();
+        };
+    }, [problemStartTime]); // problemStartTime が変わるたびにクリーンアップを再設定
 
     const handleExecute = async () => {
         if (!userCode.trim()) { setExecutionResult('コードを入力してください。'); return; }
+        recordStudyTime();
         setExecutionResult('実行中...');
         try {
             const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: stdin }), });
@@ -185,6 +217,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
             return;
         }
         setIsSubmitting(true);
+        recordStudyTime();
         setExecutionResult('採点中...');
         setSubmitResult(null);
 
@@ -274,6 +307,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     const handleReturnToEvent = () => {
         if (isReturning) return;
         setIsReturning(true);
+        recordStudyTime();
         router.push(`/event/event_detail/${eventId}`);
     };
 

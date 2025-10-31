@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SelectProblem } from '@prisma/client';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import ProblemStatement from '../components/ProblemStatement';
+import { recordStudyTimeAction } from '@/lib/actions';
 
 // サーバーから渡されるデータの型
 interface ProblemDetailClientProps {
@@ -97,6 +98,28 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   const [language, setLanguage] = useState<Language>('ja');
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [problemStartTime, setProblemStartTime] = useState<number | null>(Date.now());
+  const hasRecordedTime = useRef(false);
+
+  // --- 4. 時間を記録する共通関数を追加 ---
+    /**
+     * 学習時間を計算し、サーバーに送信する (1回だけ実行)
+     */
+    const recordStudyTimeIfNeeded = () => {
+        // まだ記録されておらず、開始時刻がセットされている場合のみ
+        if (!hasRecordedTime.current && problemStartTime !== null) {
+            const endTime = Date.now();
+            const timeSpentMs = endTime - problemStartTime;
+
+            // 3秒以上の滞在のみを記録
+            if (timeSpentMs > 3000) {
+                console.log(`Recording ${timeSpentMs}ms for group assignment problem ${problem.id}`);
+                // サーバーアクション (0 XP, timeSpentMs) を呼び出す
+                recordStudyTimeAction(timeSpentMs);
+                hasRecordedTime.current = true; // 記録済みフラグを立てる
+            }
+        }
+    };
 
   useEffect(() => {
     // ページ遷移（次の問題）が発生したときに状態をリセットする
@@ -104,13 +127,26 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
     setSelectedAnswer(null);
     setIsAnswered(false);
     setChatMessages([{ sender: 'kohaku', text: textResources.ja.problemStatement.hintInit }]);
+    setProblemStartTime(Date.now()); // タイムスタンプを保存
+    hasRecordedTime.current = false;   // 記録フラグをリセット
   }, [initialProblem.id]);
+
+  // --- 6. ページ離脱時の Effect を追加 ---
+    useEffect(() => {
+        // この Effect は problemStartTime が変わるたびに（＝新しい問題がロードされるたびに）
+        // 再セットアップされます。
+        return () => {
+            // クリーンアップ関数（ページ離脱時）に時間を記録
+            recordStudyTimeIfNeeded();
+        };
+    }, [problemStartTime]); // problemStartTime が変わるたびにクリーンアップを再設定
 
   const handleNextProblem = async () => {
     try {
       // 課題から遷移してきた場合は、課題詳細ページに戻る
       if (assignmentInfo.hashedId) {
         router.push(`/group/${assignmentInfo.hashedId}/member`);
+        recordStudyTimeIfNeeded();
         return;
       }
 
@@ -171,11 +207,14 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
         });
 
         if (!response.ok) {
+          recordStudyTimeIfNeeded();
           throw new Error('提出に失敗しました。');
         }
+        recordStudyTimeIfNeeded();
         setAlertMessage('課題を提出しました！');
         setShowAlert(true);
       } catch (error) {
+        recordStudyTimeIfNeeded();
         setAlertMessage(error instanceof Error ? error.message : '提出処理中にエラーが発生しました。');
         setShowAlert(true);
       }

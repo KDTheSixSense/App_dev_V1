@@ -10,25 +10,11 @@ export async function seedProblems(prisma: PrismaClient) {
 
   // 既存の問題関連データをクリア
   console.log('🗑️ Clearing old problem data...');
-  // Submissions が Assignment を参照しているので、先に Submissions を削除
-  await prisma.submissions.deleteMany({});
-  await prisma.sampleCase.deleteMany({});
-  await prisma.testCase.deleteMany({});
-  await prisma.problemFile.deleteMany({});
-  // Basc_Info_A_Question が UserAnswer を参照しているため、UserAnswer を先に削除
-  await prisma.userAnswer.deleteMany({});
-  await prisma.answer_Algorithm.deleteMany({});
   
-  // Basc_Info_A_Question を削除リストに追加
-  await prisma.basic_Info_A_Question.deleteMany({});
-  
-  await prisma.assignment.deleteMany({});
-  await prisma.event_Issue_List.deleteMany({});
-  await prisma.programmingProblem.deleteMany({});
-  await prisma.selectProblem.deleteMany({}); // SelectProblem もクリア対象に
-
-  await prisma.questions.deleteMany({});
-  await prisma.questions_Algorithm.deleteMany({});
+  // 改行やインデントをすべて削除し、1行の文字列にします
+  await prisma.$executeRawUnsafe(
+    `TRUNCATE TABLE "Submissions", "SampleCase", "TestCase", "ProblemFile", "UserAnswer", "Answer_Algorithm", "Basic_Info_A_Question", "Assignment", "Event_Issue_List", "ProgrammingProblem", "SelectProblem", "Questions", "Questions_Algorithm" RESTART IDENTITY CASCADE;`
+  );
 
   console.log('✅ Old problem data cleared.');
 
