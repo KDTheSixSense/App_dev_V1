@@ -152,13 +152,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   }
 
   let difficultyId: number | undefined;
-  let alreadyCorrect = false;
-
-  if (alreadyCorrect) {
-    console.log(`ユーザーID:${userId} は既に問題ID:${problemId}に正解済みです。`);
-    return { message: '既に正解済みです。' };
-  }
-
+  let alreadyCorrectToday = false; // 変数名を「今日正解済みか」に変更
 
   // 解答履歴を保存する際に、どの外部キーにIDをセットするかを格納する変数
   let userAnswerForeignKeyData: {
@@ -167,6 +161,8 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       questions_id?: number;
       selectProblem_id?: number;
   } = {};
+
+  const todayAppDateString = getAppDate(new Date()).toDateString();
   
   if (subjectid === 1) { // 1: ProgrammingProblem
     const problem = await prisma.programmingProblem.findUnique({ 
@@ -176,10 +172,13 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     difficultyId = problem?.difficulty;
     userAnswerForeignKeyData = { programingProblem_id: problemId };
     
-    const existing = await prisma.userAnswer.findFirst({
-      where: { userId, isCorrect: true, programingProblem_id: problemId }
+    const lastCorrectAnswer = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, programingProblem_id: problemId },
+      orderBy: { answeredAt: 'desc' }
     });
-    if (existing) alreadyCorrect = true;
+    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+      alreadyCorrectToday = true;
+    }
 
   } else if (subjectid === 2) { // 2: Basic_Info_A_Question
     const problem = await prisma.basic_Info_A_Question.findUnique({ 
@@ -189,10 +188,13 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     difficultyId = problem?.difficultyId;
     userAnswerForeignKeyData = { basic_A_Info_Question_id: problemId };
     
-    const existing = await prisma.userAnswer.findFirst({
-      where: { userId, isCorrect: true, basic_A_Info_Question_id: problemId }
+    const lastCorrectAnswer = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, basic_A_Info_Question_id: problemId },
+      orderBy: { answeredAt: 'desc' }
     });
-    if (existing) alreadyCorrect = true;
+    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+      alreadyCorrectToday = true;
+    }
 
   } else if (subjectid === 3) { // 3: Questions
     const problem = await prisma.questions.findUnique({ 
@@ -202,10 +204,13 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     difficultyId = problem?.difficultyId;
     userAnswerForeignKeyData = { questions_id: problemId };
     
-    const existing = await prisma.userAnswer.findFirst({
-      where: { userId, isCorrect: true, questions_id: problemId }
+    const lastCorrectAnswer = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, questions_id: problemId },
+      orderBy: { answeredAt: 'desc' }
     });
-    if (existing) alreadyCorrect = true;
+    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+      alreadyCorrectToday = true;
+    }
 
   } else if (subjectid === 4) { // 4: SelectProblem
     const problem = await prisma.selectProblem.findUnique({
@@ -215,13 +220,15 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     difficultyId = problem?.difficultyId;
     userAnswerForeignKeyData = { selectProblem_id: problemId };
     
-    const existing = await prisma.userAnswer.findFirst({
-      where: { userId, isCorrect: true, selectProblem_id: problemId }
+    const lastCorrectAnswer = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, selectProblem_id: problemId },
+      orderBy: { answeredAt: 'desc' }
     });
-    if (existing) alreadyCorrect = true;
+    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+      alreadyCorrectToday = true;
+    }
 
-  } else { 
-    // 5: Questions_Algorithm (仮)
+  } else { // 5: Questions_Algorithm (仮)
     const problem = await prisma.questions_Algorithm.findUnique({ 
       where: { id: problemId }, 
       select: { difficultyId: true } 
@@ -229,10 +236,13 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     difficultyId = problem?.difficultyId;
     userAnswerForeignKeyData = { questions_id: problemId }; // 暫定でquestions_idに保存
     
-    const existing = await prisma.userAnswer.findFirst({
-      where: { userId, isCorrect: true, questions_id: problemId }
+    const lastCorrectAnswer = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, questions_id: problemId },
+      orderBy: { answeredAt: 'desc' }
     });
-    if (existing) alreadyCorrect = true;
+    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+      alreadyCorrectToday = true;
+    }
   }
 
   // --- 4. 問題の存在と難易度IDのチェック ---
@@ -241,8 +251,8 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   }
 
    // --- 5. 正解済みかチェック ---
-  if (alreadyCorrect) {
-    console.log(`ユーザーID:${userId} は既に問題ID:${problemId}に正解済みです。`);
+  if (alreadyCorrectToday) {
+    console.log(`ユーザーID:${userId} は本日既に問題ID:${problemId}に正解済みです。`);
     return { message: '既に正解済みです。' };
   }
 
@@ -322,7 +332,6 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   });
   
   console.log(`ユーザーID:${userId} が問題ID:${problemId} (科目ID:${subjectid}) に正解し、XPを獲得しました。`);
-
 
     // 8. もし最初の解答だったら、ペットの満腹度減少タイマーを開始する
   if (isFirstAnswerEver) {
@@ -540,7 +549,6 @@ export async function updateDailyMissionProgress(
           unlockedTitle = title;
         });
 
-        
       } 
 
       // トランザクションの結果を返す
@@ -696,7 +704,6 @@ export async function ensureDailyMissionProgress(userId: number) {
     // throw error;
   }
 }
-
 
 //世界標準時が日本の-9時間なので+3して日本時間で朝6時にリセットされるようにする
 const RESET_HOUR = 3;

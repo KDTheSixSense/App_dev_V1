@@ -386,17 +386,6 @@ model Answers {
   question Questions @relation(fields: [question_id], references: [id])
 }
 
-model User_Answer_History {
-  id                  Int      @id @default(autoincrement())
-  user_id             Int
-  answerd_genre_id    Int
-  user_selectedanswer String
-  isCorrect           Boolean
-  term                String
-  year                DateTime
-  Answer_Timestamp    DateTime
-}
-
 model UserSubjectProgress {
   level Int @default(1) //科目ごとのレベル
   xp    Int @default(0) //科目ごとの経験値
