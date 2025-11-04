@@ -155,6 +155,42 @@ const TraceClient = () => {
   // 条件式を評価する関数 (既存のものを流用、エラーハンドリングを少し追加)
   const evaluateCondition = (condition: string, currentVars: Record<string, any>): boolean => {
       condition = condition.trim();
+
+      // パターン1: "num が 3と5 で割り切れる"
+      const divisibleByAndMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*と\s*(.+?)\s+で割り切れる$/);
+      if (divisibleByAndMatch) {
+          try {
+              const varValue = evaluateExpression(divisibleByAndMatch[1], currentVars);
+              const divisor1 = evaluateExpression(divisibleByAndMatch[2], currentVars);
+              const divisor2 = evaluateExpression(divisibleByAndMatch[3], currentVars);
+              if (typeof varValue !== 'number' || typeof divisor1 !== 'number' || typeof divisor2 !== 'number') {
+                  throw new Error('数値以外の値が含まれています。');
+              }
+              // (varValue % divisor1 === 0) は (varValue - Math.floor(varValue / divisor1) * divisor1) === 0 と等価
+              const mod1 = varValue - Math.floor(varValue / divisor1) * divisor1;
+              const mod2 = varValue - Math.floor(varValue / divisor2) * divisor2;
+              return (mod1 === 0) && (mod2 === 0);
+          } catch (e: any) {
+              throw new Error(`条件式 "${condition}" の評価中にエラー: ${e.message}`);
+          }
+      }
+
+      // パターン2: "num が 3 で割り切れる"
+      const divisibleByMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s+で割り切れる$/);
+      if (divisibleByMatch) {
+          try {
+              const varValue = evaluateExpression(divisibleByMatch[1], currentVars);
+              const divisor = evaluateExpression(divisibleByMatch[2], currentVars);
+              if (typeof varValue !== 'number' || typeof divisor !== 'number') {
+                  throw new Error('数値以外の値が含まれています。');
+              }
+              const mod = varValue - Math.floor(varValue / divisor) * divisor;
+              return (mod === 0);
+          } catch (e: any) {
+              throw new Error(`条件式 "${condition}" の評価中にエラー: ${e.message}`);
+          }
+      }
+
       const operators = ['>=', '<=', '>', '<', '==', '!=']; // ==, != を追加
       for (const op of operators) {
           const parts = condition.split(op);
@@ -187,27 +223,38 @@ const TraceClient = () => {
       throw new Error(`条件式 "${condition}" を評価できません。比較演算子(>, <, >=, <=, ==, !=)が必要です。`);
   };
 
-  // 対応するブロック終端('endfor', 'endwhile', 'endif', 'else')を見つける関数
   // findBlockEnd を useCallback の外に出して定義
-  const findBlockEnd = useCallback((startLine: number, blockStartKeyword: string, blockEndKeyword: string, alternateEndKeyword?: string): number => {
-    let depth = 1;
-    for (let i = startLine + 1; i < programLines.length; i++) {
-        const line = programLines[i].trim();
-        //  正規表現ではなく startsWith で判定
-        if (line.startsWith(blockStartKeyword) && line.includes('(')) { // ネスト開始をより確実に判定
-            depth++;
-        } else if (line.startsWith(blockEndKeyword)) {
-            depth--;
-            if (depth === 0) {
-                return i; // 対応する終端を発見
-            }
-        } else if (alternateEndKeyword && depth === 1 && line.startsWith(alternateEndKeyword)) {
-             // if に対する else を発見 (ネストの深さが1の場合のみ)
-             return i;
-        }
-    }
-    return -1; // 見つからなかった
-  }, [programLines]); //  依存配列に programLines を追加
+  const findBlockEnd = useCallback((startLine: number, blockStartKeyword: string, blockEndKeyword: string, alternateEndKeywords?: string | string[]): number => {
+    let depth = 1;
+    // string[] を受け取れるようにする
+    const alternates = alternateEndKeywords ? (Array.isArray(alternateEndKeywords) ? alternateEndKeywords : [alternateEndKeywords]) : [];
+    
+    for (let i = startLine + 1; i < programLines.length; i++) {
+        const line = programLines[i].trim();
+
+        // 1. Check for alternate keywords (if we are at the top level)
+        // ループして 'some' を使う
+        if (depth === 1 && alternates.length > 0) {
+            if (alternates.some(alt => line.startsWith(alt))) {
+                return i; // Found the *first* alternate keyword
+            }
+        }
+
+        // 2. Check for nested start
+        // elseif をネストとしてカウントしないようにする
+        if (line.startsWith(blockStartKeyword) && !line.startsWith('elseif') && line.includes('(')) {
+            depth++;
+        }
+        // 3. Check for end
+        else if (line.startsWith(blockEndKeyword)) {
+            depth--;
+            if (depth === 0) {
+                return i; // Found the matching end keyword
+            }
+        }
+    }
+    return -1; // Not found
+  }, [programLines]); //  依存配列に programLines を追加
 
   // --- 4. 時間を記録する共通関数を追加 ---
     /**
@@ -237,9 +284,20 @@ const TraceClient = () => {
             recordStudyTime();
         };
     }, [recordStudyTime]); // recordStudyTime 関数自体が変わったら再登録
-    // --- 5. ここまで ---
+  
+  /**
+   * 制御フロースタックを遡り、現在属している 'if' ブロックの情報を取得します
+   * @param stack - 現在の controlFlowStack
+   * @returns 見つかった IfBlockInfo、または null
+   */
+  const getParentIfBlock = (stack: ControlFlowInfo[]): IfBlockInfo | null => {
+    for (let i = stack.length - 1; i >= 0; i--) {
+      if (stack[i].type === 'if') return stack[i] as IfBlockInfo;
+    }
+    return null;
+  };
 
-  // --- トレース実行エンジン ( 大幅に修正) ---
+  // --- トレース実行エンジン ---
   const handleNextStep = useCallback(() => {
     if (!isTraceStarted || currentLine < 0 || currentLine >= programLines.length) {
         if (currentLine >= programLines.length) {
@@ -257,6 +315,8 @@ const TraceClient = () => {
     let tempOutput = [...output];
     let tempControlFlowStack = [...controlFlowStack];
     let jumped = false; // 分岐やループでジャンプしたか
+    // 現在の行が属するifブロックを取得
+    const parentIfBlock = getParentIfBlock(tempControlFlowStack);
 
     try {
       setError(null);
@@ -265,8 +325,9 @@ const TraceClient = () => {
       const declarationMatch = line.match(/^(整数型|文字列型|配列型):\s*(.+)/);
       const assignmentMatch = line.match(/^(.+?)\s*←\s*(.+)/);
       const outputMatch = line.match(/^出力する\s+(.+)/);
-      const specificOutputMatch = line.match(/^(\w+)の値\s+と\s+(\w+)の値\s+をこの順にコンマ区切りで出力する$/);
+      const specificOutputMatch = line.match(/^(\w+)(?:の値)?\s*と\s*(\w+)(?:の値)?\s*をこの順にコンマ区切りで出力する$/);
       const ifMatch = line.match(/^if\s*\((.+)\)/);
+      const elseifMatch = line.match(/^elseif\s*\((.+)\)/); // 追加: elseif の検出
       const elseMatch = line.match(/^else$/);
       const endifMatch = line.match(/^endif$/);
       const whileMatch = line.match(/^while\s*\((.+)\)/);
@@ -275,8 +336,10 @@ const TraceClient = () => {
       const forMatch = line.match(/^for\s*\((.+)\s*を\s*(.+)\s*から\s*(.+)\s*まで\s*(?:(\d+)\s*ずつ増やす)?\)/); // ステップはオプショナル
       const endforMatch = line.match(/^endfor$/);
       const commentMatch = line.match(/^\s*\/\//); // コメント行
+      const funcDefMatch = line.match(/^(\○|\●).*/); // (関数定義行を検知)
+      const returnMatch = line.match(/^return\s+(.+)/); // returnMatch を追加
 
-      if (commentMatch || line === '') {
+      if (commentMatch || line === '' || funcDefMatch) {
         // コメント行や空行は何もしない
         jumped = false; // 次の行へ
       } else if (declarationMatch) {
@@ -371,7 +434,22 @@ const TraceClient = () => {
               // 単純な変数への代入
               tempVariables[target] = value;
           }
-          jumped = false;
+          // if/elseif/else ブロックの本体を実行した場合
+          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
+            // この行の次が 'elseif' または 'else' または 'endif' かどうかをチェック
+            const nextLineStr = (lineIndex + 1 < programLines.length) ? programLines[lineIndex + 1].trim() : '';
+            if (nextLineStr.startsWith('elseif') || nextLineStr.startsWith('else') || nextLineStr.startsWith('endif')) {
+              // ブロックの最後の行だったので、endifにジャンプする
+              nextLine = parentIfBlock.endLine;
+              jumped = true;
+            } else {
+              // ブロックの途中なので、次の行へ
+              jumped = false; 
+            }
+          } else {
+            // ifブロックの外なので、次の行へ
+            jumped = false;
+          }
       } else if (specificOutputMatch) {
           const varName1 = specificOutputMatch[1]; // 例: "y"
           const varName2 = specificOutputMatch[2]; // 例: "z"
@@ -381,41 +459,115 @@ const TraceClient = () => {
           // カンマ区切りで出力
           const outputValue = `${tempVariables[varName1]},${tempVariables[varName2]}`;
           tempOutput.push(outputValue);
-          jumped = false; // 次の行へ
+          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
+            const nextLineStr = (lineIndex + 1 < programLines.length) ? programLines[lineIndex + 1].trim() : '';
+            if (nextLineStr.startsWith('elseif') || nextLineStr.startsWith('else') || nextLineStr.startsWith('endif')) {
+              nextLine = parentIfBlock.endLine;
+              jumped = true;
+            } else {
+              jumped = false; 
+            }
+          } else {
+            jumped = false;
+          }
       } else if (outputMatch) {
           const expression = outputMatch[1].trim();
           const value = evaluateExpression(expression, tempVariables);
           tempOutput.push(String(value));
-          jumped = false;
+          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
+            const nextLineStr = (lineIndex + 1 < programLines.length) ? programLines[lineIndex + 1].trim() : '';
+            if (nextLineStr.startsWith('elseif') || nextLineStr.startsWith('else') || nextLineStr.startsWith('endif')) {
+              nextLine = parentIfBlock.endLine;
+              jumped = true;
+            } else {
+              jumped = false; 
+            }
+          } else {
+            jumped = false;
+          }
       } else if (ifMatch) {
           const condition = ifMatch[1];
-          const elseLine = findBlockEnd(lineIndex, 'if', 'endif', 'else');
-          const endLine = findBlockEnd(lineIndex, 'if', 'endif');
-          if (endLine === -1) throw new Error(`行 ${lineIndex + 1}: ifに対応するendifが見つかりません。`);
-          //  elseLine が endif だった場合（elseがない場合）は -1 とする
-          const actualElseLine = (elseLine !== -1 && programLines[elseLine].trim() === 'else') ? elseLine : -1;
+          // findBlockEndの呼び出し方とスタックに積む情報
+          const endLine = findBlockEnd(lineIndex, 'if', 'endif');
+          if (endLine === -1) throw new Error(`行 ${lineIndex + 1}: ifに対応するendifが見つかりません。`);
 
-          tempControlFlowStack.push({ type: 'if', startLine: lineIndex, elseLine: actualElseLine, endLine: endLine });
+          // 'else' と 'elseif' の位置を特定 (findBlockEnd を使い分ける)
+          const elseLine = findBlockEnd(lineIndex, 'if', 'endif', 'else'); // 'else' のみ
+          const firstElseIfLine = findBlockEnd(lineIndex, 'if', 'endif', 'elseif'); // 最初の 'elseif' のみ
 
-          if (evaluateCondition(condition, tempVariables)) {
-              // 条件が真 -> 次の行へ
-              nextLine = lineIndex + 1;
-              jumped = true; // ジャンプ扱いにして endif での自動インクリメントを防ぐ
-          } else {
-              // 条件が偽 -> else または endif の次の行へジャンプ
-              nextLine = actualElseLine !== -1 ? actualElseLine + 1 : endLine + 1;
-              jumped = true;
-          }
+          // 'else' が 'elseif' よりも先にあることは構文エラーだが、ここでは'else'の位置を-1にする
+          const actualElseLine = (elseLine !== -1 && (firstElseIfLine === -1 || elseLine > firstElseIfLine)) ? elseLine : -1;
+          
+          // スタックに'if'ブロックの情報を保存
+           tempControlFlowStack.push({ type: 'if', startLine: lineIndex, elseLine: actualElseLine, endLine: endLine });
+          if (evaluateCondition(condition, tempVariables)) {
+              // 条件が真 -> 次の行へ
+              nextLine = lineIndex + 1;
+              jumped = true; 
+          } else {
+              // 'elseif' と 'else' の両方を探す
+              const nextControlLine = findBlockEnd(lineIndex, 'if', 'endif', ['elseif', 'else']);
+            
+              // parentIfBlock が null の可能性があるため、現在の if ブロックの endLine を使う
+              if (nextControlLine !== -1 && nextControlLine < endLine) {
+                  nextLine = nextControlLine; // 'elseif' か 'else' の行にジャンプ
+              } else {
+                  nextLine = endLine; // 'endif' の行にジャンプ
+              }
+              jumped = true;
+          }
+      // elseifMatch のロジックを追加
+      } else if (elseifMatch) {
+          // 'parentIfBlock' は関数の先頭で取得済み
+          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
+              // 前の 'if' または 'elseif' が実行されたか (＝スタックトップがまだアクティブか) を確認
+              // このロジックは 'if' や 'elseif' が実行されたらジャンプすることを前提とする
+              // (前のブロックが実行されていたら、ここに来る前に 'endif' にジャンプしているはず)
+
+              const condition = elseifMatch[1];
+              if (evaluateCondition(condition, tempVariables)) {
+                  // 条件が真 -> 次の行 (elseif ブロックの本体) へ
+                  nextLine = lineIndex + 1;
+                  jumped = true;
+              } else {
+                  // 条件が偽 -> 次の 'elseif' または 'else' または 'endif' を探す
+                  const nextControlLine = findBlockEnd(lineIndex, 'if', 'endif', ['elseif', 'else']);
+                  
+                  // 見つかったものが、現在の 'if' ブロック内であるか確認
+                  if (nextControlLine !== -1 && nextControlLine < parentIfBlock.endLine) {
+                      nextLine = nextControlLine; // 次の 'elseif' か 'else' の行へ
+                  } else {
+                      nextLine = parentIfBlock.endLine; // 'endif' の行へ
+                  }
+                  jumped = true;
+              }
+          } else {
+              throw new Error(`行 ${lineIndex + 1}: 対応するifがないelseifです。`);
+          }
       } else if (elseMatch) {
-          const currentIf = tempControlFlowStack.length > 0 ? tempControlFlowStack[tempControlFlowStack.length - 1] : null;
-          if (currentIf?.type === 'if' && currentIf.elseLine === lineIndex) {
-              // ifブロックの実行後、elseに来たらendifの次へジャンプ
-              nextLine = currentIf.endLine + 1;
-              jumped = true;
-          } else {
-               throw new Error(`行 ${lineIndex + 1}: 対応するifがないelseです。`);
-          }
+          // 'parentIfBlock' は関数の先頭で取得済み
+          //  if文のロジックを parentIfBlock を使うように修正
+          if (parentIfBlock && parentIfBlock.elseLine === lineIndex) {
+              // if/elseifブロックが実行済みの場合、'else' に来たら 'endif' の次へジャンプ
+              // (このツールでは、ブロック実行後は 'endif' に飛ぶため、このパスは通常通らないはず)
+              // 実際には、'if'/'elseif' が false だった場合にここに来る
+              nextLine = lineIndex + 1; // 'else' ブロックの本体へ
+              jumped = true;
+          } else {
+               // 'else' に来たが、スタック上の 'if' が 'else' を持たない場合など
+               throw new Error(`行 ${lineIndex + 1}: 対応するifがないelseです。`);
+          }
       } else if (endifMatch) {
+        // if文のロジックを parentIfBlock を使うように修正
+          if (parentIfBlock && parentIfBlock.endLine === lineIndex) {
+              // if または else ブロックの終端
+              tempControlFlowStack.pop(); // ifブロック情報をスタックから除去
+              nextLine = lineIndex + 1; // endifの次の行へ
+              jumped = true;
+          } else {
+              // 'if'ブロックの外にある 'endif' またはネストが不正
+              jumped = false;
+          }
           const currentIf = tempControlFlowStack.length > 0 ? tempControlFlowStack[tempControlFlowStack.length - 1] : null;
           if (currentIf?.type === 'if' && currentIf.endLine === lineIndex) {
               // if または else ブロックの終端
@@ -498,10 +650,18 @@ const TraceClient = () => {
             } else {
                 throw new Error(`行 ${lineIndex + 1}: 対応するforがないendfor、またはネストが不正です。`);
             }
-      } else {
-          // 不明な命令
-          throw new Error(`行 ${lineIndex + 1}: 不明な命令です: "${line}"`);
-      }
+      } else if (returnMatch) {
+          const expression = returnMatch[1].trim();
+          const value = evaluateExpression(expression, tempVariables);
+          // 戻り値を 'result' という特別な変数に格納する (FizzBuzzの例に対応)
+          // (実際の関数呼び出しスタックは実装していないため、これで代用)
+          tempVariables['result'] = value;
+          nextLine = programLines.length; // プログラム(トレース)を終了
+          jumped = true;
+      } else {
+          // 不明な命令
+          throw new Error(`行 ${lineIndex + 1}: 不明な命令です: "${line}"`);
+      }
 
       // 状態を更新
       setVariables(tempVariables);
@@ -546,6 +706,30 @@ const TraceClient = () => {
       setVariables(parsedVars);
       const lines = code.split('\n');
       setProgramLines(lines);
+      const funcDefLine = lines.find(line => line.match(/^(\○|\●).*?\((.*?)\)/));
+      if (funcDefLine) {
+          const argMatch = funcDefLine.match(/\((.*?)\)/); // 括弧の中身を取得
+          if (argMatch && argMatch[1]) {
+              const argDef = argMatch[1]; // 例: "整数型: num"
+              const argNameMatch = argDef.match(/:\s*(\w+)/); // コロンの後の変数名を取得
+              if (argNameMatch && argNameMatch[1]) {
+                  const expectedArgName = argNameMatch[1]; // "num"
+                  const jsonKeys = Object.keys(parsedVars);
+
+                  // JSONに変数が1つだけ定義されていて、それが期待される引数名と異なる場合
+                  if (jsonKeys.length === 1 && jsonKeys[0] !== expectedArgName) {
+                      const oldKey = jsonKeys[0]; // "counter"
+                      console.warn(`引数名 "${expectedArgName}" がJSONキー "${oldKey}" と一致しません。値を自動的にマッピングします。`);
+                      // "num": 15 を追加
+                      parsedVars[expectedArgName] = parsedVars[oldKey];
+                      // (古い "counter" キーは残しても動作に影響はありません)
+                  } else if (jsonKeys.length > 0 && !parsedVars.hasOwnProperty(expectedArgName)) {
+                      // JSONに複数のキーがあるが、期待される引数名が存在しない場合
+                      throw new Error(`コードは引数 "${expectedArgName}" を期待していますが、初期変数JSONに定義されていません。`);
+                  }
+              }
+          }
+      }
       //  最初の空でない行 or コメントでない行を探す
       let firstExecutableLine = 0;
       while (firstExecutableLine < lines.length && (lines[firstExecutableLine].trim() === '' || lines[firstExecutableLine].trim().startsWith('//'))) {
@@ -584,7 +768,7 @@ const TraceClient = () => {
     setControlFlowStack([]); // スタックをリセット
     // オプション: コードと初期変数もリセットする場合
     // setCode(sampleCode);
-    setInitialVarsString(sampleInitialVars);
+    // setInitialVarsString(sampleInitialVars);
   };
 
   const handleGenerateCode = async () => {
@@ -598,7 +782,7 @@ const TraceClient = () => {
        const generatedText = await generateTraceCodeFromAI(aiPrompt);
        setCode(generatedText);
        // AI生成時にサンプル初期変数もリセット（必要に応じて）
-       setInitialVarsString('{\n\n}');
+       // setInitialVarsString('{\n\n}');
      } catch (error: any) {
        setError(`AIコード生成エラー: ${error.message}`);
      } finally {
