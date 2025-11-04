@@ -17,13 +17,25 @@ export interface Event {
   };
 }
 
-export const getEvents = async (): Promise<Event[]> => {
+export const getEvents = async (userId: number): Promise<Event[]> => {
   try {
-    console.log("Fetching events directly from the database via Prisma...");
-    // Prisma Clientを使って公開されているイベントを取得します
-    // startTime, endTime, 参加人数(_count)も取得するように修正
+    console.log(`Fetching events for user ${userId} from the database...`);
+    // Prisma Clientを使って、指定されたユーザーが参加または作成したイベントを取得します
     const events = await prisma.create_event.findMany({
-      where: { publicStatus: true }, // 公開中のイベントのみ取得
+      where: {
+        OR: [
+          {
+            participants: {
+              some: {
+                userId: userId,
+              },
+            },
+          },
+          {
+            creatorId: userId,
+          },
+        ],
+      },
       select: {
         id: true,
         title: true,
@@ -37,7 +49,7 @@ export const getEvents = async (): Promise<Event[]> => {
     });
     return events;
   } catch (error) {
-    console.error("Failed to fetch events:", error);
+    console.error(`Failed to fetch events for user ${userId}:`, error);
     return []; // エラーが発生した場合は空の配列を返す
   }
 };

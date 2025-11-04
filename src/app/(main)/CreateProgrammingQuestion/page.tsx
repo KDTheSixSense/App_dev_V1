@@ -36,6 +36,12 @@ interface UploadedFile {
   url: string;
 }
 
+interface EventDifficulty {
+  id: number;
+  difficultyName: string;
+  expectedTimeMinutes: number;
+}
+
 // プログラミング問題作成ページのメインコンポーネント（改良版）
 export default function CreateProgrammingQuestionPage() {
   // フォームの状態管理
@@ -73,6 +79,8 @@ export default function CreateProgrammingQuestionPage() {
   const [showPreview, setShowPreview] = useState(false)
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [eventDifficulties, setEventDifficulties] = useState<EventDifficulty[]>([]);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<EventDifficulty | null>(null);
 
   // トピックリスト（重要な項目のみ）
   const topics = [
@@ -85,6 +93,26 @@ export default function CreateProgrammingQuestionPage() {
     'データ構造',
     'アルゴリズム'
   ]
+
+  useEffect(() => {
+    const fetchDifficulties = async () => {
+      try {
+        const response = await fetch('/api/event-difficulties');
+        if (!response.ok) {
+          throw new Error('Failed to fetch event difficulties');
+        }
+        const data: EventDifficulty[] = await response.json();
+        setEventDifficulties(data);
+        const initialDifficulty = data.find(d => d.id === formData.difficulty);
+        if (initialDifficulty) {
+          setSelectedDifficulty(initialDifficulty);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchDifficulties();
+  }, [formData.difficulty]);
 
   useEffect(() => {
   console.log('=== DEBUG INFO ===');
@@ -1518,17 +1546,30 @@ export default function CreateProgrammingQuestionPage() {
 
                     <div className="form-group">
                       <label className="form-label">難易度</label>
-                      <select
-                        className="form-select"
-                        value={formData.difficulty}
-                        onChange={(e) => setFormData(prev => ({ ...prev, difficulty: parseInt(e.target.value) }))}
-                      >
-                        <option value={1}>1</option>
-                        <option value={2}>2</option>
-                        <option value={3}>3</option>
-                        <option value={4}>4</option>
-                        <option value={5}>5</option>
-                      </select>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <select
+                          className="form-select"
+                          value={formData.difficulty}
+                          onChange={(e) => {
+                            const newDifficulty = parseInt(e.target.value);
+                            setFormData(prev => ({ ...prev, difficulty: newDifficulty }));
+                            const newSelectedDifficulty = eventDifficulties.find(d => d.id === newDifficulty);
+                            if (newSelectedDifficulty) {
+                              setSelectedDifficulty(newSelectedDifficulty);
+                            }
+                          }}
+                        >
+                          {eventDifficulties.map(d => (
+                            <option key={d.id} value={d.id}>{d.id}</option>
+                          ))}
+                        </select>
+                        {selectedDifficulty && (
+                          <div style={{ background: '#f0f0f0', padding: '0.5rem 1rem', borderRadius: '8px' }}>
+                            <span><strong>{selectedDifficulty.difficultyName}</strong></span>
+                            <span style={{ marginLeft: '1rem' }}>想定解答時間: {selectedDifficulty.expectedTimeMinutes}分</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="form-row">

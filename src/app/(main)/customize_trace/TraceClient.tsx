@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react'; //  useEffect を追加
+import React, { useState, useCallback, useEffect, useRef } from 'react'; //  useEffect を追加
 // AIコード生成をサーバー側で安全に行うための関数をインポートします
-import { generateTraceCodeFromAI } from '@/lib/actions/traceActions';
+import { generateTraceCodeFromAI} from '@/lib/actions/traceActions';
+import { recordStudyTimeAction } from '@/lib/actions';
 
 // --- サンプルコード ---
 const sampleCode = `整数型: counter
@@ -66,6 +67,10 @@ const TraceClient = () => {
   const [aiPrompt, setAiPrompt] = useState('カウンターが0になるまでデクリメントする');
   const [isGenerating, setIsGenerating] = useState(false);
   const [controlFlowStack, setControlFlowStack] = useState<ControlFlowInfo[]>([]); //  制御フロー用のスタック
+  // トレース開始時刻 (null: 未開始)
+  const [traceStartedAt, setTraceStartedAt] = useState<number | null>(null);
+  // このトレースセッションの時間を記録したか
+  const hasRecordedTime = useRef(false);
 
 
   // --- ヘルパー関数 ---
@@ -204,12 +209,43 @@ const TraceClient = () => {
     return -1; // 見つからなかった
   }, [programLines]); //  依存配列に programLines を追加
 
+  // --- 4. 時間を記録する共通関数を追加 ---
+    /**
+     * 現在のトレースセッションの学習時間を計算し、サーバーに送信する
+     */
+    const recordStudyTime = useCallback(() => {
+        // トレースが開始されていて、まだ記録していない場合のみ
+        if (traceStartedAt !== null && !hasRecordedTime.current) {
+            const endTime = Date.now();
+            const timeSpentMs = endTime - traceStartedAt;
+
+            // 3秒以上の滞在のみを記録 (ノイズ除去)
+            if (timeSpentMs > 3000) {
+                console.log(`Recording ${timeSpentMs}ms for trace session.`);
+                recordStudyTimeAction(timeSpentMs); // サーバーアクションを呼び出し
+                hasRecordedTime.current = true; // 記録済みフラグを立てる
+            }
+        }
+    }, [traceStartedAt]); // traceStartedAt が変わったら関数を再生成
+    // --- 4. ここまで ---
+
+
+    // --- 5. ページを離れる時に時間を記録する Effect を追加 ---
+    useEffect(() => {
+        // コンポーネントがアンマウントされる時に recordStudyTime を呼び出す
+        return () => {
+            recordStudyTime();
+        };
+    }, [recordStudyTime]); // recordStudyTime 関数自体が変わったら再登録
+    // --- 5. ここまで ---
+
   // --- トレース実行エンジン ( 大幅に修正) ---
   const handleNextStep = useCallback(() => {
     if (!isTraceStarted || currentLine < 0 || currentLine >= programLines.length) {
         if (currentLine >= programLines.length) {
              setError('トレースが終了しました。');
              setIsTraceStarted(false);
+             recordStudyTime(); // トレース終了時に時間を記録
         }
         return;
     }
@@ -244,43 +280,67 @@ const TraceClient = () => {
         // コメント行や空行は何もしない
         jumped = false; // 次の行へ
       } else if (declarationMatch) {
-          const varType = declarationMatch[1];
-        const declarationPart = declarationMatch[2];
-        const declaredItems = declarationPart.split(',').map(item => item.trim());
+          const varType = declarationMatch[1]; // 例: "整数型"
+          const declarationPart = declarationMatch[2]; // 例: "arr[5], i, target, index"
+          const declaredItems = declarationPart.split(',').map(item => item.trim()); // ["arr[5]", "i", ...]
 
-        declaredItems.forEach(item => {
-            // "x ← 1" のような代入部分を分離
-            const assignmentParts = item.split('←');
-            let varName = assignmentParts[0].trim(); // 変数名部分を取得
-            let isArray = varType.startsWith('配列型');
-            let initialValue = null; // デフォルト初期値
+          declaredItems.forEach(item => {
+              const assignmentParts = item.split('←');
+              let varNameWithIndex = assignmentParts[0].trim(); // "arr[5]" または "i"
+              let varName = varNameWithIndex; // デフォルトは "arr[5]" や "i"
+              let initialValue = null; // デフォルト初期値
+              let isArray = varType.startsWith('配列型'); // "整数型" の場合は false
 
-            // 配列サイズ指定 (例: arr[5]) があっても変数名だけを取得
-            if (isArray) {
-                 const nameMatch = varName.match(/^([a-zA-Z_]\w*)/);
-                 if (nameMatch) varName = nameMatch[1];
-                 initialValue = []; // 配列は空で初期化
-            }
+              // --- START MODIFICATION ---
+            
+              // 1. 型宣言に関わらず、"変数名[サイズ]" の構文を正規表現でチェックします
+              const arraySyntaxMatch = varNameWithIndex.match(/^([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\]$/);
 
-            // 宣言行で代入が行われている場合 (例: "整数型: x ← 1")
-            if (assignmentParts.length > 1) {
-                const valueExpr = assignmentParts[1].trim();
-                // 宣言行での初期値を評価して設定
-                initialValue = evaluateExpression(valueExpr, tempVariables);
-            }
+              if (arraySyntaxMatch) {
+                  // "arr[5]" のような構文が見つかった場合
+                  varName = arraySyntaxMatch[1]; // 変数名を "arr" に修正
+                  const arraySize = parseInt(arraySyntaxMatch[2], 10);
+                  
+                  isArray = true; // これは配列として扱います
+                  
+                  // 既に変数が存在しないか、または配列でない場合のみ、新しい配列で初期化
+                  if (!tempVariables[varName] || !Array.isArray(tempVariables[varName])) {
+                      // ご希望の [0, 0, 0] で初期化する場合は .fill(0) に変更してください
+                      initialValue = new Array(arraySize).fill(null);
+                  } else {
+                      // 既に配列として存在する場合（例: JSONから読み込み済）は、その値を維持
+                      initialValue = tempVariables[varName];
+                  }
 
-            // 変数テーブル (tempVariables) を更新
-            // - まだ存在しない変数なら初期化
-            // - または、宣言行で値が代入されていればその値で更新
-            // - ただし、配列が既に存在する場合に null で上書きしないようにする
-            if (!(varName in tempVariables) || assignmentParts.length > 1) {
-                 if(!(isArray && assignmentParts.length == 1 && Array.isArray(tempVariables[varName]))) {
-                    tempVariables[varName] = initialValue;
-                 }
-            }
-        });
-        // 宣言行自体の実行はこれで完了。次の行へ。
-        jumped = false;
+              } else if (isArray && (!tempVariables[varName] || !Array.isArray(tempVariables[varName]))) {
+                  // "配列型: arr" のようにサイズ指定なしで宣言され、まだ初期化されていない場合
+                  initialValue = []; // 空配列で初期化
+              }
+              // --- END MODIFICATION ---
+
+
+              // 宣言行で代入が行われている場合 (例: "整数型: x ← 1")
+              if (assignmentParts.length > 1) {
+                  const valueExpr = assignmentParts[1].trim();
+                  initialValue = evaluateExpression(valueExpr, tempVariables);
+              }
+
+              // 変数テーブル (tempVariables) を更新
+              // (varName が "arr" に修正されたため、arr[5] ではなく arr が更新されます)
+              const shouldUpdate = 
+                  !(varName in tempVariables) || // 変数が新規
+                  assignmentParts.length > 1 || // 明示的な代入がある
+                  (arraySyntaxMatch && (!tempVariables[varName] || !Array.isArray(tempVariables[varName]))); // 配列として新規初期化
+
+              if (shouldUpdate) {
+                  // 既存の配列を null で上書きしないようにする最後のチェック
+                  if(!(isArray && assignmentParts.length == 1 && Array.isArray(tempVariables[varName]))) {
+                    tempVariables[varName] = initialValue;
+                  }
+              }
+          });
+          // 宣言行自体の実行はこれで完了。次の行へ。
+          jumped = false;
       } else if (assignmentMatch) {
           const target = assignmentMatch[1].trim();
           const expression = assignmentMatch[2].trim();
@@ -452,6 +512,7 @@ const TraceClient = () => {
       if (nextLine >= programLines.length) {
           setError('トレースが正常に終了しました。');
           setIsTraceStarted(false);
+          recordStudyTime(); // トレース終了時に時間を記録
           setCurrentLine(nextLine); //  最後の行のハイライトのため >= length でもセット
       } else {
           setCurrentLine(nextLine); // 次に実行する行を設定
@@ -495,6 +556,9 @@ const TraceClient = () => {
       setOutput([]);
       setControlFlowStack([]); //  スタックをリセット
       setIsTraceStarted(true);
+      // --- 7. トレース開始時にタイマー開始 & フラグリセット ---
+      setTraceStartedAt(Date.now());
+      hasRecordedTime.current = false;
       } catch (e) {
       // エラーハンドリングを修正
       if (e instanceof SyntaxError) {
@@ -509,6 +573,8 @@ const TraceClient = () => {
   };
 
   const handleReset = () => {
+    recordStudyTime(); // 現在のセッションの時間を記録
+    setTraceStartedAt(null); // タイマーをリセット
     setIsTraceStarted(false);
     setCurrentLine(-1);
     setProgramLines([]);

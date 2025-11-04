@@ -10,6 +10,8 @@ export async function seedProblems(prisma: PrismaClient) {
 
   // 既存の問題関連データをクリア
   console.log('🗑️ Clearing old problem data...');
+  // Submissions が Assignment を参照しているので、先に Submissions を削除
+  await prisma.submissions.deleteMany({});
   await prisma.sampleCase.deleteMany({});
   await prisma.testCase.deleteMany({});
   await prisma.problemFile.deleteMany({});
@@ -20,7 +22,8 @@ export async function seedProblems(prisma: PrismaClient) {
   // Basc_Info_A_Question を削除リストに追加
   await prisma.basic_Info_A_Question.deleteMany({});
   
-  await prisma.assignment.deleteMany({}); 
+  await prisma.assignment.deleteMany({});
+  await prisma.event_Issue_List.deleteMany({});
   await prisma.programmingProblem.deleteMany({});
   await prisma.selectProblem.deleteMany({}); // SelectProblem もクリア対象に
 
@@ -32,8 +35,8 @@ export async function seedProblems(prisma: PrismaClient) {
   // 1. localProblems からのシーディング
   console.log('🌱 Seeding questions from local data...');
   for (const p of localProblems) {
-    const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, genreid: 1, difficultyId: 7, answerid: 1, term: "不明" };
-    await prisma.questions.create({ data: questionDataForDB });
+    const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, genreid: 1, difficultyId: p.difficultyId, answerid: 1, term: "不明" };
+    await prisma.questions.create({ data: questionDataForDB });
   }
   console.log(`✅ Created ${localProblems.length} questions from local data.`);
 
@@ -101,7 +104,7 @@ async function seedProblemsFromExcel(prisma: PrismaClient) {
   } catch (error) { console.error(`❌ Failed to read or process ${excelFileName}:`, error); }
 }
 
-async function seedSampleProgrammingProblems(prisma: PrismaClient) {
+async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: number = 1) {
   // Googleスプレッドシートからエクスポートしたデータ
   const spreadsheetProblems = [
     {
@@ -427,10 +430,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "グラフ", "DFS"]',
         description: '単純な無向グラフが与えられます。頂点1から出発して深さ優先探索（DFS）で到達可能な頂点を、訪れた順に（頂点番号が小さい方を優先）出力してください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '4 3\n1 2\n1 3\n2 4', expectedOutput: '1\n2\n4\n3', description: '頂点1->2->4->3の順に訪問します。', order: 1 }
@@ -447,10 +450,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "グラフ", "BFS"]',
         description: '単純な無向グラフが与えられます。頂点1から出発して幅優先探索（BFS）で到達可能な頂点を、訪れた順に出力してください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '4 3\n1 2\n1 3\n2 4', expectedOutput: '1\n2\n3\n4', description: '頂点1->2->3->4の順に訪問します。', order: 1 }
@@ -487,10 +490,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "DP", "ナップサック"]',
         description: 'N個の品物と容量 W のナップサックがあります。各品物 i は重さ w_i と価値 v_i を持ちます。重さの合計が W を超えないように品物を選んだときの、価値の合計の最大値を求めてください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '3 8\n3 30\n4 50\n5 60', expectedOutput: '90', description: '品物1(重さ3,価値30)と品物3(重さ5,価値60)を選ぶと、重さ合計8で価値合計90となり最大です。', order: 1 }
@@ -507,10 +510,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "グラフ", "最短経路"]',
         description: '重み付き有向グラフと始点 S が与えられます。始点 S から他の全ての頂点への最短経路長を求めてください。到達不可能な場合は `INF` と出力してください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '4 5 0\n0 1 1\n0 2 4\n1 2 2\n2 3 1\n1 3 5', expectedOutput: '0\n1\n3\n4', order: 1 }
@@ -693,10 +696,10 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
         tags: '["上級", "数学", "行列"]',
         description: 'N x M 行列 A と M x L 行列 B が与えられます。これらの積である N x L 行列 C を計算し、出力してください。',
         codeTemplate: '',
-        isPublic: false,
+        isPublic: true,
         allowTestCaseView: true,
         isDraft: true,
-        isPublished: false,
+        isPublished: true,
         sampleCases: {
             create: [
                 { input: '2 3 2\n1 2 3\n4 5 6\n7 8\n9 10\n11 12', expectedOutput: '58 64\n139 154', order: 1 }
@@ -726,7 +729,20 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient) {
   ];
 
   for (const p of spreadsheetProblems) {
-    await prisma.programmingProblem.create({ data: p });
+    const { difficulty, ...restOfProblemData } = p;
+
+    // ユーザーの指示に基づき eventDifficultyId を決定
+    // 難易度6以上は、eventDifficultyId を 1 にする
+    // それ以外は、元の difficulty の値をそのまま使う
+    const eventDifficultyId = difficulty >= 6 ? 1 : difficulty;
+
+    await prisma.programmingProblem.create({
+      data: {
+        ...restOfProblemData,
+        difficulty: difficulty, // 元の difficulty フィールドも残しておく
+        eventDifficultyId: eventDifficultyId,
+      },
+    });
   }
   console.log(`✅ Created ${spreadsheetProblems.length} programming problems from spreadsheet.`);
 }

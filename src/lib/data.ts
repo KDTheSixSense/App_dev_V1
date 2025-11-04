@@ -60,6 +60,7 @@ function transformStaticProblem(dbProblem: DbStaticProblem): SerializableProblem
       correctAnswer: '', // 正解データはローカルに依存するため空文字
       initialVariables: {},
       logicType: 'STATIC_QA', // 静的な質疑応答形式として扱う
+      difficultyId: 7
     };
   }
   // シリアライズできない関数を除外して返します
@@ -92,6 +93,7 @@ function transformAlgoProblem(dbProblem: DbAlgoProblem): SerializableProblem {
     initialVariables: dbProblem.initialVariable as AppProblem['initialVariables'] ?? {},
     logicType: dbProblem.logictype,
     traceOptions: parseJSON(dbProblem.options as string | null, undefined),
+    difficultyId: dbProblem.difficultyId ?? 7,
   };
 }
 
@@ -247,7 +249,8 @@ function transformBasicInfoAProblem(dbProblem: DbBasicInfoAProblem): Serializabl
     logicType: 'STATIC_QA', // Or a more specific type if needed
     imagePath: imagePath,
     sourceYear: dbProblem.sourceYear ?? undefined,
-    sourceNumber: dbProblem.sourceNumber ?? undefined
+    sourceNumber: dbProblem.sourceNumber ?? undefined,
+    difficultyId: dbProblem.difficultyId ?? 7,
     // Add other optional fields if necessary, like traceOptions
     // traceOptions: undefined,
   };

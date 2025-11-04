@@ -271,17 +271,23 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   // 5b. 学習時間（ミリ秒）を計算（開始時刻が渡された場合のみ計算）
   if (typeof problemStartedAt !== 'undefined' && problemStartedAt !== null) {
     try {
-      const parsedStart = typeof problemStartedAt === 'number'
-        ? problemStartedAt
-        : Date.parse(String(problemStartedAt));
-      if (!isNaN(parsedStart)) {
-        const startTime = parsedStart;
-        const endTime = Date.now();
-        timeSpentMs = endTime - startTime;
+      // クライアントから渡されるのは Date.now() の数値タイムスタンプのはず
+      const startTime = typeof problemStartedAt === 'number'
+          ? problemStartedAt
+          : Date.parse(String(problemStartedAt)); // 文字列の場合も考慮
+        
+      if (!isNaN(startTime)) {
+          const endTime = Date.now(); // サーバー側で現在時刻を取得
+          timeSpentMs = endTime - startTime;
+          console.log(`[awardXp] Calculated timeSpentMs: ${timeSpentMs}`);
+      } else {
+          console.warn('[awardXp] Invalid problemStartedAt value received:', problemStartedAt);
       }
     } catch (e) {
-      console.warn('学習時間の計算に失敗しました。', e);
+      console.warn('[awardXp] Failed to calculate study time:', e);
     }
+  } else {
+      console.log('[awardXp] problemStartedAt was not provided.');
   }
 
   // 5c. 日次サマリーテーブルを更新（非同期で実行し、待たない）
@@ -653,6 +659,17 @@ export async function grantXpToUser(userId: number, xpAmount: number) {
  */
 export async function ensureDailyMissionProgress(userId: number) {
   'use server';
+
+  // 0. ユーザーの存在を最初に確認
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true }, // IDのみ取得して軽量化
+  });
+
+  if (!user) {
+    console.error(`[ensureDailyMissionProgress] Error: User with ID ${userId} not found. Aborting mission creation.`);
+    return; // ユーザーが存在しない場合は処理を中断
+  }
 
   // 1. 日付を取得
   const missionDate = getMissionDate(); // 今日の日付
@@ -1365,6 +1382,7 @@ export async function createEventAction(data: CreateEventFormData) {
           publicTime: new Date(publicTime), // ※スキーマに publicTime が必要
           inviteCode: inviteCode,
           publicStatus: true, // デフォルトで公開（画像からは設定項目がなかったため）
+          isStarted: true, // ★★★ イベント作成時は「未終了」状態にする
           creatorId: userId,
         },
       });
@@ -1680,3 +1698,44 @@ export async function recordStudyTimeAction(timeSpentMs: number) {
   }
 }
 
+/**
+ * イベントを開始または終了するサーバーアクション
+ * @param eventId 対象のイベントID
+ * @param start trueで開始、falseで終了
+ */
+export async function toggleEventStatusAction(eventId: number, start: boolean) {
+  'use server';
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  const event = await prisma.create_event.findUnique({ where: { id: eventId } });
+  if (!event || event.creatorId !== userId) {
+    return { error: 'このイベントを操作する権限がありません。' };
+  }
+
+  let dataToUpdate: { isStarted: boolean; startTime?: Date; hasBeenStarted?: boolean } = { isStarted: start };
+
+  // イベントを開始する場合
+  if (start) {
+    // 現在時刻が設定上の開始時刻より前の場合、開始時刻を現在時刻に上書きして強制開始する
+    if (event.startTime && new Date() < new Date(event.startTime)) {
+      dataToUpdate.startTime = new Date();
+    }
+    // 「開始済み」フラグを立てる
+    dataToUpdate.hasBeenStarted = true;
+  }
+
+  try {
+    await prisma.create_event.update({
+      where: { id: eventId },
+      data: dataToUpdate,
+    });
+    revalidatePath(`/event/event_detail/${eventId}`);
+    return { success: true };
+  } catch (error) {
+    return { error: 'イベント状態の更新に失敗しました。' };
+  }
+}

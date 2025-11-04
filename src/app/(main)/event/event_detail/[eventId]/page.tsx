@@ -1,5 +1,5 @@
 // /workspaces/my-next-app/src/app/(main)/event/event_detail/[eventId]/page.tsx
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getAppSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
@@ -71,14 +71,19 @@ async function getEventAndUserRole(eventId: number, userId: number | null) {
     return { event: typedEvent, role: 'guest' as Role };
   }
 
-  // Check if the current user is the creator of the event
-  if (typedEvent.creatorId === userId) { // Use creatorId from Create_event model
-    return { event, role: 'admin' as Role };
+  // 参加者かどうかをチェック
+  const participant = typedEvent.participants.find(p => p.userId === userId);
+
+  // 管理者（作成者またはisAdminフラグを持つ参加者）かどうかを判定
+  if (typedEvent.creatorId === userId || participant?.isAdmin) {
+    return { event: typedEvent, role: 'admin' as Role };
   }
 
-  // 参加者かどうかをチェック（ここでは participants に含まれるかで判定）
-  const isParticipant = typedEvent.participants.some(p => p.userId === userId); // Check userId in Event_Participants
-  return { event: typedEvent, role: isParticipant ? 'member' as Role : 'guest' as Role };
+  if (participant) {
+    return { event: typedEvent, role: 'member' as Role };
+  }
+
+  return { event: typedEvent, role: 'guest' as Role };
 }
 
 export default async function EventDetailPage({ params }: { params: { eventId: string } }) {
@@ -92,6 +97,25 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
   const { event, role } = await getEventAndUserRole(eventId, userId) as { event: EventForView | null, role: Role }; // Type assertion for destructuring
 
   if (!event) notFound();
+
+  // --- アクセス制御ロジック ---
+  // 管理者でない場合
+  if (role !== 'admin') {
+    // 1. イベントが開始前の場合 (isStarted: false, startTime > now)
+    //    ※終了後と区別するためstartTimeも見るが、現状のロジックではisStartedだけで十分
+    if (!event.isStarted && event.startTime && new Date(event.startTime) > new Date()) {
+      return redirect('/event/event_list'); // 開始前は一覧へリダイレクト
+    }
+
+    // 2. イベントが終了後の場合 (isStarted: false, endTime < now)
+    if (!event.isStarted && event.endTime && new Date(event.endTime) < new Date()) {
+      const score = event.participants.find(p => p.userId === userId)?.event_getpoint ?? 0;
+      const eventName = encodeURIComponent(event.title);
+      // 終了後はポップアップ表示用のパラメータを付けてリダイレクト
+      return redirect(`/event/event_list?event_ended=true&score=${score}&eventName=${eventName}`);
+    }
+  }
+  // --- アクセス制御ここまで ---
 
   // --- ▼▼▼【ここから修正】▼▼▼ ---
   // MemberView に渡す event オブジェクトに、ログイン中のユーザー自身の参加者情報を追加します。

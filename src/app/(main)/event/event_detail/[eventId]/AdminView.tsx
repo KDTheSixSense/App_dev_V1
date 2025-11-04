@@ -1,7 +1,8 @@
 // /workspaces/my-next-app/src/app/(main)/event/event_detail/[eventId]/AdminView.tsx
 'use client';
 
-import { useState } from 'react'; // Import useState for local state management
+import { toggleEventStatusAction } from '@/lib/actions';
+import { useState, useEffect } from 'react'; // Import useState for local state management
 import type { Prisma } from '@prisma/client'; // Import Prisma namespace for types
 
 
@@ -32,10 +33,17 @@ interface AdminViewProps {
 }
 
 export default function AdminView({ event: initialEvent }: AdminViewProps) { // Rename event to initialEvent
+  // isClient state to prevent hydration mismatch
+  const [isClient, setIsClient] = useState(false);
   const [event, setEvent] = useState(initialEvent); // Use local state for event to allow updates
   const [copied, setCopied] = useState(false); // 招待コードコピー用の状態
+  const [isSubmitting, setIsSubmitting] = useState(false); // Add isSubmitting state
 
-  // イベント作成者（isAdminがtrueの参加者）を特定
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+    // イベント作成者（isAdminがtrueの参加者）を特定
   const eventCreator = event.participants.find(p => p.isAdmin);
   // その他の参加者（admin_flgがfalseの参加者）をフィルタリング
   const otherParticipants = event.participants.filter(p => !p.isAdmin);
@@ -47,54 +55,43 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
     return scoreB - scoreA; // 降順
   });
 
+  // isClientがtrueになってから時刻比較を行う
+  // 「未終了」かつ「一度でも開始された」場合にアクティブとみなす
+  const isEventActive = event.isStarted && event.hasBeenStarted;
+
   const handleStartEvent = async () => {
-    if (confirm('イベントを開始しますか？開始すると参加者に問題リストが表示されます。')) {
-      try {
-        // 仮のAPIエンドポイント。実際にはサーバーサイドでイベントの状態を更新するAPIを実装します。
-        // PrismaスキーマにCreate_eventのisStartedフィールドを追加する必要があります。
-        const response = await fetch(`/api/event/${event.id}/start`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ isStarted: true }),
-        });
-
-        if (!response.ok) {
-          throw new Error('イベントの開始に失敗しました。');
-        }
-
-        // 成功した場合、ローカルの状態を更新
-        setEvent(prev => ({ ...prev, isStarted: true }));
-        alert('イベントを開始しました！');
-      } catch (error) {
-        console.error('イベント開始エラー:', error);
-        alert(`イベント開始中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
-      }
+    if (!confirm('イベントを開始しますか？開始すると、参加者が問題にアクセスできるようになります。')) return;
+    setIsSubmitting(true);
+    try {
+      const result = await toggleEventStatusAction(event.id, true);
+      if (result.error) throw new Error(result.error);
+      
+      // 状態を即時反映させるために、ローカルstateも更新
+      setEvent(prev => ({ ...prev, isStarted: true, startTime: new Date() }));
+      alert('イベントを開始しました！');
+    } catch (error) {
+      console.error('イベント開始エラー:', error);
+      alert(`イベント開始中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleEndEvent = async () => {
-    if (confirm('イベントを終了しますか？参加者は問題を見ることができなくなります。')) {
-      try {
-        const response = await fetch(`/api/event/${event.id}/start`, { // 同じAPIエンドポイントを再利用
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ isStarted: false }), // isStartedをfalseに設定
-        });
+    if (!confirm('イベントを終了しますか？参加者は問題を見ることができなくなります。')) return;
+    setIsSubmitting(true);
+    try {
+      const result = await toggleEventStatusAction(event.id, false);
+      if (result.error) throw new Error(result.error);
 
-        if (!response.ok) {
-          throw new Error('イベントの終了に失敗しました。');
-        }
-
-        setEvent(prev => ({ ...prev, isStarted: false }));
-        alert('イベントを終了しました。');
-      } catch (error) {
-        console.error('イベント終了エラー:', error);
-        alert(`イベント終了中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
-      }
+      // 状態を即時反映
+      setEvent(prev => ({ ...prev, isStarted: false }));
+      alert('イベントを終了しました。');
+    } catch (error) {
+      console.error('イベント終了エラー:', error);
+      alert(`イベント終了中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -139,9 +136,10 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
 
       {/* イベント開始ボタン */}
       <div className="mt-6">
-        {!event.isStarted ? (
+        {!isEventActive ? (
           <button
             onClick={handleStartEvent}
+            disabled={isSubmitting}
             className="px-6 py-3 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105"
           >
             イベントを開始する
@@ -149,6 +147,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
         ) : (
           <button
             onClick={handleEndEvent}
+            disabled={isSubmitting}
             className="px-6 py-3 text-lg font-semibold text-white bg-red-500 rounded-lg shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 transform hover:scale-105"
           >
             イベントを終了する

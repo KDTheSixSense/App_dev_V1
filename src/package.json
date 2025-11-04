@@ -51,7 +51,7 @@
     "eslint-config-next": "14.x.x",
     "jest": "^30.0.4",
     "postcss": "^8.x.x",
-    "prisma": "^6.11.1",
+    "prisma": "^6.18.0",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
