@@ -114,6 +114,7 @@ export default function MemberView({ event, role }: MemberViewProps) {
   }, [role, eventId, router]); // event.isStartedを依存配列から削除
 
   const [isClient, setIsClient] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false); // 承認処理中の状態
 
   // Hydration Mismatchを避けるため、クライアントサイドでのみisClientをtrueに設定
   useEffect(() => {
@@ -134,10 +135,11 @@ export default function MemberView({ event, role }: MemberViewProps) {
   }, [isEventActive, hasMemberAccepted, role]);
 
   const handleAcceptEventStart = async () => {
-    if (!event.currentUserParticipant) {
-      alert('参加者情報が見つかりません。');
+    if (!event.currentUserParticipant || isAccepting) {
       return;
     }
+
+    setIsAccepting(true);
 
     try {
       // 仮のAPIエンドポイント。実際にはサーバーサイドで参加者の状態を更新するAPIを実装します。
@@ -161,6 +163,8 @@ export default function MemberView({ event, role }: MemberViewProps) {
     } catch (error) {
       console.error('参加承認エラー:', error);
       alert(`参加承認中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    } finally {
+      setIsAccepting(false);
     }
   };
 
@@ -219,8 +223,8 @@ export default function MemberView({ event, role }: MemberViewProps) {
 
       {/* 承認ポップアップ */}
       {showAcceptPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white/80 p-8 rounded-lg shadow-xl max-w-md w-full text-center">
             <h2 className="text-2xl font-bold mb-4 text-blue-700">イベント開始のお知らせ</h2>
             <p className="text-gray-700 mb-6">
               管理者によってイベント「<span className="font-semibold">{event.title}</span>」が開始されました。
@@ -228,9 +232,10 @@ export default function MemberView({ event, role }: MemberViewProps) {
             </p>
             <button
               onClick={handleAcceptEventStart}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-300"
+              disabled={isAccepting}
+              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-300 ${isAccepting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              参加を承認する
+              {isAccepting ? '処理中...' : '参加を承認する'}
             </button>
           </div>
         </div>
