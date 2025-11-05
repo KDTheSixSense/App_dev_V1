@@ -499,7 +499,7 @@ const TraceClient = () => {
           const actualElseLine = (elseLine !== -1 && (firstElseIfLine === -1 || elseLine > firstElseIfLine)) ? elseLine : -1;
           
           // スタックに'if'ブロックの情報を保存
-           tempControlFlowStack.push({ type: 'if', startLine: lineIndex, elseLine: actualElseLine, endLine: endLine });
+          tempControlFlowStack.push({ type: 'if', startLine: lineIndex, elseLine: actualElseLine, endLine: endLine });
           if (evaluateCondition(condition, tempVariables)) {
               // 条件が真 -> 次の行へ
               nextLine = lineIndex + 1;
@@ -547,7 +547,7 @@ const TraceClient = () => {
       } else if (elseMatch) {
           // 'parentIfBlock' は関数の先頭で取得済み
           //  if文のロジックを parentIfBlock を使うように修正
-          if (parentIfBlock && parentIfBlock.elseLine === lineIndex) {
+          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
               // if/elseifブロックが実行済みの場合、'else' に来たら 'endif' の次へジャンプ
               // (このツールでは、ブロック実行後は 'endif' に飛ぶため、このパスは通常通らないはず)
               // 実際には、'if'/'elseif' が false だった場合にここに来る
@@ -568,18 +568,6 @@ const TraceClient = () => {
               // 'if'ブロックの外にある 'endif' またはネストが不正
               jumped = false;
           }
-          const currentIf = tempControlFlowStack.length > 0 ? tempControlFlowStack[tempControlFlowStack.length - 1] : null;
-          if (currentIf?.type === 'if' && currentIf.endLine === lineIndex) {
-              // if または else ブロックの終端
-              tempControlFlowStack.pop(); // ifブロック情報をスタックから除去
-              nextLine = lineIndex + 1; // endifの次の行へ
-              jumped = true;
-          } else {
-             // 'if'ブロックの外にある 'endif' またはネストが不正
-             // throw new Error(`行 ${lineIndex + 1}: 対応するifがないendif、またはネストが不正です。`);
-             //  エラーにせず、単に次に進む（ループ内のifなど、スタック管理外の場合があるため）
-             jumped = false;
-          }
       } else if (whileMatch) {
           const condition = whileMatch[1];
           const endLine = findBlockEnd(lineIndex, 'while', 'endwhile');
