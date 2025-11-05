@@ -1,7 +1,7 @@
 // /workspaces/my-next-app/src/app/(main)/issue_list/programming_problem/[problemId]/page.tsx
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, TextCursorInput, GripVertical } from 'lucide-react';
 // パネルのリサイズ機能を提供するライブラリのコンポーネントをインポートします
@@ -11,9 +11,36 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import type { Problem as SerializableProblem, SampleCase } from '@/lib/types';
 import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction} from '@/lib/actions';
 
+import AceEditor from 'react-ace';
+import ace from 'ace-builds/src-noconflict/ace';
+
+// 1. 必要な「モード」（言語のシンタックスハイライト）をインポート
+import 'ace-builds/src-noconflict/mode-python';
+import 'ace-builds/src-noconflict/mode-javascript';
+import 'ace-builds/src-noconflict/mode-typescript';
+import 'ace-builds/src-noconflict/mode-java';
+import 'ace-builds/src-noconflict/mode-c_cpp'; // CとC++
+import 'ace-builds/src-noconflict/mode-csharp';
+import 'ace-builds/src-noconflict/mode-php';
+
+// 2. 必要な「テーマ」（エディタの配色）をインポート
+import 'ace-builds/src-noconflict/theme-github';
+import 'ace-builds/src-noconflict/theme-tomorrow_night'; // (ダークモード例)
+
+// 3. 必要な「機能拡張」をインポート (非常に重要)
+import 'ace-builds/src-noconflict/ext-language_tools'; // 自動補完とスニペット
+import 'ace-builds/src-noconflict/ext-beautify'; // (おまけ: コード整形機能)
+
 // --- 型定義 ---
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 type ActiveTab = 'input' | 'output';
+// --- Aceのアノテーション型を定義 ---
+type AceAnnotation = {
+    row: number;
+    column: number;
+    text: string;
+    type: 'error' | 'warning' | 'info';
+};
 
 // --- UIコンポーネント ---
 
@@ -54,18 +81,28 @@ const CodeEditorPanel: React.FC<{
     selectedLanguage: string; languages: { value: string; label: string }[]; onLanguageSelect: (lang: string) => void;
     onExecute: () => void; onSubmit: () => void; isSubmitting: boolean;
     executionResult: string; submitResult: any;
-}> = (props) => {
+    annotations: AceAnnotation[];
+}> = memo((props) => { // memoでラップ
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
     const [activeTab, setActiveTab] = useState<ActiveTab>('input');
-    const lineCount = props.userCode.split('\n').length;
-    const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const lineNumbersRef = useRef<HTMLPreElement>(null);
 
-    const syncScroll = () => { if (textareaRef.current && lineNumbersRef.current) { lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop; } };
+    const getAceMode = (langValue: string) => {
+        const mapping: { [key: string]: string } = {
+            'python': 'python',
+            'javascript': 'javascript',
+            'typescript': 'typescript',
+            'java': 'java',
+            'c': 'c_cpp',
+            'cpp': 'c_cpp',
+            'csharp': 'csharp',
+            'php': 'php',
+        };
+        return mapping[langValue] || 'javascript';
+    };
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
+            {/* --- ヘッダー（言語選択） --- */}
             <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Code className="h-5 w-5 text-gray-600" />コード入力</h2>
                 <div className="relative">
@@ -75,27 +112,47 @@ const CodeEditorPanel: React.FC<{
                     {showLanguageDropdown && (<div className="absolute right-0 mt-1 w-40 bg-white border border-gray-300 rounded-md shadow-lg z-20">{props.languages.map((lang) => (<button key={lang.value} onClick={() => { props.onLanguageSelect(lang.value); setShowLanguageDropdown(false); }} className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100">{lang.label}</button>))}</div>)}
                 </div>
             </div>
-            <div className="flex-grow flex min-h-0">
-                <pre ref={lineNumbersRef} className="bg-gray-100 p-3 text-right font-mono text-sm text-gray-500 select-none border-r overflow-y-hidden">{lineNumbers}</pre>
-                <textarea ref={textareaRef} onScroll={syncScroll} value={props.userCode} onChange={(e) => props.setUserCode(e.target.value)} className="w-full h-full p-3 text-sm font-mono border-0 focus:outline-none resize-none" style={{ lineHeight: '1.5rem' }} spellCheck="false" />
+
+            {/* --- AceEditor (変更なし) --- */}
+            <div className="flex-grow flex min-h-0 relative">
+                <AceEditor
+                    mode={getAceMode(props.selectedLanguage)}
+                    theme="github"
+                    value={props.userCode}
+                    onChange={props.setUserCode}
+                    name="CODE_EDITOR_MAIN"
+                    editorProps={{ $blockScrolling: true }}
+                    width="100%"
+                    height="100%"
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                    fontSize={14}
+                    // アノテーションをpropsから受け取り、標準ワーカーを無効化
+                    annotations={props.annotations}
+                    setOptions={{
+                        showLineNumbers: true,
+                        showGutter: true,
+                        enableBasicAutocompletion: true,
+                        enableLiveAutocompletion: true,
+                        enableSnippets: true,
+                        useWorker: false, // 標準ワーカーを無効化
+                        highlightActiveLine: true,
+                        showPrintMargin: false,
+                    }}
+                />
             </div>
+
+            {/* --- フッター（実行/提出/入出力タブ） (変更なし) --- */}
             <div className="p-4 border-t flex-shrink-0">
                 <div className="flex justify-between items-center mb-2">
-                    <div className="flex gap-2">
-                        <button onClick={props.onExecute} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Play className="h-4 w-4" /> 実行</button>
-                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '提出中...' : '提出'}</button>
-                    </div>
                     <div className="flex border border-gray-300 rounded-md p-0.5">
                         <button onClick={() => setActiveTab('input')} className={`px-3 py-1 text-sm rounded-md ${activeTab === 'input' ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}>標準入力</button>
                         <button onClick={() => setActiveTab('output')} className={`px-3 py-1 text-sm rounded-md ${activeTab === 'output' ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}>実行結果</button>
                     </div>
-                    {/* 実行・提出ボタンを右側に配置 */}
                     <div className="flex gap-2">
                         <button onClick={props.onExecute} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Play className="h-4 w-4" /> 実行</button>
                         <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '提出中...' : '提出'}</button>
                     </div>
                 </div>
-                {/* 境界線はそのままに、上の要素の `mb-3` でスペースを調整 */}
                 <div className="h-32 overflow-y-auto border rounded-md p-2">
                     {activeTab === 'input' && (<textarea value={props.stdin} onChange={(e) => props.setStdin(e.target.value)} className="w-full h-full p-1 text-sm font-mono border-0 rounded-md resize-none focus:outline-none" placeholder="コードへの入力値..."></textarea>)}
                     {activeTab === 'output' && (
@@ -106,10 +163,9 @@ const CodeEditorPanel: React.FC<{
                     )}
                 </div>
             </div>
-            {/* ▲▲▲【修正ここまで】▲▲▲ */}
         </div>
     );
-};
+});
 
 // 右パネル: AIチャット
 const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: string) => void; }> = ({ messages, onSendMessage }) => {
@@ -153,6 +209,7 @@ const ProblemSolverPage = () => {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [problemStartedAt, setProblemStartedAt] = useState<number>(Date.now());
     const hasRecordedTime = useRef(false);
+    const [annotations, setAnnotations] = useState<AceAnnotation[]>([]);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -166,12 +223,24 @@ const ProblemSolverPage = () => {
     ];
 
     useEffect(() => {
+        // 静的エラーチェック(Linting)や自動補完のワーカー(別ファイル)を
+        // どこから読み込むかをAce Editorに教えます。
+        // CDNを使うのが最も簡単です。
+        const cdnBaseUrl = "https://cdn.jsdelivr.net/npm/ace-builds@1.33.0/src-noconflict/";
+        ace.config.set("basePath", cdnBaseUrl);
+        ace.config.set("modePath", cdnBaseUrl);
+        ace.config.set("themePath", cdnBaseUrl);
+        ace.config.set("workerPath", cdnBaseUrl);
+    }, []);
+
+    useEffect(() => {
         if (!problemId) return;
         const fetchProblem = async () => {
             setIsLoading(true);
             setSubmitResult(null);
             setExecutionResult('');
             setStdin('');
+            setAnnotations([]);
             const fetchedProblem = await getProblemByIdAction(problemId);
             setProblem(fetchedProblem || null);
             if (fetchedProblem) {
@@ -184,6 +253,47 @@ const ProblemSolverPage = () => {
         };
         fetchProblem();
     }, [problemId]);
+
+    // サーバーサイド・リンティングを呼び出すEffect
+    useEffect(() => {
+        // 読み込み中は実行しない
+        if (isLoading) {
+            return;
+        }
+        
+        // コードが空になったらエラーをクリア
+        if (!userCode.trim()) {
+             setAnnotations([]);
+             return;
+        }
+
+        // ユーザーのタイピングが終わるのを待つ（デバウンス）
+        const handler = setTimeout(async () => {
+            console.log(`[Lint] Running server-side lint for ${selectedLanguage}...`);
+            try {
+                const res = await fetch('/api/lint_code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: userCode, language: selectedLanguage })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.annotations) {
+                        console.log("[Lint] Annotations received:", data.annotations);
+                        setAnnotations(data.annotations); // 取得したアノテーションをステートにセット
+                    }
+                }
+            } catch (error) {
+                console.error("[Lint] API call failed:", error);
+            }
+        }, 1000); // 1秒（1000ms）待ってから実行
+
+        // ユーザーがタイピングを再開したら、前回のタイマーをキャンセル
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [userCode, selectedLanguage, isLoading]); // コードか言語か読み込み状態が変わるたびに実行
 
     /**
      * 学習時間を計算し、サーバーに送信する
@@ -284,6 +394,7 @@ const ProblemSolverPage = () => {
                                 onLanguageSelect={setSelectedLanguage}
                                 onExecute={handleExecute} onSubmit={handleSubmit}
                                 isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
+                                annotations={annotations}
                             />
                         </Panel>
                         <PanelResizeHandle className="h-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
