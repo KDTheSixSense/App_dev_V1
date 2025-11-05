@@ -107,36 +107,41 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
 
   if (!event) notFound();
 
-  // --- アクセス制御ロジック ---
-  // 管理者でない場合
-  if (role !== 'admin') {
+  if (role === 'admin') {
+    // --- ▼▼▼【ここから修正】▼▼▼ ---
+    // MemberView に渡す event オブジェクトに、ログイン中のユーザー自身の参加者情報を追加します。
+    // これにより、MemberView は「誰が」参加承認ボタンを押したのかを正しく認識できるようになります。
+    event.currentUserParticipant = event.participants.find(p => p.userId === userId) || null;
+    // --- ▲▲▲【修正ここまで】▲▲▲ ---
+    return <AdminView event={event} />;
+  } else { // 'member' or 'guest'
+    // --- アクセス制御ロジック (管理者でない場合) ---
     // 1. イベントが開始前の場合 (isStarted: false, startTime > now)
-    //    ※終了後と区別するためstartTimeも見るが、現状のロジックではisStartedだけで十分
     if (!event.isStarted && event.startTime && new Date(event.startTime) > new Date()) {
       return redirect('/event/event_list'); // 開始前は一覧へリダイレクト
     }
 
     // 2. イベントが終了後の場合 (isStarted: false, endTime < now)
     if (!event.isStarted && event.endTime && new Date(event.endTime) < new Date()) {
-    const score = event.participants.find(p => p.userId === userId)?.event_getpoint ?? 0;
+      const score = event.participants.find(p => p.userId === userId)?.event_getpoint ?? 0;
     // イベント名をエンコード
-    const eventName = encodeURIComponent(event.title);
+      const eventName = encodeURIComponent(event.title);
     
     // 結果表示用のパラメータを付けてイベント一覧ページにリダイレクト
-    return redirect(`/event/event_list?event_ended=true&score=${score}&eventName=${eventName}`);
-  }
-  // --- 修正ここまで ---
+      return redirect(`/event/event_list?event_ended=true&score=${score}&eventName=${eventName}`);
+    }
 
   // --- ▼▼▼【ここから修正】▼▼▼ ---
   // MemberView に渡す event オブジェクトに、ログイン中のユーザー自身の参加者情報を追加します。
   // これにより、MemberView は「誰が」参加承認ボタンを押したのかを正しく認識できるようになります。
-  event.currentUserParticipant = event.participants.find(p => p.userId === userId) || null;
+    event.currentUserParticipant = event.participants.find(p => p.userId === userId) || null;
   // --- ▲▲▲【修正ここまで】▲▲▲ ---
 
   if (role === 'admin') {
     return <AdminView event={event} />; // event is already typed correctly
   }
 
-  // member もしくは guest (イベントに参加していないが見ることはできる場合)
-  return <MemberView event={event} role={role} />;
+    // member もしくは guest (イベントに参加していないが見ることはできる場合)
+    return <MemberView event={event} role={role} />;
+  }
 }

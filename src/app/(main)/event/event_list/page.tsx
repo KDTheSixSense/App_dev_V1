@@ -2,8 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import type { Create_event as PrismaEvent } from "@prisma/client";
-import { getAppSession } from "@/lib/auth";
 import ProblemClient from "./ProblemClient";
+import { getAppSession } from "@/lib/auth";
 
 // クライアントコンポーネントが期待する型に合わせます
 // 注意: propsとして渡す際、Dateオブジェクトは文字列にシリアライズされます。
@@ -19,7 +19,7 @@ export type イベント = PrismaEvent & {
 /**
  * タスク：サーバーサイドで初期表示に必要なイベントデータを取得します。
  */
-const イベントリストページ = async () => {
+const EventListPage = async () => {
   let initialEvents: イベント[] = [];
   const session = await getAppSession();
   const userId = session?.user?.id ? Number(session.user.id) : null;
@@ -63,7 +63,11 @@ const イベントリストページ = async () => {
     console.error("初期イベントの取得に失敗しました:", error);
   }
 
-  return <ProblemClient initialEvents={initialEvents} />;
+  // サーバーコンポーネントからクライアントコンポーネントへ渡すデータはシリアライズ可能である必要があります。
+  // Dateオブジェクトなどが含まれている可能性があるため、JSONを経由してプレーンなオブジェクトに変換します。
+  const serializableEvents = JSON.parse(JSON.stringify(initialEvents));
+
+  return <ProblemClient initialEvents={serializableEvents} />;
 };
 
-export default イベントリストページ;
+export default EventListPage;

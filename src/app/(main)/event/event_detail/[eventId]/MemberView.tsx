@@ -126,6 +126,7 @@ export default function MemberView({ event, role }: MemberViewProps) {
   }, [currentEvent]);
 
   const [isClient, setIsClient] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false); // 承認処理中の状態
 
   // Hydration Mismatchを避けるため、クライアントサイドでのみisClientをtrueに設定
   useEffect(() => {
@@ -151,6 +152,8 @@ export default function MemberView({ event, role }: MemberViewProps) {
       return;
     }
 
+    setIsAccepting(true);
+
     try {
       // 仮のAPIエンドポイント。実際にはサーバーサイドで参加者の状態を更新するAPIを実装します。
       // PrismaスキーマにEvent_ParticipantsのhasAcceptedフィールドを追加する必要があります。
@@ -173,6 +176,8 @@ export default function MemberView({ event, role }: MemberViewProps) {
     } catch (error) {
       console.error('参加承認エラー:', error);
       alert(`参加承認中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    } finally {
+      setIsAccepting(false);
     }
   };
 
@@ -243,9 +248,10 @@ export default function MemberView({ event, role }: MemberViewProps) {
             </p>
             <button
               onClick={handleAcceptEventStart}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-300"
+              disabled={isAccepting}
+              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-300 ${isAccepting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              参加を承認する
+              {isAccepting ? '処理中...' : '参加を承認する'}
             </button>
           </div>
         </div>
