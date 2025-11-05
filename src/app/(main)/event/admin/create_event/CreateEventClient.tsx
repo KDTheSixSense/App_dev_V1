@@ -145,16 +145,16 @@ export function CreateEventClient({ problems }: Props) {
       const result = await createEventAction({
         title,
         description,
-        startTime,
-        endTime,
-        publicTime,
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString(),
+        publicTime: new Date(publicTime).toISOString(),
         selectedProblemIds,
       });
 
       if (result.success) {
         alert('イベントを作成しました！');
         // イベント詳細ページや一覧ページにリダイレクト
-        router.push(`/event`); // TODO: 適切なパスに変更
+        router.push(`/event/event_list`); // TODO: 適切なパスに変更
       } else {
         setError(result.error || '不明なエラーが発生しました。');
       }
@@ -183,9 +183,9 @@ export function CreateEventClient({ problems }: Props) {
       const result = await saveEventDraftAction({
         title,
         description,
-        startTime,
-        endTime,
-        publicTime,
+        startTime: startTime ? new Date(startTime).toISOString() : '',
+        endTime: endTime ? new Date(endTime).toISOString() : '',
+        publicTime: publicTime ? new Date(publicTime).toISOString() : '',
         selectedProblemIds,
       });
 

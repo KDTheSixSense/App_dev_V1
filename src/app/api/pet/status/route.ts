@@ -38,4 +38,3 @@ export async function GET() {
     return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
   }
 }
-

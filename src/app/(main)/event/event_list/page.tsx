@@ -1,39 +1,56 @@
-// イベントリスト（参加・作成を選択する初期ページ）
 // app/(main)/event/event_list/page.tsx
 
+import { prisma } from "@/lib/prisma";
+import type { Create_event as PrismaEvent } from "@prisma/client";
+import { getAppSession } from "@/lib/auth";
 import ProblemClient from "./ProblemClient";
-import { headers } from "next/headers";
+import { getAppSession } from "@/lib/auth";
 
-// イベントの型定義
-interface Event {
-  id: string;
-  name: string;
-}
-
-// サーバーサイドでAPIを呼び出すためのヘルパー関数
-const getBaseUrl = async () => {
-  const h = await headers();
-  const host = h.get("host");
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  return `${protocol}://${host}`;
+// クライアントコンポーネントが期待する型に合わせます
+// 注意: propsとして渡す際、Dateオブジェクトは文字列にシリアライズされます。
+export type イベント = PrismaEvent & {
+  startTime: Date | string | null;
+  endTime: Date | string | null;
+  _count?: { participants: number }; // 基本イベントの型定義に含まれていないため、ここで定義
 };
 
-const EventListPage = async () => {
-  let initialEvents: Event[] = [];
-  const baseUrl = await getBaseUrl();
+/**
+ * タスク：サーバーサイドで初期表示に必要なイベントデータを取得します。
+ */
+const イベントリストページ = async () => {
+  let initialEvents: イベント[] = [];
+  const session = await getAppSession();
+  const userId = session?.user?.id ? Number(session.user.id) : null;
+
   try {
-    // サーバーサイドで参加中のイベントリストを取得
-    const res = await fetch(`${baseUrl}/api/event/event_list`, {
-      cache: "no-store", // 常に最新のデータを取得
-    });
-    if (res.ok) {
-      initialEvents = await res.json();
+    // ログインしていない場合は何も表示しない
+    if (userId) {
+      const eventsFromDb = await prisma.create_event.findMany({
+        where: {
+          // AND条件
+          // 1. 自分が参加者であるイベント
+          participants: {
+            some: {
+              userId: userId,
+            },
+          },
+        },
+        include: {
+          _count: { select: { participants: true } },
+        },
+        orderBy: [
+          { publicStatus: 'desc' }, // 公開中を次に
+          { startTime: 'desc' }, // 開始時間が新しい順
+        ]
+      });
+      initialEvents = eventsFromDb;
     }
+
   } catch (error) {
-    console.error("Failed to fetch initial events:", error);
+    console.error("初期イベントの取得に失敗しました:", error);
   }
 
   return <ProblemClient initialEvents={initialEvents} />;
 };
 
-export default EventListPage;
+export default イベントリストページ;

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
@@ -12,16 +12,14 @@ interface SessionData {
 
 export async function POST(req: NextRequest) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    const user = session.user;
+
+    if (!user || !user.id) {
+        return NextResponse.json({ success: false, message: '認証されていません。' }, { status: 401 });
+    }
+    const userId = Number(user.id);
+
     try {
-        // セッションからユーザー情報を取得
-        const user = session.user;
-
-        // ログインしていない場合はエラーを返す
-        if (!user || !user.id) {
-            return NextResponse.json({ success: false, message: '認証されていません。' }, { status: 401 });
-        }
-        const userId = Number(user.id);
-
         const body = await req.json();
         const {
             title,

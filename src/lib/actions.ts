@@ -12,12 +12,19 @@ import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid'; // 招待コード生成に使う
 import { sessionOptions } from '../lib/session';
 import type { Problem as SerializableProblem } from '@/lib/types';
+import { TitleType } from '@prisma/client';
+import { getMissionDate } from './utils';
 
 interface SessionData {
   user?: {
     id: string;
     email: string;
   };
+}
+
+interface LoginCredentials {
+  email: string;
+  password: string;
 }
 
 const MAX_HUNGER = 200; //満腹度の最大値を一括管理
@@ -41,7 +48,7 @@ export async function registerUserAction(data: { username: string, email: string
         username: username,
         email: email,
         password: hashedPassword,
-        // --- ▼▼▼ 生年月日を保存するロジックを追加 ▼▼▼ ---
+        // --- 生年月日を保存するロジックを追加 ---
         birth: birth ? new Date(birth) : null,
         // 関連するペットステータスも同時に作成
         status_Kohaku: {
@@ -70,7 +77,6 @@ export async function registerUserAction(data: { username: string, email: string
  */
 export async function getNextProblemId(currentId: number, category: string): Promise<number | null> {
   try {
-    // ▼▼▼【ここから修正】▼▼▼
     // 変数を一つに統一し、型を明示的に指定することで、以降の型エラーをすべて解消します
     let problemIds: { id: number }[] = [];
 
@@ -88,14 +94,17 @@ export async function getNextProblemId(currentId: number, category: string): Pro
       ]);
       // 取得したIDを結合
       problemIds = [...staticIds, ...algoIds];
+    } else if (category === 'basic_info_a_problem') {
+      // Basc_Info_A_Question テーブルからIDを取得
+      problemIds = await prisma.basic_Info_A_Question.findMany({
+        select: { id: true },
+      });
     } else {
-      // その他のカテゴリの場合も、同じ変数に代入します
       problemIds = await prisma.questions_Algorithm.findMany({
         where: { subject: { name: category } },
         select: { id: true },
       });
     }
-    // ▲▲▲【ここまで修正】▲▲▲
 
     // `problemIds` が正しく型付けされているため、以降の処理で型エラーは発生しません
     const allIds = problemIds.map(p => p.id);
@@ -122,7 +131,7 @@ export async function getNextProblemId(currentId: number, category: string): Pro
 /**
  * 正解時に経験値を付与し、解答履歴を保存するサーバーアクション
  */
-export async function awardXpForCorrectAnswer(problemId: number) {
+export async function awardXpForCorrectAnswer(problemId: number, eventId: number | undefined, subjectid?: number, problemStartedAt?: string | number) {
   'use server';
 
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -137,8 +146,8 @@ export async function awardXpForCorrectAnswer(problemId: number) {
     throw new Error('セッション内のユーザーIDが無効です。');
   }
 
-  let problemDetails: { subjectId: number; difficultyId: number; type: 'ALGO' | 'STATIC' } | null = null;
-  let alreadyCorrect = false;
+  let problemDetails: { subjectId: number; difficultyId: number; type: 'ALGO' | 'STATIC' | 'BASIC_A' } | null = null; 
+  let alreadyCorrect = false;
 
   // 1. まずアルゴリズム問題テーブル(Questions_Algorithm)から問題を探す
   const algoProblem = await prisma.questions_Algorithm.findUnique({
@@ -169,11 +178,21 @@ export async function awardXpForCorrectAnswer(problemId: number) {
         difficultyId: staticProblem.difficultyId,
         type: 'STATIC',
       };
-      // 解答履歴をチェック
-      const existingAnswer = await prisma.userAnswer.findFirst({
-        where: { userId, questionId: problemId, isCorrect: true },
+      } else {
+      // 3. なければ基本情報A問題テーブル(Basc_Info_A_Question)を探す
+      const basicAProblem = await prisma.basic_Info_A_Question.findUnique({
+        where: { id: problemId },
+        select: { subjectId: true, difficultyId: true },
       });
-      if (existingAnswer) alreadyCorrect = true;
+
+      if (basicAProblem) {
+        problemDetails = { ...basicAProblem, type: 'BASIC_A' };
+        // 解答履歴をチェック (UserAnswerモデルを共有)
+        const existingAnswer = await prisma.userAnswer.findFirst({
+          where: { userId, questionId: problemId, isCorrect: true },
+        });
+        if (existingAnswer) alreadyCorrect = true;
+      }
     }
   }
 
@@ -188,15 +207,69 @@ export async function awardXpForCorrectAnswer(problemId: number) {
     return { message: '既に正解済みです。' };
   }
 
+  // 5. XP量と学習時間を計算
+  let xpAmount = 0;
+  let timeSpentMs = 0;
+
+  // 5a. XP量を取得
+  const difficulty = await prisma.difficulty.findUnique({
+    where: { id: problemDetails.difficultyId },
+  });
+  if (difficulty) {
+    xpAmount = difficulty.xp;
+  }
+
+  // 5b. 学習時間（ミリ秒）を計算（開始時刻が渡された場合のみ計算）
+  if (typeof problemStartedAt !== 'undefined' && problemStartedAt !== null) {
+    try {
+      // クライアントから渡されるのは Date.now() の数値タイムスタンプのはず
+      const startTime = typeof problemStartedAt === 'number'
+          ? problemStartedAt
+          : Date.parse(String(problemStartedAt)); // 文字列の場合も考慮
+        
+      if (!isNaN(startTime)) {
+          const endTime = Date.now(); // サーバー側で現在時刻を取得
+          timeSpentMs = endTime - startTime;
+          console.log(`[awardXp] Calculated timeSpentMs: ${timeSpentMs}`);
+      } else {
+          console.warn('[awardXp] Invalid problemStartedAt value received:', problemStartedAt);
+      }
+    } catch (e) {
+      console.warn('[awardXp] Failed to calculate study time:', e);
+    }
+  } else {
+      console.log('[awardXp] problemStartedAt was not provided.');
+  }
+
+  // 5c. 日次サマリーテーブルを更新（非同期で実行し、待たない）
+  upsertDailyActivity(userId, xpAmount, timeSpentMs);
+
   //ユーザーの回答数を数える
   const userAnswerCount = await prisma.userAnswer.count({ where: { userId } });
   const algoAnswerCount = await prisma.answer_Algorithm.count({ where: { userId } });
   const isFirstAnswerEver = (userAnswerCount + algoAnswerCount) === 0; //初めての解答ならtrue,違うならfalse
 
+  updateDailyMissionProgress(1, 1); // デイリーミッションの「問題を解く」進捗を1増やす
+
   // 5. 経験値を付与
   const { unlockedTitle } = await addXp(userId, problemDetails.subjectId, problemDetails.difficultyId);
   // 6. コハクの満腹度を回復
   await feedPetAction(problemDetails.difficultyId);
+
+  // 7. イベント参加者の得点を更新 (eventIdが渡された場合のみ)
+  if (eventId !== undefined && xpAmount > 0) {
+    await prisma.event_Participants.updateMany({
+      where: {
+        eventId: eventId,
+        userId: userId,
+      },
+      data: {
+        event_getpoint: { increment: xpAmount },
+      },
+    });
+    console.log(`[EventScore] ユーザーID:${userId} の イベントID:${eventId} での得点を ${xpAmount}点 加算しました。`);
+  }
+
   // ログイン統計を更新
   await updateUserLoginStats(userId);
 
@@ -240,6 +313,8 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
   const xpAmount = difficulty.xp;
   console.log(`${difficulty_id}: ${xpAmount}xp`);
   
+  updateDailyMissionProgress(3, xpAmount); // デイリーミッションの「XPを獲得する」進捗を更新
+
   const result = await prisma.$transaction(async (tx) => {
     const updatedProgress = await tx.userSubjectProgress.upsert({
       where: { user_id_subject_id: { user_id, subject_id } },
@@ -322,6 +397,277 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
   console.log('XP加算処理が完了しました。');
   return result;
 }
+
+/**
+ * 特定のデイリーミッションの進捗を更新するサーバーアクション
+ * * @param missionId - 更新するミッションのID (DailyMissionMaster の ID)
+ * @param incrementAmount - 加算する進捗量 
+ * @returns 更新結果 ({ success: boolean, completed?: boolean, unlockedTitle?: { name: string } | null })
+ */
+export async function updateDailyMissionProgress(
+  missionId: number,
+  incrementAmount: number
+) {
+  'use server';
+
+  // --- 1. ユーザー認証 ---
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const user = session.user;
+  if (!user?.id) {
+    console.error('[updateDailyMissionProgress] Error: User not authenticated.');
+    return { success: false, error: '認証されていません。' };
+  }
+  const userId = Number(user.id);
+  if (isNaN(userId)) {
+    console.error('[updateDailyMissionProgress] Error: Invalid user ID in session.');
+    return { success: false, error: 'セッション情報が無効です。' };
+  }
+
+  // --- 2. 日付の取得 ---
+  const missionDate = getMissionDate();
+
+  try {
+    // --- 3. トランザクション開始 ---
+    // 進捗更新 -> 達成確認 -> 完了フラグ更新 & XP付与 をアトミックに行う
+    const result = await prisma.$transaction(async (tx) => {
+      
+      // --- 3a. 現在の進捗とマスターデータを取得 (ロック) ---
+      // findUniqueOrThrow を使い、レコードがない場合はエラーにする
+      const currentProgress = await tx.userDailyMissionProgress.findUniqueOrThrow({
+        where: {
+          userId_missionId_date: {
+            userId: userId,
+            missionId: missionId,
+            date: missionDate,
+          },
+          // isCompleted: false // ここで false を条件にすると、達成直後の重複呼び出しでエラーになるため外す
+        },
+        include: {
+          mission: true, // targetCount と xpReward を取得
+        },
+      });
+
+      // --- 3b. 既に完了済みかチェック ---
+      if (currentProgress.isCompleted) {
+        console.log(`[updateDailyMissionProgress] Mission ${missionId} for user ${userId} on ${missionDate.toISOString().split('T')[0]} is already completed.`);
+        // 既に完了している場合は、更新せずに成功として終了 (nullを返す)
+        return null; 
+      }
+
+      // --- 3c. 進捗を加算 ---
+      const newProgress = currentProgress.progress + incrementAmount;
+
+      // --- 3d. 進捗を更新 ---
+      await tx.userDailyMissionProgress.update({
+        where: {
+          userId_missionId_date: {
+            userId: userId,
+            missionId: missionId,
+            date: missionDate,
+          },
+        },
+        data: {
+          progress: newProgress,
+        },
+      });
+
+      let unlockedTitle: { name: string } | null = null;
+      let justCompleted = false;
+
+      // --- 3e. 達成したかチェック ---
+      if (newProgress >= currentProgress.mission.targetCount) {
+        console.log(`[updateDailyMissionProgress] Mission ${missionId} completed for user ${userId}!`);
+        justCompleted = true;
+
+        // --- 3f. 完了フラグを立てる ---
+        await tx.userDailyMissionProgress.update({
+           where: {
+            userId_missionId_date: {
+              userId: userId,
+              missionId: missionId,
+              date: missionDate,
+            },
+          },
+          data: {
+            isCompleted: true,
+          },
+        });
+
+        // --- 3g. XPを付与 ---
+        // grantXpToUser を直接呼び出す代わりに、XP加算ロジックをトランザクション内で実行
+        // (注意: grantXpToUser 内の称号付与ロジックもここに含める必要があります)
+        grantXpToUser(userId, currentProgress.mission.xpReward).then(({ unlockedTitle: title }) => {
+          unlockedTitle = title;
+        });
+
+        
+      } 
+
+      // トランザクションの結果を返す
+      return { justCompleted, unlockedTitle };
+
+    }); // --- トランザクション終了 ---
+
+    // トランザクション結果に応じたレスポンスを返す
+    if (result === null) {
+      // 既に完了していた場合
+      return { success: true, completed: true, message: '既に達成済みです。' };
+    } else {
+      // 更新が成功した場合
+      return { success: true, completed: result.justCompleted, unlockedTitle: result.unlockedTitle };
+    }
+
+  } catch (error: any) {
+    // レコードが見つからない場合(findUniqueOrThrow)やその他のエラー
+    if (error.code === 'P2025') { // Prisma の RecordNotFound エラーコード
+        console.error(`[updateDailyMissionProgress] Error: Progress record not found for mission ${missionId}, user ${userId}, date ${missionDate.toISOString().split('T')[0]}. Ensure ensureDailyMissionProgress was called.`);
+        return { success: false, error: '本日のミッション進捗が見つかりません。' };
+    }
+    console.error(`[updateDailyMissionProgress] Error updating progress for mission ${missionId}, user ${userId}:`, error);
+    return { success: false, error: 'ミッション進捗の更新中にエラーが発生しました。' };
+  }
+}
+
+
+/**
+ * ユーザーにXPを直接付与し、レベルアップと称号のチェックを行う。
+ * (ミッション報酬など、科目XPとは無関係なXP付与に使用)
+ * * @param userId - XPを付与するユーザーのID
+ * @param xpAmount - 付与するXPの量
+ * @returns 獲得した称号（あれば）
+ */
+export async function grantXpToUser(userId: number, xpAmount: number) {
+  'use server';
+
+  // 付与するXPが0以下なら何もしない
+  if (xpAmount <= 0) {
+    return { unlockedTitle: null };
+  }
+
+  // 複数のDB操作を安全に行うためトランザクションを使用
+  const { unlockedTitle } = await prisma.$transaction(async (tx) => {
+    
+    // 1. ユーザーの総XPを加算
+    let user = await tx.user.update({
+      where: { id: userId },
+      data: { xp: { increment: xpAmount } },
+    });
+
+    let unlockedTitle: { name: string } | null = null;
+    const oldLevel = user.level;
+    const newAccountLevel = calculateLevelFromXp(user.xp);
+
+    // 2. レベルアップしたかチェック
+    if (newAccountLevel > oldLevel) {
+      
+      // 2a. ユーザーの level を更新
+      user = await tx.user.update({
+        where: { id: userId },
+        data: { level: newAccountLevel },
+      });
+      console.log(`[アカウントレベルアップ!] ユーザーID:${userId} がアカウントレベル ${newAccountLevel} に！`);
+
+      // 2b. 称号付与ロジック (USER_LEVEL)
+      const userTitles = await tx.title.findMany({
+        where: {
+          type: TitleType.USER_LEVEL, // USER_LEVEL の称号のみ
+          requiredLevel: { lte: newAccountLevel }, // 新しいレベルでアンロックされるもの
+        },
+      });
+
+      for (const title of userTitles) {
+        // 既にその称号を持っているか確認
+        const existingUnlock = await tx.userUnlockedTitle.findUnique({
+          where: { userId_titleId: { userId: userId, titleId: title.id } },
+        });
+        
+        // 持っていなければ、新しくアンロックする
+        if (!existingUnlock) {
+          await tx.userUnlockedTitle.create({
+            data: { userId: userId, titleId: title.id },
+          });
+          unlockedTitle = { name: title.name }; // 最後に獲得した称号を返す
+          console.log(`[称号獲得!] ${title.name} を獲得しました！`);
+        }
+      }
+    }
+    
+    return { unlockedTitle };
+  });
+
+  console.log(`ユーザーID:${userId} に ${xpAmount}XP (ミッション報酬) を付与しました。`);
+  return { unlockedTitle };
+}
+
+/**
+ * デイリーミッションの進捗を確実に作成するサーバーアクション
+ * @param userId - 進捗を作成するユーザーのID
+ */
+export async function ensureDailyMissionProgress(userId: number) {
+  'use server';
+
+  // 0. ユーザーの存在を最初に確認
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true }, // IDのみ取得して軽量化
+  });
+
+  if (!user) {
+    console.error(`[ensureDailyMissionProgress] Error: User with ID ${userId} not found. Aborting mission creation.`);
+    return; // ユーザーが存在しない場合は処理を中断
+  }
+
+  // 1. 日付を取得
+  const missionDate = getMissionDate(); // 今日の日付
+
+  try {
+    // 2. 既存のデイリーミッションをカウント
+    const existingProgressCount = await prisma.userDailyMissionProgress.count({
+      where: {
+        userId: userId,
+        date: missionDate,
+      },
+    });
+
+    // 3. デイリーミッションのが既に存在する場合は何もしない
+    if (existingProgressCount > 0) {
+      console.log(`ユーザーID:${userId} の ${missionDate.toISOString().split('T')[0]} 分のデイリーミッションは既に存在します。`);
+      return;
+    }
+
+    // 4. マスターデータから全ミッションを取得
+    const missionMasters = await prisma.dailyMissionMaster.findMany({
+      select: { id: true }, // Only need the IDs
+    });
+
+    if (missionMasters.length === 0) {
+      console.warn('デイリーミッションのマスターデータが見つかりません。');
+      return;
+    }
+
+    // 5. 新しい進捗エントリのデータを準備
+    const newProgressData = missionMasters.map((master) => ({
+      userId: userId,
+      missionId: master.id,
+      date: missionDate,
+      progress: 0,
+      isCompleted: false,
+    }));
+
+    // 6. 新しい進捗エントリを一括作成
+    await prisma.userDailyMissionProgress.createMany({
+      data: newProgressData,
+    });
+
+    console.log(`ユーザーID:${userId} の ${missionDate.toISOString().split('T')[0]} 分のデイリーミッション (${newProgressData.length}件) を作成しました。`);
+
+  } catch (error) {
+    console.error(`ユーザーID:${userId} のデイリーミッション進捗作成中にエラーが発生しました:`, error);
+    // ここでエラーを再スローするか、エラーハンドリングを行うかは要件次第
+    // throw error;
+  }
+}
+
 
 //世界標準時が日本の-9時間なので+3して日本時間で朝6時にリセットされるようにする
 const RESET_HOUR = 3;
@@ -749,6 +1095,7 @@ export async function feedPetAction(difficultyId: number) {
           hungerLastUpdatedAt: now, // 最終更新日時を「今」に設定
         },
       });
+      updateDailyMissionProgress(2, foodAmount); // デイリーミッションの進捗を更新
       console.log(`満腹度を${cappedHungerLevel}に更新しました。`);
     }
 
@@ -982,6 +1329,7 @@ export async function createEventAction(data: CreateEventFormData) {
           publicTime: new Date(publicTime), // ※スキーマに publicTime が必要
           inviteCode: inviteCode,
           publicStatus: true, // デフォルトで公開（画像からは設定項目がなかったため）
+          isStarted: true, // ★★★ イベント作成時は「未終了」状態にする
           creatorId: userId,
         },
       });
@@ -1008,7 +1356,7 @@ export async function createEventAction(data: CreateEventFormData) {
     });
 
     // 4. キャッシュのクリアと成功レスポンス
-    revalidatePath('/event'); // イベント一覧ページなどのキャッシュをクリア
+    revalidatePath('/event/event_list'); // イベント一覧ページなどのキャッシュをクリア
     return { success: true, eventId: newEvent.id };
 
   } catch (error) {
@@ -1203,5 +1551,138 @@ export async function getDraftEventDetailsAction(eventId: number) {
   } catch (error) {
     console.error('下書き詳細の取得に失敗:', error);
     return { error: '下書きの読み込みに失敗しました。' };
+  }
+}
+
+/**
+ * 日々の活動を集計・更新するヘルパー関数
+ */
+async function upsertDailyActivity(
+  userId: number,
+  xpAmount: number,
+  timeSpentMs: number
+) {
+  // 1. 「今日の日付」を取得します（JSTを考慮）
+  // タイムゾーンをJST（UTC+9）に設定
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const todayJST = new Date(Date.now() + jstOffset);
+  
+  // JSTでの「YYYY-MM-DD」の文字列を元に、UTCの「日付」オブジェクトを作成
+  // (例: '2025-10-25' -> 2025-10-25 00:00:00 UTC)
+  // これにより、@db.Date 型に正しく保存されます
+  const todayDate = new Date(todayJST.toISOString().split('T')[0]);
+
+  try {
+    await prisma.dailyActivitySummary.upsert({
+      where: {
+        userId_date: {
+          userId: userId,
+          date: todayDate,
+        },
+      },
+      // 該当する日付のデータがなければ、新しいレコードを作成
+      create: {
+        userId: userId,
+        date: todayDate,
+        totalXpGained: xpAmount,
+        totalTimeSpentMs: BigInt(timeSpentMs),
+        problemsCompleted: 1,
+      },
+      // 該当する日付のデータがあれば、既存の値に加算
+      update: {
+        totalXpGained: { increment: xpAmount },
+        totalTimeSpentMs: { increment: BigInt(timeSpentMs) },
+        problemsCompleted: { increment: 1 },
+      },
+    });
+    console.log(`[ActivitySummary] ユーザーID:${userId} の ${todayDate.toISOString().split('T')[0]} の活動を更新しました。`);
+  } catch (error) {
+    console.error(`[ActivitySummary] ユーザーID:${userId} の活動更新に失敗:`, error);
+  }
+}
+
+/**
+ * 学習時間を記録するサーバーアクション
+ * @param timeSpentMs ページ滞在時間 (ミリ秒)
+ */
+export async function recordStudyTimeAction(timeSpentMs: number) {
+  'use server'; // サーバーアクションであることを明示
+
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  const user = session.user;
+
+  if (!user?.id) {
+    // ログインしていない場合はエラーを返すか、何もしない
+    console.warn('[recordStudyTimeAction] User not authenticated.');
+    return { error: 'Authentication required.' };
+    // throw new Error('Authentication required.'); // エラーを投げるとクライアント側でcatchが必要
+  }
+
+  const userId = Number(user.id);
+  if (isNaN(userId)) {
+    console.error('[recordStudyTimeAction] Invalid user ID in session.');
+    return { error: 'Invalid user session.' };
+    // throw new Error('Invalid user session.');
+  }
+
+  // 時間が有効な数値か基本的なチェック
+  if (typeof timeSpentMs !== 'number' || timeSpentMs <= 0 || isNaN(timeSpentMs)) {
+    console.warn(`[recordStudyTimeAction] Invalid timeSpentMs received: ${timeSpentMs}`);
+    return { error: 'Invalid time value.' };
+    // throw new Error('Invalid time value.');
+  }
+
+  console.log(`[recordStudyTimeAction] Recording ${timeSpentMs}ms for UserID:${userId}`);
+
+    try {
+    // upsertDailyActivityを呼び出し、時間だけを加算 (XP=0)
+    await upsertDailyActivity(userId, 0, timeSpentMs);
+    return { success: true, message: 'Study time recorded.' };
+  } catch (error) {
+    console.error('[recordStudyTimeAction] Failed to update daily activity:', error);
+    return { error: 'Failed to record study time.' };
+    // throw new Error('Failed to record study time.');
+  }
+}
+
+/**
+ * イベントを開始または終了するサーバーアクション
+ * @param eventId 対象のイベントID
+ * @param start trueで開始、falseで終了
+ */
+export async function toggleEventStatusAction(eventId: number, start: boolean) {
+  'use server';
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  const event = await prisma.create_event.findUnique({ where: { id: eventId } });
+  if (!event || event.creatorId !== userId) {
+    return { error: 'このイベントを操作する権限がありません。' };
+  }
+
+  let dataToUpdate: { isStarted: boolean; startTime?: Date; hasBeenStarted?: boolean } = { isStarted: start };
+
+  // イベントを開始する場合
+  if (start) {
+    // 現在時刻が設定上の開始時刻より前の場合、開始時刻を現在時刻に上書きして強制開始する
+    if (event.startTime && new Date() < new Date(event.startTime)) {
+      dataToUpdate.startTime = new Date();
+    }
+    // 「開始済み」フラグを立てる
+    dataToUpdate.hasBeenStarted = true;
+  }
+
+  try {
+    await prisma.create_event.update({
+      where: { id: eventId },
+      data: dataToUpdate,
+    });
+    revalidatePath(`/event/event_detail/${eventId}`);
+    return { success: true };
+  } catch (error) {
+    return { error: 'イベント状態の更新に失敗しました。' };
   }
 }

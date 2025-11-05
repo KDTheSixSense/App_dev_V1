@@ -1,16 +1,16 @@
 import { NextResponse, NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
 
 interface SessionData {
   user?: { id: number | string; email: string };
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.user?.id) {
       return NextResponse.json({ message: '認証が必要です' }, { status: 401 });
     }
@@ -58,8 +58,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     // ログインしていない場合はエラーを返す
     if (!session.user || !session.user.id) {
       return NextResponse.json({ message: '認証が必要です' }, { status: 401 });

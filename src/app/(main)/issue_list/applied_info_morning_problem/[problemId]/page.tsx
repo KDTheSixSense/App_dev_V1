@@ -4,36 +4,33 @@ import { prisma } from '@/lib/prisma';
 import { getAppSession } from '@/lib/auth';
 
 
-
 import { getAppliedInfoMorningProblemById } from '@/lib/issue_list/applied_info_morning_problem/problem';
 import ProblemClient from './ProblemClient';
-import type { SerializableProblem } from '@/lib/data';
+import type { Problem } from '@/lib/types'; // Problem 型をインポート
+import type { SerializableProblem } from '@/lib/data'; // SerializableProblem 型をインポート
 
-interface PageProps {
+type AppliedInfoMorningProblemPageProps = {
   params: Promise<{ problemId: string }>;
-}
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
-const AppliedInfoMorningProblemPage = async ({ params }: PageProps) => {
+const AppliedInfoMorningProblemPage = async ({ params, searchParams }: AppliedInfoMorningProblemPageProps) => {
   const resolvedParams = await params;
   const { problemId } = resolvedParams;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined; // searchParams を await する
   const session = await getAppSession();
   const problem = getAppliedInfoMorningProblemById(problemId);
 
-  if (!problem) {
+  if (!problem || !problem.answerOptions) { // problem.answerOptions が undefined の場合も notFound を呼び出す
     notFound();
   }
 
-  // answerOptionsが存在しない場合もnotFoundを呼び出す
-    if (!problem.answerOptions) {
-      notFound();
-    }
-
-  const problemForClient: SerializableProblem = {
+  // Problem 型から SerializableProblem 型に変換
+  const serializableProblem: SerializableProblem = {
     ...problem,
-    answerOptions: problem.answerOptions,
-    programLines: problem.programLines || { ja: [], en: [] },
-    explanationText: problem.explanationText || { ja: '', en: '' },
-    initialVariables: problem.initialVariables || {},
+    programLines: problem.programLines ?? { ja: [], en: [] },
+    explanationText: problem.explanationText ?? { ja: '', en: '' },
+    initialVariables: problem.initialVariables ?? {},
   };
 
   let userCredits = 0;
@@ -47,7 +44,7 @@ const AppliedInfoMorningProblemPage = async ({ params }: PageProps) => {
     }
   }
 
-  return <ProblemClient initialProblem={problemForClient} initialCredits={userCredits} />;
+  return <ProblemClient initialProblem={serializableProblem} initialCredits={userCredits} />;
 };
 
 export default AppliedInfoMorningProblemPage;

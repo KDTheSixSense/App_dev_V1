@@ -44,12 +44,13 @@ export interface Problem {
   title: { ja: string; en: string };            // 問題のタイトル (日本語/英語)
   description: { ja: string; en: string };      // 問題文
   programLines: { ja: string[]; en: string[] };  // 擬似言語プログラムの各行
-  answerOptions: { ja: AnswerOption[]; en: AnswerOption[] }; // 解答群の選択肢
+  answerOptions?: { ja: AnswerOption[]; en: AnswerOption[] }; // 解答群の選択肢
   correctAnswer: string;                        // この問題の正解の値
   explanationText: { ja: string; en: string };  // 解答後に表示される解説文
   initialVariables: VariablesState;             // トレース開始時の変数の初期状態
   traceLogic: TraceStep[];                      // プログラムの各行に対応するトレース処理の配列
   logicType: string;
+  difficultyId: number;
   
   // --- 以下は特定の種類の問題でのみ使用するオプションのプロパティです ---
   
@@ -92,6 +93,7 @@ export const problems: Problem[] = [
         initialVariables: { x: null, y: null, z: null },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     {
         id: '2',
@@ -106,6 +108,7 @@ export const problems: Problem[] = [
         traceOptions: { presets: [3, 5, 15, 7] },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     {
         id: '3',
@@ -119,6 +122,7 @@ export const problems: Problem[] = [
         initialVariables: { in: [3, 2, 1, 6, 5, 4], out: [], i: null, tail: null },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     {
         id: '4',
@@ -132,6 +136,7 @@ export const problems: Problem[] = [
         initialVariables: { num1: 36, num2: 60, x: null, y: null },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     {
         id: '5',
@@ -145,6 +150,7 @@ export const problems: Problem[] = [
         initialVariables: { x: 3, y: 4, result: null },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     {
         id: '6',
@@ -158,6 +164,7 @@ export const problems: Problem[] = [
         initialVariables: { byte: '01001011', rbyte: null, r: null, i: null, },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     {
         id: '7',
@@ -171,6 +178,7 @@ export const problems: Problem[] = [
         initialVariables: { n: 4, current_n: 4, result: 1, },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     {
         id: '8',
@@ -184,6 +192,7 @@ export const problems: Problem[] = [
         initialVariables: { queue: [], output: [], },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 問9: 2分木の走査 ---
@@ -263,6 +272,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 問10: 単方向リストの要素削除 ---
@@ -342,6 +352,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 問11: ビンソート ---
@@ -411,6 +422,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 問12: 配列の類似度計算 ---
@@ -479,6 +491,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 問13: 2分探索法 (バグあり) ---
@@ -573,6 +586,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 問14: 5数要約 ---
@@ -646,6 +660,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 問15: ミニマックス法 ---
@@ -696,6 +711,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 問16: UTF-8 エンコード ---
@@ -751,6 +767,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 問17: セキュリティ（責任分界点） ---
@@ -786,6 +803,7 @@ export const problems: Problem[] = [
         },
         initialVariables: {}, // トレース変数は不要
         traceLogic: [],
+        difficultyId: 7
     },
     // =================================================================================
     // --- 問18: セキュリティ（BYODのリスク） ---
@@ -821,6 +839,7 @@ export const problems: Problem[] = [
         },
         initialVariables: {}, // トレース変数は不要
         traceLogic: [],
+        difficultyId: 7
     },
     // =================================================================================
     // --- 問19: 職務の分離と最小権限 ---
@@ -851,6 +870,7 @@ export const problems: Problem[] = [
         },
         initialVariables: {}, // トレース変数は不要
         traceLogic: [],
+        difficultyId: 7
     },
     // =================================================================================
     // --- 問20: 情報システム運用 ---
@@ -883,6 +903,7 @@ export const problems: Problem[] = [
         },
         initialVariables: {}, // トレース変数は不要
         traceLogic: [],
+        difficultyId: 7
     },
     // =================================================================================
     // --- 問21: プログラムの条件分岐 ---
@@ -952,6 +973,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問22: 配列の要素の逆順化 ---
@@ -1001,6 +1023,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 問23: 単方向リストへの要素追加 ---　動いていない
@@ -1081,6 +1104,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問24: スパースマトリックスへの変換 ---
@@ -1140,6 +1164,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 問25: 条件付き確率の計算 --- 動いていない
@@ -1217,6 +1242,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問26: 情報セキュリティ（責任分界点） ---
@@ -1270,6 +1296,7 @@ export const problems: Problem[] = [
         initialVariables: {},
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問27: 素数探索（試し割り法） ---
@@ -1359,6 +1386,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     {
         id: '28',
@@ -1432,6 +1460,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問29: クイックソートのトレース ---
@@ -1540,6 +1569,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 【★ここから追加】問30: 単方向リストへの要素追加 --- 動かない
@@ -1604,6 +1634,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 【★ここから追加】問31: コサイン類似度 ---
@@ -1699,6 +1730,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 【★ここから追加】問32: 情報セキュリティ（業務委託） ---
@@ -1740,6 +1772,7 @@ export const problems: Problem[] = [
         initialVariables: {},
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問33: 3つの数の最大値 ---
@@ -1815,6 +1848,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問34: 2進数から10進数への変換 ---
@@ -1883,6 +1917,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問35: 辺リストから隣接行列への変換 ---
@@ -1966,6 +2001,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 8
     },
     // =================================================================================
     // --- 【★ここから追加】問36: マージアルゴリズム ---
@@ -2050,6 +2086,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問37: 商品の関連度分析 ---
@@ -2143,6 +2180,7 @@ export const problems: Problem[] = [
         },
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
     // =================================================================================
     // --- 【★ここから追加】問38: 情報セキュリティ（テレワーク） ---
@@ -2186,6 +2224,7 @@ export const problems: Problem[] = [
         initialVariables: {},
         traceLogic: [],
         calculateNextLine: undefined,
+        difficultyId: 7
     },
 ];
 
