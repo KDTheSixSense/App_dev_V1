@@ -36,14 +36,23 @@ const CustomAlertModal: React.FC<{
     </div>
 );
 
-const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ problem }) => {
+const ProblemDescriptionPanel: React.FC<{
+    problem: SerializableProblem;
+    onReturn: () => void;
+    isReturning: boolean;
+}> = ({ problem, onReturn, isReturning }) => {
     // titleとdescriptionがオブジェクト形式か文字列形式かを判定して内容を取得
     const titleText = typeof problem.title === 'object' ? problem.title.ja : problem.title;
     const descriptionText = typeof problem.description === 'object' ? problem.description?.ja : problem.description;
 
     return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
-        <div className="p-4 border-b flex-shrink-0"><h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>問{problem.id}: {titleText}</span></h2></div>
+        <div className="p-4 border-b flex-shrink-0 flex justify-between items-center">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>{titleText}</span></h2>
+            <button onClick={onReturn} disabled={isReturning} className="py-2 px-4 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:bg-gray-400">
+                {isReturning ? '戻っています...' : '問題リストに戻る'}
+            </button>
+        </div>
         <div className="p-6 space-y-6 overflow-y-auto">
             <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: (descriptionText ?? '説明がありません。').replace(/\n/g, '<br />') }} />
             <div>
@@ -159,14 +168,42 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         { value: 'csharp', label: 'C#' },
         { value: 'php', label: 'PHP' }
     ];
-
+    
+    // ★★★ 修正点: sessionStorage用のキーを定義 ★★★
+    const storageKey = `event-${eventId}-problem-${problem.id}-code`;
+    
     useEffect(() => {
+        // ★★★ 修正点: sessionStorageから保存されたコードを読み込む ★★★
+        const savedCode = sessionStorage.getItem(storageKey);
+        if (savedCode) {
+            setUserCode(savedCode);
+        } else {
+            // 保存されたコードがなければ、テンプレートをセット
+            setUserCode(((problem as any).codeTemplate) || '');
+        }
+
         setSubmitResult(null);
         setExecutionResult('');
         setStdin(problem.sampleCases?.[0]?.input || '');
         setUserCode(((problem as any).codeTemplate) || '');
-        setProblemStartTime(new Date()); 
-    }, [problem]);
+        setProblemStartTime(new Date());
+
+        // ★★★ 修正点: 問題ページを開いたときに「解答中」として記録する ★★★
+        const recordStartTime = async () => {
+            try {
+                await fetch('/api/event-submissions/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        eventIssueId: eventIssueId,
+                    }),
+                });
+            } catch (error) {
+                console.error('Failed to record problem start time:', error);
+            }
+        };
+        recordStartTime();
+    }, [problem, storageKey, eventIssueId]);
 
     const handleExecute = async () => {
         if (!userCode.trim()) { setExecutionResult('コードを入力してください。'); return; }
@@ -178,6 +215,12 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
             else { setExecutionResult(`エラー: ${data.error || '不明なエラー'}`); }
         } catch (error) { console.error('Error executing code:', error); setExecutionResult('コードの実行中にエラーが発生しました。'); }
     };
+
+    // ★★★ 修正点: コードが変更されるたびにsessionStorageに保存 ★★★
+    useEffect(() => {
+        // problemStartTimeがセットされた後（＝初期化後）にのみ保存処理を実行
+        if (problemStartTime) sessionStorage.setItem(storageKey, userCode);
+    }, [userCode, storageKey, problemStartTime]);
 
     const handleSubmit = async () => {
         if (!userCode.trim()) {
@@ -276,13 +319,15 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         setIsReturning(true);
         router.push(`/event/event_detail/${eventId}`);
     };
-
+    
     return (
         <div className="h-screen bg-gray-100 p-4 flex flex-col">
-            <div className="flex-grow min-h-0">
+            {/* ヘッダー部分を削除し、ボタンをProblemDescriptionPanel内に移動 */}
+            {/* このブロックは不要になったため削除 */}
+            <div className="flex-grow min-h-0"> 
                 <PanelGroup direction="horizontal">
                     <Panel defaultSize={35} minSize={20}>
-                        <ProblemDescriptionPanel problem={problem} />
+                        <ProblemDescriptionPanel problem={problem} onReturn={handleReturnToEvent} isReturning={isReturning} />
                     </Panel>
                     <PanelResizeHandle className="w-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
                         <GripVertical className="h-4 w-4 text-gray-600" />
