@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 interface PetStatusViewProps {
   initialHunger: number;
   maxHunger: number;
+  petname: string;
 }
 
 /**
@@ -43,7 +44,7 @@ const getPetDisplayInfo = (hungerLevel: number) => {
 
 };
 
-export default function PetStatusView({ initialHunger, maxHunger }: PetStatusViewProps) {
+export default function PetStatusView({ initialHunger, maxHunger, petname }: PetStatusViewProps) {
   const router = useRouter();
 
   // ヘルパー関数を呼び出して、現在の状態を取得
@@ -69,7 +70,7 @@ export default function PetStatusView({ initialHunger, maxHunger }: PetStatusVie
       {/* 2. ラベルテキスト */}
       <div className="text-center">
         <p className="text-lg font-semibold text-gray-700">
-          コハクの満腹度
+          {petname}の満腹度
         </p>
       </div>
 
