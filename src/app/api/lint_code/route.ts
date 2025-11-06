@@ -73,6 +73,12 @@ async function cleanupTempFile(filePath: string) {
 
 // --- 各言語のリンティングロジック ---
 
+function getJavaClassName(code: string): string {
+    const match = code.match(/public\s+class\s+([A-Za-z0-9_]+)/);
+    // クラス名が見つかればそれを、見つからなければ 'Main' をデフォルトとして使用
+    return match ? match[1] : 'Main';
+}
+
 async function lintPython(code: string): Promise<Annotation[]> {
     const { stderr, tempFile } = await runLintProcess(
         'python3',
@@ -124,37 +130,111 @@ async function lintJavaScriptOrTypeScript(code: string): Promise<Annotation[]> {
 }
 
 async function lintJava(code: string): Promise<Annotation[]> {
-    const { stderr, tempFile } = await runLintProcess(
-        'javac',
-        ['-Xlint:none', '-d', os.devNull, '-proc:none'], //構文エラーのみ報告
-        code,
-        '.java'
-    );
-    await cleanupTempFile(tempFile);
+    
+    // 1. コードから public class 名 (例: Main) を取得
+    const className = getJavaClassName(code);
+    
+    // 2. クラス名に基づいた一時ファイルパス (例: /tmp/lint-java-123/Main.java) を作成
+    //    コンパイルにはディレクトリが必要な場合があるため、ディレクトリごと作成
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lint-java-'));
+    const tempFile = path.join(tempDir, `${className}.java`);
+    
+    let stderr = '';
+    let spawnError = false; // spawn自体のエラーを追跡
+
+    try {
+        await fs.writeFile(tempFile, code);
+        
+        // 3. javac を実行
+        const process = spawn('javac', [
+            '-Xlint:none',   // 警告を抑制（構文エラーのみほしい）
+            '-d', tempDir, // コンパイル結果(.class)を破棄
+            '-proc:none',    // アノテーション処理を無効化
+            tempFile         // 正しいファイル名 (例: Main.java) でコンパイル
+        ], { cwd: tempDir }); // 一時ディレクトリ内で実行
+
+        process.stderr.on('data', (data) => (stderr += data.toString()));
+
+        await new Promise((resolve) => {
+            process.on('error', (err: any) => {
+                if (err.code === 'ENOENT') {
+                    stderr = `Lint command 'javac' not found. Is the JDK installed in the Docker container?`;
+                } else {
+                    stderr = `Failed to start javac: ${err.message}`;
+                }
+                spawnError = true;
+                resolve(null);
+            });
+            process.on('close', (code) => {
+                 if (!spawnError && code !== 0 && stderr.trim() === '') {
+                     stderr = `javac failed with exit code ${code}.`;
+                 }
+                resolve(null);
+            });
+        });
+
+    } catch (error: any) {
+        stderr += `Linting process failed: ${error.message}`;
+    } finally {
+        // 4. 一時ファイルとディレクトリを削除
+        await cleanupTempFile(tempFile);
+        try {
+            await fs.rmdir(tempDir);
+        } catch (e) { /* 無視 */ }
+    }
 
     if (!stderr) return [];
     
+    // ▼ コマンドが見つからない場合やプロセス失敗の汎用エラーをキャッチ
+    if (stderr.includes('Lint command') || stderr.includes('javac failed')) {
+         return [{ row: 0, column: 0, text: stderr, type: 'error' }];
+    }
+    
     const annotations: Annotation[] = [];
-    // Regex: /path/to/File.java:5: error: ';' expected
-    const regex = /^(.*?):(\d+): error: (.*)$/gm;
+    
+    // 5. 【UPDATED】列番号(column)もキャプチャする正規表現
+    // 例: /tmp/lint-java-123/Main.java:3:25: error: ';' expected
+    //    Main.java:3: error: ';' expected
+    //    ^ (ファイルパスが省略される場合にも対応)
+    const regex = /^(.*?):(\d+):(\d+): error: (.*)$/gm;
+    const regexSimple = /^(.*?):(\d+): error: (.*)$/gm;
+    
     let match;
     while ((match = regex.exec(stderr)) !== null) {
-        // tempFileの名前（例: /tmp/lint_...java）を "Error" に置換
-        const message = match[3].replace(tempFile, 'Error');
+        const column = parseInt(match[3], 10);
         annotations.push({
-            row: parseInt(match[2], 10) - 1, // 1-indexed -> 0-indexed
-            column: 0, // javac は正確な列番号を出さない
-            text: message,
+            row: parseInt(match[2], 10) - 1,   // 1-indexed -> 0-indexed
+            column: column > 0 ? column - 1 : 0, // 1-indexed -> 0-indexed (列番号は1始まり)
+            text: match[4],
             type: 'error',
         });
     }
+    
+    // 列番号なしのエラーフォーマットもフォールバックで確認
+    if (annotations.length === 0) {
+        while ((match = regexSimple.exec(stderr)) !== null) {
+             annotations.push({
+                row: parseInt(match[2], 10) - 1,
+                column: 0, // 列番号が取れなかったので0
+                text: match[3],
+                type: 'error',
+            });
+        }
+    }
+    
+    // エラーが検出されたが、正規表現にマッチしなかった場合（ファイル名不一致など）
+    if (annotations.length === 0 && stderr.trim() !== '') {
+        const firstLine = stderr.split('\n')[0].replace(tempFile, 'Error'); // パスを隠す
+        return [{ row: 0, column: 0, text: firstLine, type: 'error' }];
+    }
+    
     return annotations;
 }
 
 async function lintCpp(code: string): Promise<Annotation[]> {
     const { stderr, tempFile } = await runLintProcess(
         'g++',
-        ['-fsyntax-only', '-pedantic-errors', '-std=c++11'], // 構文チェックのみ
+        ['-fsyntax-only', '-pedantic-errors', '-std=c++11'],
         code,
         '.cpp'
     );
@@ -163,13 +243,12 @@ async function lintCpp(code: string): Promise<Annotation[]> {
     if (!stderr) return [];
 
     const annotations: Annotation[] = [];
-    // Regex: /tmp/lint_...cpp:4:5: error: expected ';' before '}' token
     const regex = /^(.*?):(\d+):(\d+): error: (.*)$/gm;
     let match;
     while ((match = regex.exec(stderr)) !== null) {
         annotations.push({
-            row: parseInt(match[2], 10) - 1, // 1-indexed
-            column: parseInt(match[3], 10) - 1, // 1-indexed
+            row: parseInt(match[2], 10) - 1,
+            column: parseInt(match[3], 10) - 1,
             text: match[4],
             type: 'error',
         });
@@ -203,25 +282,56 @@ async function lintC(code: string): Promise<Annotation[]> {
 }
 
 async function lintCsharp(code: string): Promise<Annotation[]> {
-    // C# (csc) は stdout にエラーを出力する
-    const { stdout, tempFile } = await runLintProcess(
-        'csc',
+    
+    // C#はMainクラス/メソッドでラップする必要がある
+    const wrappedCode = `
+        using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        
+        public class LintCheck
+        {
+            public static void Main(string[] args)
+            {
+        ${code} 
+            }
+        }
+        `;
+    // エラーの行番号を調整するためのオフセット
+    const lineOffset = 10; // 上記テンプレートの ` ${code} ` が始まる行番号 - 1 (11 - 1)
+
+    // C# (csc) は stdout にエラーを出力する場合がある
+    const { stdout, stderr, tempFile } = await runLintProcess(
+        'csc', // `csc` (mono) または `dotnet build` など
         ['-nologo', `-out:${os.devNull}`],
-        code,
+        wrappedCode, // ラップしたコード
         '.cs'
     );
     await cleanupTempFile(tempFile);
 
-    if (!stdout) return [];
+    const output = stdout + stderr; // stdoutとstderrを結合して解析
+
+    if (!output) return [];
+    
+    if (output.includes('Lint command') || output.includes('Linter')) {
+         return [{ row: 0, column: 0, text: output, type: 'error' }];
+    }
 
     const annotations: Annotation[] = [];
     // Regex: /tmp/lint_....cs(5,2): error CS1525: Invalid expression term ')'
+    // Regex: /tmp/lint_....cs(11,29): error CS1002: ; expected
     const regex = /^(.*?)\((\d+),(\d+)\): error (\w+): (.*)$/gm;
     let match;
-    while ((match = regex.exec(stdout)) !== null) {
+    while ((match = regex.exec(output)) !== null) {
+        const originalLine = parseInt(match[2], 10) - 1; // 0-indexed
+        
+        // テンプレート部分のエラーは無視
+        if (originalLine < lineOffset) continue;
+        
         annotations.push({
-            row: parseInt(match[2], 10) - 1, // 1-indexed
-            column: parseInt(match[3], 10) - 1, // 1-indexed
+            row: originalLine - lineOffset, // ユーザーのコード行番号にマッピング
+            column: parseInt(match[3], 10) - 1,
             text: `${match[4]}: ${match[5]}`,
             type: 'error',
         });
@@ -230,24 +340,43 @@ async function lintCsharp(code: string): Promise<Annotation[]> {
 }
 
 async function lintPhp(code: string): Promise<Annotation[]> {
+    
+    // コードが `<?php` で始まっていない場合、自動でラップする
+    const wrappedCode = code.trim().startsWith('<?php') 
+        ? code 
+        : `<?php\n${code}\n?>`;
+
     // PHP (php -l) は stdout にエラーを出力する
-    const { stdout, tempFile } = await runLintProcess(
+    const { stdout, stderr, tempFile } = await runLintProcess(
         'php',
         ['-l'], // Lint (構文チェック)
-        code,
+        wrappedCode, // ラップしたコード
         '.php'
     );
     await cleanupTempFile(tempFile);
 
+    const output = stdout + stderr; // stdoutとstderrを結合して解析
+
     // "No syntax errors detected" が成功
-    if (!stdout || stdout.startsWith("No syntax errors detected")) return [];
+    if (!output || output.includes("No syntax errors detected")) return [];
+    
+    if (output.includes('Lint command') || output.includes('Linter')) {
+         return [{ row: 0, column: 0, text: output, type: 'error' }];
+    }
 
     // Example: Parse error: syntax error, unexpected '}' in /tmp/lint_....php on line 5
     const regex = /^Parse error: (.*?) in .*? on line (\d+)$/m;
-    const match = stdout.match(regex);
+    const match = output.match(regex);
     if (match) {
+        const errorLine = parseInt(match[2], 10) - 1; // 0-indexed
+        
+        // コードをラップした場合、行番号を調整
+        const adjustedLine = code.trim().startsWith('<?php')
+            ? errorLine
+            : errorLine - 1; // `<?php` の1行分を引く
+
         return [{
-            row: parseInt(match[2], 10) - 1, // 1-indexed
+            row: adjustedLine < 0 ? 0 : adjustedLine,
             column: 0, // PHP lint は列番号を出さない
             text: match[1],
             type: 'error',

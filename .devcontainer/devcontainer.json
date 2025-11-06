@@ -15,7 +15,7 @@
   "updateRemoteUserUID": true,
 
   // コンテナ作成後に一度だけ実行されるコマンド (依存パッケージのインストール)
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "sudo chown -R node node_modules && npm install",
 
   // "postStartCommand": "npm run dev & npx prisma studio --browser none &",
 
