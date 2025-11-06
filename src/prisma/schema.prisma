@@ -496,10 +496,12 @@ model Submissions {
 model Status_Kohaku {
   id                  Int       @id @default(autoincrement())
   user_id             Int       @unique
+  name                String    @default("コハク")
   status              String
   hungerlevel         Int       @default(1000) // 満腹度の初期値
   // 満腹度を最後に更新した日時を記録します
   hungerLastUpdatedAt DateTime?
+  birthdate           DateTime@default(now()) @db.Date // 誕生日
 
   user User @relation(fields: [user_id], references: [id])
 }
