@@ -228,9 +228,10 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
           {/* 右カラム：ペットステータスとグラフ */}
             <div className="lg:col-span-1 space-y-8">
               <PetStatusView 
-              initialHunger={initialUser.Status_Kohaku?.[0]?.hungerlevel ?? 200} 
+              initialHunger={initialUser.Status_Kohaku?.[0].hungerlevel ?? 200} 
               maxHunger={200} 
               adviceText={aiAdvice} 
+              petname={initialUser.Status_Kohaku?.[0].name || 'コハク'}
             />
             </div>
           {/* ---  新しい行：中央に配置するグラフ  --- */}
