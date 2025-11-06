@@ -1,3 +1,4 @@
+//イベント作成者の作成ページ（フロントエンド）
 // /workspaces/my-next-app/src/app/(main)/event/admin/create_event/page.tsx
 import { prisma } from '@/lib/prisma';
 import { CreateEventClient } from './CreateEventClient'; // 次のステップで作成

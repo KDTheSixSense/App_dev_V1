@@ -184,28 +184,22 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
 
                         <div style={{ marginTop: '24px' }}>
                             {selectedAssignment.selectProblemId ? (
-                                <Link
-                                    href={{
-                                        pathname: `/group/select-page/${selectedAssignment.selectProblemId}`, // 修正: 正しいパスとIDを使用
-                                        query: { assignmentId: selectedAssignment.id, hashedId: params.hashedId as string },
-                                    }}
-                                    style={{ 
-                                        display: 'inline-block', 
-                                        padding: '10px 20px', 
-                                        backgroundColor: '#58A8fdff', 
-                                        color: 'white', 
-                                        textDecoration: 'none', 
-                                        borderRadius: '5px' 
-                                    }}
-                                >
-                                    {problemTitle ? ` ${problemTitle}` : ''}
-                                </Link>
+                               <Link
+                                   href={`/group/select-page/${selectedAssignment.selectProblemId}?assignmentId=${selectedAssignment.id}&hashedId=${params.hashedId as string}`}
+                                   style={{
+                                       display: 'inline-block',
+                                       padding: '10px 20px',
+                                       backgroundColor: '#58A8fdff',
+                                       color: 'white',
+                                       textDecoration: 'none',
+                                       borderRadius: '5px'
+                                   }}
+                               >
+                                   {problemTitle ? ` ${problemTitle}` : ''}
+                               </Link>
                             ) : selectedAssignment.programmingProblemId ? (
                                 <Link
-                                    href={{
-                                        pathname: `/group/coding-page/${selectedAssignment.programmingProblemId}`, // 修正: 正しいパスとIDを使用
-                                        query: { assignmentId: selectedAssignment.id, hashedId: params.hashedId as string },
-                                    }}
+                                    href={`/group/coding-page/${selectedAssignment.programmingProblemId}?assignmentId=${selectedAssignment.id}&hashedId=${params.hashedId as string}`}
                                     style={{ 
                                         display: 'inline-block', padding: '10px 20px', backgroundColor: '#58A8fdff', color: 'white', textDecoration: 'none', borderRadius: '5px' 
                                     }}

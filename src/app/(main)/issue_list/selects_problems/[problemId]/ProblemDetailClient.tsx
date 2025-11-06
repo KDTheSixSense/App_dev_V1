@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { SelectProblem } from '@prisma/client';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '../components/KohakuChat';
+import { recordStudyTimeAction } from '@/lib/actions';
 
 // サーバーから渡されるデータの型
 interface ProblemDetailClientProps {
@@ -91,15 +92,50 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
 
+  // 問題の表示開始時刻を保存
+  const [problemStartedAt, setProblemStartedAt] = useState<number>(Date.now());
+  // この問題の時間をすでに記録したかを管理
+  const hasRecordedTime = useRef(false);
+
   useEffect(() => {
     // ページ遷移（次の問題）が発生したときに状態をリセットする
     setProblem(formatProblem(initialProblem));
     setSelectedAnswer(null);
     setIsAnswered(false);
     setChatMessages([{ sender: 'kohaku', text: textResources.ja.problemStatement.hintInit }]);
+    setProblemStartedAt(Date.now()); // 開始時刻をリセット
+    hasRecordedTime.current = false;   // 記録フラグをリセット
   }, [initialProblem.id]);
 
+  /**
+   * 学習時間を計算し、サーバーに送信する
+   */
+  const recordStudyTime = () => {
+    // まだこの問題の時間を記録していない場合のみ実行
+    if (!hasRecordedTime.current) {
+      const endTime = Date.now();
+      const timeSpentMs = endTime - problemStartedAt;
+
+      // 3秒以上の滞在のみを記録 (ページ移動のノイズを除外)
+      if (timeSpentMs > 3000) {
+        console.log(`Recording ${timeSpentMs}ms for problem ${problem.id}`);
+        recordStudyTimeAction(timeSpentMs); // サーバーアクションを呼び出し
+        hasRecordedTime.current = true; // 記録済みフラグを立てる
+      }
+    }
+  };
+
+  // --- 6. ページを離れる時に時間を記録する Effect を追加 ---
+  useEffect(() => {
+    // このEffectは、problemStartedAt（＝新しい問題）が変わるたびに再登録される
+    return () => {
+      // クリーンアップ関数（ページ離脱時）に時間を記録
+      recordStudyTime();
+    };
+  }, [problemStartedAt]); // problemStartedAt が変わるたびにクリーンアップを再設定
+
   const handleNextProblem = async () => {
+    recordStudyTime(); // 次の問題に行く前に時間を記録
     try {
       const res = await fetch(`/api/selects_problems/next/${problem.id}`);
       const data = await res.json();
@@ -142,6 +178,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
     setIsAnswered(true);
     const hint = generateKohakuResponse(true, selectedValue);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
+    recordStudyTime();
   };
 
   const handleUserMessage = (message: string) => {

@@ -6,8 +6,9 @@ import { EventCard } from './EventCard';
 type イベントデータ = {
   id: number;
   title: string;
-  startTime: Date;
-  endTime: Date;
+  startTime: Date | string | null;
+  endTime: Date | string | null;
+  isStarted: boolean;
   _count?: { participants: number };
 };
 
@@ -18,7 +19,7 @@ export const EventList = ({ events }: { events: イベントデータ[] }) => {
   return (
     <section>
       <h2 className="text-2xl font-bold text-gray-900 border-b-2 border-indigo-200 pb-3 mb-8">
-        参加中のイベント一覧
+        開催中のイベント一覧
       </h2>
       {events.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">

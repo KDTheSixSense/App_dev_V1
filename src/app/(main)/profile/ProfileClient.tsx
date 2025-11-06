@@ -3,10 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
-import Chart from './Chart/Chart';
-import PetStatusView from '../home/Pet/PetStatusView';
-import Advice from './Advice/Advice';
+import PetStatusView from '../profile/Pet/PetStatusview';
 import { updateUserProfileAction } from './actions';
+import DailyActivityChart from './Chart/DailyActivityChart';
 
 // --- 型定義 ---
 type SerializedUserUnlockedTitle = Omit<UserUnlockedTitle, 'unlockedAt'> & {
@@ -226,11 +225,18 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
             </div>
           </div>
 
-          {/* 右カラム：ペット、チャート、アドバイス */}
-          <div className="lg:col-span-1 space-y-8">
-            <PetStatusView initialHunger={initialUser.Status_Kohaku?.[0]?.hungerlevel ?? 200} maxHunger={200} />
-            <Chart stats={initialStats} />
-            <Advice advice={aiAdvice} />
+          {/* 右カラム：ペットステータスとグラフ */}
+            <div className="lg:col-span-1 space-y-8">
+              <PetStatusView 
+              initialHunger={initialUser.Status_Kohaku?.[0]?.hungerlevel ?? 200} 
+              maxHunger={200} 
+              adviceText={aiAdvice} 
+            />
+            </div>
+          {/* ---  新しい行：中央に配置するグラフ  --- */}
+          <div className="lg:col-span-3">
+            {/*  新しいチャートコンポーネントを配置  */}
+            <DailyActivityChart />
           </div>
         </div>
       </div>
@@ -259,8 +265,6 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
                     {presetIcons.male.map(icon => <img key={icon} src={icon} alt="icon" className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)}/>)}
                     {presetIcons.female.map(icon => <img key={icon} src={icon} alt="icon" className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)}/>)}
                 </div>
-                {/* ファイルアップロード */}
-                <label className="cursor-pointer bg-green-500 text-white text-sm py-2 px-4 rounded-full block text-center"><input type="file" className="hidden" onChange={handleIconChange} accept="image/*" />ファイルを選択</label>
                 <button onClick={() => setIsIconModalOpen(false)} className="mt-6 bg-gray-200 text-gray-700 py-2 px-4 rounded w-full">閉じる</button>
             </div>
          </div>

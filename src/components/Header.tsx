@@ -115,7 +115,7 @@ export default function Header({ userWithPet }: HeaderProps) {
     { href: '/group', icon: '/images/group_slateblue.png', label: 'グループ' },
     //提出機能とイベント機能はまだ完成してないから一旦コメントアウトで隠しておく
     { href: '/unsubmitted-assignments', icon: '/images/assignment_slateblue.png', label: '課題' },
-    { href: '/', icon: '/images/event_slateblue.png', label: 'イベント' },
+    { href: '/event/event_list', icon: '/images/event_slateblue.png', label: 'イベント' },
   ];
 
   return (
@@ -124,7 +124,7 @@ export default function Header({ userWithPet }: HeaderProps) {
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0">
         {/* Linkをaタグに変更 */}
-        <a href="/" className="transition-opacity hover:opacity-80">
+        <a href="/home" className="transition-opacity hover:opacity-80">
           {/* Imageをimgタグに変更 */}
           <img
             src="/images/infopia_logo.png"
@@ -158,7 +158,7 @@ export default function Header({ userWithPet }: HeaderProps) {
       
       {/*コハクの情報*/}
       {petStatus && (
-        <div className="flex items-center gap-2 ml-20">
+        <div className="flex items-center gap-2 ml-auto">
             {/* アイコンをStateから動的に設定 */}
             <img src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
             <div className="w-50">
@@ -174,7 +174,7 @@ export default function Header({ userWithPet }: HeaderProps) {
       )}
 
       {/* 右側：ユーザー情報 */}
-      <div className="flex items-center gap-4 ml-auto">
+      <div className="flex items-center gap-4 ml-6">
         {/* ランクとログイン日数 */}
         <div className="flex flex-col">
           <div className="relative group flex items-center gap-2">

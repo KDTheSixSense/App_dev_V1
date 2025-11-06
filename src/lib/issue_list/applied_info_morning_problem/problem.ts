@@ -1,5 +1,5 @@
 // src/lib/issue_list/applied_info_morning_problem/problem.ts
-import type { Problem } from '@/lib/types'; // '@/lib/types'のパスとProblem型が正しいことを確認
+import type { Problem } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
 
 export const appliedInfoMorningProblems: Problem[] = [
   {
@@ -28,7 +28,8 @@ export const appliedInfoMorningProblems: Problem[] = [
       en: "TCP/IP is a widely used protocol for internet communication."
     },
     initialVariables: {}, // トレース不要な問題では変数も不要
-    traceLogic: []       // トレース不要
+    traceLogic: [],       // トレース不要
+    difficultyId: 7
   },
   {
     id: 'AM2',
@@ -56,7 +57,8 @@ export const appliedInfoMorningProblems: Problem[] = [
       en: "Third Normal Form eliminates partial and transitive functional dependencies."
     },
     initialVariables: {},
-    traceLogic: []
+    traceLogic: [],
+    difficultyId: 7
   },
   // 必要に応じて問題を追加
 ];

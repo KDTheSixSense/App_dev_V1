@@ -1,15 +1,29 @@
 // /workspaces/my-next-app/src/lib/data.ts
 import { problems as localProblems, Problem as AppProblem } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
 import { prisma } from './prisma';
-import type { Questions as DbStaticProblem, Questions_Algorithm as DbAlgoProblem } from '@prisma/client';
+import type { 
+  Questions as DbStaticProblem,
+  Questions_Algorithm as DbAlgoProblem,
+  Basic_Info_A_Question as DbBasicInfoAProblem 
+} from '@prisma/client';
 import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 
-// クライアントに渡すことができる、シリアライズ可能な問題の型
-export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'>;
+export interface AnswerOption {
+  label: string; // 解答の表示ラベル（例: 'ア'）
+  value: string; // 解答の実際の値（正誤判定用）
+}
 
-// --- ▼▼▼ セッションの型定義を追加します ▼▼▼ ---
+// クライアントに渡すことができる、シリアライズ可能な問題の型
+export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'> & {
+  answerOptions?: { ja: AnswerOption[]; en: AnswerOption[] }; // answerOptions をオプションに修正
+  sourceYear?: string;
+  sourceNumber?: string;
+  imagePath?: string; // Optional image path
+  difficultyId: number;
+};
+
 interface SessionData {
   // iron-sessionに保存されているユーザーIDは文字列の可能性があるため、string型で定義します
   user?: { id: string; email: string; };
@@ -47,6 +61,7 @@ function transformStaticProblem(dbProblem: DbStaticProblem): SerializableProblem
       correctAnswer: '', // 正解データはローカルに依存するため空文字
       initialVariables: {},
       logicType: 'STATIC_QA', // 静的な質疑応答形式として扱う
+      difficultyId: 7
     };
   }
   // シリアライズできない関数を除外して返します
@@ -79,6 +94,7 @@ function transformAlgoProblem(dbProblem: DbAlgoProblem): SerializableProblem {
     initialVariables: dbProblem.initialVariable as AppProblem['initialVariables'] ?? {},
     logicType: dbProblem.logictype,
     traceOptions: parseJSON(dbProblem.options as string | null, undefined),
+    difficultyId: dbProblem.difficultyId ?? 7,
   };
 }
 
@@ -189,3 +205,90 @@ export async function getUnsubmittedAssignments() {
   return groupedAssignments;
 }
 
+/**
+ * DBから取得した基本情報A問題(Basc_Info_A_Question)をクライアント用の形式に変換します。
+ * [修正版] 全てのフィールドを SerializableProblem 形式にマッピング
+ * @param dbProblem - Prismaから取得したBasc_Info_A_Questionオブジェクト
+ * @returns クライアントで利用可能な SerializableProblem
+ */
+function transformBasicInfoAProblem(dbProblem: DbBasicInfoAProblem): SerializableProblem {
+  const answerLabels = ['ア', 'イ', 'ウ', 'エ'];
+
+  // DBの answerOptions (例: ["説明A", "説明B", ...]) を
+  // { label: "ア", value: "説明A" } の形式に変換
+  // Ensure dbProblem.answerOptions is treated as an array
+  const dbOptionsArray = Array.isArray(dbProblem.answerOptions) ? dbProblem.answerOptions : [];
+  const transformedOptions = dbOptionsArray.map((optionText, index) => ({
+    label: answerLabels[index] || '?',
+    // Ensure value is a string
+    value: String(optionText),
+  })).slice(0, 4); // Ensure only 4 options are included
+
+  // DBの correctAnswer (例: 0) から、正解の「テキスト」 (例: "説明A") を取得
+  const correctOptionText = dbOptionsArray[dbProblem.correctAnswer]
+                           ? String(dbOptionsArray[dbProblem.correctAnswer])
+                           : ''; // Handle potential index out of bounds
+
+  // Only include imagePath if the property actually exists on the DB object.
+  // This avoids TypeScript errors when the Prisma model does not define imagePath.
+  const imagePath = 'imagePath' in dbProblem ? (dbProblem as any).imagePath : undefined;
+
+  return {
+    id: String(dbProblem.id),
+    // ★ Wrap text fields in language objects
+    title: { ja: dbProblem.title || '', en: dbProblem.title || '' },
+    description: { ja: dbProblem.description || '', en: dbProblem.description || '' },
+    explanationText: { ja: dbProblem.explanation || '', en: dbProblem.explanation || '' },
+    programLines: { ja: [], en: [] }, // A問題はプログラムがない
+    answerOptions: {
+      ja: transformedOptions,
+      en: transformedOptions // Assuming same options for EN for now
+    },
+    // ★ Use the correct answer text
+    correctAnswer: correctOptionText,
+    initialVariables: {},
+    logicType: 'STATIC_QA', // Or a more specific type if needed
+    imagePath: imagePath,
+    sourceYear: dbProblem.sourceYear ?? undefined,
+    sourceNumber: dbProblem.sourceNumber ?? undefined,
+    difficultyId: dbProblem.difficultyId ?? 7,
+    // Add other optional fields if necessary, like traceOptions
+    // traceOptions: undefined,
+  };
+}
+
+/**
+ * 【新設】基本情報A問題用のデータ取得関数
+ * 指定されたIDの基本情報A問題データを取得します。
+ * [修正版] デバッグログを追加
+ * @param id - 取得したい問題のID (数値型)
+ * @returns 見つかった問題データ、またはnull
+ */
+export async function getBasicInfoAProblem(id: number): Promise<SerializableProblem | null> {
+  console.log(`[getBasicInfoAProblem] Attempting to fetch problem with ID: ${id}`);
+  try {
+    const basicInfoAProblem = await prisma.basic_Info_A_Question.findUnique({
+      where: { id }
+    });
+
+    if (basicInfoAProblem) {
+      console.log(`[getBasicInfoAProblem] Found problem data for ID: ${id}. Transforming...`);
+      // ここで transformBasicInfoAProblem がエラーを投げる可能性も考慮
+      try {
+          const transformed = transformBasicInfoAProblem(basicInfoAProblem);
+          console.log(`[getBasicInfoAProblem] Transformation successful for ID: ${id}.`);
+          return transformed;
+      } catch (transformError) {
+          console.error(`[getBasicInfoAProblem] Error during transformation for ID: ${id}`, transformError);
+          return null; // 変換エラー時も null を返す
+      }
+    } else {
+      console.log(`[getBasicInfoAProblem] No problem data found for ID: ${id}. Returning null.`);
+      return null;
+    }
+
+  } catch (error) {
+    console.error(`[getBasicInfoAProblem] Database error fetching ID: ${id}:`, error);
+    return null;
+  }
+}

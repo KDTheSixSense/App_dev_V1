@@ -11,7 +11,7 @@ export default async function PetStatus({user}: {user : User | null} ) {
     return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} />;
   }
 
-  // --- ▼▼▼ ここからが時間経過の計算ロジックです ▼▼▼ ---
+  // --- ここからが時間経過の計算ロジックです ---
   const now = new Date();
   let petStatus = await prisma.status_Kohaku.findFirst({
     where: { user_id: user.id },
@@ -52,7 +52,7 @@ export default async function PetStatus({user}: {user : User | null} ) {
       console.log(`${minutesPassed}分経過したため、満腹度を${hungerPointsToDecrease}ポイント減少させました。`);
     }
   }
-  // --- ▲▲▲ 計算ロジックここまで ▲▲▲ ---
+  // --- 計算ロジックここまで ---
 
   return (
     <PetStatusView 

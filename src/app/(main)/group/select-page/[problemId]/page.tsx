@@ -5,17 +5,16 @@ import { prisma } from '@/lib/prisma';
 import ProblemDetailClient from './ProblemDetailClient'; // これから作成するファイル
 import { notFound } from 'next/navigation';
 
-// ページに渡されるパラメータの型
-interface PageProps {
-  params: Promise<{
-    problemId: string; // ディレクトリ名に合わせて 'assignments' から変更
-  }>;
-}
+type ProblemDetailPageProps = {
+  params: Promise<{ problemId: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
 // ページ自体をサーバー側でデータを取得する非同期関数に変更
-export default async function ProblemDetailPage({ params }: PageProps) {
+export default async function ProblemDetailPage({ params, searchParams }: ProblemDetailPageProps) {
   const resolvedParams = await params;
   const id = parseInt(resolvedParams.problemId, 10);
+  const resolvedSearchParams = searchParams ? await searchParams : undefined; // searchParams を await する
 
   
   // IDが無効な場合は404ページを表示

@@ -18,11 +18,12 @@ export type ApiHandler = (
  */
 export function withApiSession(handler: ApiHandler) {
   // context を受け取れるように引数を変更
-  return async function (req: NextRequest, context: { params: { [key: string]: string } }): Promise<NextResponse | Response> {
+  return async function (req: NextRequest, { params }: { params: { [key: string]: string | string[] | undefined } }): Promise<NextResponse | Response> {
     const session = await getIronSession<IronSessionData>(
       await cookies(),
       sessionOptions
     );
-    return handler(req, session, context);
+    // handler に渡す context も { params } の形式に合わせる
+    return handler(req, session, { params });
   };
 }
