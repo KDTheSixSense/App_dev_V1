@@ -140,7 +140,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       const numericId = parseInt(problem.id, 10);
       if (!isNaN(numericId)) {
         try {
-          const result = await awardXpForCorrectAnswer(numericId, 2);
+          const result = await awardXpForCorrectAnswer(numericId,undefined, 2);
           if (result.message === '経験値を獲得しました！') {
             window.dispatchEvent(new CustomEvent('petStatusUpdated'));
           }
@@ -225,12 +225,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start w-full">
         {/* 左側: 問題表示エリア */}
         <div className="lg:w-1/2 w-full bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col">
-          {/* h1 を削除 (タイトルは ProblemStatement 内で表示) */}
-          {/*
-          <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-            問{problem.id}: {problem.title[currentLang] || t.title}
+          {/* 出典情報 */}
+          <div className="text-center text-gray-600 mb-2">
+            {problem.sourceYear && problem.sourceNumber ? `${problem.sourceYear} ${problem.sourceNumber}` : t.title}
+          </div>
+          {/* 問題タイトル */}
+          <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            {problem.title[currentLang]}
           </h1>
-          */}
           <ProblemStatement
             description={problem.description[currentLang]}
             answerOptions={problem.answerOptions?.[currentLang] || []}
@@ -241,7 +243,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             explanation={problem.explanationText?.[currentLang] || ''}
             imagePath={problem.imagePath}
             language={language}
-            textResources={{...t, title: problem.sourceYear && problem.sourceNumber ? `${problem.sourceYear} ${problem.sourceNumber}` : t.title }}
+            textResources={t}
           />
         </div>
 
@@ -251,20 +253,22 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             <p className="text-sm text-gray-600">
               AIアドバイス残り回数: <span className="font-bold text-lg text-blue-600">{credits}</span> 回
             </p>
+            
             {credits <= 0 && (
               <Link href="/profile" className="text-xs text-blue-500 hover:underline">
                 (XPを消費して増やす)
               </Link>
             )}
+          
           </div>
           {/* KohakuChat コンポーネントを表示 */}
           <KohakuChat
             messages={chatMessages}
             onSendMessage={handleUserMessage} // 実装したハンドラを渡す
             language={language}
-            textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
-            isLoading={isAiLoading} // AIローディング状態を渡す
-            isDisabled={credits <= 0 || isAiLoading} // 無効化条件
+            textResources={{...t, chatInputPlaceholder: t.chatInputPlaceholder}}
+            isLoading={isAiLoading}
+            isDisabled={isAiLoading}
           />
         </div>
         {/* コハクチャットエリアここまで */}

@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import type { User, Status_Kohaku } from '@prisma/client';
 import React from 'react';
 import { ensureDailyMissionProgress } from '@/lib/actions'; // (パスは適宜調整)
+import {Toaster} from 'react-hot-toast';
 
 interface SessionData {
   user?: {
@@ -46,7 +47,10 @@ export default async function MainPagesLayout({
     <>
       {/* 取得したuserオブジェクトをHeaderコンポーネントにpropsとして渡す */}
       <Header userWithPet={userWithPet} />
-      <main className="pt-20 flex-grow">{children}</main>
+      <main className="pt-20 flex-grow">
+        <Toaster position="bottom-right" />
+        {children}
+      </main>
     </>
   );
 }
