@@ -29,7 +29,7 @@ export async function seedProblems(prisma: PrismaClient) {
 
   await prisma.questions.deleteMany({});
   await prisma.questions_Algorithm.deleteMany({});
-
+ 
   console.log('✅ Old problem data cleared.');
 
   // 1. localProblems からのシーディング
