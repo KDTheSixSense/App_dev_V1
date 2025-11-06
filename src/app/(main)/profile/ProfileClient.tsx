@@ -139,6 +139,23 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
     }
   };
 
+  const petBirthdate = initialUser.Status_Kohaku?.[0]?.birthdate;
+  let formattedPetBirthdate: string | null = null;
+
+  if (petBirthdate) {
+    try {
+      const date = new Date(petBirthdate);
+      // "YYYY年M月D日" 形式にフォーマット
+      formattedPetBirthdate = date.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch (e) {
+      console.error("ペットの誕生日の日付フォーマットに失敗:", e);
+    }
+  }
+
   const displayedTitleName = isEditing
     ? initialUser.unlockedTitles.find(ut => ut.title.id === formData.selectedTitleId)?.title.name || '称号なし'
     : initialUser.selectedTitle?.name || '称号なし';
@@ -232,6 +249,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
               maxHunger={200} 
               adviceText={aiAdvice} 
               petname={initialUser.Status_Kohaku?.[0].name || 'コハク'}
+              petBirthdate={formattedPetBirthdate}
             />
             </div>
           {/* ---  新しい行：中央に配置するグラフ  --- */}

@@ -13,6 +13,7 @@ interface PetStatusViewProps {
   adviceText?: string | null; // AIアドバイスを受け取る (オプショナル)
   maxHunger: number; // Props としては受け取るが今回は表示に使わない
   petname: string; // ペットの名前を受け取る
+  petBirthdate: string | null; // ペットの誕生日 
 }
 
 // 満腹度に応じた画像パスを返すヘルパー関数 (変更なし)
@@ -28,7 +29,7 @@ const getPetDisplayInfo = (hungerLevel: number) => {
   }
 };
 
-export default function PetStatusView({ initialHunger, maxHunger, adviceText, petname }: PetStatusViewProps) {
+export default function PetStatusView({ initialHunger, maxHunger, adviceText, petname, petBirthdate }: PetStatusViewProps) {
   const router = useRouter();
   const petInfo = getPetDisplayInfo(initialHunger);
 
@@ -134,6 +135,12 @@ export default function PetStatusView({ initialHunger, maxHunger, adviceText, pe
             >
               <Edit3 className="w-4 h-4" />
             </button>
+          </div>
+        )}
+        {/* 誕生日 (お迎え日) */}
+        {petBirthdate && (
+          <div className="flex items-center justify-center text-sm text-gray-500 mt-2">
+            <span>お迎え日: {petBirthdate}</span>
           </div>
         )}
       </div>
