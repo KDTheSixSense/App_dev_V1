@@ -53,7 +53,6 @@ CREATE TABLE "Post" (
 CREATE TABLE "UserAnswer" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
-    "questionId" INTEGER NOT NULL,
     "answer" TEXT NOT NULL,
     "isCorrect" BOOLEAN NOT NULL,
     "answeredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -298,20 +297,6 @@ CREATE TABLE "Answers" (
 );
 
 -- CreateTable
-CREATE TABLE "User_Answer_History" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "answerd_genre_id" INTEGER NOT NULL,
-    "user_selectedanswer" TEXT NOT NULL,
-    "isCorrect" BOOLEAN NOT NULL,
-    "term" TEXT NOT NULL,
-    "year" TIMESTAMP(3) NOT NULL,
-    "Answer_Timestamp" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "User_Answer_History_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "UserSubjectProgress" (
     "level" INTEGER NOT NULL DEFAULT 1,
     "xp" INTEGER NOT NULL DEFAULT 0,
@@ -397,9 +382,11 @@ CREATE TABLE "Submissions" (
 CREATE TABLE "Status_Kohaku" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
+    "name" TEXT NOT NULL DEFAULT 'コハク',
     "status" TEXT NOT NULL,
     "hungerlevel" INTEGER NOT NULL DEFAULT 1000,
     "hungerLastUpdatedAt" TIMESTAMP(3),
+    "birthdate" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Status_Kohaku_pkey" PRIMARY KEY ("id")
 );
