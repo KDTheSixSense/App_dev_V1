@@ -69,7 +69,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
       if (result.error) throw new Error(result.error);
       
       // 状態を即時反映させるために、ローカルstateも更新
-      setEvent(prev => ({ ...prev, isStarted: true, startTime: new Date() }));
+      setEvent(prev => ({ ...prev, isStarted: true, hasBeenStarted: true, startTime: new Date() }));
       alert('イベントを開始しました！');
     } catch (error) {
       console.error('イベント開始エラー:', error);
@@ -145,7 +145,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
         <h2 className="text-2xl font-semibold">イベント作成者</h2>
         {eventCreator ? (
           <p>
-            {eventCreator.user.username} (ID: {eventCreator.user.id})
+            {eventCreator.user.username} 
             <span className="ml-2 text-sm text-green-600">(管理者)</span>
           </p>
         ) : (

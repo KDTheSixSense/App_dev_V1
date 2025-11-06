@@ -33,7 +33,7 @@ export type MemberViewEvent = Prisma.Create_eventGetPayload<{
   };
 }>;
 
-type Role = 'member' | 'guest';
+type Role = 'member';
 
 // Extend EventWithDetails to include the current user's participant record and event's isStarted status
 type EventWithCurrentUserParticipant = MemberViewEvent & {
@@ -133,6 +133,40 @@ export default function MemberView({ event, role }: MemberViewProps) {
     setIsClient(true);
   }, []);
 
+  // ポーリングでイベント状態を同期する
+  useEffect(() => {
+    const pollEventStatus = async () => {
+      try {
+        const response = await fetch(`/api/event/${eventId}/status`);
+        if (!response.ok) {
+          // レスポンスがエラーの場合、ポーリングを停止
+          console.error('Failed to fetch event status, stopping poll.');
+          clearInterval(intervalId);
+          return;
+        }
+        const data = await response.json();
+        
+        // サーバーからの最新のイベント状態でローカルステートを更新
+        setCurrentEvent(prevEvent => ({ ...prevEvent, ...data }));
+
+        // イベントが終了していたらポーリングを停止
+        if (!data.isStarted && data.hasBeenStarted) {
+          clearInterval(intervalId);
+          // 終了後のリダイレクト処理
+          const score = eventRef.current.currentUserParticipant?.event_getpoint ?? 0;
+          const eventName = encodeURIComponent(eventRef.current.title);
+          router.push(`/event/event_list?event_ended=true&score=${score}&eventName=${eventName}`);
+        }
+      } catch (error) {
+        console.error('Error polling event status:', error);
+        clearInterval(intervalId); // エラー発生時もポーリングを停止
+      }
+    };
+
+    const intervalId = setInterval(pollEventStatus, 5000); // 5秒ごとに状態を確認
+    return () => clearInterval(intervalId);
+  }, [eventId, router]);
+
   // ★★★ 修正点: イベントが「アクティブ（開催中）」かどうかを判定する変数を追加 ★★★
   // 「未終了」かつ「一度でも開始された」場合にアクティブとみなす
   const isEventActive = currentEvent.isStarted && currentEvent.hasBeenStarted;
@@ -199,43 +233,38 @@ export default function MemberView({ event, role }: MemberViewProps) {
         )}
       </div>
 
-      {role === 'member' ? (
-        <>
-          {isEventActive ? (
-            hasMemberAccepted ? (
-              // イベントが開始され、メンバーが承認済みの場合、問題リストを表示 (onProblemClickを削除)
-              <EventProblemList eventId={eventId} issues={currentEvent.issues} currentUserParticipant={currentEvent.currentUserParticipant} />
-            ) : (
-              // イベントは開始されたが、メンバーがまだ承認していない場合、承認を促すメッセージ
-              <p className="mt-8 text-blue-600">イベントが開始されました。問題リストを見るには承認してください。</p>
-            )
+      <>
+        {isEventActive ? (
+          hasMemberAccepted ? (
+            // イベントが開始され、メンバーが承認済みの場合、問題リストを表示 (onProblemClickを削除)
+            <EventProblemList eventId={eventId} issues={currentEvent.issues} currentUserParticipant={currentEvent.currentUserParticipant} />
           ) : (
-            // イベントがまだ開始されていない場合、参加人数と開始時刻を表示
-            <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-              <p className="text-lg font-semibold text-gray-800">イベントはまだ開始されていません。</p>
-              <p className="mt-2 text-gray-600">開始までお待ちください。</p>
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-700">
-                  <span className="font-semibold">現在の参加者:</span> {otherParticipants.length}人
+            // イベントは開始されたが、メンバーがまだ承認していない場合、承認を促すメッセージ
+            <p className="mt-8 text-blue-600">イベントが開始されました。問題リストを見るには承認してください。</p>
+          )
+        ) : (
+          // イベントがまだ開始されていない場合、参加人数と開始時刻を表示
+          <div className="mt-8 p-4 bg-gray-100 rounded-lg">
+            <p className="text-lg font-semibold text-gray-800">イベントはまだ開始されていません。</p>
+            <p className="mt-2 text-gray-600">開始までお待ちください。</p>
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">現在の参加者:</span> {otherParticipants.length}人
+              </p>
+              {currentEvent.startTime && (
+                <p className="text-sm text-gray-700 mt-1">
+                  <span className="font-semibold">開始予定時刻:</span>{' '}
+                  {isClient ? (
+                    new Date(currentEvent.startTime).toLocaleString('ja-JP')
+                  ) : (
+                    '----/--/-- --:--:--' // サーバーサイドまたはハイドレーション前のプレースホルダー
+                  )}
                 </p>
-                {currentEvent.startTime && (
-                  <p className="text-sm text-gray-700 mt-1">
-                    <span className="font-semibold">開始予定時刻:</span>{' '}
-                    {isClient ? (
-                      new Date(currentEvent.startTime).toLocaleString('ja-JP')
-                    ) : (
-                      '----/--/-- --:--:--' // サーバーサイドまたはハイドレーション前のプレースホルダー
-                    )}
-                  </p>
-                )}
-              </div>
+              )}
             </div>
-
-          )}
-        </>
-      ) : (
-        <p className="mt-8 text-red-500">このイベントに参加していません。</p>
-      )}
+          </div>
+        )}
+      </>
 
       {/* 承認ポップアップ */}
       {showAcceptPopup && (

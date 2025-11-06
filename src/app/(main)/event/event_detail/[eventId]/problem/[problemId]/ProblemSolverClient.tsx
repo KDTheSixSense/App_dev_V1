@@ -204,7 +204,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         setExecutionResult('');
         setStdin(problem.sampleCases?.[0]?.input || '');
         setUserCode(((problem as any).codeTemplate) || '');
-        setProblemStartTime(new Date());
+        setProblemStartTime(Date.now());
 
         // ★★★ 修正点: 問題ページを開いたときに「解答中」として記録する ★★★
         const recordStartTime = async () => {
