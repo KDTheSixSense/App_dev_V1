@@ -1783,3 +1783,42 @@ function getJstDate(daysAgo: number = 0): Date {
   targetJST.setDate(targetJST.getDate() - daysAgo);
   return new Date(targetJST.toISOString().split('T')[0]);
 }
+
+/**
+ * ペットの名前を更新するサーバーアクション
+ * @param newName 新しいペットの名前
+ */
+export async function updatePetName(newName: string) {
+  // 1. セッションからユーザーIDを取得
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const user = session.user;
+
+  if (!user?.id) {
+    return { error: '認証されていません。' };
+  }
+  const userId = Number(user.id);
+  
+  // 2. バリデーション
+  const trimmedName = newName.trim();
+  if (trimmedName.length === 0 || trimmedName.length > 20) {
+    return { error: '名前は1文字以上20文字以下である必要があります。' };
+  }
+
+  // 3. データベースを更新
+  try {
+    await prisma.status_Kohaku.update({
+      where: { user_id: userId }, // ログイン中のユーザーのペットを更新
+      data: { name: trimmedName }, // 新しい名前をセット
+    });
+
+    // 4. キャッシュをクリア
+    // このペットコンポーネントが表示されているページのパスを指定 (例: '/dashboard' や '/')
+    revalidatePath('/profile'); // 
+    
+    return { success: true };
+
+  } catch (error) {
+    console.error('ペットの名前更新に失敗しました:', error);
+    return { error: 'データベースエラーで名前を変更できませんでした。' };
+  }
+}
