@@ -17,7 +17,7 @@ import Image from 'next/image'; // Imageコンポーネントをインポート
             <div className='flex flex-col items-center justify-center w-25 h-20'>
                 <div className='flex w-full h-8 justify-center items-center'>
                     <Image
-                    src="/images/Rank.png"
+                    src="/images/rank.png"
                     alt="ランク"
                     width={40}
                     height={20}

@@ -52,6 +52,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           no-cache: true
           # ★★★ 修正点 ★★★
           # "runner" ステージをビルド対象として指定

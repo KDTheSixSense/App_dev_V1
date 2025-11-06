@@ -178,7 +178,7 @@ export default function Header({ userWithPet }: HeaderProps) {
         {/* ランクとログイン日数 */}
         <div className="flex flex-col">
           <div className="relative group flex items-center gap-2">
-            <img src="/images/Rank.png" alt="ランク" width={45} height={15} />
+            <img src="/images/rank.png" alt="ランク" width={45} height={15} />
             <div className='frex ml-auto'>
               <p className="text-[#5FE943] text-2xl font-bold select-none">{user?.level ?? 1}</p>
             </div>
