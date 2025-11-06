@@ -24,22 +24,22 @@ const MAX_HUNGER = 200; // 満腹度の最大値
 const getPetDisplayState = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
-      icon: '/images/kohaku/kohaku-full.png',      // 満腹の画像
+      icon: '/images/Kohaku/kohaku-full.png',      // 満腹の画像
       colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
     };
   } else if (hungerLevel >= 100) {
     return {
-      icon: '/images/kohaku/kohaku-normal.png',    // 普通の画像
+      icon: '/images/Kohaku/kohaku-normal.png',    // 普通の画像
       colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
     };
   } else if (hungerLevel >= 50) {
     return {
-      icon: '/images/kohaku/kohaku-hungry.png',    // 空腹の画像
+      icon: '/images/Kohaku/kohaku-hungry.png',    // 空腹の画像
       colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
     };
   } else {
     return {
-      icon: '/images/kohaku/kohaku-starving.png',  // 死にかけの画像
+      icon: '/images/Kohaku/kohaku-starving.png',  // 死にかけの画像
       colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
     };
   }
