@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, FileText, Code, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-
+import { recordStudyTimeAction } from '@/lib/actions';
 import type { Problem as SerializableProblem } from '@/lib/types';
 
 type ActiveTab = 'input' | 'output';
@@ -36,14 +36,23 @@ const CustomAlertModal: React.FC<{
     </div>
 );
 
-const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ problem }) => {
+const ProblemDescriptionPanel: React.FC<{
+    problem: SerializableProblem;
+    onReturn: () => void;
+    isReturning: boolean;
+}> = ({ problem, onReturn, isReturning }) => {
     // titleとdescriptionがオブジェクト形式か文字列形式かを判定して内容を取得
     const titleText = typeof problem.title === 'object' ? problem.title.ja : problem.title;
     const descriptionText = typeof problem.description === 'object' ? problem.description?.ja : problem.description;
 
     return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
-        <div className="p-4 border-b flex-shrink-0"><h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>問{problem.id}: {titleText}</span></h2></div>
+        <div className="p-4 border-b flex-shrink-0 flex justify-between items-center">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>{titleText}</span></h2>
+            <button onClick={onReturn} disabled={isReturning} className="py-2 px-4 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:bg-gray-400">
+                {isReturning ? '戻っています...' : '問題リストに戻る'}
+            </button>
+        </div>
         <div className="p-6 space-y-6 overflow-y-auto">
             <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: (descriptionText ?? '説明がありません。').replace(/\n/g, '<br />') }} />
             <div>
@@ -139,7 +148,7 @@ const CodeEditorPanel: React.FC<{
 const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, eventId, eventIssueId }) => {
     const router = useRouter();
 
-    const [problemStartTime, setProblemStartTime] = useState<Date | null>(null);
+    const [problemStartTime, setProblemStartTime] = useState<number | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState('python');
     const [userCode, setUserCode] = useState('');
@@ -148,6 +157,8 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitResult, setSubmitResult] = useState<any>(null);
     const [isReturning, setIsReturning] = useState(false);
+    const storageKey = `event-problem-code-${eventId}-${problem.id}`;
+    const hasRecordedTime = useRef(false);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -160,16 +171,71 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         { value: 'php', label: 'PHP' }
     ];
 
+    /**
+     * 学習時間を計算し、サーバーに送信する (1回だけ実行)
+     */
+    const recordStudyTime = () => {
+        // まだ記録されておらず、開始時刻がセットされている場合のみ
+        if (!hasRecordedTime.current && problemStartTime !== null) {
+            const endTime = Date.now();
+            const timeSpentMs = endTime - problemStartTime;
+
+            // 3秒以上の滞在のみを記録
+            if (timeSpentMs > 3000) {
+                console.log(`Recording ${timeSpentMs}ms for event problem ${problem.id}`);
+                // サーバーアクション (0 XP, timeSpentMs) を呼び出す
+                recordStudyTimeAction(timeSpentMs); 
+                hasRecordedTime.current = true; // 記録済みフラグを立てる
+            }
+        }
+    };
+
     useEffect(() => {
+        // ★★★ 修正点: sessionStorageから保存されたコードを読み込む ★★★
+        const savedCode = sessionStorage.getItem(storageKey);
+        if (savedCode) {
+            setUserCode(savedCode);
+        } else {
+            // 保存されたコードがなければ、テンプレートをセット
+            setUserCode(((problem as any).codeTemplate) || '');
+        }
+
         setSubmitResult(null);
         setExecutionResult('');
         setStdin(problem.sampleCases?.[0]?.input || '');
         setUserCode(((problem as any).codeTemplate) || '');
-        setProblemStartTime(new Date()); 
-    }, [problem]);
+        setProblemStartTime(Date.now());
+
+        // ★★★ 修正点: 問題ページを開いたときに「解答中」として記録する ★★★
+        const recordStartTime = async () => {
+            try {
+                await fetch('/api/event-submissions/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        eventIssueId: eventIssueId,
+                    }),
+                });
+            } catch (error) {
+                console.error('Failed to record problem start time:', error);
+            }
+        };
+        recordStartTime();
+    }, [problem, storageKey, eventIssueId]);
+
+    // --- 7. ページ離脱時の Effect---
+    useEffect(() => {
+        // この Effect は problemStartTime が変わるたびに（＝新しい問題がロードされるたびに）
+        // 再セットアップされます。
+        return () => {
+            // クリーンアップ関数（ページ離脱時）に時間を記録
+            recordStudyTime();
+        };
+    }, [problemStartTime]); // problemStartTime が変わるたびにクリーンアップを再設定
 
     const handleExecute = async () => {
         if (!userCode.trim()) { setExecutionResult('コードを入力してください。'); return; }
+        recordStudyTime();
         setExecutionResult('実行中...');
         try {
             const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: stdin }), });
@@ -179,12 +245,19 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         } catch (error) { console.error('Error executing code:', error); setExecutionResult('コードの実行中にエラーが発生しました。'); }
     };
 
+    // ★★★ 修正点: コードが変更されるたびにsessionStorageに保存 ★★★
+    useEffect(() => {
+        // problemStartTimeがセットされた後（＝初期化後）にのみ保存処理を実行
+        if (problemStartTime) sessionStorage.setItem(storageKey, userCode);
+    }, [userCode, storageKey, problemStartTime]);
+
     const handleSubmit = async () => {
         if (!userCode.trim()) {
             alert('コードを入力してから提出してください。');
             return;
         }
         setIsSubmitting(true);
+        recordStudyTime();
         setExecutionResult('採点中...');
         setSubmitResult(null);
 
@@ -274,15 +347,18 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     const handleReturnToEvent = () => {
         if (isReturning) return;
         setIsReturning(true);
+        recordStudyTime();
         router.push(`/event/event_detail/${eventId}`);
     };
-
+    
     return (
         <div className="h-screen bg-gray-100 p-4 flex flex-col">
-            <div className="flex-grow min-h-0">
+            {/* ヘッダー部分を削除し、ボタンをProblemDescriptionPanel内に移動 */}
+            {/* このブロックは不要になったため削除 */}
+            <div className="flex-grow min-h-0"> 
                 <PanelGroup direction="horizontal">
                     <Panel defaultSize={35} minSize={20}>
-                        <ProblemDescriptionPanel problem={problem} />
+                        <ProblemDescriptionPanel problem={problem} onReturn={handleReturnToEvent} isReturning={isReturning} />
                     </Panel>
                     <PanelResizeHandle className="w-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
                         <GripVertical className="h-4 w-4 text-gray-600" />

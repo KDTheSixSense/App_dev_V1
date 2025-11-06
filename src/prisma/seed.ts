@@ -26,14 +26,13 @@ async function main() {
     console.error('❌ Creator user (alice@example.com) not found. Aborting problem seed.');
     return;
   }
-  await seedProblems(prisma);  
+
   console.log(`👤 Using user "${creatorUser.username}" (ID: ${creatorUser.id}) as creator.`);
 
   console.log('Verifying EventDifficulty data...');
   const seededEventDifficulties = await prisma.eventDifficulty.findMany();
   console.log(seededEventDifficulties);
 
-  await seedEventDifficulty(prisma);
   await runOperations(prisma);
 
   console.log('✅ Seeding finished.');

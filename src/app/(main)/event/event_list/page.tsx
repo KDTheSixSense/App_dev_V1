@@ -10,13 +10,16 @@ import { getAppSession } from "@/lib/auth";
 export type イベント = PrismaEvent & {
   startTime: Date | string | null;
   endTime: Date | string | null;
-  _count?: { participants: number }; // 基本イベントの型定義に含まれていないため、ここで定義
+  // 参加者数をサーバーサイドで計算して渡すため、型を拡張
+  participantsCount?: number;
+  // 元の_countは使わなくなるが、他の箇所での影響を避けるため残しても良い
+  _count?: { participants: number };
 };
 
 /**
  * タスク：サーバーサイドで初期表示に必要なイベントデータを取得します。
  */
-const イベントリストページ = async () => {
+const EventListPage = async () => {
   let initialEvents: イベント[] = [];
   const session = await getAppSession();
   const userId = session?.user?.id ? Number(session.user.id) : null;
@@ -35,7 +38,12 @@ const イベントリストページ = async () => {
           },
         },
         include: {
-          _count: { select: { participants: true } },
+          // ★★★ 修正点: 参加者の詳細情報を取得して、管理者を除いた人数を計算できるようにする ★★★
+          participants: {
+            select: {
+              isAdmin: true,
+            },
+          },
         },
         orderBy: [
           { publicStatus: 'desc' }, // 公開中を次に
@@ -43,13 +51,23 @@ const イベントリストページ = async () => {
         ]
       });
       initialEvents = eventsFromDb;
+
+      // 取得したデータに参加者数を計算して追加
+      initialEvents = eventsFromDb.map(event => ({
+        ...event,
+        participantsCount: event.participants.filter(p => !p.isAdmin).length,
+      }));
     }
 
   } catch (error) {
     console.error("初期イベントの取得に失敗しました:", error);
   }
 
-  return <ProblemClient initialEvents={initialEvents} />;
+  // サーバーコンポーネントからクライアントコンポーネントへ渡すデータはシリアライズ可能である必要があります。
+  // Dateオブジェクトなどが含まれている可能性があるため、JSONを経由してプレーンなオブジェクトに変換します。
+  const serializableEvents = JSON.parse(JSON.stringify(initialEvents));
+
+  return <ProblemClient initialEvents={serializableEvents} />;
 };
 
-export default イベントリストページ;
+export default EventListPage;

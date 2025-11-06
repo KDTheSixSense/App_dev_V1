@@ -8,7 +8,7 @@ import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVer
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 import type { Problem as SerializableProblem } from '@/lib/types';
-import { getNextProgrammingProblemId } from '@/lib/actions';
+import { getNextProgrammingProblemId, recordStudyTimeAction } from '@/lib/actions';
 
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 type ActiveTab = 'input' | 'output';
@@ -180,6 +180,8 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [onCloseAction, setOnCloseAction] = useState<(() => void) | null>(null);
     const [alertAction, setAlertAction] = useState<{ text: string; onClick: () => void; } | undefined>(undefined);
+    const [problemStartTime, setProblemStartTime] = useState<number>(Date.now());
+    const hasRecordedTime = useRef(false);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -192,6 +194,26 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         { value: 'php', label: 'PHP' }
     ];
 
+    // --- 4. 時間を記録する共通関数を追加 ---
+    /**
+     * 学習時間を計算し、サーバーに送信する (1回だけ実行)
+     */
+    const recordStudyTime = () => {
+        // まだ記録されておらず、開始時刻がセットされている場合のみ
+        if (!hasRecordedTime.current && problemStartTime !== null) {
+            const endTime = Date.now();
+            const timeSpentMs = endTime - problemStartTime;
+
+            // 3秒以上の滞在のみを記録
+            if (timeSpentMs > 3000) {
+                console.log(`Recording ${timeSpentMs}ms for group assignment problem ${problem.id}`);
+                // サーバーアクション (0 XP, timeSpentMs) を呼び出す
+                recordStudyTimeAction(timeSpentMs); 
+                hasRecordedTime.current = true; // 記録済みフラグを立てる
+            }
+        }
+    };
+
     useEffect(() => {
         // problemが変更されたら（＝別の問題ページに遷移したら）状態をリセット
         setSubmitResult(null);
@@ -199,10 +221,23 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         setStdin('');
         setUserCode(problem.programLines?.ja.join('\n') || '');
         setChatMessages([{ sender: 'kohaku', text: `問${problem.id}について、何かヒントは必要ですか？` }]);
+        setProblemStartTime(Date.now()); // タイムスタンプを保存
+        hasRecordedTime.current = false;   // 記録フラグをリセット
     }, [problem]);
+
+    // --- 6. ページ離脱時の Effect を追加 ---
+    useEffect(() => {
+        // この Effect は problemStartTime が変わるたびに（＝新しい問題がロードされるたびに）
+        // 再セットアップされます。
+        return () => {
+            // クリーンアップ関数（ページ離脱時）に時間を記録
+            recordStudyTime();
+        };
+    }, [problemStartTime]); // problemStartTime が変わるたびにクリーンアップを再設定
 
     const handleExecute = async () => {
         if (!userCode.trim()) { setExecutionResult('コードを入力してください。'); return; }
+        recordStudyTime();
         setExecutionResult('実行中...');
         try {
             const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: stdin }), });
@@ -215,6 +250,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
     const handleSubmit = async () => {
         if (!userCode.trim()) { alert('コードを入力してから提出してください。'); return; }
         setIsSubmitting(true);
+        recordStudyTime();
         setExecutionResult('提出中...');
         try {
             const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: problem?.sampleCases?.[0]?.input || '' }), });
@@ -263,6 +299,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         try {
           // 課題から遷移してきた場合は、課題詳細ページに戻る
           if (assignmentInfo.hashedId && assignmentInfo.assignmentId) {
+            recordStudyTime();
             router.push(`/group/${assignmentInfo.hashedId}/member`);
             return;
           }
@@ -270,6 +307,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
           const res = await fetch(`/group/select-page/${problem.id}`);
           const data = await res.json();
           if (data.nextProblemId) { // 修正: 正しいパスへ遷移
+            recordStudyTime();
             router.push(`/group/select-page/${data.nextProblemId}`);
           } else {
             setAlertMessage("最後の問題です！お疲れ様でした。");

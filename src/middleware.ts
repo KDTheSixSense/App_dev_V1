@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // 保護したいページと、公開するページをここで定義します
-const config = {
+const routeConfig = {
   // 保護対象のパス（正規表現が使えます）
   protectedRoutes: [
     '/home',
@@ -33,7 +33,7 @@ export function middleware(req: NextRequest) {
   const sessionCookie = req.cookies.get(cookieName);
   console.log(`[Middleware] Cookie found: ${!!sessionCookie}`); // ② クッキーを見つけられたか確認
 
-const isProtectedRoute = config.protectedRoutes.some(path => 
+const isProtectedRoute = routeConfig.protectedRoutes.some(path => 
   new RegExp(`^${path.replace(/:\w+\*/, '.*')}$`).test(pathname)
 );  
   if (isProtectedRoute && !sessionCookie) {
@@ -45,9 +45,7 @@ const isProtectedRoute = config.protectedRoutes.some(path =>
   return NextResponse.next();
 }
 
-export const configMatcher = {
-  matcher: [
-    '/:path*',
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+export const config = {
+  // api, _next/static, _next/image, .png, .ico, .json を除くすべてのパスにミドルウェアを適用
+  matcher: '/((?!api|_next/static|_next/image|.*\\.png$|favicon\\.ico|.*\\.json$).*)',
 };

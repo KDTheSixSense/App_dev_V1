@@ -1,7 +1,8 @@
 // /workspaces/my-next-app/src/app/(main)/event/event_detail/[eventId]/AdminView.tsx
 'use client';
 
-import { toggleEventStatusAction } from '@/lib/actions';
+import { toggleEventStatusAction, deleteEventAction } from '@/lib/actions';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react'; // Import useState for local state management
 import type { Prisma } from '@prisma/client'; // Import Prisma namespace for types
 
@@ -13,8 +14,8 @@ type EventWithDetails = Prisma.Create_eventGetPayload<{
     participants: {
       include: {
         user: {
-          // ユーザーに紐づくイベント提出情報を取得
           include: {
+            // ユーザーに紐づくイベント提出情報を取得
             eventSubmissions: true;
           };
         };
@@ -33,6 +34,7 @@ interface AdminViewProps {
 }
 
 export default function AdminView({ event: initialEvent }: AdminViewProps) { // Rename event to initialEvent
+  const router = useRouter();
   // isClient state to prevent hydration mismatch
   const [isClient, setIsClient] = useState(false);
   const [event, setEvent] = useState(initialEvent); // Use local state for event to allow updates
@@ -67,7 +69,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
       if (result.error) throw new Error(result.error);
       
       // 状態を即時反映させるために、ローカルstateも更新
-      setEvent(prev => ({ ...prev, isStarted: true, startTime: new Date() }));
+      setEvent(prev => ({ ...prev, isStarted: true, hasBeenStarted: true, startTime: new Date() }));
       alert('イベントを開始しました！');
     } catch (error) {
       console.error('イベント開始エラー:', error);
@@ -90,6 +92,23 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
     } catch (error) {
       console.error('イベント終了エラー:', error);
       alert(`イベント終了中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!confirm('本当にこのイベントを削除しますか？\nこの操作は元に戻すことができません。')) return;
+    setIsSubmitting(true);
+    try {
+      const result = await deleteEventAction(event.id);
+      if (result.error) throw new Error(result.error);
+
+      alert('イベントを削除しました。');
+      router.push('/event/event_list');
+    } catch (error) {
+      console.error('イベント削除エラー:', error);
+      alert(`イベントの削除中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -126,7 +145,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
         <h2 className="text-2xl font-semibold">イベント作成者</h2>
         {eventCreator ? (
           <p>
-            {eventCreator.user.username} (ID: {eventCreator.user.id})
+            {eventCreator.user.username} 
             <span className="ml-2 text-sm text-green-600">(管理者)</span>
           </p>
         ) : (
@@ -135,28 +154,39 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
       </div>
 
       {/* イベント開始ボタン */}
-      <div className="mt-6">
-        {!isEventActive ? (
-          <button
-            onClick={handleStartEvent}
-            disabled={isSubmitting}
-            className="px-6 py-3 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105"
-          >
-            イベントを開始する
-          </button>
-        ) : (
-          <button
-            onClick={handleEndEvent}
-            disabled={isSubmitting}
-            className="px-6 py-3 text-lg font-semibold text-white bg-red-500 rounded-lg shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 transform hover:scale-105"
-          >
-            イベントを終了する
-          </button>
-        )}
+      <div className="mt-6 flex items-center space-x-4">
+        {!event.hasBeenStarted ? (
+            <button
+              onClick={handleStartEvent}
+              disabled={isSubmitting}
+              className="px-6 py-3 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400"
+            >
+              イベントを開始する
+            </button>
+          ) : event.isStarted ? (
+            <button
+              onClick={handleEndEvent}
+              disabled={isSubmitting}
+              className="px-6 py-3 text-lg font-semibold text-white bg-red-500 rounded-lg shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400"
+            >
+              イベントを終了する
+            </button>
+          ) : (
+            <p className="text-lg font-semibold text-gray-500">このイベントは終了しました。</p>
+          )}
+
+        {/* 削除ボタン */}
+        <button
+          onClick={handleDeleteEvent}
+          disabled={isSubmitting}
+          className="px-4 py-2 text-sm font-medium text-red-700 bg-red-100 border border-transparent rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-300"
+        >
+          イベントを削除
+        </button>
       </div>
       
       <div className="mt-8">
-        <h2 className="text-2xl font-semibold">イベント参加者一覧 ({event.participants.length}人)</h2>
+        <h2 className="text-2xl font-semibold">イベント参加者一覧 ({otherParticipants.length}人)</h2>
         {sortedParticipants.length > 0 ? (
           <ul className="list-disc list-inside mt-2">
             {sortedParticipants.map((participant) => (
@@ -166,7 +196,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
                 
                 return (
                   <li key={participant.id} className="mt-1">
-                    {participant.user.username} (ID: {participant.user.id}) - <span className="font-bold text-lg text-indigo-600">{score}点</span>
+                    {participant.user.username}  - <span className="font-bold text-lg text-indigo-600">{score}点</span>
                     {participant.hasAccepted && <span className="ml-2 text-sm text-blue-500">(参加承認済み)</span>}
                   </li>
                 );

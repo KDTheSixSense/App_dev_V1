@@ -273,12 +273,12 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     try {
       // クライアントから渡されるのは Date.now() の数値タイムスタンプのはず
       const startTime = typeof problemStartedAt === 'number'
-          ? problemStartedAt
+        ? problemStartedAt
           : Date.parse(String(problemStartedAt)); // 文字列の場合も考慮
         
       if (!isNaN(startTime)) {
           const endTime = Date.now(); // サーバー側で現在時刻を取得
-          timeSpentMs = endTime - startTime;
+        timeSpentMs = endTime - startTime;
           console.log(`[awardXp] Calculated timeSpentMs: ${timeSpentMs}`);
       } else {
           console.warn('[awardXp] Invalid problemStartedAt value received:', problemStartedAt);
@@ -1737,5 +1737,107 @@ export async function toggleEventStatusAction(eventId: number, start: boolean) {
     return { success: true };
   } catch (error) {
     return { error: 'イベント状態の更新に失敗しました。' };
+  }
+}
+
+/**
+ * イベントを削除するサーバーアクション
+ * @param eventId 削除対象のイベントID
+ */
+export async function deleteEventAction(eventId: number) {
+  'use server';
+  const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return { error: 'ログインしていません。' };
+  }
+  const userId = Number(session.user.id);
+
+  // 削除対象のイベントを取得し、作成者であることを確認
+  const event = await prisma.create_event.findUnique({
+    where: { id: eventId },
+    select: { creatorId: true },
+  });
+
+  if (!event) {
+    return { error: 'イベントが見つかりません。' };
+  }
+
+  if (event.creatorId !== userId) {
+    return { error: 'このイベントを削除する権限がありません。' };
+  }
+
+  // 関連データも onDelele: Cascade により自動で削除される
+  await prisma.create_event.delete({ where: { id: eventId } });
+
+  revalidatePath('/event/event_list');
+  return { success: true };
+}
+
+/**
+ * JST（日本標準時）の「日付」オブジェクトを取得するヘルパー関数
+ * @param daysAgo 0 = JSTの今日, 1 = JSTの昨日
+ */
+function getJstDate(daysAgo: number = 0): Date {
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const targetJST = new Date(Date.now() + jstOffset);
+  targetJST.setDate(targetJST.getDate() - daysAgo);
+  return new Date(targetJST.toISOString().split('T')[0]);
+}
+
+/**
+ 
+デイリーミッションの進捗を確実に作成するサーバーアクション
+@param userId - 進捗を作成するユーザーのID*/
+export async function ensureDailyMissionProgress(userId: number) {
+  'use server';
+
+  // 1. 日付を取得
+  const missionDate = getMissionDate(); // 今日の日付
+
+  try {
+    // 2. 既存のデイリーミッションをカウント
+    const existingProgressCount = await prisma.userDailyMissionProgress.count({
+      where: {
+        userId: userId,
+        date: missionDate,
+      },
+    });
+
+    // 3. デイリーミッションのが既に存在する場合は何もしない
+    if (existingProgressCount > 0) {
+      console.log(`ユーザーID:${userId} の ${missionDate.toISOString().split('T')[0]} 分のデイリーミッションは既に存在します。`);
+      return;
+    }
+
+    // 4. マスターデータから全ミッションを取得
+    const missionMasters = await prisma.dailyMissionMaster.findMany({
+      select: { id: true }, // Only need the IDs
+    });
+
+    if (missionMasters.length === 0) {
+      console.warn('デイリーミッションのマスターデータが見つかりません。');
+      return;
+    }
+
+    // 5. 新しい進捗エントリのデータを準備
+    const newProgressData = missionMasters.map((master) => ({
+      userId: userId,
+      missionId: master.id,
+      date: missionDate,
+      progress: 0,
+      isCompleted: false,
+    }));
+
+    // 6. 新しい進捗エントリを一括作成
+    await prisma.userDailyMissionProgress.createMany({
+      data: newProgressData,
+    });
+
+    console.log(`ユーザーID:${userId} の ${missionDate.toISOString().split('T')[0]} 分のデイリーミッション (${newProgressData.length}件) を作成しました。`);
+
+  } catch (error) {
+    console.error(`ユーザーID:${userId} のデイリーミッション進捗作成中にエラーが発生しました:`, error);
+    // ここでエラーを再スローするか、エラーハンドリングを行うかは要件次第
+    // throw error;
   }
 }
