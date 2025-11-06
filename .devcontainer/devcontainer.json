@@ -1,4 +1,4 @@
-{
+@{
   "name": "Next.js & PostgreSQL Dev Container",
   "dockerComposeFile": "docker-compose.yml",
 
@@ -13,9 +13,13 @@
 
   // コンテナ内のユーザーのUID/GIDをホストに合わせ、パーミッションの問題を解決する
   "updateRemoteUserUID": true,
+  // ★★★ 修正点 1 ★★★
+  // npm installの前に、node_modulesの所有権をnodeユーザーに変更する
+  "postCreateCommand": "sudo chown -R node:node /workspaces/my-next-app/src/node_modules && npm install",
 
-  // コンテナ作成後に一度だけ実行されるコマンド (依存パッケージのインストール)
-  "postCreateCommand": "npm install",
+  // ★★★ 修正点 2 ★★★
+  // コンテナ起動のたびに実行するコマンド (開発サーバーとPrisma Studioを起動)
+  "postStartCommand": "npm run dev & npx prisma studio --browser none &",
 
   // "postStartCommand": "npm run dev & npx prisma studio --browser none &",
 

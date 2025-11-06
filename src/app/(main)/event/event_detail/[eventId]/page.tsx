@@ -86,7 +86,7 @@ async function getEventAndUserRole(eventId: number, userId: number | null) {
   return { event: typedEvent, role: 'guest' as Role };
 }
 
-export default async function EventDetailPage({ params }: { params: { eventId: string } }) {
+export default async function EventDetailPage({ params }: { params: Promise<{ eventId: string }> }) {
   const resolvedParams = await params;
   const eventId = parseInt(resolvedParams.eventId, 10);
   const session = await getAppSession();

@@ -8,12 +8,13 @@ import ProblemSolverClient from './ProblemSolverClient';
 import type { Problem as SerializableProblem } from '@/lib/types';
 
 type ProblemSolverPageProps = {
-  params: { eventId: string, problemId: string };
+  params: Promise<{ eventId: string, problemId: string }>;
 };
 
 export default async function ProblemSolverPage({ params }: ProblemSolverPageProps) {
-  const eventId = parseInt(params.eventId, 10);
-  const problemId = parseInt(params.problemId, 10);
+  const resolvedParams = await params;
+  const eventId = parseInt(resolvedParams.eventId, 10);
+  const problemId = parseInt(resolvedParams.problemId, 10);
 
   if (isNaN(eventId) || isNaN(problemId)) {
     notFound();

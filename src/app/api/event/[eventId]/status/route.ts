@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
  */
 export async function GET(
   request: Request,
-  { params }: { params: { eventId: string } }
+  { params }: any
 ) {
   const eventId = parseInt(params.eventId, 10);
 

@@ -12,7 +12,7 @@ interface SessionData {
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { eventId: string } }
+  { params }: any
 ) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? Number(session.user.id) : null;

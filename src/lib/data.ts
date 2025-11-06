@@ -21,6 +21,7 @@ export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNext
   sourceYear?: string;
   sourceNumber?: string;
   imagePath?: string; // Optional image path
+  difficultyId: number;
 };
 
 interface SessionData {

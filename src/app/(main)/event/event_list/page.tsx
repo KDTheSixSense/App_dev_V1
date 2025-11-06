@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import type { Create_event as PrismaEvent } from "@prisma/client";
 import { getAppSession } from "@/lib/auth";
 import ProblemClient from "./ProblemClient";
-import { getAppSession } from "@/lib/auth";
 
 // クライアントコンポーネントが期待する型に合わせます
 // 注意: propsとして渡す際、Dateオブジェクトは文字列にシリアライズされます。
