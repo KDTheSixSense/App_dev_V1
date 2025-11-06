@@ -977,7 +977,7 @@ async function seedBasicInfoAProblems(prisma) {
     const excelFileName = 'PBL3基本Aデータ使用.xlsx'; // 新しいファイル名
     const sheetName = '基本情報A問題統合用シート'; // 新しいシート名
     // --- ▲▲▲ ---
-    const filePath = path_1.default.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
+    const filePath = path_1.default.join(process.cwd(), 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
     try {
         const workbook = XLSX.readFile(filePath);
         const sheet = workbook.Sheets[sheetName];

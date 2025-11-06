@@ -13,8 +13,8 @@ async function main() {
   // 各シーディング処理を順番に呼び出す
   await seedMasterData(prisma);
   await seedEventDifficulty(prisma);
-  await seedUsersAndGroups(prisma);
   await seedProblems(prisma);
+  await seedUsersAndGroups(prisma);
   await runOperations(prisma);
 
   console.log('✅ Seeding finished.');
