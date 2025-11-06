@@ -37,6 +37,8 @@ async function seedUsersAndGroups(prisma) {
     await prisma.userSubjectProgress.deleteMany({});
     await prisma.status_Kohaku.deleteMany({});
     await prisma.groups.deleteMany({});
+    await prisma.create_event.deleteMany({});
+    await prisma.userDailyMissionProgress.deleteMany({});
     await prisma.user.deleteMany({});
     console.log('🗑️ Cleared existing user and group data.');
     // --- 2. シーディングするユーザーの基本情報を定義 ---
@@ -251,6 +253,41 @@ async function seedUsersAndGroups(prisma) {
         else {
             console.warn('⚠️ Could not find "神戸ゼミ" or "KDITクラス". Skipping assignment creation.');
         }
+    }
+    // --- 5. イベントと参加者のシーディング ---
+    console.log('🌱 Seeding events and participants...');
+    const kobeTaroForEvent = await prisma.user.findUnique({ where: { email: 'kobe_taro@example.com' } });
+    const satoMisaki = await prisma.user.findUnique({ where: { email: 'sato@example.com' } });
+    if (kobeTaroForEvent && satoMisaki) {
+        // イベントを作成 (作成者は神戸太郎)
+        const event1 = await prisma.create_event.create({
+            data: {
+                title: 'コーディングチャレンジ Vol.1',
+                description: '最初のコーディングチャレンジイベントです。腕試しをしてみましょう！',
+                inviteCode: 'event1-invite',
+                publicStatus: true,
+                startTime: new Date('2025-12-01T10:00:00Z'),
+                endTime: new Date('2025-12-01T12:00:00Z'),
+                publicTime: new Date('2025-11-30T10:00:00Z'),
+                creatorId: kobeTaroForEvent.id,
+            },
+        });
+        // 参加者を登録 (神戸太郎: 管理者, 佐藤美咲: 一般参加者)
+        await prisma.event_Participants.createMany({
+            data: [
+                {
+                    eventId: event1.id,
+                    userId: kobeTaroForEvent.id,
+                    isAdmin: true,
+                },
+                {
+                    eventId: event1.id,
+                    userId: satoMisaki.id,
+                    isAdmin: false,
+                },
+            ],
+        });
+        console.log(`✅ Created event "${event1.title}" with 2 participants.`);
     }
     console.log(`🎉 User and group seeding finished.`);
 }

@@ -1,0 +1,141 @@
+"use strict";
+// /app/api/groups/[hashedId]/assignments/route.ts
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GET = GET;
+exports.POST = POST;
+const server_1 = require("next/server");
+const prisma_1 = require("@/lib/prisma");
+const client_1 = require("@prisma/client"); // Prismaの型をインポート
+const iron_session_1 = require("iron-session");
+const session_1 = require("@/lib/session");
+const headers_1 = require("next/headers");
+// 課題一覧を取得 (GET)
+async function GET(req) {
+    var _a;
+    const session = await (0, iron_session_1.getIronSession)(await (0, headers_1.cookies)(), session_1.sessionOptions);
+    if (!((_a = session.user) === null || _a === void 0 ? void 0 : _a.id)) {
+        return server_1.NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
+    }
+    const urlParts = req.url.split('/');
+    const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
+    if (!hashedId) {
+        return server_1.NextResponse.json({ success: false, message: 'Invalid group ID format.' }, { status: 400 });
+    }
+    try {
+        const group = await prisma_1.prisma.groups.findUnique({
+            where: { hashedId },
+            select: { id: true },
+        });
+        if (!group) {
+            return server_1.NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
+        }
+        const assignments = await prisma_1.prisma.assignment.findMany({
+            where: { groupid: group.id },
+            orderBy: { created_at: 'desc' },
+            // Use `select` to be explicit about the fields, preventing Prisma
+            // from trying to access columns that might not exist in the DB.
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                due_date: true,
+                created_at: true,
+                updated_at: true,
+                programmingProblemId: true,
+                selectProblemId: true,
+                // Include the related records
+                programmingProblem: true,
+                selectProblem: true,
+                // Add the group relation to the select clause
+                group: true,
+                Submissions: {
+                    select: { id: true },
+                }
+            }
+        });
+        return server_1.NextResponse.json({ success: true, data: assignments });
+    }
+    catch (error) {
+        console.error('課題取得エラー:', error);
+        return server_1.NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
+    }
+}
+// 課題を作成 (POST)
+async function POST(req) {
+    var _a, _b, _c;
+    const session = await (0, iron_session_1.getIronSession)(await (0, headers_1.cookies)(), session_1.sessionOptions);
+    const sessionUserId = (_a = session.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!sessionUserId) {
+        return server_1.NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
+    }
+    const userId = Number(sessionUserId);
+    try {
+        const urlParts = req.url.split('/');
+        const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
+        const body = await req.json();
+        const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
+        if (!title || !dueDate) {
+            return server_1.NextResponse.json({ success: false, message: 'タイトルと期日は必須です。' }, { status: 400 });
+        }
+        if (!programmingProblemId && !selectProblemId) {
+            return server_1.NextResponse.json({ success: false, message: '課題となる問題が指定されていません。' }, { status: 400 });
+        }
+        if (typeof hashedId !== 'string') {
+            return server_1.NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });
+        }
+        const group = await prisma_1.prisma.groups.findUnique({ where: { hashedId: hashedId } });
+        if (!group) {
+            return server_1.NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
+        }
+        // ユーザーが管理者かどうかのチェック
+        const membership = await prisma_1.prisma.groups_User.findFirst({
+            where: {
+                group_id: group.id,
+                user_id: userId,
+                admin_flg: true,
+            },
+        });
+        if (!membership) {
+            return server_1.NextResponse.json({ success: false, message: 'この操作を行う権限がありません' }, { status: 403 });
+        }
+        const newAssignment = await prisma_1.prisma.$transaction(async (tx) => {
+            const createdAssignment = await tx.assignment.create({
+                data: Object.assign(Object.assign({ title,
+                    description, due_date: new Date(dueDate), group: { connect: { id: group.id } } }, (programmingProblemId && { programmingProblem: { connect: { id: Number(programmingProblemId) } } })), (selectProblemId && { selectProblem: { connect: { id: Number(selectProblemId) } } })),
+            });
+            // グループの全メンバーを取得
+            const members = await tx.groups_User.findMany({
+                where: { group_id: group.id },
+                select: { user_id: true },
+            });
+            // 全メンバーに対して「未提出」の提出レコードを作成
+            const submissionData = members.map(member => ({
+                assignment_id: createdAssignment.id,
+                userid: member.user_id,
+                status: '未提出',
+                description: '', // 初期値は空
+                codingid: 0, // 初期値は0
+            }));
+            if (submissionData.length > 0) {
+                await tx.submissions.createMany({
+                    data: submissionData,
+                });
+            }
+            return createdAssignment;
+        });
+        return server_1.NextResponse.json({ success: true, data: newAssignment }, { status: 201 });
+    }
+    catch (error) {
+        console.error('課題作成APIエラー:', error);
+        if (error instanceof client_1.Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+            // 外部キー制約違反
+            if (((_b = error.meta) === null || _b === void 0 ? void 0 : _b.field_name) === 'Assignment_programmingProblemId_fkey') {
+                return server_1.NextResponse.json({ success: false, message: '指定されたプログラミング問題が見つかりません。' }, { status: 404 });
+            }
+            if (((_c = error.meta) === null || _c === void 0 ? void 0 : _c.field_name) === 'Assignment_selectProblemId_fkey') {
+                return server_1.NextResponse.json({ success: false, message: '指定された選択問題が見つかりません。' }, { status: 404 });
+            }
+        }
+        return server_1.NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
+    }
+}

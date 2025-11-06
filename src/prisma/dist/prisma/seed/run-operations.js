@@ -139,4 +139,76 @@ async function runOperations(prisma) {
     else {
         console.warn('⚠️ Could not find groups to seed assignments.');
     }
+    // 5. ダミーのデイリーアクティビティサマリーを生成
+    await seedDailyActivities(prisma);
+    console.log('✅ Post-seeding operations completed.');
+}
+/**
+ * JST（日本標準時）の「日付」オブジェクトを取得するヘルパー関数
+ * @param daysAgo 0 = JSTの今日, 1 = JSTの昨日
+ */
+function getJstDate(daysAgo = 0) {
+    // タイムゾーンをJST（UTC+9）に設定
+    const jstOffset = 9 * 60 * 60 * 1000;
+    const targetJST = new Date(Date.now() + jstOffset);
+    // 日付を指定された日数だけ巻き戻す
+    targetJST.setDate(targetJST.getDate() - daysAgo);
+    // JSTでの「YYYY-MM-DD」の文字列を元に、UTCの「日付」オブジェクトを作成
+    // (例: '2025-10-27' -> 2025-10-27 00:00:00 UTC)
+    // これにより、Prisma の @db.Date 型に正しく保存されます
+    return new Date(targetJST.toISOString().split('T')[0]);
+}
+/**
+ * 範囲内のランダムな整数を生成するヘルパー関数
+ */
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+/**
+ * 過去7日間の活動サマリー（ダミーデータ）を生成する
+ */
+async function seedDailyActivities(prisma) {
+    console.log('🌱 Seeding daily activity summaries for the past 7 days...');
+    // 1. 既存のサマリーデータをクリア
+    await prisma.dailyActivitySummary.deleteMany({});
+    // 2. ダミーデータを割り当てるユーザーを取得
+    // (users-groups-data.ts で作成されるユーザーを指定)
+    const alice = await prisma.user.findUnique({ where: { email: 'alice@example.com' } });
+    const bob = await prisma.user.findUnique({ where: { email: 'bob@example.com' } });
+    const kobeTaro = await prisma.user.findUnique({ where: { email: 'kobe_taro@example.com' } });
+    // null でないユーザー（＝DBに存在するユーザー）のみを対象にする
+    const users = [alice, bob, kobeTaro].filter(u => u !== null);
+    if (users.length === 0) {
+        console.warn('⚠️ No users found to seed activity data for. Skipping.');
+        return;
+    }
+    const activitiesToCreate = [];
+    const DAYS_TO_SEED = 7; // 今日を含めて7日間
+    // 3. 過去7日分 (i=0が今日, i=6が6日前) のループ
+    for (let i = 0; i < DAYS_TO_SEED; i++) {
+        const date = getJstDate(i); // i日前のJST日付を取得
+        // 4. 各ユーザーのループ
+        for (const user of users) {
+            // ランダムなダミーデータを生成
+            const totalXpGained = getRandomInt(50, 2500);
+            const totalTimeSpentMs = BigInt(getRandomInt(5, 120) * 60000); // 5分〜120分 (BigInt型で)
+            const problemsCompleted = getRandomInt(0, 15);
+            activitiesToCreate.push({
+                userId: user.id,
+                date: date,
+                totalXpGained: totalXpGained,
+                totalTimeSpentMs: totalTimeSpentMs,
+                problemsCompleted: problemsCompleted,
+            });
+        }
+    }
+    // 5. データをデータベースに一括挿入 (createMany)
+    if (activitiesToCreate.length > 0) {
+        await prisma.dailyActivitySummary.createMany({
+            data: activitiesToCreate,
+        });
+        console.log(`✅ Created ${activitiesToCreate.length} daily activity summary records.`);
+    }
 }
