@@ -45,7 +45,6 @@ interface EventDifficulty {
 // プログラミング問題作成ページのメインコンポーネント（改良版）
 export default function CreateProgrammingQuestionPage() {
   // フォームの状態管理
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [problemId, setProblemId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('basic') // アクティブなタブ

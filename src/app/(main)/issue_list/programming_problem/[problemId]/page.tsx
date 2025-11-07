@@ -1,14 +1,14 @@
 // /workspaces/my-next-app/src/app/(main)/issue_list/programming_problem/[problemId]/page.tsx
 'use client';
 
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, TextCursorInput, GripVertical } from 'lucide-react';
+import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
 // パネルのリサイズ機能を提供するライブラリのコンポーネントをインポートします
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 // --- データと型のインポート ---
-import type { Problem as SerializableProblem, SampleCase } from '@/lib/types';
+import type { Problem as SerializableProblem } from '@/lib/types';
 import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction} from '@/lib/actions';
 
 import AceEditor from 'react-ace';
@@ -34,6 +34,13 @@ import 'ace-builds/src-noconflict/ext-beautify'; // (おまけ: コード整形�
 // --- 型定義 ---
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 type ActiveTab = 'input' | 'output';
+type SubmitResult = {
+    success: boolean;
+    message: string;
+    yourOutput?: string;
+    expected?: string;
+};
+
 // --- Aceのアノテーション型を定義 ---
 type AceAnnotation = {
     row: number;
@@ -80,7 +87,7 @@ const CodeEditorPanel: React.FC<{
     stdin: string; setStdin: (stdin: string) => void;
     selectedLanguage: string; languages: { value: string; label: string }[]; onLanguageSelect: (lang: string) => void;
     onExecute: () => void; onSubmit: () => void; isSubmitting: boolean;
-    executionResult: string; submitResult: any;
+    executionResult: string; submitResult: SubmitResult | null;
     annotations: AceAnnotation[];
 }> = memo((props) => { // memoでラップ
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -167,6 +174,8 @@ const CodeEditorPanel: React.FC<{
     );
 });
 
+CodeEditorPanel.displayName = 'CodeEditorPanel';
+
 // 右パネル: AIチャット
 const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: string) => void; isLoading: boolean; }> = ({ messages, onSendMessage, isLoading }) => {
     const [input, setInput] = useState('');
@@ -204,13 +213,14 @@ const ProblemSolverPage = () => {
     const [stdin, setStdin] = useState('');
     const [executionResult, setExecutionResult] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitResult, setSubmitResult] = useState<any>(null);
+    const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [problemStartedAt, setProblemStartedAt] = useState<number>(Date.now());
     const hasRecordedTime = useRef(false);
     const [annotations, setAnnotations] = useState<AceAnnotation[]>([]);
+    const [isAiLoading, setIsAiLoading] = useState(false);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -299,7 +309,7 @@ const ProblemSolverPage = () => {
     /**
      * 学習時間を計算し、サーバーに送信する
      */
-    const recordStudyTime = () => {
+    const recordStudyTime = useCallback(() => {
       // まだこの問題の時間を記録していない場合のみ実行
       if (!hasRecordedTime.current) {
         const endTime = Date.now();
@@ -312,7 +322,7 @@ const ProblemSolverPage = () => {
           hasRecordedTime.current = true; // 記録済みフラグを立てる
         }
       }
-    };
+    }, [problemId, problemStartedAt]);
 
     // --- 6. ページを離れる時に時間を記録する Effect を追加 ---
     useEffect(() => {
@@ -321,7 +331,7 @@ const ProblemSolverPage = () => {
         // クリーンアップ関数（ページ離脱時）に時間を記録
         recordStudyTime();
       };
-    }, [problemStartedAt]); // problemStartedAt が変わるたびにクリーンアップを再設定
+    }, [problemStartedAt, recordStudyTime]); // problemStartedAt が変わるたびにクリーンアップを再設定
 
     const handleExecute = async () => {
         if (!userCode.trim()) { setExecutionResult('コードを入力してください。'); return; }
@@ -364,12 +374,47 @@ const ProblemSolverPage = () => {
         else { setAlertMessage("これが最後の問題です！お疲れ様でした。"); setShowAlert(true); }
     };
 
-    const handleUserMessage = (message: string) => {
+    const handleUserMessage = async (message: string) => {
+        if (!problem) return;
+
+        // ユーザーのメッセージを即座にチャットに追加
         setChatMessages((prev) => [...prev, { sender: 'user', text: message }]);
-        setTimeout(() => {
-            const kohakuResponse = "ごめんなさい、まだ質問には答えられません。";
+        setIsAiLoading(true);
+
+        try {
+            // APIエンドポイントにリクエストを送信
+            const response = await fetch('/api/generate-hint', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: message,
+                    context: {
+                        problemTitle: problem.title.ja,
+                        problemDescription: problem.description.ja,
+                        userCode: userCode,
+                    },
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'AIからの応答取得に失敗しました。');
+            }
+
+            const data = await response.json();
+            const kohakuResponse = data.hint || 'ヒントを生成できませんでした。もう一度試してみてください。';
+            
+            // AIからの応答をチャットに追加
             setChatMessages((prev) => [...prev, { sender: 'kohaku', text: kohakuResponse }]);
-        }, 1000);
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました。';
+            // エラーメッセージをチャットに追加
+            setChatMessages((prev) => [...prev, { sender: 'kohaku', text: `エラー: ${errorMessage}` }]);
+        } finally {
+            // ローディング状態を解除
+            setIsAiLoading(false);
+        }
     };
 
     if (isLoading) return <div className="flex justify-center items-center h-screen bg-gray-100">読み込んでいます...</div>;
