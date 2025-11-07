@@ -90,10 +90,6 @@ const CodeEditorPanel: React.FC<{
                         <button onClick={() => setActiveTab('output')} className={`px-3 py-1 text-sm rounded-md ${activeTab === 'output' ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}>実行結果</button>
                     </div>
                     {/* 実行・提出ボタンを右側に配置 */}
-                    <div className="flex gap-2">
-                        <button onClick={props.onExecute} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Play className="h-4 w-4" /> 実行</button>
-                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '提出中...' : '提出'}</button>
-                    </div>
                 </div>
                 {/* 境界線はそのままに、上の要素の `mb-3` でスペースを調整 */}
                 <div className="h-32 overflow-y-auto border rounded-md p-2">
