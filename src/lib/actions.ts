@@ -227,7 +227,26 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
       alreadyCorrectToday = true;
     }
-
+  } else if (subjectid === 5) { // 5: Applied_am_Question
+    // 1. 正しいテーブル (Applied_am_Question) を参照する
+    const problem = await prisma.applied_am_Question.findUnique({ 
+      where: { id: problemId }, 
+      select: { difficultyId: true } 
+    });
+    difficultyId = problem?.difficultyId;
+    
+    // 2. UserAnswer テーブルのスキーマに 'applied_am_Question_id' がないため、
+    //    'basic_A_Info_Question_id' に保存します。 (スキーマの制約)
+    userAnswerForeignKeyData = { basic_A_Info_Question_id: problemId };
+    
+    // 3. 履歴チェックも 'basic_A_Info_Question_id' で行います
+    const lastCorrectAnswer = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, basic_A_Info_Question_id: problemId },
+      orderBy: { answeredAt: 'desc' }
+    });
+    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+      alreadyCorrectToday = true;
+    }
   } else { // 5: Questions_Algorithm (仮)
     const problem = await prisma.questions_Algorithm.findUnique({ 
       where: { id: problemId }, 

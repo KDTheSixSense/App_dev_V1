@@ -111,7 +111,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       if (!isNaN(numericId)) {
         try {
           // Pass eventId and subjectId as undefined when not applicable, and include the problem start time if available
-          const result = await awardXpForCorrectAnswer(numericId, 9);
+          const result = await awardXpForCorrectAnswer(numericId, undefined, 5);
           if (result.message === '経験値を獲得しました！') {
               window.dispatchEvent(new CustomEvent('petStatusUpdated'));
           }
