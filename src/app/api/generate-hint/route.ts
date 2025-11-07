@@ -139,6 +139,7 @@ ${context.userCode}
 
     // 受け取ったJSONでテンプレートを穴埋め
     const finalHint = hintTemplate
+    const finalHint = hintTemplate
       .replace('{{question}}', question)
       .replace('{{hint1}}', aiResponseJson.hint1 || "ヒント1の取得に失敗しました")
       .replace('{{hint2}}', aiResponseJson.hint2 || "ヒント2の取得に失敗しました")
