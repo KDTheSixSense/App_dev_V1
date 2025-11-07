@@ -181,12 +181,45 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
     recordStudyTime();
   };
 
-  const handleUserMessage = (message: string) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleUserMessage = async (message: string) => {
     setChatMessages((prev) => [...prev, { sender: 'user', text: message }]);
-    setTimeout(() => {
-      const kohakuResponse = generateKohakuResponse(false, null, message);
-      setChatMessages((prev) => [...prev, { sender: 'kohaku', text: kohakuResponse }]);
-    }, 1000);
+    setIsLoading(true);
+
+    try {
+      // AIに渡すコンテキストを作成
+      const context = {
+        problemTitle: problem.title.ja,
+        problemDescription: problem.description.ja,
+        // この問題タイプにはユーザーコードがないため、問題文を代わりに使用
+        userCode: problem.description.ja, 
+      };
+
+      const response = await fetch('/api/generate-hint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: message, context }),
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setChatMessages((prev) => [...prev, { sender: 'kohaku', text: data.hint }]);
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "不明なエラーが発生しました。";
+      setChatMessages((prev) => [...prev, { sender: 'kohaku', text: `エラー: ${errorMessage}` }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -213,7 +246,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
           </>
         </div>
         <div className="w-full lg:w-96 flex flex-col">
-          <KohakuChat messages={chatMessages} onSendMessage={handleUserMessage} language={language} textResources={t} />
+          <KohakuChat messages={chatMessages} onSendMessage={handleUserMessage} language={language} textResources={t} isLoading={isLoading} />
         </div>
       </div>
       {isAnswered && (
