@@ -2,13 +2,13 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 import type { Problem as SerializableProblem } from '@/lib/types';
-import { getNextProgrammingProblemId, recordStudyTimeAction } from '@/lib/actions';
+import { recordStudyTimeAction } from '@/lib/actions';
 
 import AceEditor from 'react-ace';
 import ace from 'ace-builds/src-noconflict/ace';
@@ -30,6 +30,13 @@ import 'ace-builds/src-noconflict/ext-language_tools'; // 自動補完とスニ�
 
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 type ActiveTab = 'input' | 'output';
+
+type SubmitResult = {
+    success: boolean;
+    message: string;
+    yourOutput?: string;
+    expected?: string;
+};
 
 // Aceのエラー/警告表示用のアノテーション型
 type AceAnnotation = {
@@ -106,7 +113,7 @@ const CodeEditorPanel: React.FC<{
     stdin: string; setStdin: (stdin: string) => void;
     selectedLanguage: string; languages: { value: string; label: string }[]; onLanguageSelect: (lang: string) => void;
     onExecute: () => void; onSubmit: () => void; isSubmitting: boolean;
-    executionResult: string; submitResult: any;
+    executionResult: string; submitResult: SubmitResult | null;
     annotations: AceAnnotation[]; // annotations prop を追加
 }> = React.memo((props) => { // React.memoでラップ
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -200,6 +207,7 @@ const CodeEditorPanel: React.FC<{
         </div>
     );
 });
+CodeEditorPanel.displayName = 'CodeEditorPanel';
 
 const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: string) => void; }> = ({ messages, onSendMessage }) => {
     const [input, setInput] = useState('');
@@ -225,7 +233,6 @@ const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: 
 
 const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assignmentInfo }) => {
     const router = useRouter();
-    const searchParams = useSearchParams(); // クエリパラメータを取得
     const t = textResources['ja'].problemStatement;
 
     // problemはpropsから直接受け取るので、useStateは不要
@@ -235,7 +242,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
     const [stdin, setStdin] = useState('');
     const [executionResult, setExecutionResult] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitResult, setSubmitResult] = useState<any>(null);
+    const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -313,7 +320,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
     /**
      * 学習時間を計算し、サーバーに送信する (1回だけ実行)
      */
-    const recordStudyTime = () => {
+    const recordStudyTime = useCallback(() => {
         // まだ記録されておらず、開始時刻がセットされている場合のみ
         if (!hasRecordedTime.current && problemStartTime !== null) {
             const endTime = Date.now();
@@ -327,7 +334,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
                 hasRecordedTime.current = true; // 記録済みフラグを立てる
             }
         }
-    };
+    }, [problem.id, problemStartTime]);
 
     useEffect(() => {
         // problemが変更されたら（＝別の問題ページに遷移したら）状態をリセット
@@ -348,7 +355,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
             // クリーンアップ関数（ページ離脱時）に時間を記録
             recordStudyTime();
         };
-    }, [problemStartTime]); // problemStartTime が変わるたびにクリーンアップを再設定
+    }, [problemStartTime, recordStudyTime]); // problemStartTime が変わるたびにクリーンアップを再設定
 
     const handleExecute = async () => {
         if (!userCode.trim()) { setExecutionResult('コードを入力してください。'); return; }

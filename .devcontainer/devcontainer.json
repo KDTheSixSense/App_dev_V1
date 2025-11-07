@@ -27,7 +27,9 @@
         "ms-azuretools.vscode-docker",
         "Prisma.prisma",
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "google.gemini-cli-vscode-ide-companion",
+        "google.geminicodeassist"
       ]
     }
   },
