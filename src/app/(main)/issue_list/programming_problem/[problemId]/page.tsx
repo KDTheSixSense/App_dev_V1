@@ -168,22 +168,23 @@ const CodeEditorPanel: React.FC<{
 });
 
 // 右パネル: AIチャット
-const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: string) => void; }> = ({ messages, onSendMessage }) => {
+const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: string) => void; isLoading: boolean; }> = ({ messages, onSendMessage, isLoading }) => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-    const handleSend = () => { if (input.trim()) { onSendMessage(input); setInput(''); } };
+    const handleSend = () => { if (input.trim() && !isLoading) { onSendMessage(input); setInput(''); } };
     return (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
             <div className="p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg text-gray-800 flex items-center gap-2"><Sparkles className="h-5 w-5 text-cyan-500" />AIに質問</h3></div>
             <div className="flex-grow p-4 overflow-y-auto space-y-4">
                 {messages.map((msg, index) => (<div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>{msg.sender === 'kohaku' && <div className="w-8 h-8 rounded-full bg-cyan-400 flex-shrink-0 flex items-center justify-center text-white text-lg font-bold">AI</div>}<div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-xl shadow-sm ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white border'}`}><p className="text-sm">{msg.text}</p></div></div>))}
+                {isLoading && <div className="text-center text-gray-500 text-sm">AIが考えています...</div>}
                 <div ref={messagesEndRef} />
             </div>
             <div className="p-4 bg-white border-t flex-shrink-0">
                 <div className="flex gap-2">
-                    <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder="ヒントを求める..." className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-400" />
-                    <button onClick={handleSend} className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Send className="h-5 w-5" /></button>
+                    <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder={isLoading ? "AIが応答中です..." : "ヒントを求める..."} disabled={isLoading} className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:bg-gray-100" />
+                    <button onClick={handleSend} disabled={isLoading} className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors disabled:bg-cyan-300 disabled:cursor-not-allowed"><Send className="h-5 w-5" /></button>
                 </div>
             </div>
         </div>
@@ -401,7 +402,7 @@ const ProblemSolverPage = () => {
                              <div className="w-8 h-1 bg-gray-400 rounded-full" />
                         </PanelResizeHandle>
                         <Panel defaultSize={30} minSize={15}>
-                             <AiChatPanel messages={chatMessages} onSendMessage={handleUserMessage} />
+                             <AiChatPanel messages={chatMessages} onSendMessage={handleUserMessage} isLoading={isAiLoading} />
                         </Panel>
                     </PanelGroup>
                 </Panel>
