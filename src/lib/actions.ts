@@ -48,7 +48,7 @@ export async function registerUserAction(data: { username: string, email: string
         username: username,
         email: email,
         password: hashedPassword,
-        // --- 生年月日を保存するロジックを追加 ---
+        // --- 生年月日を保存するロジック ---
         birth: birth ? new Date(birth) : null,
         // 関連するペットステータスも同時に作成
         status_Kohaku: {
@@ -99,6 +99,12 @@ export async function getNextProblemId(currentId: number, category: string): Pro
       problemIds = await prisma.basic_Info_A_Question.findMany({
         select: { id: true },
       });
+    } else if (category === 'applied_info_morning_problem') {
+      // 応用情報技術者試験 午前問題
+      problemIds = await prisma.applied_am_Question.findMany({
+        select: { id: true },
+      });
+
     } else {
       problemIds = await prisma.questions_Algorithm.findMany({
         where: { subject: { name: category } },
@@ -1079,7 +1085,7 @@ export async function deleteProblemAction(formData: FormData) {
   }
 }
 
-// ★ 新しく追加する関数
+// ★ 新しする関数
 export async function getMineProblems() {
   'use server';
   try {
@@ -1401,7 +1407,7 @@ export async function createEventAction(data: CreateEventFormData) {
           publicTime: new Date(publicTime), // ※スキーマに publicTime が必要
           inviteCode: inviteCode,
           publicStatus: true, // デフォルトで公開（画像からは設定項目がなかったため）
-          isStarted: true, // ★★★ イベント作成時は「未終了」状態にする
+          isStarted: true, // イベント作成時は「未終了」状態にする
           creatorId: userId,
         },
       });
