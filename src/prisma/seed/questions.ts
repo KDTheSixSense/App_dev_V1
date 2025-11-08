@@ -1284,8 +1284,8 @@ async function seedAppliedInfoAmProblems(prisma: PrismaClient) {
   const imageFileMap = createAppliedAmImageFileMap(); //（現在未使用）
 
   //  TODO: 応用情報のExcelファイル名とシート名を指定してください 
-  const excelFileName = 'PBL3応用午前入力シートテンプレート .xlsx'; // あなたのファイル名
-  const sheetName = '応用情報午前問題統合用シート';     // あなたのシート名
+  const excelFileName = 'PBL3応用午前入力シートテンプレート.xlsx'; // あなたのファイル名
+  const sheetName = '令和6年度 応用情報午前問題シート';     // あなたのシート名
   //  TODOここまで 
 
   //  変更: 応用AM用のデータパス
