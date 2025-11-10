@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useTransition,useRef } from 'react';
+import React, { useState, useEffect, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // --- コンポーネントのインポート ---
-import ProblemStatement from '@/app/(main)/issue_list/basic_info_b_problem/components/ProblemStatement';
+// 修正: basic_info_b_problem ではなく、ローカルの(応用午前用の)コンポーネントをインポート
+import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '@/components/KohakuChat';
 
 // --- データと型、アクションのインポート ---
 import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
-//import { getHintAction } from '@/lib/actions/hintActions';
 import { useNotification } from '@/app/contexts/NotificationContext';
 import type { SerializableProblem } from '@/lib/data';
 import { getHintFromAI } from '@/lib/actions/hintactions';
@@ -20,7 +20,7 @@ const textResources = {
   ja: {
     problemStatement: {
       title: "問題",
-      programTitle: "（プログラム）",
+      // programTitle: "（プログラム）", // 不要なので削除またはコメントアウト
       answerGroup: "解答群",
       explanationTitle: "解説",
       hintInit: "こんにちは！何かわからないことはありますか？",
@@ -37,7 +37,7 @@ const textResources = {
   en: {
     problemStatement: {
       title: "Problem",
-      programTitle: "(Program)",
+      // programTitle: "(Program)", // 不要なので削除またはコメントアウト
       answerGroup: "Answer Choices",
       explanationTitle: "Explanation",
       hintInit: "Hello! Is there anything I can help you with?",
@@ -77,8 +77,6 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
   const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -92,8 +90,12 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           if (startTimeRef.current) {
             const endTime = Date.now();
             const durationMs = endTime - startTimeRef.current;
-            const problemIdForLog = initialProblem?.id || 'unknown'; // アンマウント時でもIDを参照できるように
-            startTimeRef.current = null; // リセット
+            // const problemIdForLog = initialProblem?.id || 'unknown';
+            startTimeRef.current = null;
+            // 滞在時間の記録が必要ならここで recordStudyTimeAction を呼び出す
+            if (durationMs > 3000) {
+                 recordStudyTimeAction(durationMs).catch(e => console.error(e));
+            }
           }
         };
   }, [initialProblem, initialCredits, language]);
@@ -110,8 +112,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       const numericId = parseInt(problem.id, 10);
       if (!isNaN(numericId)) {
         try {
-          // Pass eventId and subjectId as undefined when not applicable, and include the problem start time if available
-          const result = await awardXpForCorrectAnswer(numericId, undefined, 5);
+          // 応用情報午前問題の subjectId は 5 と想定（DBシードに合わせて調整してください）
+          const result = await awardXpForCorrectAnswer(numericId, undefined, 5, startTimeRef.current || Date.now());
           if (result.message === '経験値を獲得しました！') {
               window.dispatchEvent(new CustomEvent('petStatusUpdated'));
           }
@@ -146,7 +148,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           const context = { 
             problemTitle: problem.title[currentLang], 
             problemDescription: problem.description[currentLang],
-            userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムを文字列として渡す
+            // userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムはないので空文字か、選択肢を渡す
+            userCode: '',
+            answerOptions: JSON.stringify(problem.answerOptions?.[currentLang]), // AIに選択肢の情報を渡す
+            explanation: problem.explanationText?.[currentLang],
           };
           const hint = await getHintFromAI(message, context);
           setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
@@ -173,13 +178,18 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
 
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start">
-        <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col lg:col-span-8 lg:col-start-3">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-            問{problem.id}: {problem.title[currentLang] || t.title}
+        <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[600px] flex flex-col lg:col-span-8 lg:col-start-3">
+          {/* 出典情報があれば表示するエリア（オプション） */}
+          <div className="text-center text-gray-500 mb-2 text-sm">
+             {problem.sourceYear} {problem.sourceNumber}
+          </div>
+
+          <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+             {problem.title[currentLang]}
           </h1>
           <ProblemStatement
             description={problem.description[currentLang]}
-            programText={problem.programLines?.[currentLang]?.join('\n') || ''}
+            imagePath={problem.imagePath} // ここで画像パスを渡す
             answerOptions={problem.answerOptions?.[currentLang] || []}
             onSelectAnswer={handleSelectAnswer}
             selectedAnswer={selectedAnswer}
@@ -187,11 +197,12 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             isAnswered={isAnswered}
             explanation={problem.explanationText?.[currentLang] || ''}
             language={language}
-            textResources={{ ...t, title: problem.title[currentLang] || t.title }}
+            textResources={{ ...t, title: t.title }} // タイトルは上で表示しているので、t.titleをそのまま渡すか、調整してください
           />
         </div>
 
-        <div className="fixed bottom-4 right-4 lg:col-span-8 lg:col-start-3 w-full max-w-md lg:max-w-none mx-auto lg:w-full mt-8">
+        {/* コハクチャットエリア */}
+        <div className="lg:w-1/3 w-full lg:sticky lg:top-10 mt-8 lg:mt-0">
            <div className="bg-white p-3 rounded-t-lg shadow-lg border-b text-center">
               <p className="text-sm text-gray-600">
                 AIアドバイス残り回数: <span className="font-bold text-lg text-blue-600">{credits}</span> 回
@@ -207,14 +218,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             onSendMessage={handleUserMessage}
             language={language}
             textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
-            isLoading={isPending}
-            isDisabled={credits <= 0}
+            isLoading={isPending || isAiLoading}
+            isDisabled={credits <= 0 || isPending || isAiLoading}
           />
         </div>
       </div>
 
       {isAnswered && (
-        <div className="w-full max-w-lg mt-8 flex justify-center">
+        <div className="w-full max-w-lg mt-8 mb-10 flex justify-center px-4">
           <button
             onClick={handleNextProblem}
             className="w-full py-4 px-8 text-lg font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:scale-105"
