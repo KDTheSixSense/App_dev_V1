@@ -9,6 +9,7 @@ export async function getHintFromAI(
     problemTitle: string;
     problemDescription: string;
     userCode: string;
+    problemType: string; // 問題の種類を追加
   }
 ): Promise<string> {
   try {
