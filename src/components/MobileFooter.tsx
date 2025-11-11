@@ -3,8 +3,14 @@
 import Link from 'next/link';
 import React from 'react';
 import { FaHome, FaList, FaTasks, FaUsers, FaCalendarAlt, FaBars, FaTimes } from 'react-icons/fa'; // Importing icons
+import type { User, Status_Kohaku } from '@prisma/client';
+
+type UserWithPetStatus = User & {
+  status_Kohaku: Status_Kohaku | null;
+};
 
 type MobileFooterProps = {
+  userWithPet: UserWithPetStatus | null; // Adjust the type as necessary
   isMenuOpen: boolean;
   setIsMenuOpen: (isOpen: boolean) => void;
 };
