@@ -35,12 +35,12 @@ export default async function HomePage({
 
   return (
     <div className='bg-white select-none'>
-      <main className="flex justify-center w-full min-h-screen text-center py-10 px-20 gap-10">
-        <div className="flex flex-col w-full max-w-150 gap-8">
+      <main className="flex flex-col md:flex-row justify-center min-h-screen text-center py-10 px-4 sm:px-6 lg:px-8 gap-10">
+        <div className="flex flex-col w-full md:w-1/2 gap-8">
           <User user={user}/>
           <Ranking />
         </div>
-        <div className="flex flex-col w-full max-w-150 gap-10">
+        <div className="flex flex-col w-full md:w-1/2 gap-10">
           <Pet user={user}/>
           <Daily />
         </div>

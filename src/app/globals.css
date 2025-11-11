@@ -24,4 +24,15 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  padding-bottom: 4rem; /* Adjust body padding for fixed footer on mobile */
+}
+
+@media (min-width: 768px) {
+  /* md breakpoint */
+  footer {
+    display: none; /* Hide footer on desktop */
+  }
+  body {
+    padding-bottom: 0; /* Remove padding on desktop */
+  }
 }

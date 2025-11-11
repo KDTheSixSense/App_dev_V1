@@ -11,6 +11,8 @@ type UserWithPetStatus = User & {
 
 type HeaderProps = {
   userWithPet: UserWithPetStatus | null; // ユーザー情報を受け取る
+  isMenuOpen: boolean;
+  setIsMenuOpen: (isOpen: boolean) => void;
 };
 
 type PetDisplayStatus = {
@@ -24,28 +26,28 @@ const MAX_HUNGER = 200; // 満腹度の最大値
 const getPetDisplayState = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
-      icon: '/images/kohaku/kohaku-full.png',      // 満腹の画像
+      icon: '/images/Kohaku/kohaku-full.png',      // 満腹の画像
       colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
     };
   } else if (hungerLevel >= 100) {
     return {
-      icon: '/images/kohaku/kohaku-normal.png',    // 普通の画像
+      icon: '/images/Kohaku/kohaku-normal.png',    // 普通の画像
       colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
     };
   } else if (hungerLevel >= 50) {
     return {
-      icon: '/images/kohaku/kohaku-hungry.png',    // 空腹の画像
+      icon: '/images/Kohaku/kohaku-hungry.png',    // 空腹の画像
       colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
     };
   } else {
     return {
-      icon: '/images/kohaku/kohaku-starving.png',  // 死にかけの画像
+      icon: '/images/Kohaku/kohaku-starving.png',  // 死にかけの画像
       colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
     };
   }
 };
 
-export default function Header({ userWithPet }: HeaderProps) {
+export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
 
   // 1. ランク(level)のstate
@@ -57,8 +59,10 @@ export default function Header({ userWithPet }: HeaderProps) {
   // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
     const initialStatus = userWithPet?.status_Kohaku;
+    console.log("[Header Debug] Initializing petStatus. userWithPet:", userWithPet);
     if (initialStatus) {
       const displayState = getPetDisplayState(initialStatus.hungerlevel);
+      console.log("[Header Debug] Initial petStatus from userWithPet:", { hungerlevel: initialStatus.hungerlevel, ...displayState });
       return {
         hungerlevel: initialStatus.hungerlevel,
         ...displayState,
@@ -67,16 +71,20 @@ export default function Header({ userWithPet }: HeaderProps) {
     // ユーザーはいるがペット情報がない場合 (フォールバック)
     if (userWithPet) {
         const displayState = getPetDisplayState(MAX_HUNGER);
+        console.log("[Header Debug] Initial petStatus (fallback for no status_Kohaku):", { hungerlevel: MAX_HUNGER, ...displayState });
         return { hungerlevel: MAX_HUNGER, ...displayState };
     }
+    console.log("[Header Debug] Initial petStatus (no userWithPet): null");
     return null;  });
 
     // ペットのステータスをAPIから再取得して、Stateを更新する関数
   const refetchPetStatus = async () => {
+    console.log("[Header Debug] refetchPetStatus called.");
     try {
       const res = await fetch('/api/pet/status');
       if (res.ok) {
         const { data } = await res.json();
+        console.log("[Header Debug] API /api/pet/status response data:", data);
         if (data) {
           const displayState = getPetDisplayState(data.hungerlevel);
           setPetStatus({
@@ -89,11 +97,16 @@ export default function Header({ userWithPet }: HeaderProps) {
           setContinuousLogin(data.continuouslogin);
           console.log('ヘッダーのペット情報を更新しました。');
         }
+      } else {
+        console.error("[Header Debug] Failed to fetch pet status. Response not OK:", res.status, await res.text());
       }
     } catch (error) {
-      console.error("ペット情報の再取得に失敗:", error);
+      console.error("[Header Debug] ペット情報の再取得に失敗:", error);
     }
   };
+
+  // レンダリング直前にpetStatus.iconの値をログ出力
+  console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
 
   useEffect(() => {
 
@@ -108,7 +121,7 @@ export default function Header({ userWithPet }: HeaderProps) {
     return () => {
       window.removeEventListener('petStatusUpdated', refetchPetStatus);
     };
-  }, []); // 空の依存配列なので、この設定はコンポーネントのマウント時に一度だけ行われます
+  }, [userWithPet]); // userWithPetを依存配列に追加
 
   // ログアウト処理を行う非同期関数
   const handleLogout = async () => {
@@ -139,7 +152,7 @@ export default function Header({ userWithPet }: HeaderProps) {
   ];
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 flex items-center px-4 h-20 z-50">
+    <header className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
       
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0">
@@ -198,7 +211,7 @@ export default function Header({ userWithPet }: HeaderProps) {
         {/* ランクとログイン日数 */}
         <div className="flex flex-col">
           <div className="relative group flex items-center gap-2">
-            <img src="/images/Rank.png" alt="ランク" width={45} height={15} />
+            <img src="/images/rank.png" alt="ランク" width={45} height={15} />
             <div className='flex ml-auto'>
               <p className="text-[#5FE943] text-2xl font-bold select-none">{rank}</p>
             </div>
