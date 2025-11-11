@@ -23,6 +23,7 @@
     "lucide-react": "^0.523.0",
     "nanoid": "^5.1.5",
     "next": "15.3.4",
+    "next-auth": "^4.24.13",
     "nodemailer": "^7.0.3",
     "react": "^19.1.0",
     "react-ace": "^14.0.1",

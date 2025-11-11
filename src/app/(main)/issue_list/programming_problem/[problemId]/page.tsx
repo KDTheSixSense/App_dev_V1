@@ -392,6 +392,9 @@ const ProblemSolverPage = () => {
                         problemTitle: problem.title.ja,
                         problemDescription: problem.description.ja,
                         userCode: userCode,
+                        answerOptions: JSON.stringify(problem.answerOptions?.ja || []),
+                        correctAnswer: problem.correctAnswer || '',
+                        explanation: problem.explanation?.ja || '',
                     },
                 }),
             });

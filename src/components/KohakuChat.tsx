@@ -77,7 +77,7 @@ const KohakuChat: React.FC<KohakuChatProps> = ({
             // ★★★ whitespace-pre-wrap を追加して改行を反映 ★★★
             className={`mb-2 p-3 rounded-lg max-w-[85%] text-sm whitespace-pre-wrap ${
               msg.sender === 'user'
-                ? 'ml-auto bg-blue-500 text-white'
+                ? 'ml-auto bg-cyan-500 text-white border border-cyan-700'
                 : 'mr-auto bg-gray-200 text-gray-800'
             }`}
           >
