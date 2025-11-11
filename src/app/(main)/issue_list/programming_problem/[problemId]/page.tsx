@@ -394,7 +394,7 @@ const ProblemSolverPage = () => {
                         userCode: userCode,
                         answerOptions: JSON.stringify(problem.answerOptions?.ja || []),
                         correctAnswer: problem.correctAnswer || '',
-                        explanation: problem.explanation?.ja || '',
+                        explanation: (problem as any).explanation?.ja || '',
                     },
                 }),
             });
