@@ -20,7 +20,7 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission, onClaim }) => {
   const isClaimable = mission.progress >= mission.targetCount && !mission.isCompleted;
 
   return (
-    <div className="border border-gray-200 rounded-lg p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+    <div className="border border-gray-200 rounded-lg p-5 flex flex-col sm:flex-row items-center sm:items-center gap-4">
       {/* ミッション情報 (左側) */}
       <div className="flex-1">
         <h3 className="text-lg font-semibold text-gray-800">{mission.title}</h3>

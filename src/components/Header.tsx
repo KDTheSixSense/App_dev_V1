@@ -11,6 +11,8 @@ type UserWithPetStatus = User & {
 
 type HeaderProps = {
   userWithPet: UserWithPetStatus | null; // ユーザー情報を受け取る
+  isMenuOpen: boolean;
+  setIsMenuOpen: (isOpen: boolean) => void;
 };
 
 type PetDisplayStatus = {
@@ -45,7 +47,7 @@ const getPetDisplayState = (hungerLevel: number) => {
   }
 };
 
-export default function Header({ userWithPet }: HeaderProps) {
+export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
 
   // 1. ランク(level)のstate
@@ -139,7 +141,7 @@ export default function Header({ userWithPet }: HeaderProps) {
   ];
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 flex items-center px-4 h-20 z-50">
+    <header className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
       
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0">

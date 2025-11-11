@@ -121,6 +121,25 @@ CREATE TABLE "Basic_Info_A_Question" (
 );
 
 -- CreateTable
+CREATE TABLE "Applied_am_Question" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "imagePath" TEXT,
+    "description" TEXT NOT NULL,
+    "explanation" TEXT NOT NULL,
+    "answerOptions" JSONB NOT NULL,
+    "correctAnswer" INTEGER NOT NULL,
+    "sourceYear" TEXT,
+    "sourceNumber" TEXT,
+    "difficultyId" INTEGER NOT NULL,
+    "subjectId" INTEGER NOT NULL,
+    "assignmentId" INTEGER,
+    "categoryId" INTEGER NOT NULL,
+
+    CONSTRAINT "Applied_am_Question_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Questions_Algorithm" (
     "id" SERIAL NOT NULL,
     "title" TEXT NOT NULL,
@@ -522,6 +541,14 @@ CREATE TABLE "EventDifficulty" (
     CONSTRAINT "EventDifficulty_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "_Applied_am_QuestionToUserAnswer" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL,
+
+    CONSTRAINT "_Applied_am_QuestionToUserAnswer_AB_pkey" PRIMARY KEY ("A","B")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -612,6 +639,9 @@ CREATE UNIQUE INDEX "DailyActivitySummary_userId_date_key" ON "DailyActivitySumm
 -- CreateIndex
 CREATE UNIQUE INDEX "EventDifficulty_difficultyName_key" ON "EventDifficulty"("difficultyName");
 
+-- CreateIndex
+CREATE INDEX "_Applied_am_QuestionToUserAnswer_B_index" ON "_Applied_am_QuestionToUserAnswer"("B");
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_selectedTitleId_fkey" FOREIGN KEY ("selectedTitleId") REFERENCES "Title"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -656,6 +686,18 @@ ALTER TABLE "Basic_Info_A_Question" ADD CONSTRAINT "Basic_Info_A_Question_assign
 
 -- AddForeignKey
 ALTER TABLE "Basic_Info_A_Question" ADD CONSTRAINT "Basic_Info_A_Question_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Applied_am_Question" ADD CONSTRAINT "Applied_am_Question_difficultyId_fkey" FOREIGN KEY ("difficultyId") REFERENCES "Difficulty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Applied_am_Question" ADD CONSTRAINT "Applied_am_Question_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Applied_am_Question" ADD CONSTRAINT "Applied_am_Question_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "Assignment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Applied_am_Question" ADD CONSTRAINT "Applied_am_Question_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Questions_Algorithm" ADD CONSTRAINT "Questions_Algorithm_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -770,3 +812,9 @@ ALTER TABLE "UserDailyMissionProgress" ADD CONSTRAINT "UserDailyMissionProgress_
 
 -- AddForeignKey
 ALTER TABLE "DailyActivitySummary" ADD CONSTRAINT "DailyActivitySummary_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_Applied_am_QuestionToUserAnswer" ADD CONSTRAINT "_Applied_am_QuestionToUserAnswer_A_fkey" FOREIGN KEY ("A") REFERENCES "Applied_am_Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_Applied_am_QuestionToUserAnswer" ADD CONSTRAINT "_Applied_am_QuestionToUserAnswer_B_fkey" FOREIGN KEY ("B") REFERENCES "UserAnswer"("id") ON DELETE CASCADE ON UPDATE CASCADE;

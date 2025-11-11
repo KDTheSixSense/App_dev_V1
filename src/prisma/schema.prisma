@@ -98,6 +98,7 @@ model UserAnswer {
   @@index([basic_A_Info_Question_id])
   @@index([questions_id])
   @@index([selectProblem_id])
+  appliedAmQuestions Applied_am_Question[]
 }
 
 //科目テーブル
@@ -110,6 +111,7 @@ model Subject {
   Questions_Algorithm Questions_Algorithm[]
   SelectProblem       SelectProblem[] // SelectProblemとのリレーション
   problems            Basic_Info_A_Question[]
+  appliedAmQuestions Applied_am_Question[]
 }
 
 model Language {
@@ -139,9 +141,42 @@ model Category {
 
   // このカテゴリに属する問題のリスト
   problems Basic_Info_A_Question[]
+  appliedAmQuestions Applied_am_Question[]
 }
 
 model Basic_Info_A_Question {
+  id          Int     @id @default(autoincrement())
+  title       String // 問題タイトル
+  imagePath   String? // 問題画像のパス（Null許容）
+  description String  @db.Text // 問題文
+  explanation String  @db.Text // 解説
+
+  // 解答群 (例: ["選択肢ア", "選択肢イ", "選択肢ウ", "選択肢エ"])
+  answerOptions Json
+
+  // 正解のインデックス (例: 0, 1, 2, 3)
+  correctAnswer Int
+
+  sourceYear   String? // 出典の年/区分 (例: "令和5年度")
+  sourceNumber String? // 出典の問題番号 (例: "問1")
+
+  // --- リレーションのためのフィールド ---
+  difficultyId Int
+  subjectId    Int
+  assignmentId Int? // 課題は任意なのでオプショナル
+  categoryId   Int
+
+  // --- リレーション定義 ---
+  difficulty Difficulty  @relation(fields: [difficultyId], references: [id])
+  subject    Subject     @relation(fields: [subjectId], references: [id])
+  assignment Assignment? @relation(fields: [assignmentId], references: [id])
+  category   Category    @relation(fields: [categoryId], references: [id])
+
+  // この問題に対するユーザーの解答履歴
+  userAnswers UserAnswer[]
+}
+
+model Applied_am_Question {
   id          Int     @id @default(autoincrement())
   title       String // 問題タイトル
   imagePath   String? // 問題画像のパス（Null許容）
@@ -420,6 +455,7 @@ model Difficulty {
   Questions           Questions[]
   SelectProblem       SelectProblem[]
   problems            Basic_Info_A_Question[]
+  appliedAmQuestions Applied_am_Question[]
 }
 
 model Groups {
@@ -473,6 +509,7 @@ model Assignment {
   group       Groups                  @relation(fields: [groupid], references: [id])
   Submissions Submissions[]
   problems    Basic_Info_A_Question[]
+  appliedAmQuestions Applied_am_Question[]
 }
 
 model Submissions {
