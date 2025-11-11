@@ -80,6 +80,12 @@ export async function POST(req: Request) {
 ${context.problemTitle}
 ## 問題文
 ${context.problemDescription}
+## 選択肢
+${context.answerOptions}
+## 正解
+${context.correctAnswer}
+## 解説
+${context.explanation}
 ## ユーザーが書いたコード
 \`\`\`
 ${context.userCode}
