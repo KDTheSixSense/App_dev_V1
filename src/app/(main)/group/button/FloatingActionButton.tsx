@@ -26,7 +26,7 @@ const FloatingActionButton: React.FC<FABProps> = ({ onCreateClick, onJoinClick }
   }, []);
 
   return (
-    <div ref={fabRef} style={{ position: 'fixed', right: '40px', bottom: '40px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+    <div ref={fabRef} className="fixed right-10 bottom-[100px] md:bottom-10 z-50 flex flex-col items-end">
       
       {/* サブボタン (テキストラベル付き) */}
       <div style={{

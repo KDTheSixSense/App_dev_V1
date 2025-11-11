@@ -292,7 +292,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       const context = {
         problemTitle: problem.title[currentLang],
         problemDescription: problem.description[currentLang],
-        userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムを文字列として渡す
+        userCode: problem.programLines?.[currentLang]?.join('\n') || '', // プログラムを文字列として渡す
+        answerOptions: JSON.stringify(problem.answerOptions?.[currentLang] || []),
+        correctAnswer: problem.correctAnswer,
+        explanation: problem.explanationText?.[currentLang] || '',
       };
       const hint = await getHintFromAI(message, context);
       setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);

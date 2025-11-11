@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import React from 'react';
-import { FaHome, FaList, FaTasks, FaUsers, FaCalendarAlt, FaBars, FaTimes } from 'react-icons/fa'; // Importing icons
+import { FaHome, FaList, FaTasks, FaUsers, FaCalendarAlt, FaBars, FaTimes, FaUser } from 'react-icons/fa'; // Importing icons
+import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 type MobileFooterProps = {
   isMenuOpen: boolean;
@@ -10,7 +12,11 @@ type MobileFooterProps = {
 };
 
 const MobileFooter = ({ isMenuOpen, setIsMenuOpen }: MobileFooterProps) => {
+  const { data: session } = useSession();
+  const userImage = session?.user?.image;
+
   const navItems = [
+    { href: '/profile', icon: FaUser, label: 'プロフィール' },
     { href: '/unsubmitted-assignments', icon: FaTasks, label: '課題' },
     { href: '/issue_list', icon: FaList, label: '問題一覧' },
     { href: '/home', icon: FaHome, label: 'ホーム' },
@@ -23,7 +29,11 @@ const MobileFooter = ({ isMenuOpen, setIsMenuOpen }: MobileFooterProps) => {
       <nav className="flex justify-around items-center flex-grow">
         {navItems.map((item) => (
           <Link key={item.label} href={item.href} className="flex flex-col items-center text-xs text-[#546E7A] hover:bg-[#b2ebf2] transition-colors p-2 rounded-lg">
-            <item.icon className="text-xl mb-1" />
+            {item.href === '/profile' && userImage ? (
+              <Image src={userImage} alt={item.label} width={20} height={20} className="rounded-full mb-1" />
+            ) : (
+              <item.icon className="text-xl mb-1" />
+            )}
             {item.label}
           </Link>
         ))}
@@ -47,7 +57,11 @@ const MobileFooter = ({ isMenuOpen, setIsMenuOpen }: MobileFooterProps) => {
           <nav className="flex flex-col p-4 space-y-4 flex-grow">
             {navItems.map((item) => (
               <Link key={item.label} href={item.href} className="flex items-center text-lg text-gray-800 hover:bg-gray-100 p-3 rounded-lg" onClick={() => setIsMenuOpen(false)}>
-                <item.icon className="text-2xl mr-3" />
+                {item.href === '/profile' && userImage ? (
+                  <Image src={userImage} alt={item.label} width={24} height={24} className="rounded-full mr-3" />
+                ) : (
+                  <item.icon className="text-2xl mr-3" />
+                )}
                 {item.label}
               </Link>
             ))}

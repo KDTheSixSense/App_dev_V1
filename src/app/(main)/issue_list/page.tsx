@@ -74,7 +74,7 @@ const QuestionsPage: React.FC = () => {
         
         {/* 左側の出題項目（9つのカード）エリア */}
         <div className="flex-1 bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-6 text-gray-700">出題項目</h2>
+
           
           {/* カードをグリッドレイアウトで表示。画面サイズに応じて列数が変わるレスポンシブ対応。 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -18,7 +18,9 @@ export default function MainLayout({
   return (
     <>
       <Header userWithPet={userWithPet} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-      <main className={`flex-grow container mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-300 ease-out ${isMenuOpen ? 'scale-95 blur-sm' : ''}`}>
+      <main className={`flex-grow container mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-300 ease-out pb-20 md:pt-20 ${isMenuOpen ? 'scale-95 blur-sm' : ''}`}>
+
+
         <Toaster position="bottom-right" />
         {children}
       </main>
