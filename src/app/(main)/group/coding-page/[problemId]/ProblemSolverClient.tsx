@@ -2,16 +2,49 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 import type { Problem as SerializableProblem } from '@/lib/types';
-import { getNextProgrammingProblemId, recordStudyTimeAction } from '@/lib/actions';
+import { recordStudyTimeAction } from '@/lib/actions';
+
+import AceEditor from 'react-ace';
+import ace from 'ace-builds/src-noconflict/ace';
+
+// 1. 必要な「モード」（言語のシンタックスハイライト）
+import 'ace-builds/src-noconflict/mode-python';
+import 'ace-builds/src-noconflict/mode-javascript';
+import 'ace-builds/src-noconflict/mode-typescript';
+import 'ace-builds/src-noconflict/mode-java';
+import 'ace-builds/src-noconflict/mode-c_cpp'; // CとC++
+import 'ace-builds/src-noconflict/mode-csharp';
+import 'ace-builds/src-noconflict/mode-php';
+
+// 2. 必要な「テーマ」（エディタの配色）
+import 'ace-builds/src-noconflict/theme-github';
+
+// 3. 必要な「機能拡張」（非常に重要）
+import 'ace-builds/src-noconflict/ext-language_tools'; // 自動補完とスニペット
 
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 type ActiveTab = 'input' | 'output';
+
+type SubmitResult = {
+    success: boolean;
+    message: string;
+    yourOutput?: string;
+    expected?: string;
+};
+
+// Aceのエラー/警告表示用のアノテーション型
+type AceAnnotation = {
+    row: number;
+    column: number;
+    text: string;
+    type: 'error' | 'warning' | 'info';
+};
 
 interface ProblemSolverClientProps {
     problem: SerializableProblem;
@@ -74,24 +107,36 @@ const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ p
     );
 };
 
+// 既存の CodeEditorPanel をこれで置き換える
 const CodeEditorPanel: React.FC<{
     userCode: string; setUserCode: (code: string) => void;
     stdin: string; setStdin: (stdin: string) => void;
     selectedLanguage: string; languages: { value: string; label: string }[]; onLanguageSelect: (lang: string) => void;
     onExecute: () => void; onSubmit: () => void; isSubmitting: boolean;
-    executionResult: string; submitResult: any;
-}> = (props) => {
+    executionResult: string; submitResult: SubmitResult | null;
+    annotations: AceAnnotation[]; // annotations prop を追加
+}> = React.memo((props) => { // React.memoでラップ
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
     const [activeTab, setActiveTab] = useState<ActiveTab>('input');
-    const lineCount = props.userCode.split('\n').length;
-    const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const lineNumbersRef = useRef<HTMLPreElement>(null);
 
-    const syncScroll = () => { if (textareaRef.current && lineNumbersRef.current) { lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop; } };
+    // Ace Editor用の言語モード名を取得するヘルパー関数
+    const getAceMode = (langValue: string) => {
+        const mapping: { [key: string]: string } = {
+            'python': 'python',
+            'javascript': 'javascript',
+            'typescript': 'typescript',
+            'java': 'java',
+            'c': 'c_cpp',
+            'cpp': 'c_cpp',
+            'csharp': 'csharp',
+            'php': 'php',
+        };
+        return mapping[langValue] || 'javascript'; // デフォルト
+    };
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
+            {/* --- ヘッダー（言語選択） --- */}
             <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Code className="h-5 w-5 text-gray-600" />コード入力</h2>
                 <div className="relative">
@@ -101,9 +146,32 @@ const CodeEditorPanel: React.FC<{
                     {showLanguageDropdown && (<div className="absolute right-0 mt-1 w-40 bg-white border border-gray-300 rounded-md shadow-lg z-20">{props.languages.map((lang) => (<button key={lang.value} onClick={() => { props.onLanguageSelect(lang.value); setShowLanguageDropdown(false); }} className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100">{lang.label}</button>))}</div>)}
                 </div>
             </div>
-            <div className="flex-grow flex min-h-0">
-                <pre ref={lineNumbersRef} className="bg-gray-100 p-3 text-right font-mono text-sm text-gray-500 select-none border-r overflow-y-hidden">{lineNumbers}</pre>
-                <textarea ref={textareaRef} onScroll={syncScroll} value={props.userCode} onChange={(e) => props.setUserCode(e.target.value)} className="w-full h-full p-3 text-sm font-mono border-0 focus:outline-none resize-none" style={{ lineHeight: '1.5rem' }} spellCheck="false" />
+
+            {/* --- AceEditor --- */}
+            <div className="flex-grow flex min-h-0 relative">
+                <AceEditor
+                    mode={getAceMode(props.selectedLanguage)}
+                    theme="github" // テーマ
+                    value={props.userCode}
+                    onChange={props.setUserCode}
+                    name="CODE_EDITOR_GROUP" // ページごとにユニークなID
+                    editorProps={{ $blockScrolling: true }}
+                    width="100%"
+                    height="100%"
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                    fontSize={14}
+                    annotations={props.annotations} // 静的エラーチェックの結果を渡す
+                    setOptions={{
+                        showLineNumbers: true,
+                        showGutter: true,
+                        enableBasicAutocompletion: true, // 基本的な自動補完
+                        enableLiveAutocompletion: true, // ライブ自動補完
+                        enableSnippets: true, // スニペット
+                        useWorker: false, // 標準ワーカーは無効化 (カスタムlintのため)
+                        highlightActiveLine: true,
+                        showPrintMargin: false, // 印刷マージン非表示
+                    }}
+                />
             </div>
             <div className="p-4 border-t flex-shrink-0">
                 <div className="flex justify-between items-center mb-2">
@@ -138,7 +206,8 @@ const CodeEditorPanel: React.FC<{
             </div>
         </div>
     );
-};
+});
+CodeEditorPanel.displayName = 'CodeEditorPanel';
 
 const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: string) => void; }> = ({ messages, onSendMessage }) => {
     const [input, setInput] = useState('');
@@ -164,7 +233,6 @@ const AiChatPanel: React.FC<{ messages: ChatMessage[]; onSendMessage: (message: 
 
 const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assignmentInfo }) => {
     const router = useRouter();
-    const searchParams = useSearchParams(); // クエリパラメータを取得
     const t = textResources['ja'].problemStatement;
 
     // problemはpropsから直接受け取るので、useStateは不要
@@ -174,7 +242,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
     const [stdin, setStdin] = useState('');
     const [executionResult, setExecutionResult] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitResult, setSubmitResult] = useState<any>(null);
+    const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -182,6 +250,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
     const [alertAction, setAlertAction] = useState<{ text: string; onClick: () => void; } | undefined>(undefined);
     const [problemStartTime, setProblemStartTime] = useState<number>(Date.now());
     const hasRecordedTime = useRef(false);
+    const [annotations, setAnnotations] = useState<AceAnnotation[]>([]);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -194,11 +263,64 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         { value: 'php', label: 'PHP' }
     ];
 
+    useEffect(() => {
+        // Ace Editorのワーカー（自動補完や構文チェック用）の読み込みパスをCDNに設定
+        const cdnBaseUrl = "https://cdn.jsdelivr.net/npm/ace-builds@1.33.0/src-noconflict/";
+        ace.config.set("basePath", cdnBaseUrl);
+        ace.config.set("modePath", cdnBaseUrl);
+        ace.config.set("themePath", cdnBaseUrl);
+        ace.config.set("workerPath", cdnBaseUrl);
+    }, []);
+
+    useEffect(() => {
+        // 静的エラーチェック（リンティング）
+        // problemがロードされるまで待つ
+        if (!problem) return;
+
+        // コードが空ならエラーをクリア
+        if (!userCode.trim()) {
+            setAnnotations([]);
+            return;
+        }
+
+        // ユーザーのタイピングが終わるのを待つ（デバウンス）
+        const handler = setTimeout(async () => {
+            console.log(`[Lint] Running server-side lint for ${selectedLanguage}...`);
+            try {
+                const res = await fetch('/api/lint_code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: userCode, language: selectedLanguage })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.annotations) {
+                        console.log("[Lint] Annotations received:", data.annotations);
+                        setAnnotations(data.annotations); // 取得したアノテーションをセット
+                    } else {
+                        setAnnotations([]); // エラーがなくてもクリア
+                    }
+                } else {
+                    setAnnotations([]); // API失敗時もクリア
+                }
+            } catch (error) {
+                console.error("[Lint] API call failed:", error);
+                setAnnotations([]);
+            }
+        }, 1000); // 1秒待ってから実行
+
+        // ユーザーがタイピングを再開したら、前回のタイマーをキャンセル
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [userCode, selectedLanguage, problem]); // コード、言語、または問題が変わるたびに実行
+
     // --- 4. 時間を記録する共通関数を追加 ---
     /**
      * 学習時間を計算し、サーバーに送信する (1回だけ実行)
      */
-    const recordStudyTime = () => {
+    const recordStudyTime = useCallback(() => {
         // まだ記録されておらず、開始時刻がセットされている場合のみ
         if (!hasRecordedTime.current && problemStartTime !== null) {
             const endTime = Date.now();
@@ -212,7 +334,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
                 hasRecordedTime.current = true; // 記録済みフラグを立てる
             }
         }
-    };
+    }, [problem.id, problemStartTime]);
 
     useEffect(() => {
         // problemが変更されたら（＝別の問題ページに遷移したら）状態をリセット
@@ -233,7 +355,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
             // クリーンアップ関数（ページ離脱時）に時間を記録
             recordStudyTime();
         };
-    }, [problemStartTime]); // problemStartTime が変わるたびにクリーンアップを再設定
+    }, [problemStartTime, recordStudyTime]); // problemStartTime が変わるたびにクリーンアップを再設定
 
     const handleExecute = async () => {
         if (!userCode.trim()) { setExecutionResult('コードを入力してください。'); return; }
@@ -351,6 +473,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
                                     onLanguageSelect={setSelectedLanguage}
                                     onExecute={handleExecute} onSubmit={handleSubmit} // onReturnToList を削除
                                     isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
+                                    annotations={annotations}
                                 />
                             </Panel>
                             <PanelResizeHandle className="h-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">

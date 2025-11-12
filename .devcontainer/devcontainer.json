@@ -15,7 +15,7 @@
   "updateRemoteUserUID": true,
 
   // コンテナ作成後に一度だけ実行されるコマンド (依存パッケージのインストール)
-  "postCreateCommand": "sudo chown -R node node_modules && npm install",
+  "postCreateCommand": "sudo chown -R node node_modules && npm install && sudo npm install -g @google/gemini-cli",
 
   // "postStartCommand": "npm run dev & npx prisma studio --browser none &",
 
@@ -27,7 +27,9 @@
         "ms-azuretools.vscode-docker",
         "Prisma.prisma",
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "google.gemini-cli-vscode-ide-companion",
+        "google.geminicodeassist"
       ]
     }
   },

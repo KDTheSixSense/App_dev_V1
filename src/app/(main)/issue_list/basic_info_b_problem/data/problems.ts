@@ -84,7 +84,7 @@ export const problems: Problem[] = [
     {
         id: '1',
         logicType: 'VARIABLE_SWAP',
-        title: { ja: "サンプル問題 [科目B] 問1", en: "Sample Problem [Subject B] Q1" },
+        title: { ja: "サンプル問題 [科目B] 問1 型，変数，代入のプログラム", en: "Sample Problem [Subject B] Q1" },
         description: { ja: "次の記述中の□に入れる正しい答えを、解答群の中から選べ。プログラムを実行すると'　　'と出力される。", en: "What are the values of y and z after executing the following program?" },
         programLines: { ja: [ '1 整数型: x ← 1', '2 整数型: y ← 2', '3 整数型: z ← 3', '4 x ← y', '5 y ← z', '6 z ← x', '7 yとzの値をこの順にコンマ区切りで出力する', ], en: [], },
         answerOptions: { ja: [ { label: 'ア', value: '1,2' }, { label: 'イ', value: '1,3' }, { label: 'ウ', value: '2,1' }, { label: 'エ', value: '2,3' }, { label: 'オ', value: '3,1' }, { label: 'カ', value: '3,2' }, ], en: [], },
@@ -98,7 +98,7 @@ export const problems: Problem[] = [
     {
         id: '2',
         logicType: 'FIZZ_BUZZ',
-        title: { ja: "サンプル問題 [科目B] 問2", en: "Sample Problem [Subject B] Q2" },
+        title: { ja: "サンプル問題 [科目B] 問2 比較演算と選択処理のプログラム", en: "Sample Problem [Subject B] Q2" },
         description: { ja: "次のプログラム中の a ~ c に入れる正しい答えの組み合わせを、解答群の中から選べ。関数 fizzBuzz は、引数で与えられた値が、3で割り切れて5で割り切れない場合は\"3で割り切れる\"を、5で割り切れて3で割り切れない場合は\"5で割り切れる\"を、3と5で割り切れる場合は\"3と5で割り切れる\"を返します。それ以外の場合は\"3でも5でも割り切れない\"を返します。", en: "" },
         programLines: { ja: [ ' 1: ○文字列型: fizzBuzz(整数型: num)', ' 2: 　文字列型: result', ' 3: 　if (num が 3と5 で割り切れる)', ' 4: 　　result ← "3と5で割り切れる"', ' 5: 　elseif (num が 3 で割り切れる)', ' 6: 　　result ← "3で割り切れる"', ' 7: 　elseif (num が 5 で割り切れる)', ' 8: 　　result ← "5で割り切れる"', ' 9: 　else', '10: 　　result ← "3でも5でも割り切れない"', '11: 　endif', '12: 　return result', ], en: [], },
         answerOptions: { ja: [ { label: 'ア', value: 'a:3, b:3と5, c:5' }, { label: 'イ', value: 'a:3, b:5, c:3と5' }, { label: 'ウ', value: 'a:3と5, b:3, c:5' }, { label: 'エ', value: 'a:5, b:3, c:3と5' }, { label: 'オ', value: 'a:5, b:3と5, c:3' }, ], en: [], },
@@ -113,7 +113,7 @@ export const problems: Problem[] = [
     {
         id: '3',
         logicType: 'ARRAY_SUM',
-        title: { ja: "サンプル問題 [科目B] 問3", en: "Sample Problem [Subject B] Q3" },
+        title: { ja: "サンプル問題 [科目B] 問3 配列を処理するプログラム", en: "Sample Problem [Subject B] Q3" },
         description: { ja: "配列の要素番号は1から始まる。関数 makeNewArray は、要素数2以上の整数型の配列を引数にとり、整数型の配列を返す関数である。関数 makeNewArray を makeNewArray({3, 2, 1, 6, 5, 4})として呼び出したとき、戻り値の配列の要素番号5の値は[ ]となる。", en: "", },
         programLines: { ja: [ ' 1: ○整数型の配列: makeNewArray(整数型の配列: in)', ' 2: 　整数型の配列: out ← {}', ' 3: 　整数型: i, tail', ' 4: 　outの末尾に in[1] の値 を追加する', ' 5: 　for (i を 2 から inの要素数 まで 1 ずつ増やす)', ' 6: 　　tail ← out[outの要素数]', ' 7: 　　outの末尾に (tail + in[i]) の結果を追加する', ' 8: 　endfor', ' 9: 　return out', ], en: [], },
         answerOptions: { ja: [ { label: 'ア', value: '5' }, { label: 'イ', value: '6' }, { label: 'ウ', value: '9' }, { label: 'エ', value: '11' }, { label: 'オ', value: '12' }, { label: 'カ', value: '17' }, { label: 'キ', value: '21' }, ], en: [], },
@@ -127,7 +127,7 @@ export const problems: Problem[] = [
     {
         id: '4',
         logicType: 'GCD_SUBTRACTION',
-        title: { ja: "サンプル問題 [科目B] 問4", en: "Sample Problem [Subject B] Q4" },
+        title: { ja: "サンプル問題 [科目B] 問4 最大公約数を求めるプログラム", en: "Sample Problem [Subject B] Q4" },
         description: { ja: "次のプログラム中の a ～ c に入れる正しい答えの組合せを，解答群の中から選べ。\n\n関数 gcd は，引数で与えられた二つの正の整数 num1 と num2 の最大公約数を，次の(1)～(3)の性質を利用して求める。\n(1) num1 と num2 が等しいとき，num1 と num2 の最大公約数は num1 である。\n(2) num1 が num2 より大きいとき，num1 と num2 の最大公約数は，(num1 - num2) と num2 の最大公約数と等しい。\n(3) num2 が num1 より大きいとき，num1 と num2 の最大公約数は，num1 と (num2 - num1) の最大公約数と等しい。", en: "Select the correct combination for a, b, and c in the following program from the answer choices. The function gcd finds the greatest common divisor (GCD) of two positive integers, num1 and num2, using properties (1) to (3)." },
         programLines: { ja: [ ' 1: ○整数型: gcd(整数型: num1, 整数型: num2)', ' 2: 　整数型: x ← num1', ' 3: 　整数型: y ← num2', ' 4: 　[   a   ]', ' 5: 　　if ( [   b   ] )', ' 6: 　　　x ← x - y', ' 7: 　　else', ' 8: 　　　y ← y - x', ' 9: 　　endif', '10: 　[   c   ]', '11: 　return x', ], en: [ ' 1: ○function gcd(integer: num1, integer: num2) -> integer', ' 2: 　integer: x ← num1', ' 3: 　integer: y ← num2', ' 4: 　[   a   ]', ' 5: 　　if ( [   b   ] )', ' 6: 　　　x ← x - y', ' 7: 　　else', ' 8: 　　　y ← y - x', ' 9: 　　endif', '10: 　[   c   ]', '11: 　return x', ], },
         answerOptions: { ja: [ { label: 'ア', value: 'a: if (x ≠ y), b: x < y, c: endif' }, { label: 'イ', value: 'a: if (x ≠ y), b: x > y, c: endif' }, { label: 'ウ', value: 'a: while (x ≠ y), b: x < y, c: endwhile' }, { label: 'エ', value: 'a: while (x ≠ y), b: x > y, c: endwhile' }, ], en: [ { label: 'A', value: 'a: if (x ≠ y), b: x < y, c: endif' }, { label: 'B', value: 'a: if (x ≠ y), b: x > y, c: endif' }, { label: 'C', value: 'a: while (x ≠ y), b: x < y, c: endwhile' }, { label: 'D', value: 'a: while (x ≠ y), b: x > y, c: endwhile' }, ], },
@@ -141,7 +141,7 @@ export const problems: Problem[] = [
     {
         id: '5',
         logicType: 'EXPRESSION_EVAL',
-        title: { ja: "サンプル問題 [科目B] 問5", en: "Sample Problem [Subject B] Q5" },
+        title: { ja: "サンプル問題 [科目B] 問5 斜辺の長さを求めるプログラム", en: "Sample Problem [Subject B] Q5" },
         description: { ja: "次のプログラム中の□に入れる正しい答えを、解答群の中から選べ。\n\n関数 calc は、正の実数 x と y を受け取り、√x²+y² の計算結果を返す。関数 calc が使う関数 pow は、第1引数として正の実数 a を、第2引数として実数 b を受け取り、a の b 乗の値を実数型で返す。", en: "Select the correct answer for the blank in the program from the answer choices.\n\nThe function calc takes two positive real numbers, x and y, and returns the result of √x²+y². The function pow, used by calc, takes a positive real number a as the first argument and a real number b as the second argument, and returns the value of a to the power of b as a real number." },
         programLines: { ja: [ '○実数型: calc(実数型: x, 実数型: y)', '  return [                      ]', ], en: [ '○function calc(real: x, real: y) -> real', '  return [                      ]', ] },
         answerOptions: { ja: [ { label: 'ア', value: '(pow(x, 2) + pow(y, 2)) ÷ pow(2, 0.5)' }, { label: 'イ', value: '(pow(x, 2) + pow(y, 2)) ÷ pow(x, y)' }, { label: 'ウ', value: 'pow(2, pow(x, 0.5)) + pow(2, pow(y, 0.5))' }, { label: 'エ', value: 'pow(pow(pow(2, x), y), 0.5)' }, { label: 'オ', value: 'pow(pow(x, 2) + pow(y, 2), 0.5)' }, { label: 'カ', value: 'pow(x, 2) × pow(y, 2) ÷ pow(x, y)' }, { label: 'キ', value: 'pow(x, y) ÷ pow(2, 0.5)' }, ], en: [ { label: 'A', value: '(pow(x, 2) + pow(y, 2)) ÷ pow(2, 0.5)' }, { label: 'B', value: '(pow(x, 2) + pow(y, 2)) ÷ pow(x, y)' }, { label: 'C', value: 'pow(2, pow(x, 0.5)) + pow(2, pow(y, 0.5))' }, { label: 'D', value: 'pow(pow(pow(2, x), y), 0.5)' }, { label: 'E', value: 'pow(pow(x, 2) + pow(y, 2), 0.5)' }, { label: 'F', value: 'pow(x, 2) × pow(y, 2) ÷ pow(x, y)' }, { label: 'G', value: 'pow(x, y) ÷ pow(2, 0.5)' }, ], },
@@ -155,7 +155,7 @@ export const problems: Problem[] = [
     {
         id: '6',
         logicType: 'BIT_REVERSE',
-        title: { ja: "サンプル問題 [科目B] 問6", en: "Sample Problem [Subject B] Q6" },
+        title: { ja: "サンプル問題 [科目B] 問6 論理演算を用いたプログラム", en: "Sample Problem [Subject B] Q6" },
         description: { ja: "次のプログラム中の□に入れる正しい答えを，解答群の中から選べ。\n\n関数 rev は8ビット型の引数 byte を受け取り，ビットの並びを逆にした値を返す。例えば，関数 rev を rev(01001011) として呼び出すと，戻り値は11010010となる。\nなお，演算子∧はビット単位の論理積，演算子∨はビット単位の論理和，演算子>>は論理右シフト，演算子<<は論理左シフトを表す。例えば，value >> n は value の値を n ビットだけ右に論理シフトし，value << n は value の値を n ビットだけ左に論理シフトする。", en: "Select the correct answer for the blank in the program from the answer choices. The function rev takes an 8-bit argument 'byte' and returns a value with the bit order reversed. For example, calling rev(01001011) returns 11010010. The operator ∧ is bitwise AND, ∨ is bitwise OR, >> is logical right shift, and << is logical left shift." },
         programLines: { ja: [ '1: ○8ビット型: rev(8ビット型: byte)', '2:   8ビット型: rbyte ← byte', '3:   8ビット型: r ← 00000000', '4:   整数型: i', '5:   for (i を 1 から 8 まで 1 ずつ増やす)', '6:     [                                          ]', '7:   endfor', '8:   return r', ], en: [ '1: ○function rev(byte: 8bit) -> 8bit', '2:   8bit: rbyte ← byte', '3:   8bit: r ← 00000000', '4:   integer: i', '5:   for (i from 1 to 8 step 1)', '6:     [                                          ]', '7:   endfor', '8:   return r', ], },
         answerOptions: { ja: [ { label: 'ア', value: 'r ← (r << 1) ∨ (rbyte ∧ 00000001)\nrbyte ← rbyte >> 1' }, { label: 'イ', value: 'r ← (r << 7) ∨ (rbyte ∧ 00000001)\nrbyte ← rbyte >> 7' }, { label: 'ウ', value: 'r ← (rbyte << 1) ∨ (rbyte >> 7)\nrbyte ← r' }, { label: 'エ', value: 'r ← (rbyte >> 1) ∨ (rbyte << 7)\nrbyte ← r' }, ], en: [ { label: 'A', value: 'r ← (r << 1) ∨ (rbyte ∧ 00000001)\nrbyte ← rbyte >> 1' }, { label: 'B', value: 'r ← (r << 7) ∨ (rbyte ∧ 00000001)\nrbyte ← rbyte >> 7' }, { label: 'C', value: 'r ← (rbyte << 1) ∨ (rbyte >> 7)\nrbyte ← r' }, { label: 'D', value: 'r ← (rbyte >> 1) ∨ (rbyte << 7)\nrbyte ← r' }, ] },
@@ -169,7 +169,7 @@ export const problems: Problem[] = [
     {
         id: '7',
         logicType: 'RECURSIVE_FACTORIAL',
-        title: { ja: "サンプル問題 [科目B] 問7", en: "Sample Problem [Subject B] Q7" },
+        title: { ja: "サンプル問題 [科目B] 問7 再帰関数のプログラム", en: "Sample Problem [Subject B] Q7" },
         description: { ja: "次のプログラム中の□に入れる正しい答えを，解答群の中から選べ。\n\n関数 factorial は非負の整数 n を引数にとり，その階乗を返す関数である。非負の整数 n の階乗は n が0のときに1になり，それ以外の場合は1からnまでの整数を全て掛け合わせた数となる。", en: "Select the correct answer for the blank in the program from the answer choices. The function factorial takes a non-negative integer n as an argument and returns its factorial. The factorial of a non-negative integer n is 1 when n is 0, and the product of all integers from 1 to n otherwise." },
         programLines: { ja: [ '1: ○整数型: factorial(整数型: n)', '2:   if (n = 0)', '3:     return 1', '4:   endif', '5:   return [                      ]', ], en: [ '1: ○function factorial(integer: n) -> integer', '2:   if (n = 0)', '3:     return 1', '4:   endif', '5:   return [                      ]', ] },
         answerOptions: { ja: [ { label: 'ア', value: '(n - 1) * factorial(n)' }, { label: 'イ', value: 'factorial(n - 1)' }, { label: 'ウ', value: 'n' }, { label: 'エ', value: 'n * (n - 1)' }, { label: 'オ', value: 'n * factorial(1)' }, { label: 'カ', value: 'n * factorial(n - 1)' }, ], en: [ { label: 'A', value: '(n - 1) * factorial(n)' }, { label: 'B', value: 'factorial(n - 1)' }, { label: 'C', value: 'n' }, { label: 'D', value: 'n * (n - 1)' }, { label: 'E', value: 'n * factorial(1)' }, { label: 'F', value: 'n * factorial(n - 1)' }, ] },
@@ -183,7 +183,7 @@ export const problems: Problem[] = [
     {
         id: '8',
         logicType: 'PRIORITY_QUEUE',
-        title: { ja: "サンプル問題 [科目B] 問8", en: "Sample Problem [Subject B] Q8" },
+        title: { ja: "サンプル問題 [科目B] 問8 優先度付きキューを操作するプログラム", en: "Sample Problem [Subject B] Q8" },
         description: { ja: "次の記述中の□に入れる正しい答えを，解答群の中から選べ。\n\n優先度付きキューを操作するプログラムである。優先度付きキューとは扱う要素に優先度を付けたキューであり，要素を取り出す際には優先度の高いものから順番に取り出される。クラス PrioQueue は優先度付きキューを表すクラスである。クラス PrioQueue の説明を図に示す。ここで，優先度は整数型の値1，2，3のいずれかであり，小さい値ほど優先度が高いものとする。\n\n手続 prioSched を呼び出したとき，出力は□の順となる。", en: "Select the correct answer for the blank in the following description from the answer choices. This is a program that operates on a priority queue. A priority queue is a queue where each element has a priority, and elements are dequeued in order of highest priority. The class PrioQueue represents a priority queue. The description of the PrioQueue class is shown in the figure. Here, the priority is one of the integer values 1, 2, or 3, with smaller values indicating higher priority. When the procedure prioSched is called, the output will be in the order of [ ]." },
         programLines: { ja: [ ' 1: ○prioSched()', ' 2:   prioQueue: PrioQueue ← PrioQueue()', ' 3:   prioQueue.enqueue("A", 1)', ' 4:   prioQueue.enqueue("B", 2)', ' 5:   prioQueue.enqueue("C", 2)', ' 6:   prioQueue.enqueue("D", 3)', ' 7:   prioQueue.dequeue() /* 戻り値は使用しない */', ' 8:   prioQueue.dequeue() /* 戻り値は使用しない */', ' 9:   prioQueue.enqueue("D", 3)', '10:   prioQueue.enqueue("B", 2)', '11:   prioQueue.dequeue() /* 戻り値は使用しない */', '12:   prioQueue.dequeue() /* 戻り値は使用しない */', '13:   prioQueue.enqueue("C", 2)', '14:   prioQueue.enqueue("A", 1)', '15:   while (prioQueue.size() が 0 と等しくない)', '16:     prioQueue.dequeue() の戻り値を出力', '17:   endwhile', ], en: [ ' 1: ○procedure prioSched()', ' 2:   prioQueue: PrioQueue ← new PrioQueue()', ' 3:   prioQueue.enqueue("A", 1)', ' 4:   prioQueue.enqueue("B", 2)', ' 5:   prioQueue.enqueue("C", 2)', ' 6:   prioQueue.enqueue("D", 3)', ' 7:   prioQueue.dequeue() /* return value not used */', ' 8:   prioQueue.dequeue() /* return value not used */', ' 9:   prioQueue.enqueue("D", 3)', '10:   prioQueue.enqueue("B", 2)', '11:   prioQueue.dequeue() /* return value not used */', '12:   prioQueue.dequeue() /* return value not used */', '13:   prioQueue.enqueue("C", 2)', '14:   prioQueue.enqueue("A", 1)', '15:   while (prioQueue.size() is not equal to 0)', '16:     output the return value of prioQueue.dequeue()', '17:   endwhile', ] },
         answerOptions: { ja: [ { label: 'ア', value: '"A", "B", "C", "D"' }, { label: 'イ', value: '"A", "B", "D", "D"' }, { label: 'ウ', value: '"A", "C", "C", "D"' }, { label: 'エ', value: '"A", "C", "D", "D"' }, ], en: [ { label: 'A', value: '"A", "B", "C", "D"' }, { label: 'B', value: '"A", "B", "D", "D"' }, { label: 'C', value: '"A", "C", "C", "D"' }, { label: 'D', value: '"A", "C", "D", "D"' }, ] },
@@ -200,7 +200,7 @@ export const problems: Problem[] = [
     {
         id: '9',
         logicType: 'BINARY_TREE_TRAVERSAL',
-        title: { ja: "サンプル問題 [科目B] 問9", en: "Sample Problem [Subject B] Q9" },
+        title: { ja: "サンプル問題 [科目B] 問9 木構造を走査するプログラム", en: "Sample Problem [Subject B] Q9" },
         description: {
             ja: "次の記述中の□に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n手続 order は，図の2分木の，引数で指定した節を根とする部分木をたどりながら，全ての節番号を出力する。大域の配列 tree が図の2分木を表している。配列 tree の要素は，対応する節の子の節番号を，左の子，右の子の順に格納した配列である。例えば，配列 tree の要素番号1の要素は，節番号1の子の節番号から成る配列であり，左の子の節番号2，右の子の節番号3を配列 {2, 3} として格納する。手続 order を order(1) として呼び出すと，□の順に出力される。",
             en: "Select the correct answer for the blank from the answer choices. Array indices start from 1. The procedure 'order' traverses a subtree rooted at the node specified by the argument and outputs all node numbers. The global array 'tree' represents the binary tree shown. Each element of 'tree' is an array containing the node numbers of its children, left then right. For example, element 1 of 'tree' is {2, 3}, representing the children of node 1. When 'order' is called as order(1), the output is in the order of [ ]."
@@ -280,7 +280,7 @@ export const problems: Problem[] = [
     {
         id: '10',
         logicType: 'LINKED_LIST_DELETE',
-        title: { ja: "サンプル問題 [科目B] 問10", en: "Sample Problem [Subject B] Q10" },
+        title: { ja: "サンプル問題 [科目B] 問10 リストの要素を削除するプログラム", en: "Sample Problem [Subject B] Q10" },
         description: {
             ja: "次のプログラム中の□に入れる正しい答えを，解答群の中から選べ。\n\n手続 delNode は，単方向リストから，引数 pos で指定された位置の要素を削除する手続である。引数 pos は，リストの要素数以下の正の整数とする。リストの先頭の位置を1とする。\nクラス ListElement は，単方向リストの要素を表す。クラス ListElement のメンバ変数の説明を表に示す。ListElement 型の変数はクラス ListElement のインスタンスの参照を格納するものとする。大域変数 listHead には，リストの先頭要素の参照があらかじめ格納されている。",
             en: "Select the correct answer for the blank in the program from the answer choices. The procedure 'delNode' deletes an element at the position specified by the argument 'pos' from a singly linked list. The argument 'pos' is a positive integer less than or equal to the number of elements in the list. The position of the head of the list is 1. Class ListElement represents an element of the singly linked list. The member variables of the ListElement class are shown in the table. A variable of type ListElement stores a reference to an instance of the ListElement class. The global variable listHead stores a reference to the head element of the list."
@@ -360,7 +360,7 @@ export const problems: Problem[] = [
     {
         id: '11',
         logicType: 'BIN_SORT',
-        title: { ja: "サンプル問題 [科目B] 問11", en: "Sample Problem [Subject B] Q11" },
+        title: { ja: "サンプル問題 [科目B] 問11 整列プログラム", en: "Sample Problem [Subject B] Q11" },
         description: {
             ja: "次の記述中の□に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 binSort を binSort(□) として呼び出すと，戻り値の配列には未定義の要素は含まれておらず，値は昇順に並んでいる。",
             en: "Select the correct answer for the blank from the answer choices. Array indices start from 1. When the function binSort is called as binSort([ ]), the returned array contains no undefined elements and the values are sorted in ascending order."
@@ -430,7 +430,7 @@ export const problems: Problem[] = [
     {
         id: '12',
         logicType: 'SIMILARITY_RATIO',
-        title: { ja: "サンプル問題 [科目B] 問12", en: "Sample Problem [Subject B] Q12" },
+        title: { ja: "サンプル問題 [科目B] 問12 文字列同士の類似度を求めるプログラム", en: "Sample Problem [Subject B] Q12" },
         description: {
             ja: "次のプログラム中の□に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 simRatio は，引数として与えられた要素数1以上の二つの文字列の配列 s1 と s2 を比較し，要素数が等しい場合は，配列の並びがどの程度似ているかの指標として，(要素番号が同じ要素の文字列同士が一致する要素の組みの個数 ÷ s1の要素数)を実数型で返す。例えば，配列の全ての要素が一致する場合の戻り値は1，いずれの要素も一致しない場合の戻り値は0である。\n\nなお，二つの配列の要素数が等しくない場合は，-1を返す。関数 simRatio に与える s1，s2 及び戻り値の例を表に示す。プログラムでは，配列の領域外を参照してはならないものとする。",
             en: "Select the correct answer for the blank in the program. Array indices start from 1. The function simRatio compares two character arrays, s1 and s2, of one or more elements. If the element counts are equal, it returns a similarity index as a real number: (number of matching character pairs at the same index) / (number of elements in s1). For example, if all elements match, the return value is 1, and if no elements match, it is 0. If the element counts are not equal, it returns -1. The table shows examples of s1, s2, and the return values. The program must not access outside the array bounds."
@@ -499,7 +499,7 @@ export const problems: Problem[] = [
     {
         id: '13',
         logicType: 'BINARY_SEARCH',
-        title: { ja: "サンプル問題 [科目B] 問13", en: "Sample Problem [Subject B] Q13" },
+        title: { ja: "サンプル問題 [科目B] 問13 探索プログラム", en: "Sample Problem [Subject B] Q13" },
         description: {
             ja: "次の記述中の□に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 search は，引数 data で指定された配列に，引数 target で指定された値が含まれていればその要素番号を返し，含まれていなければ-1を返す。data は昇順に整列されており，値に重複はない。\n\n関数 search には不具合がある。例えば，data の□場合は，無限ループになる。",
             en: "Select the correct answer for the blank from the answer choices. Array indices start from 1.\n\nThe function 'search' returns the index of the value specified by 'target' in the array 'data', or -1 if not found. 'data' is sorted in ascending order with no duplicate values.\n\nThere is a bug in the 'search' function. For example, in the case of [ ], the function enters an infinite loop."
@@ -594,7 +594,7 @@ export const problems: Problem[] = [
     {
         id: '14',
         logicType: 'FIVE_NUMBER_SUMMARY',
-        title: { ja: "サンプル問題 [科目B] 問14", en: "Sample Problem [Subject B] Q14" },
+        title: { ja: "サンプル問題 [科目B] 問14 配列の特徴値を返すプログラム", en: "Sample Problem [Subject B] Q14" },
         description: {
             ja: "次の記述中の□に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n要素数が1以上で，昇順に整列済みの配列を基に，配列を特徴づける五つの値を返すプログラムである。\n\n関数 summarize を summarize({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1}) として呼び出すと，戻り値は□である。",
             en: "Select the correct answer for the blank. Array indices start at 1. This program returns five characteristic values based on a sorted array with one or more elements. When summarize({0.1, 0.2, ... , 1}) is called, the return value is [ ]."
@@ -668,7 +668,7 @@ export const problems: Problem[] = [
     {
         id: '15',
         logicType: 'MINIMAX',
-        title: { ja: "サンプル問題 [科目B] 問15", en: "Sample Problem [Subject B] Q15" },
+        title: { ja: "サンプル問題 [科目B] 問15 三目並べのプログラム", en: "Sample Problem [Subject B] Q15" },
         description: {
             ja: "次の記述中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n三目並べにおいて自分が勝利する可能性が最も高い手を決定する。次の手順で，ゲームの状態遷移を木構造として表現し，根以外の各節の評価値を求める。その結果，根の子の中で最も評価値が高い手を，最も勝利する可能性が高い手とする。自分が選択した手を〇で表し，相手が選択した手を×で表す。\n\n〔手順〕\n(1) 現在の盤面の状態を根とし，勝敗がつくか，引き分けとなるまでの考えられる全ての手を木構造で表現する。\n(2) 葉の状態を次のように評価する。\n    ① 自分が勝ちの場合は10\n    ② 自分が負けの場合は－10\n    ③ 引き分けの場合は0\n(3) 葉以外の節の評価値は，その節の全ての子の評価値を基に決定する。\n    ① 自分の手番の節である場合，子の評価値で最大の評価値を節の評価値とする。\n    ② 相手の手番の節である場合，子の評価値で最小の評価値を節の評価値とする。\n\nゲームが図の最上部にある根の状態のとき，自分が選択できる手は三つある。そのうちAが指す子の評価値は a であり，Bが指す子の評価値は b である。",
             en: "Select the correct combination for a and b. In Tic-Tac-Toe, determine the move with the highest probability of winning. Represent the game's state transitions as a tree and find the evaluation value for each node other than the root. The move with the highest evaluation value among the children of the root is considered the best move. Your moves are O, opponent's are X. [Procedures] (1) ... (2) Leaf nodes are evaluated: win=10, lose=-10, draw=0. (3) Non-leaf nodes: For your turn, take the max of children's values. For the opponent's turn, take the min. When the game is at the root state, what are the evaluation values for the children pointed to by A (value a) and B (value b)?"
@@ -719,7 +719,7 @@ export const problems: Problem[] = [
     {
         id: '16',
         logicType: 'UTF8_ENCODE',
-        title: { ja: "サンプル問題 [科目B] 問16", en: "Sample Problem [Subject B] Q16" },
+        title: { ja: "サンプル問題 [科目B] 問16 文字列処理のプログラム", en: "Sample Problem [Subject B] Q16" },
         description: {
             ja: "次のプログラム中の□に入れる正しい答えを，解答群の中から選べ。二つの□には，同じ答えが入る。ここで，配列の要素番号は1から始まる。\n\nUnicodeの符号位置を，UTF-8の符号に変換するプログラムである。本問で数値の後ろに\"(16)\"と記載した場合は，その数値が16進数であることを表す。\nUnicodeの各文字には，符号位置と呼ばれる整数値が与えられている。UTF-8は，Unicodeの文字を符号化する方式の一つであり，符号位置が 800(16) 以上 FFFF(16) 以下の文字は，次のように3バイトの値に符号化する。\n3バイトの長さのビットパターンを 1110xxxx 10xxxxxx 10xxxxxx とする。ビットパターンの下線の付いた\"x\"の箇所に，符号位置を2進数で表した値を右詰めで格納し，余った\"x\"の箇所に，0を格納する。この3バイトの値がUTF-8の符号である。\n例えば，ひらがなの\"あ\"の符号位置である 3042(16) を2進数で表すと 11000001000010 である。これを，上に示したビットパターンの\"x\"の箇所に右詰めで格納すると，1110xx11 10000001 10000010 となる。余った二つの\"x\"の箇所に0を格納すると，\"あ\"のUTF-8の符号 11100011 10000001 10000010 が得られる。\n\n関数 encode は，引数で渡されたUnicodeの符号位置をUTF-8の符号に変換し，先頭から順に1バイトずつ要素に格納した整数型の配列を返す。encode には，引数として，800(16) 以上 FFFF(16) 以下の整数値だけが渡されるものとする。",
             en: "Select the correct answer for the blanks. Both blanks take the same answer. Array indices start at 1.\n\nThis program converts a Unicode code point to its UTF-8 representation..."
@@ -775,7 +775,7 @@ export const problems: Problem[] = [
     {
         id: '17',
         logicType: 'STATIC_QA', // トレース機能がないことを示す
-        title: { ja: "サンプル問題 [科目B] 問17", en: "Sample Problem [Subject B] Q17" },
+        title: { ja: "サンプル問題 [科目B] 問17 脆弱性診断", en: "Sample Problem [Subject B] Q17" },
         description: {
             ja: "製造業のA社では，ECサイト（以下，A社のECサイトをAサイトという）を使用し，個人向けの製品販売を行っている。Aサイトは，A社の製品やサービスが検索可能で，ログイン機能を有しており，あらかじめAサイトに利用登録した個人（以下，会員という）の氏名やメールアドレスといった情報（以下，会員情報という）を管理している。Aサイトは，B社のPaaSで稼働しており，PaaS上のDBMSとアプリケーションサーバを利用している。\nA社は，Aサイトの開発，運用をC社に委託している。A社とC社との間の委託契約では，Webアプリケーションプログラムの脆弱性対策は，C社が実施するとしている。\n最近，A社の同業他社が運営しているWebサイトで脆弱性が悪用され，個人情報が漏えいするという事件が発生した。そこでA社は，セキュリティ診断サービスを行っているD社に，Aサイトの脆弱性診断を依頼した。脆弱性診断の結果，対策が必要なセキュリティ上の脆弱性が複数指摘された。図1にD社からの指摘事項を示す。\n\n項番1 Aサイトで利用しているアプリケーションサーバのOSに既知の脆弱性があり，脆弱性を悪用した攻撃を受けるおそれがある。\n項番2 Aサイトにクロスサイトスクリプティングの脆弱性があり，会員情報を不正に取得されるおそれがある。\n項番3 Aサイトで利用しているDBMSに既知の脆弱性があり，脆弱性を悪用した攻撃を受けるおそれがある。\n\n【設問】図1中の各項番それぞれに対処する組織の適切な組合せを，解答群の中から選べ。",
             en: "Company A, a manufacturer, operates an e-commerce site (Site A) for direct-to-consumer sales..."
@@ -811,7 +811,7 @@ export const problems: Problem[] = [
     {
         id: '18',
         logicType: 'STATIC_QA', // トレース機能がないことを示す
-        title: { ja: "サンプル問題 [科目B] 問18", en: "Sample Problem [Subject B] Q18" },
+        title: { ja: "サンプル問題 [科目B] 問18 セキュリティリスクの洗い出し", en: "Sample Problem [Subject B] Q18" },
         description: {
             ja: "A社はIT開発を行っている従業員1,000名の企業である。総務部50名，営業部50名で，ほかは開発部に所属している。開発部員の9割は客先に常駐している。現在，A社におけるPCの利用状況は図1のとおりである。\n\n【図1 A社におけるPCの利用状況】\n1 A社のPC\n・総務部員，営業部員及びA社オフィスに勤務する開発部員には，会社が用意したPC(以下，A社PCという)を一人1台ずつ貸与している。\n・客先常駐開発部員には，A社PCを貸与していないが，代わりに客先常駐開発部員がA社オフィスに出社したときに利用するための共用PCを用意している。\n2 客先常駐開発部員の業務システム利用\n・客先常駐開発部員が休暇申請，経費精算などで業務システムを利用するためには共用PCを使う必要がある。\n3 A社のVPN利用\n・A社には，VPNサーバが設置されており，営業部員が出張時にA社PCからインターネット経由で社内ネットワークにVPN接続し，業務システムを利用できるようになっている。規則で，VPN接続にはA社PCを利用すると定められている。\n\nA社では，客先常駐開発部員が業務システムを使うためだけにA社オフィスに出社するのは非効率的であると考え，客先常駐開発部員に対して個人所有PCの業務用利用(BYOD)とVPN接続の許可を検討することにした。\n\n【設問】\n客先常駐開発部員に，個人所有PCからのVPN接続を許可した場合に，増加する又は新たに生じると考えられるリスクを二つ挙げた組合せは，次のうちどれか。解答群のうち，最も適切なものを選べ。\n\n(一) VPN接続が増加し，可用性が損なわれるリスク\n(二) 客先常駐開発部員がA社PCを紛失するリスク\n(三) 客先常駐開発部員がフィッシングメールのURLをクリックして個人PCがマルウェアに感染するリスク\n(四) 総務部員が個人所有PCをVPN接続するリスク\n(五) マルウェアに感染した個人所有PCが社内ネットワークにVPN接続され，マルウェアが社内ネットワークに拡散するリスク",
             en: "Company A, an IT development firm with 1,000 employees, is considering allowing off-site developers to use personal PCs (BYOD) with VPN access..."
@@ -847,7 +847,7 @@ export const problems: Problem[] = [
     {
         id: '19',
         logicType: 'STATIC_QA', // トレース機能がないことを示す
-        title: { ja: "サンプル問題 [科目B] 問19", en: "Sample Problem [Subject B] Q19" },
+        title: { ja: "サンプル問題 [科目B] 問19 アクセス管理", en: "Sample Problem [Subject B] Q19" },
         description: {
             ja: "A社は従業員200名の通信販売業者である。一般消費者向けに生活雑貨，ギフト商品などの販売を手掛けている。取扱商品の一つである商品Zは，Z販売課が担当している。\n\n〔Z販売課の業務〕\n現在，Z販売課の要員は，商品Zについての受注管理業務及び問合せ対応業務を行っている。商品Zについての受注管理業務の手順を図1に示す。\n\n【図1 受注管理業務の手順】\n商品Zの顧客からの注文は電子メールで届く。\n(1) 入力\n    販売担当者は，届いた注文(変更，キャンセルを含む)の内容を受注管理システム1)(以下，Jシステムという)に入力し，販売責任者2)に承認を依頼する。\n(2) 承認\n    販売責任者は，注文の内容とJシステムへの入力結果を突き合わせて確認し，問題がなければ承認する。問題があれば差し戻す。\n注1) A社情報システム部が運用している。利用者は，販売責任者，販売担当者などである。\n注2) Z販売課の課長1名だけである。\n\n〔Jシステムの操作権限〕\nZ販売課では，Jシステムについて，次の利用方針を定めている。\n〔方針1〕ある利用者が入力した情報は，別の利用者が承認する。\n〔方針2〕販売責任者は，Z販売課の全業務の情報を閲覧できる。\n\nJシステムでは，業務上必要な操作権限を利用者に与える機能が実装されている。\nこの度，商品Zの受注管理業務が受注増によって増えていることから，B社に一部を委託することにした(以下，商品Zの受注管理業務の入力作業を行うB社従業員を商品ZのB社販売担当者といい，商品ZのB社販売担当者の入力結果を閲覧して，不備があればA社に口頭で差戻しを依頼するB社従業員を商品ZのB社販売責任者という)。\n\n委託に当たって，Z販売課は情報システム部にJシステムに関する次の要求事項を伝えた。\n［要求1］B社が入力した場合は，A社が承認する。\n［要求2］A社の販売担当者が入力した場合は，現状どおりにA社の販売責任者が承認する。\n\n上記を踏まえ，情報システム部は今後の各利用者に付与される操作権限を表1にまとめ，Z販売課の情報セキュリティリーダーであるCさんに確認をしてもらった。\n\n【表1 操作権限案】\n利用者 (省略)\nZ販売課の販売担当者 (省略)\na1 (空欄)\na2 (空欄)\n(注記 ○は、操作権限が付与されることを示す。)\n\n【設問】\n表1中の a1， a2 に入れる字句の適切な組合せを，aに関する解答群の中から選べ。",
             en: "Company A, a mail-order business, has outsourced some of its order management tasks for Product Z to Company B..."
@@ -878,7 +878,7 @@ export const problems: Problem[] = [
     {
         id: '20',
         logicType: 'STATIC_QA', // トレース機能がないことを示す
-        title: { ja: "サンプル問題 [科目B] 問20", en: "Sample Problem [Subject B] Q20" },
+        title: { ja: "サンプル問題 [科目B] 問20 情報セキュリティ監査", en: "Sample Problem [Subject B] Q20" },
         description: {
             ja: " A社は栄養補助食品を扱う従業員500名の企業である。A社のサーバ及びファイアウォール (以下、FWという)を含む情報システムの運用は情報システム部が担当している。ある日、内部監査部の監査があり、FWの運用状況について情報システム部の日部長が図1 のとおり説明したところ、表1に示す指摘を受けた。・FWを含め、情報システムの運用は、情報システム部の運用チームに所属する6名の運用担当者が担当している。FWの運用には、FWルールの編集、操作ログの確認、並びに編集後のFWルールの確認及び操作の承認(以下、 編集後のFWルールの確認及び操作の承認を操作承認というの三つがある。 FWルールの編集は事前に作成された操作指示書に従って行う。FWの機能には、FWルールの編集、操作ログの確認、及び操作承認の三つがある。FWルールの変更には、FWルールの編集と操作承認の両方が必要である。操作承認の前に操作ログの確認を行う。FWの利用者IDは各運用担当者に個別に発行されており、利用者IDの共用はしていない。FWでは、機能を利用する権限を運用担当者の利用者のごとに付与できる。現在は、6名の運用担当者とも全権限を付与されており、運用担当者はFWのルールの編集後、編集を行った運用担当者が操作に誤りがないことを確認し、操作承認をしている。FWへのログインにはパスワードを利用している。パスワードは文字の英数字である。・FWの運用では、運用担当者の利用者ごとに、ネットワークを経由せずコンソールでログインできるかどうか、ネットワークを経由してリモートからログインできるかどうかを設定できる。・FWは、ネットワークを経由せずコンソールでログインした場合でも、ネットワークを経由してリモートからログインした場合でも、同一の機能を利用できる。FWはサーバパレームに設置されており、サーバルームにはほかに数種類のサーバも設置されている。運用担当者だけがサーバルームへの入退室を許可されている。FWの運用の作業の中で、職務が適切に分離されていない。B部長は表1の指摘に対する改善策を検討することにした。設問表1中の指摘1について、FWルールの誤った変更を防ぐための改善策はどれか。解答群のうち、最も適切なものを選べ。",
             en: "Company A, a mail-order business, has outsourced some of its order management tasks for Product Z to Company B..."
@@ -911,7 +911,7 @@ export const problems: Problem[] = [
     {
         id: '21',
         logicType: 'ADMISSION_FEE',
-        title: { ja: "基本情報技術者試験 科目B 問21", en: "Fundamental Information Technology Engineer Examination, Subject B, Question 21" },
+        title: { ja: "基本情報技術者試験 科目B 問21 プログラムの条件分岐", en: "Fundamental Information Technology Engineer Examination, Subject B, Question 21" },
         description: {
             ja: "次のプログラム中の□に入れる正しい答えを、解答群の中から選べ。\n\nある施設の入場料は、0歳から3歳までは100円、4歳から9歳までは300円、10歳以上は500円である。関数 fee は、年齢を表す0以上の整数(num)を引数として受け取り、入場料を返す。",
             en: "Select the correct answer for the blank in the following program from the answer choices.\n\nThe admission fee for a certain facility is 100 yen for ages 0 to 3, 300 yen for ages 4 to 9, and 500 yen for ages 10 and over. The function 'fee' takes a non-negative integer representing age(num) as an argument and returns the admission fee."
@@ -976,12 +976,12 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問22: 配列の要素の逆順化 ---
+    // --- 問22: 配列の要素の逆順化 ---
     // =================================================================================
     {
         id: '22',
         logicType: 'ARRAY_REVERSE',
-        title: { ja: "基本情報技術者試験 科目B 問22", en: "Subject B Sample Problem Q22" },
+        title: { ja: "基本情報技術者試験 科目B 問22 配列の要素の逆順化", en: "Subject B Sample Problem Q22" },
         description: {
             ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n次のプログラムは，整数型の配列 array の要素の並びを逆順にする。",
             en: "Select the correct combination for a and b in the following program from the answer choices. Here, array indices start from 1.\n\nThe following program reverses the order of elements in an integer array 'array'."
@@ -1031,7 +1031,7 @@ export const problems: Problem[] = [
     {
         id: '23',
         logicType: 'LINKED_LIST_APPEND',
-        title: { ja: "基本情報技術者試験 科目B 問23", en: "Subject B Sample Problem Q23" },
+        title: { ja: "基本情報技術者試験 科目B 問23 単方向リストへの要素追加", en: "Subject B Sample Problem Q23" },
         description: {
             ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n手続 append は，引数で与えられた文字を単方向リストに追加する手続である。...",
             en: "Select the correct combination for a and b from the answer choices. The procedure 'append' adds a character given as an argument to a singly linked list..."
@@ -1107,12 +1107,12 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問24: スパースマトリックスへの変換 ---
+    // --- 問24: スパースマトリックスへの変換 ---
     // =================================================================================
     {
         id: '24',
         logicType: 'SPARSE_MATRIX',
-        title: { ja: "基本情報技術者試験 科目B 問24", en: "Subject B Sample Problem Q24" },
+        title: { ja: "基本情報技術者試験 科目B 問24 スパースマトリックスへの変換", en: "Subject B Sample Problem Q24" },
         description: {
             ja: "次の記述中の a 〜 c に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n要素の多くが0の行列を疎行列という。次のプログラムは，二次元配列に格納された行列のデータ量を削減するために，疎行列の格納に適したデータ構造に変換する。関数 transformSparseMatrix は，引数 matrix で二次元配列として与えられた行列を，整数型配列の配列に変換して返す。関数 transformSparseMatrix を transformSparseMatrix({{3, 0, 0, 0, 0}, {0, 2, 2, 0, 0}, {0, 0, 0, 1, 3}, {0, 0, 0, 2, 0}, {0, 0, 0, 0, 1}})として呼び出したときの戻り値は，{{ a }, { b }, { c }} である。",
             en: "Select the correct combination for a, b, and c from the answer choices. Array indices start from 1. A matrix where most elements are zero is called a sparse matrix. The following program converts a matrix stored in a 2D array into a data structure suitable for storing a sparse matrix to reduce data volume. The function transformSparseMatrix converts a matrix given as a 2D array in the argument matrix and returns it as an array of integer arrays. When called as transformSparseMatrix(...), the return value is {{a}, {b}, {c}}."
@@ -1173,7 +1173,7 @@ export const problems: Problem[] = [
         id: '25',
         logicType: 'CONDITIONAL_PROBABILITY',
         title: { 
-            ja: "基本情報技術者試験 科目B 問25", 
+            ja: "基本情報技術者試験 科目B 問25 条件付き確率の計算", 
             en: "Subject B Sample Problem Q25" 
         },
         description: {
@@ -1245,13 +1245,13 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問26: 情報セキュリティ（責任分界点） ---
+    // --- 問26: 情報セキュリティ（責任分界点） ---
     // =================================================================================
     {
         id: '26',
         logicType: 'STATIC_QA',
         title: { 
-            ja: "基本情報技術者試験 科目B 問26", 
+            ja: "基本情報技術者試験 科目B 問26 情報セキュリティ(責任分界点)", 
             en: "Subject B Sample Problem Q26" 
         },
         description: {
@@ -1299,13 +1299,13 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問27: 素数探索（試し割り法） ---
+    // --- 問27: 素数探索（試し割り法） ---
     // =================================================================================
     {
         id: '27',
         logicType: 'PRIME_NUMBER',
         title: { 
-            ja: "令和5年 科目B 問1", 
+            ja: "令和5年 科目B 問1 素数探査(試し割り法)", 
             en: "Reiwa 5, Subject B, Question 1" 
         },
         description: {
@@ -1356,16 +1356,16 @@ export const problems: Problem[] = [
         },
         answerOptions: {
             ja: [
-                { label: 'ア', value: 'a: num, b: i ÷ j の余り が 0 と等しい' }, // ★変更
-                { label: 'イ', value: 'a: num, b: i ÷ j の商 が 1 と等しくない' }, // ★変更
-                { label: 'ウ', value: 'a: num + 1, b: i ÷ j の余り が 0 と等しい' }, // ★変更
-                { label: 'エ', value: 'a: num + 1, b: i ÷ j の商 が 1 と等しくない' }, // ★変更
+                { label: 'ア', value: 'a: num, b: i ÷ j の余り が 0 と等しい' }, 
+                { label: 'イ', value: 'a: num, b: i ÷ j の商 が 1 と等しくない' }, 
+                { label: 'ウ', value: 'a: num + 1, b: i ÷ j の余り が 0 と等しい' }, 
+                { label: 'エ', value: 'a: num + 1, b: i ÷ j の商 が 1 と等しくない' },
             ],
             en: [
-                { label: 'A', value: 'a: num, b: remainder of i ÷ j is 0' }, // ★変更
-                { label: 'B', value: 'a: num, b: quotient of i ÷ j is not 1' }, // ★変更
-                { label: 'C', value: 'a: num + 1, b: remainder of i ÷ j is 0' }, // ★変更
-                { label: 'D', value: 'a: num + 1, b: quotient of i ÷ j is not 1' }, // ★変更
+                { label: 'A', value: 'a: num, b: remainder of i ÷ j is 0' },
+                { label: 'B', value: 'a: num, b: quotient of i ÷ j is not 1' }, 
+                { label: 'C', value: 'a: num + 1, b: remainder of i ÷ j is 0' }, 
+                { label: 'D', value: 'a: num + 1, b: quotient of i ÷ j is not 1' },  
             ]
         },
         correctAnswer: 'a: num, b: i ÷ j の余り が 0 と等しい',
@@ -1392,7 +1392,7 @@ export const problems: Problem[] = [
         id: '28',
         logicType: 'CALL_STACK',
         title: { 
-            ja: "令和5年 科目B 問2", 
+            ja: "令和5年 科目B 問2 関数によるコールスタック式文字出力", 
             en: "Reiwa 5, Subject B, Question 2" 
         },
         description: {
@@ -1463,13 +1463,13 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問29: クイックソートのトレース ---
+    // --- 問29: クイックソートのトレース ---
     // =================================================================================
     {
         id: '29',
         logicType: 'QUICKSORT_TRACE',
         title: { 
-            ja: "令和5年 科目B 問3", 
+            ja: "令和5年 科目B 問3 クイックソートのトレース", 
             en: "Reiwa 5, Subject B, Question 3" 
         },
         description: {
@@ -1572,12 +1572,12 @@ export const problems: Problem[] = [
         difficultyId: 8
     },
     // =================================================================================
-    // --- 【★ここから追加】問30: 単方向リストへの要素追加 --- 動かない
+    // --- 問30: 単方向リストへの要素追加 --- 動かない
     // =================================================================================
     {
         id: '30',
         logicType: 'LINKED_LIST_APPEND',
-        title: { ja: "令和5年 科目B 問4", en: "Subject B Sample Problem Q30" },
+        title: { ja: "令和5年 科目B 問4 単方向リストへの要素追加", en: "Subject B Sample Problem Q30" },
         description: {
             ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n手続 append は，引数で与えられた文字を単方向リストに追加する手続である。単方向リストの各要素は，クラス ListElement を用いて表現する。ListElement 型の変数はクラス ListElement のインスタンスの参照を格納するものとする。大域変数 listHead は，単方向リストの先頭の要素の参照を格納する。リストが空のときは，listHead は未定義である。",
             en: "Select the correct combination for a and b from the answer choices. The procedure 'append' adds a character given as an argument to a singly linked list..."
@@ -1637,13 +1637,13 @@ export const problems: Problem[] = [
         difficultyId: 8
     },
     // =================================================================================
-    // --- 【★ここから追加】問31: コサイン類似度 ---
+    // --- 問31: コサイン類似度 ---
     // =================================================================================
     {
         id: '31',
         logicType: 'COSINE_SIMILARITY',
         title: { 
-            ja: "令和5年 科目B 問5", 
+            ja: "令和5年 科目B 問5 コサイン類似度", 
             en: "Reiwa 5, Subject B, Question 5" 
         },
         description: {
@@ -1733,13 +1733,13 @@ export const problems: Problem[] = [
         difficultyId: 8
     },
     // =================================================================================
-    // --- 【★ここから追加】問32: 情報セキュリティ（業務委託） ---
+    // --- 問32: 情報セキュリティ（業務委託） ---
     // =================================================================================
     {
         id: '32',
         logicType: 'STATIC_QA',
         title: { 
-            ja: "令和5年 科目B 問6", 
+            ja: "令和5年 科目B 問6 情報セキュリティ(業務委託)", 
             en: "Reiwa 5, Subject B, Question 6" 
         },
         description: {
@@ -1775,13 +1775,13 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問33: 3つの数の最大値 ---
+    // --- 問33: 3つの数の最大値 ---
     // =================================================================================
     {
         id: '33',
         logicType: 'MAX_OF_THREE',
         title: { 
-            ja: "令和6年 科目B 問1", 
+            ja: "令和6年 科目B 問1 3つの数の最大値", 
             en: "Reiwa 6, Subject B, Question 1" 
         },
         description: {
@@ -1851,13 +1851,13 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問34: 2進数から10進数への変換 ---
+    // --- 問34: 2進数から10進数への変換 ---
     // =================================================================================
     {
         id: '34',
         logicType: 'BINARY_TO_DECIMAL',
         title: { 
-            ja: "令和6年 科目B 問2", 
+            ja: "令和6年 科目B 問2 2進数から10進数への変換", 
             en: "Reiwa 6, Subject B, Question 2" 
         },
         description: {
@@ -1920,13 +1920,13 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問35: 辺リストから隣接行列への変換 ---
+    // --- 問35: 辺リストから隣接行列への変換 ---
     // =================================================================================
     {
         id: '35',
         logicType: 'EDGES_TO_MATRIX',
         title: { 
-            ja: "令和6年 科目B 問3", 
+            ja: "令和6年 科目B 問3 辺リストから隣接行列への変換", 
             en: "Reiwa 6, Subject B, Question 3" 
         },
         description: {
@@ -2004,13 +2004,13 @@ export const problems: Problem[] = [
         difficultyId: 8
     },
     // =================================================================================
-    // --- 【★ここから追加】問36: マージアルゴリズム ---
+    // --- 問36: マージアルゴリズム ---
     // =================================================================================
     {
         id: '36',
         logicType: 'MERGE_ALGORITHM',
         title: { 
-            ja: "令和6年 科目B 問4", 
+            ja: "令和6年 科目B 問4 マージアルゴリズム", 
             en: "Reiwa 6, Subject B, Question 4" 
         },
         description: {
@@ -2089,13 +2089,13 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問37: 商品の関連度分析 ---
+    // --- 問37: 商品の関連度分析 ---
     // =================================================================================
     {
         id: '37',
         logicType: 'ASSOCIATION_ANALYSIS',
         title: { 
-            ja: "令和6年 科目B 問5", 
+            ja: "令和6年 科目B 問5 商品の関連度分析", 
             en: "Reiwa 6, Subject B, Question 5" 
         },
         description: {
@@ -2183,13 +2183,13 @@ export const problems: Problem[] = [
         difficultyId: 7
     },
     // =================================================================================
-    // --- 【★ここから追加】問38: 情報セキュリティ（テレワーク） ---
+    // --- 問38: 情報セキュリティ（テレワーク） ---
     // =================================================================================
     {
         id: '38',
         logicType: 'STATIC_QA',
         title: { 
-            ja: "令和6年 科目B 問6", 
+            ja: "令和6年 科目B 問6 情報セキュリティ(テレワーク)", 
             en: "Reiwa 6, Subject B, Question 6" 
         },
         description: {
