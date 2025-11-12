@@ -128,21 +128,25 @@ const Login = () => {
                     )}
                 </div>
 
-                {/* Googleログインボタン */}
-                <div className=" ">
-                    <button
-                        type="button"
-                        onClick={handleGoogleLogin}
-                        disabled={loading}
-                        aria-label="Google でログイン" // スクリーンリーダー用のラベル
-                        className={`border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 transition-colors`}
-                    >
-                        <FcGoogle className="w-10 h-10" />
-                    </button>
-                </div>
+                {/* Googleログインボタンとログインボタンをflexコンテナで囲む */}
+                <div className="flex justify-between items-center mb-4">
 
-                {/*ログインボタン*/}
-                <div className="flex justify-end">
+                    {/* Googleログインボタン (画像に合わせて変更) */}
+                    <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        disabled={loading}
+                        aria-label="Google でログイン" // スクリーンリーダー用のラベル
+                        className={`flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors ${
+                            loading ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                    >
+                        <FcGoogle className="mr-2 -ml-1 w-6 h-6" /> {/* アイコンサイズとマージンを調整 */}
+                        Googleでログイン
+                    </button>
+
+
+                    {/*ログインボタン*/}
                     <button
                         type="submit"disabled={loading}
                         className={`px-4 py-2 font-bold text-white rounded ${
