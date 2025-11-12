@@ -185,7 +185,7 @@ const MemberGroupPage: React.FC = () => {
 
                     {/* タブナビゲーション */}
                     <div style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#fff', padding: '0 24px' }}>
-                        {(['お知らせ', '課題', 'メンバー'] as const).map(tab => (
+                        {(['お知らせ', '課題'] as const).map(tab => (
                             <button key={tab} onClick={() => setActiveTab(tab)} style={{
                                 padding: '16px 24px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer',
                                 fontSize: '14px', fontWeight: '500', marginRight: '16px',
@@ -303,22 +303,6 @@ const MemberGroupPage: React.FC = () => {
                                          </div>
                                     </div>
                                 )}
-                            </div>
-                        )}
-
-                        {activeTab === 'メンバー' && (
-                            <div>
-                                <h3 style={{ fontSize: '18px', color: '#3c4043', margin: '0 0 16px 0', fontWeight: '500' }}>メンバー ({group.memberCount}人)</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
-                                    {generateMembers(group.memberCount).map(member => (
-                                        <div key={member.id} style={{ display: 'flex', alignItems: 'center', padding: '8px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #eee' }}>
-                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', backgroundColor: '#00bcd4', color: '#fff', fontSize: '12px' }}>
-                                                {member.avatar}
-                                            </div>
-                                            <span style={{ fontSize: '12px', color: '#3c4043' }}>{member.name}</span>
-                                        </div>
-                                    ))}
-                                </div>
                             </div>
                         )}
                     </div>

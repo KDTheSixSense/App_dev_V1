@@ -12,7 +12,6 @@ interface Group {
     hashedId: string;
     name: string;
     description: string;
-    room?: string;
     color: string;
     teacher: string;
     memberCount: number;
@@ -85,10 +84,7 @@ const ClassroomApp: React.FC = () => {
     // ★ 修正: グループ作成フォーム専用のstateを用意
     const [createGroupForm, setCreateGroupForm] = useState({
         className: '',
-        description: '',
-        section: '',
-        subject: '',
-        room: '',
+        description: ''
     });
 
     const [classCode, setClassCode] = useState('');
@@ -121,18 +117,23 @@ const ClassroomApp: React.FC = () => {
             }
             
             // Actionから返されたデータを整形する
-            const formattedGroups: Group[] = result.data.map((group: any) => ({
-                id: group.id,
-                hashedId: group.hashedId,
-                name: group.groupname,
-                description: group.body,
-                color: '#00bcd4',
-                teacher: '管理者',
-                memberCount: group._count?.groups_User || 0,
-                // ★★★ サーバーからの `groups_User` を、クライアントの `members` にマッピングする ★★★
-                members: group.groups_User || [], 
-                inviteCode: group.invite_code || '' // 招待コードを追加
-            }));
+            const formattedGroups: Group[] = result.data.map((group: any) => {
+                const members: Member[] = group.groups_User || [];
+                const admin = members.find(member => member.admin_flg);
+                const teacherName = admin?.user?.username || '管理者';
+
+                return {
+                    id: group.id,
+                    hashedId: group.hashedId,
+                    name: group.groupname,
+                    description: group.body,
+                    color: '#00bcd4',
+                    teacher: teacherName,
+                    memberCount: group._count?.groups_User || 0,
+                    members: members,
+                    inviteCode: group.invite_code || ''
+                };
+            });
 
             setGroups(formattedGroups);
 
@@ -273,26 +274,7 @@ const ClassroomApp: React.FC = () => {
         });
     };
 
-    // リスト作成
-    const insertList = () => {
-        document.execCommand('insertUnorderedList', false, undefined);
-    };
-
-    // ファイル添付（ダミー実装）
-    const handleFileAttach = () => {
-        alert('ファイル添付機能');
-    };
-
-    // 動画埋め込み（ダミー実装）
-    const handleVideoEmbed = () => {
-        alert('動画埋め込み機能');
-    };
-
-    // ファイルアップロード（ダミー実装）
-    const handleFileUpload = () => {
-        alert('ファイルアップロード機能');
-    };
-
+    
     // リンク挿入
     const handleLinkInsert = () => {
         const url = prompt('URLを入力してください:');
@@ -329,7 +311,7 @@ const handleCreateGroup = async () => {
         // 4. Actionからの戻り値で成功・失敗を判定
         if (result.success) {
             setShowCreateModal(false);
-            setCreateGroupForm({ className: '', description: '', section: '',subject: '', room: '' });
+            setCreateGroupForm({ className: '',description: ''});
             fetchGroups(); // Server ActionのrevalidatePathが機能するため、これは不要になる場合があります
         } else {
             // エラーがあればそれを表示
@@ -373,18 +355,7 @@ const handleCreateGroup = async () => {
         // setCurrentView('detail');
     };
 
-    // 3点メニューの表示切り替え
-    const toggleDropdown = (groupId: number, event: React.MouseEvent) => {
-        event.stopPropagation();
-        setActiveDropdown(activeDropdown === groupId ? null : groupId);
-    };
-
-    // グループ移動処理
-    const handleMoveGroup = (groupId: number, event: React.MouseEvent) => {
-        event.stopPropagation();
-        alert(`グループ ID ${groupId} を移動しました`);
-        setActiveDropdown(null);
-    };
+    
 
     // グループ登録解除処理
     const handleUnregisterGroup = (groupId: number, event: React.MouseEvent) => {
@@ -631,100 +602,8 @@ const handleCreateGroup = async () => {
                                         padding: '16px',
                                         color: '#fff'
                                     }}>
-                                        {/* 3点メニューボタン */}
-                                        <button
-                                            onClick={(e) => toggleDropdown(group.id, e)}
-                                            aria-label="メニューを開く"
-                                            title="メニューを開く"
-                                            style={{
-                                                position: 'absolute',
-                                                top: '8px',
-                                                right: '8px',
-                                                background: 'rgba(0, 0, 0, 0.2)',
-                                                border: '1px solid rgba(255, 255, 255, 0.3)',
-                                                cursor: 'pointer',
-                                                padding: '8px',
-                                                borderRadius: '50%',
-                                                color: '#fff',
-                                                transition: 'all 0.2s',
-                                                zIndex: 10,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                width: '32px',
-                                                height: '32px',
-                                                outline: 'none'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
-                                                e.currentTarget.style.transform = 'scale(1.1)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
-                                                e.currentTarget.style.transform = 'scale(1)';
-                                            }}
-                                        >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                                            </svg>
-                                        </button>
 
-                                        {/* ドロップダウンメニュー */}
-                                        {activeDropdown === group.id && (
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: '45px',
-                                                right: '8px',
-                                                backgroundColor: '#fff',
-                                                border: '1px solid #e0e0e0',
-                                                borderRadius: '8px',
-                                                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                                                zIndex: 1000,
-                                                minWidth: '140px',
-                                                overflow: 'hidden',
-                                                animation: 'fadeIn 0.2s ease-out'
-                                            }}>
-                                                <div
-                                                    onClick={(e) => handleMoveGroup(group.id, e)}
-                                                    style={{
-                                                        padding: '12px 16px',
-                                                        fontSize: '14px',
-                                                        color: '#3c4043',
-                                                        cursor: 'pointer',
-                                                        borderBottom: '1px solid #f0f0f0',
-                                                        transition: 'background-color 0.2s',
-                                                        display: 'flex',
-                                                        alignItems: 'center'
-                                                    }}
-                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
-                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginRight: '8px' }}>
-                                                        <path d="M3 17h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V5H3z" fill="#5f6368"/>
-                                                    </svg>
-                                                    移動
-                                                </div>
-                                                <div
-                                                    onClick={(e) => handleUnregisterGroup(group.id, e)}
-                                                    style={{
-                                                        padding: '12px 16px',
-                                                        fontSize: '14px',
-                                                        color: '#d32f2f',
-                                                        cursor: 'pointer',
-                                                        transition: 'background-color 0.2s',
-                                                        display: 'flex',
-                                                        alignItems: 'center'
-                                                    }}
-                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffebee'}
-                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginRight: '8px' }}>
-                                                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="#d32f2f"/>
-                                                    </svg>
-                                                    登録を解除
-                                                </div>
-                                            </div>
-                                        )}
+                                        
 
                                         <div>
                                             <h3 style={{
@@ -776,7 +655,7 @@ const handleCreateGroup = async () => {
                                                     fontSize: '10px',
                                                     fontWeight: 'bold'
                                                 }}>
-                                                    {group.teacher.charAt(0)}
+                                                    {group.teacher ? group.teacher.charAt(0) : '管'}
                                                 </div>
                                                 {group.teacher}
                                             </div>
@@ -942,18 +821,7 @@ const handleCreateGroup = async () => {
                                                         alignItems: 'center',
                                                         marginBottom: '16px'
                                                     }}>
-                                                        <div style={{
-                                                            width: '32px',
-                                                            height: '32px',
-                                                            backgroundColor: '#00bcd4',
-                                                            borderRadius: '50%',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            marginRight: '12px'
-                                                        }}>
-                                                            <span style={{ color: '#fff', fontSize: '14px' }}>ク</span>
-                                                        </div>
+                                                        
                                                         <span style={{ fontSize: '14px', color: '#3c4043' }}>
                                                             クラスへの連絡事項を入力
                                                         </span>
@@ -1018,104 +886,7 @@ const handleCreateGroup = async () => {
                                                         >
                                                             I
                                                         </button>
-                                                        <button
-                                                            onClick={() => applyFormat('underline')}
-                                                            style={{
-                                                                padding: '6px 8px',
-                                                                border: '1px solid #e0e0e0',
-                                                                backgroundColor: formatState.underline ? '#e3f2fd' : '#fff',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                textDecoration: 'underline',
-                                                                fontSize: '14px'
-                                                            }}
-                                                            title="下線"
-                                                        >
-                                                            U
-                                                        </button>
-                                                        <button
-                                                            onClick={() => applyFormat('strikeThrough')}
-                                                            style={{
-                                                                padding: '6px 8px',
-                                                                border: '1px solid #e0e0e0',
-                                                                backgroundColor: formatState.strikethrough ? '#e3f2fd' : '#fff',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                textDecoration: 'line-through',
-                                                                fontSize: '14px'
-                                                            }}
-                                                            title="取り消し線"
-                                                        >
-                                                            S
-                                                        </button>
-                                                        <button
-                                                            onClick={insertList}
-                                                            style={{
-                                                                padding: '6px 8px',
-                                                                border: '1px solid #e0e0e0',
-                                                                backgroundColor: '#fff',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                fontSize: '14px'
-                                                            }}
-                                                            title="リスト"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                                                <path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/>
-                                                            </svg>
-                                                        </button>
-
-                                                        <div style={{ width: '1px', height: '24px', backgroundColor: '#e0e0e0', margin: '0 4px' }} />
-
-                                                        {/* メディアボタン */}
-                                                        <button
-                                                            onClick={handleFileAttach}
-                                                            style={{
-                                                                padding: '6px 8px',
-                                                                border: '1px solid #e0e0e0',
-                                                                backgroundColor: '#fff',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                fontSize: '14px'
-                                                            }}
-                                                            title="ファイル添付"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={handleVideoEmbed}
-                                                            style={{
-                                                                padding: '6px 8px',
-                                                                border: '1px solid #e0e0e0',
-                                                                backgroundColor: '#fff',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                fontSize: '14px'
-                                                            }}
-                                                            title="動画"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                                                <path d="M8 5v14l11-7z"/>
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={handleFileUpload}
-                                                            style={{
-                                                                padding: '6px 8px',
-                                                                border: '1px solid #e0e0e0',
-                                                                backgroundColor: '#fff',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                fontSize: '14px'
-                                                            }}
-                                                            title="アップロード"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                                                <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
-                                                            </svg>
-                                                        </button>
+                                                        
                                                         <button
                                                             onClick={handleLinkInsert}
                                                             style={{
@@ -1351,104 +1122,7 @@ const handleCreateGroup = async () => {
                             </label>
                         </div>
 
-                        {/* 一部 */}
-                        <div style={{ marginBottom: '24px', position: 'relative' }}>
-                            <input
-                                type="text"
-                                value={createGroupForm.section}
-                                onChange={(e) => setCreateGroupForm({...createGroupForm, section: e.target.value})}
-                                style={{
-                                    width: '100%',
-                                    padding: '12px 0 12px 12px',
-                                    border: 'none',
-                                    borderBottom: '2px solid #e0e0e0',
-                                    backgroundColor: '#f5f5f5',
-                                    fontSize: '16px',
-                                    color: '#3c4043',
-                                    outline: 'none',
-                                    borderRadius: '4px 4px 0 0',
-                                    boxSizing: 'border-box'
-                                }}
-                                placeholder=" "
-                            />
-                            <label style={{
-                                position: 'absolute',
-                                top: createGroupForm.section ? '-8px' : '12px',
-                                left: '12px',
-                                fontSize: createGroupForm.section ? '12px' : '14px',
-                                color: '#5f6368',
-                                pointerEvents: 'none',
-                                transition: 'all 0.2s'
-                            }}>
-                                一部
-                            </label>
-                        </div>
-
-                        {/* 科目 */}
-                        <div style={{ marginBottom: '24px', position: 'relative' }}>
-                            <input
-                                type="text"
-                                value={createGroupForm.subject}
-                                onChange={(e) => setCreateGroupForm({...createGroupForm, subject: e.target.value})}
-                                style={{
-                                    width: '100%',
-                                    padding: '12px 0 12px 12px',
-                                    border: 'none',
-                                    borderBottom: '2px solid #e0e0e0',
-                                    backgroundColor: '#f5f5f5',
-                                    fontSize: '16px',
-                                    color: '#3c4043',
-                                    outline: 'none',
-                                    borderRadius: '4px 4px 0 0',
-                                    boxSizing: 'border-box'
-                                }}
-                                placeholder=" "
-                            />
-                            <label style={{
-                                position: 'absolute',
-                                top: createGroupForm.subject ? '-8px' : '12px',
-                                left: '12px',
-                                fontSize: createGroupForm.subject ? '12px' : '14px',
-                                color: '#5f6368',
-                                pointerEvents: 'none',
-                                transition: 'all 0.2s'
-                            }}>
-                                科目
-                            </label>
-                        </div>
-
-                        {/* 部屋 */}
-                        <div style={{ marginBottom: '24px', position: 'relative' }}>
-                            <input
-                                type="text"
-                                value={createGroupForm.room}
-                                onChange={(e) => setCreateGroupForm({...createGroupForm, room: e.target.value})}
-                                style={{
-                                    width: '100%',
-                                    padding: '12px 0 12px 12px',
-                                    border: 'none',
-                                    borderBottom: '2px solid #e0e0e0',
-                                    backgroundColor: '#f5f5f5',
-                                    fontSize: '16px',
-                                    color: '#3c4043',
-                                    outline: 'none',
-                                    borderRadius: '4px 4px 0 0',
-                                    boxSizing: 'border-box'
-                                }}
-                                placeholder=" "
-                            />
-                            <label style={{
-                                position: 'absolute',
-                                top: createGroupForm.room ? '-8px' : '12px',
-                                left: '12px',
-                                fontSize: createGroupForm.room ? '12px' : '14px',
-                                color: '#5f6368',
-                                pointerEvents: 'none',
-                                transition: 'all 0.2s'
-                            }}>
-                                部屋
-                            </label>
-                        </div>
+                        
 
                         <div style={{
                             display: 'flex',
@@ -1541,7 +1215,7 @@ const handleCreateGroup = async () => {
                             color: '#5f6368',
                             marginBottom: '24px'
                         }}>
-                            教師にクラスコードを尋ねて、ここに入力してください。
+                            クラスコードをここに入力してください。
                         </p>
                         <div style={{ marginBottom: '24px', position: 'relative' }}>
                             <input
@@ -1658,4 +1332,3 @@ const handleCreateGroup = async () => {
 };
 
 export default ClassroomApp;
-

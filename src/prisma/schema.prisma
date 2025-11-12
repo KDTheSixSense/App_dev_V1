@@ -38,6 +38,7 @@ model User {
   createdSelectProblems    SelectProblem[]       @relation("SelectProblemCreator") // SelectProblemとのリレーション
   createdEvents            Create_event[]        @relation("CreatedEvents")
   posts                    Post[]
+  createdAssignments       Assignment[]
   loginHistory             LoginHistory[]
   submissions              Submissions[]
   eventParticipants        Event_Participants[] // このユーザーのイベント参加情報（EventParticipantとの対向リレーション）
@@ -498,6 +499,9 @@ model Assignment {
   due_date    DateTime
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
+
+  authorId    Int? // 課題作成者のID
+  author      User?    @relation(fields: [authorId], references: [id])
 
   programmingProblemId Int?                @unique // プログラミング問題との関連付け (オプショナル)
   programmingProblem   ProgrammingProblem? @relation(fields: [programmingProblemId], references: [id])

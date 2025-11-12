@@ -69,10 +69,6 @@ export const PostEditor: React.FC<PostEditorProps> = ({ onPost }) => {
     };
 
     // その他のツール機能
-    const insertList = () => document.execCommand('insertUnorderedList', false, undefined);
-    const handleFileAttach = () => alert('ファイル添付機能');
-    const handleVideoEmbed = () => alert('動画埋め込み機能');
-    const handleFileUpload = () => alert('ファイルアップロード機能');
     const handleLinkInsert = () => {
         const url = prompt('URLを入力してください:');
         if (url) {
@@ -193,82 +189,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({ onPost }) => {
                             fontStyle: 'italic'
                         }} title="斜体">I</button>
 
-                        <button onClick={() => applyFormat('underline')} style={{
-                            padding: '6px 8px',
-                            border: `1px solid ${formatState.underline ? '#a1c2fa' : '#e0e0e0'}`,
-                            backgroundColor: formatState.underline ? '#e3f2fd' : '#fff',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            textDecoration: 'underline'
-                        }} title="下線">U</button>
-
-                        <button onClick={() => applyFormat('strikeThrough')} style={{
-                            padding: '6px 8px',
-                            border: `1px solid ${formatState.strikethrough ? '#a1c2fa' : '#e0e0e0'}`,
-                            backgroundColor: formatState.strikethrough ? '#e3f2fd' : '#fff',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            textDecoration: 'line-through'
-                        }} title="取り消し線">S</button>
-
-                        {/* リストボタン */}
-                        <button onClick={insertList} style={{
-                            padding: '6px 8px',
-                            border: '1px solid #e0e0e0',
-                            backgroundColor: '#fff',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                        }} title="リスト">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                <path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/>
-                            </svg>
-                        </button>
-
-                        {/* 区切り線 */}
-                        <div style={{
-                            width: '1px',
-                            height: '24px',
-                            backgroundColor: '#e0e0e0',
-                            margin: '0 4px'
-                        }} />
-
-                        {/* その他のツールボタン */}
-                        <button onClick={handleFileAttach} style={{
-                            padding: '6px 8px',
-                            border: '1px solid #e0e0e0',
-                            backgroundColor: '#fff',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                        }} title="ファイル添付">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/>
-                            </svg>
-                        </button>
-
-                        <button onClick={handleVideoEmbed} style={{
-                            padding: '6px 8px',
-                            border: '1px solid #e0e0e0',
-                            backgroundColor: '#fff',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                        }} title="動画">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-                            </svg>
-                        </button>
-
-                        <button onClick={handleFileUpload} style={{
-                            padding: '6px 8px',
-                            border: '1px solid #e0e0e0',
-                            backgroundColor: '#fff',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                        }} title="アップロード">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
-                            </svg>
-                        </button>
-
+                        
                         <button onClick={handleLinkInsert} style={{
                             padding: '6px 8px',
                             border: '1px solid #e0e0e0',
