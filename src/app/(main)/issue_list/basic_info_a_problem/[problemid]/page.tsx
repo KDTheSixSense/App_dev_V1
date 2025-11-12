@@ -10,17 +10,16 @@ import type { SerializableProblem } from '@/lib/data';
 
 // --- 修正点 1: 型定義を修正 ---
 // params は Promise ではなく、プロパティ名はファイル名に合わせて 'problemid' (小文字) にします。
-type BasicInfoAProblemDetailPageProps = {
-  params: { problemId: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-};
-
-// --- 修正点 2: props の型から Promise を削除 ---
-const BasicInfoAProblemDetailPage = async ({ params, searchParams }: BasicInfoAProblemDetailPageProps) => {
-  
-  // --- 修正点 3: 'await params' を削除し、'params.problemid' (小文字) から直接IDを取得 ---
-  const problemIdStr = params.problemId;
-  const problemIdNum = parseInt(problemIdStr, 10);
+const BasicInfoAProblemDetailPage = async ({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ problemId: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) => {
+  const resolvedParams = await params;
+  const problemIdStr = resolvedParams.problemId;
+  const problemIdNum = parseInt(problemIdStr, 10);
   // const resolvedSearchParams = searchParams; // searchParams も await は不要です
 
   if (isNaN(problemIdNum)) {

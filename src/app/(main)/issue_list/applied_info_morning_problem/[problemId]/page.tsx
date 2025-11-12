@@ -9,17 +9,16 @@ import ProblemClient from './ProblemClient';
 import type { SerializableProblem } from '@/lib/data';
 
 // 型定義を 'basic_info_a_problem' と同様に修正
-type AppliedInfoProblemDetailPageProps = {
-  params: { problemId: string }; // 'Promise' を削除
-  searchParams?: { [key: string]: string | string[] | undefined };
-};
-
-// 'async' 関数に変更
-const AppliedInfoProblemDetailPage = async ({ params, searchParams }: AppliedInfoProblemDetailPageProps) => {
-  const resolvedParams = await params;
-  // 'await params' を削除
-  const problemIdStr = resolvedParams.problemId;
-  const problemIdNum = parseInt(problemIdStr, 10);
+const AppliedInfoProblemDetailPage = async ({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ problemId:string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) => {
+  const resolvedParams = await params;
+  const problemIdStr = resolvedParams.problemId;
+  const problemIdNum = parseInt(problemIdStr, 10);
 
   if (isNaN(problemIdNum)) {
     console.log(`[Page] Invalid problem ID received from params: ${problemIdStr}. Calling notFound().`);

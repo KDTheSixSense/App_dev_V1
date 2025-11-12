@@ -1,5 +1,6 @@
 // app/(main)/event/event_list/page.tsx
 
+import { getAppSession } from '@/lib/auth';
 import { prisma } from "@/lib/prisma";
 import type { Create_event as PrismaEvent } from "@prisma/client";
 import ProblemClient from "./ProblemClient";

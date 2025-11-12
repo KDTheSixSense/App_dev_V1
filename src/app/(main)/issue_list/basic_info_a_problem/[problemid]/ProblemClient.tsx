@@ -200,6 +200,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         answerOptions: JSON.stringify(problem.answerOptions?.[currentLang] || []),
         correctAnswer: problem.correctAnswer,
         explanation: problem.explanationText?.[currentLang] || '',
+        problemType: 'basic_information_a',
       };
 
       // AIヒント取得 (Server Action呼び出し)

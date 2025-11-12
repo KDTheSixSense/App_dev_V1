@@ -145,13 +145,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
           setCredits(data.newCredits);
     
-          const context = { 
-            problemTitle: problem.title[currentLang], 
+          const context = {
+            problemTitle: problem.title[currentLang],
             problemDescription: problem.description[currentLang],
             // userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムはないので空文字か、選択肢を渡す
             userCode: '',
             answerOptions: JSON.stringify(problem.answerOptions?.[currentLang]), // AIに選択肢の情報を渡す
             explanation: problem.explanationText?.[currentLang],
+            problemType: 'applied_information_am'
           };
           const hint = await getHintFromAI(message, context);
           setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);

@@ -221,7 +221,6 @@ const ProblemSolverPage = () => {
     const [problemStartedAt, setProblemStartedAt] = useState<number>(Date.now());
     const hasRecordedTime = useRef(false);
     const [annotations, setAnnotations] = useState<AceAnnotation[]>([]);
-    const [isAiLoading, setIsAiLoading] = useState(false);
 
     const languages = [
         { value: 'python', label: 'Python' },
