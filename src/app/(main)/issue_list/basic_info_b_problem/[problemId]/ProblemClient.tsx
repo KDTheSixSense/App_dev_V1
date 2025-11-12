@@ -202,7 +202,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     if (correct) {
       try {
         const problemId = parseInt(problem.id, 10);
-        const result = await awardXpForCorrectAnswer(problemId, 3); // 科目Bの問題なのでsubjectidに3を渡す
+        const result = await awardXpForCorrectAnswer(problemId,undefined ,3); // 科目Bの問題なのでsubjectidに3を渡す
         // 処理が成功し、エラーでなければヘッダーのペットゲージを更新する
         if (result.message === '経験値を獲得しました！') {
             window.dispatchEvent(new CustomEvent('petStatusUpdated'));
@@ -275,12 +275,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   };
 
   const handleUserMessage = async (message: string) => {
+    // ユーザーのメッセージは常にチャット履歴に追加
+    setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
+
     if (credits <= 0) {
       setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
       return;
     }
 
-    setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
     setIsAiLoading(true);
 
     try {
@@ -292,7 +294,11 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       const context = {
         problemTitle: problem.title[currentLang],
         problemDescription: problem.description[currentLang],
-        userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムを文字列として渡す
+        userCode: problem.programLines?.[currentLang]?.join('\n') || '', // プログラムを文字列として渡す
+        answerOptions: JSON.stringify(problem.answerOptions?.[currentLang] || []),
+        correctAnswer: problem.correctAnswer,
+        explanation: problem.explanationText?.[currentLang] || '',
+        problemType: problem.logicType, // 問題の種類を追加
       };
       const hint = await getHintFromAI(message, context);
       setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);

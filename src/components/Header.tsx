@@ -11,6 +11,8 @@ type UserWithPetStatus = User & {
 
 type HeaderProps = {
   userWithPet: UserWithPetStatus | null; // ユーザー情報を受け取る
+  isMenuOpen: boolean;
+  setIsMenuOpen: (isOpen: boolean) => void;
 };
 
 type PetDisplayStatus = {
@@ -45,42 +47,73 @@ const getPetDisplayState = (hungerLevel: number) => {
   }
 };
 
-export default function Header({ userWithPet }: HeaderProps) {
+export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
 
+  // 1. ランク(level)のstate
+  const [rank, setRank] = useState(() => userWithPet?.level ?? 1);
+  
+  // 2. 連続ログイン日数のstate
+  const [continuousLogin, setContinuousLogin] = useState(() => userWithPet?.continuouslogin ?? 0);
+
+  // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
     const initialStatus = userWithPet?.status_Kohaku;
+    console.log("[Header Debug] Initializing petStatus. userWithPet:", userWithPet);
     if (initialStatus) {
       const displayState = getPetDisplayState(initialStatus.hungerlevel);
+      console.log("[Header Debug] Initial petStatus from userWithPet:", { hungerlevel: initialStatus.hungerlevel, ...displayState });
       return {
         hungerlevel: initialStatus.hungerlevel,
         ...displayState,
       };
     }
-    return null;
-  });
+    // ユーザーはいるがペット情報がない場合 (フォールバック)
+    if (userWithPet) {
+        const displayState = getPetDisplayState(MAX_HUNGER);
+        console.log("[Header Debug] Initial petStatus (fallback for no status_Kohaku):", { hungerlevel: MAX_HUNGER, ...displayState });
+        return { hungerlevel: MAX_HUNGER, ...displayState };
+    }
+    console.log("[Header Debug] Initial petStatus (no userWithPet): null");
+    return null;  });
 
     // ペットのステータスをAPIから再取得して、Stateを更新する関数
   const refetchPetStatus = async () => {
+    console.log("[Header Debug] refetchPetStatus called.");
     try {
       const res = await fetch('/api/pet/status');
       if (res.ok) {
         const { data } = await res.json();
+        console.log("[Header Debug] API /api/pet/status response data:", data);
         if (data) {
           const displayState = getPetDisplayState(data.hungerlevel);
           setPetStatus({
             hungerlevel: data.hungerlevel,
             ...displayState,
           });
+          setRank(data.level);
+
+          // 3. 連続ログイン日数を更新
+          setContinuousLogin(data.continuouslogin);
           console.log('ヘッダーのペット情報を更新しました。');
         }
+      } else {
+        console.error("[Header Debug] Failed to fetch pet status. Response not OK:", res.status, await res.text());
       }
     } catch (error) {
-      console.error("ペット情報の再取得に失敗:", error);
+      console.error("[Header Debug] ペット情報の再取得に失敗:", error);
     }
   };
 
+  // レンダリング直前にpetStatus.iconの値をログ出力
+  console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
+
   useEffect(() => {
+
+        // ページ読み込み時にも最新の情報を取得
+    if (userWithPet) { // ログインしている場合のみ
+      refetchPetStatus();
+    }
     // 'petStatusUpdated' という名前のカスタムイベントをウィンドウで監視します
     window.addEventListener('petStatusUpdated', refetchPetStatus);
 
@@ -88,7 +121,7 @@ export default function Header({ userWithPet }: HeaderProps) {
     return () => {
       window.removeEventListener('petStatusUpdated', refetchPetStatus);
     };
-  }, []); // 空の依存配列なので、この設定はコンポーネントのマウント時に一度だけ行われます
+  }, [userWithPet]); // userWithPetを依存配列に追加
 
   // ログアウト処理を行う非同期関数
   const handleLogout = async () => {
@@ -119,7 +152,7 @@ export default function Header({ userWithPet }: HeaderProps) {
   ];
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 flex items-center px-4 h-20 z-50">
+    <header className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
       
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0">
@@ -179,8 +212,8 @@ export default function Header({ userWithPet }: HeaderProps) {
         <div className="flex flex-col">
           <div className="relative group flex items-center gap-2">
             <img src="/images/rank.png" alt="ランク" width={45} height={15} />
-            <div className='frex ml-auto'>
-              <p className="text-[#5FE943] text-2xl font-bold select-none">{user?.level ?? 1}</p>
+            <div className='flex ml-auto'>
+              <p className="text-[#5FE943] text-2xl font-bold select-none">{rank}</p>
             </div>
             {/* ツールチップ */}
             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-999">
@@ -192,8 +225,8 @@ export default function Header({ userWithPet }: HeaderProps) {
             <div className='flex ml-3'>
               <img src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} />
             </div>
-            <div className='frex ml-auto'>
-              <p className="text-[#feb75c] text-2xl font-bold select-none">{user?.continuouslogin ?? 0}</p>
+            <div className='flex ml-auto'>
+              <p className="text-[#feb75c] text-2xl font-bold select-none">{continuousLogin}</p>
             </div>
             {/* ツールチップ */}
             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-999">

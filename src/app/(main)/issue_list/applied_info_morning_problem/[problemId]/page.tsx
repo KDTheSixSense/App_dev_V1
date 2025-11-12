@@ -1,50 +1,68 @@
+// /workspaces/my-next-app/src/app/(main)/issue_list/applied_info_morning_problem/[problemId]/page.tsx
+
+import React from 'react';
 import { notFound } from 'next/navigation';
-//import { getIronSession } from 'iron-session';
-import { prisma } from '@/lib/prisma';
 import { getAppSession } from '@/lib/auth';
-
-
-import { getAppliedInfoMorningProblemById } from '@/lib/issue_list/applied_info_morning_problem/problem';
+import { prisma } from '@/lib/prisma';
+import { getAppliedInfoAmProblem } from '@/lib/data'; 
 import ProblemClient from './ProblemClient';
-import type { Problem } from '@/lib/types'; // Problem 型をインポート
-import type { SerializableProblem } from '@/lib/data'; // SerializableProblem 型をインポート
+import type { SerializableProblem } from '@/lib/data';
 
-type AppliedInfoMorningProblemPageProps = {
-  params: Promise<{ problemId: string }>;
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+// 型定義を 'basic_info_a_problem' と同様に修正
+type AppliedInfoProblemDetailPageProps = {
+  params: { problemId: string }; // 'Promise' を削除
+  searchParams?: { [key: string]: string | string[] | undefined };
 };
 
-const AppliedInfoMorningProblemPage = async ({ params, searchParams }: AppliedInfoMorningProblemPageProps) => {
-  const resolvedParams = await params;
-  const { problemId } = resolvedParams;
-  const resolvedSearchParams = searchParams ? await searchParams : undefined; // searchParams を await する
-  const session = await getAppSession();
-  const problem = getAppliedInfoMorningProblemById(problemId);
+// 'async' 関数に変更
+const AppliedInfoProblemDetailPage = async ({ params, searchParams }: AppliedInfoProblemDetailPageProps) => {
+  const resolvedParams = await params;
+  // 'await params' を削除
+  const problemIdStr = resolvedParams.problemId;
+  const problemIdNum = parseInt(problemIdStr, 10);
 
-  if (!problem || !problem.answerOptions) { // problem.answerOptions が undefined の場合も notFound を呼び出す
-    notFound();
-  }
+  if (isNaN(problemIdNum)) {
+    console.log(`[Page] Invalid problem ID received from params: ${problemIdStr}. Calling notFound().`);
+    notFound();
+  }
 
-  // Problem 型から SerializableProblem 型に変換
-  const serializableProblem: SerializableProblem = {
-    ...problem,
-    programLines: problem.programLines ?? { ja: [], en: [] },
-    explanationText: problem.explanationText ?? { ja: '', en: '' },
-    initialVariables: problem.initialVariables ?? {},
-  };
+  const session = await getAppSession(); 
 
-  let userCredits = 0;
-  if (session?.user) {
-    const user = await prisma.user.findUnique({
-      where: { id: Number(session.user.id) },
-      select: { aiAdviceCredits: true },
-    });
-    if (user) {
-      userCredits = user.aiAdviceCredits;
-    }
-  }
+  console.log(`[Page] Fetching applied AM problem for ID: ${problemIdNum}`);
+  // 修正: データベースから取得する関数に変更
+  const problem = await getAppliedInfoAmProblem(problemIdNum);
+  console.log(`[Page] Fetched problem data:`, problem ? `Title: ${problem.title.ja}` : 'null or undefined');
 
-  return <ProblemClient initialProblem={serializableProblem} initialCredits={userCredits} />;
+  if (!problem) {
+    console.log(`[Page] Problem not found for ID: ${problemIdNum}. Calling notFound().`);
+    notFound();
+  }
+
+  // ユーザーのクレジット情報を取得（変更なし）
+  let userCredits = 0;
+  if (session?.user?.id) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: Number(session.user.id) },
+        select: { aiAdviceCredits: true }
+      });
+      if (user) {
+        userCredits = user.aiAdviceCredits;
+      }
+    } catch (error) {
+       console.error("[Page] Error fetching user credits:", error);
+    }
+  } else {
+     console.log("[Page] No user session found, credits will be 0.");
+  }
+
+  // problem は 'SerializableProblem' 型になっているため、変換は不要
+  return (
+    <ProblemClient
+      initialProblem={problem} 
+      initialCredits={userCredits}
+    />
+  );
 };
 
-export default AppliedInfoMorningProblemPage;
+export default AppliedInfoProblemDetailPage;

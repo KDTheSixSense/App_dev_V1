@@ -4,7 +4,8 @@ import { prisma } from './prisma';
 import type { 
   Questions as DbStaticProblem,
   Questions_Algorithm as DbAlgoProblem,
-  Basic_Info_A_Question as DbBasicInfoAProblem 
+  Basic_Info_A_Question as DbBasicInfoAProblem ,
+  Applied_am_Question as DbAppliedInfoAmProblem
 } from '@prisma/client';
 import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
@@ -291,4 +292,72 @@ export async function getBasicInfoAProblem(id: number): Promise<SerializableProb
     console.error(`[getBasicInfoAProblem] Database error fetching ID: ${id}:`, error);
     return null;
   }
+}
+
+/**
+ * DBから取得した応用情報AM問題(Applied_am_Question)をクライアント用の形式に変換します。
+ * (transformBasicInfoAProblem をコピーして作成)
+ */
+function transformAppliedInfoAmProblem(dbProblem: DbAppliedInfoAmProblem): SerializableProblem {
+  const answerLabels = ['ア', 'イ', 'ウ', 'エ'];
+
+  const dbOptionsArray = Array.isArray(dbProblem.answerOptions) ? dbProblem.answerOptions : [];
+  const transformedOptions = dbOptionsArray.map((optionText, index) => ({
+    label: answerLabels[index] || '?',
+    value: String(optionText),
+  })).slice(0, 4); 
+
+  const correctOptionText = dbOptionsArray[dbProblem.correctAnswer]
+                           ? String(dbOptionsArray[dbProblem.correctAnswer])
+                           : ''; 
+
+  const imagePath = 'imagePath' in dbProblem ? (dbProblem as any).imagePath : undefined;
+
+  return {
+    id: String(dbProblem.id),
+    title: { ja: dbProblem.title || '', en: dbProblem.title || '' },
+    description: { ja: dbProblem.description || '', en: dbProblem.description || '' },
+    explanationText: { ja: dbProblem.explanation || '', en: dbProblem.explanation || '' },
+    programLines: { ja: [], en: [] }, // A問題と同様にプログラムはない
+    answerOptions: {
+      ja: transformedOptions,
+      en: transformedOptions // ひとまず 'ja' と同じ
+    },
+    correctAnswer: correctOptionText,
+    initialVariables: {},
+    logicType: 'STATIC_QA', // 静的な選択問題
+    imagePath: imagePath,
+    sourceYear: dbProblem.sourceYear ?? undefined,
+    sourceNumber: dbProblem.sourceNumber ?? undefined,
+    difficultyId: dbProblem.difficultyId ?? 9, // 9 = 応用資格午前問題
+  };
+}
+
+/**
+ * 【新設】応用情報AM問題用のデータ取得関数
+ * (getBasicInfoAProblem をコピーして作成)
+ */
+export async function getAppliedInfoAmProblem(id: number): Promise<SerializableProblem | null> {
+  console.log(`[getAppliedInfoAmProblem] Attempting to fetch problem with ID: ${id}`);
+  try {
+    // ★ モデルを Applied_am_Question に変更
+    const appliedAmProblem = await prisma.applied_am_Question.findUnique({
+      where: { id }
+    });
+
+    if (appliedAmProblem) {
+      console.log(`[getAppliedInfoAmProblem] Found problem data for ID: ${id}. Transforming...`);
+      // ★ 変換関数を変更
+      const transformed = transformAppliedInfoAmProblem(appliedAmProblem);
+      console.log(`[getAppliedInfoAmProblem] Transformation successful for ID: ${id}.`);
+      return transformed;
+    } else {
+      console.log(`[getAppliedInfoAmProblem] No problem data found for ID: ${id}. Returning null.`);
+      return null;
+    }
+
+  } catch (error) {
+    console.error(`[getAppliedInfoAmProblem] Database error fetching ID: ${id}:`, error);
+    return null;
+  }
 }

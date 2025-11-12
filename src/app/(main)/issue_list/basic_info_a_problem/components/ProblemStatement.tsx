@@ -69,7 +69,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
               alt={`問題画像: ${t.title || 'No Title'}`}
               width={500} // Keep width (or adjust)
               height={300} // Keep height (or adjust)
-              className="rounded-lg border border-gray-200 object-contain mx-auto" // Keep styling
+              className="rounded-lg border object-contain mx-auto" // Keep styling
               priority
               // unoptimized={true} // Consider keeping or removing based on testing
               style={{

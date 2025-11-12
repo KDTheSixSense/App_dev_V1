@@ -8,7 +8,7 @@ export default async function PetStatus({user}: {user : User | null} ) {
 
   // ログインしていない場合は、デフォルトの満タン状態で表示
   if (!user) {
-    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} />;
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク'/>;
   }
 
   // --- ここからが時間経過の計算ロジックです ---
@@ -20,7 +20,7 @@ export default async function PetStatus({user}: {user : User | null} ) {
   // もしペット情報がなければ、ここで処理を中断（表示はデフォルト）
   if (!petStatus) {
     console.error(`User ID: ${user.id} のペット情報が見つかりません。`);
-    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} />;
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク'/>;
   }
 
   // 1. 最後に更新されてからの経過時間（分）を計算
@@ -58,6 +58,7 @@ export default async function PetStatus({user}: {user : User | null} ) {
     <PetStatusView 
       initialHunger={finalHungerLevel} 
       maxHunger={MAX_HUNGER} 
+      petname={petStatus.name}
     />
   );
 }

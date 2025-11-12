@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+const prismaClient = prisma;
 /**
  * 特定のイベントの状態（特に isStarted）を取得するAPIエンドポイント
  */
@@ -8,14 +9,15 @@ export async function GET(
   request: Request,
   { params }: any
 ) {
-  const eventId = parseInt(params.eventId, 10);
+  // params オブジェクトを await してからプロパティにアクセスします
+  const eventId = parseInt((await params).eventId, 10);
 
   if (isNaN(eventId)) {
     return NextResponse.json({ error: 'Invalid event ID' }, { status: 400 });
   }
 
   try {
-    const event = await prisma.create_event.findUnique({
+    const event = await prismaClient.create_event.findUnique({
       where: { id: eventId },
       select: { isStarted: true, hasBeenStarted: true }, // hasBeenStartedも取得
     });

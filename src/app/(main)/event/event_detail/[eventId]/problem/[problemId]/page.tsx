@@ -11,10 +11,10 @@ type ProblemSolverPageProps = {
   params: Promise<{ eventId: string, problemId: string }>;
 };
 
-export default async function ProblemSolverPage({ params }: ProblemSolverPageProps) {
-  const resolvedParams = await params;
-  const eventId = parseInt(resolvedParams.eventId, 10);
-  const problemId = parseInt(resolvedParams.problemId, 10);
+export default async function ProblemSolverPage({ params }: ProblemSolverPageProps) {  
+  const awaitedParams = await params;
+  const eventId = parseInt(awaitedParams.eventId, 10);
+  const problemId = parseInt(awaitedParams.problemId, 10);
 
   if (isNaN(eventId) || isNaN(problemId)) {
     notFound();

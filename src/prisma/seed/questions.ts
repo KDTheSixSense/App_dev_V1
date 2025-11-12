@@ -10,26 +10,12 @@ export async function seedProblems(prisma: PrismaClient) {
 
   // 既存の問題関連データをクリア
   console.log('🗑️ Clearing old problem data...');
-  // Submissions が Assignment を参照しているので、先に Submissions を削除
-  await prisma.submissions.deleteMany({});
-  await prisma.sampleCase.deleteMany({});
-  await prisma.testCase.deleteMany({});
-  await prisma.problemFile.deleteMany({});
-  // Basc_Info_A_Question が UserAnswer を参照しているため、UserAnswer を先に削除
-  await prisma.userAnswer.deleteMany({});
-  await prisma.answer_Algorithm.deleteMany({});
   
-  // Basc_Info_A_Question を削除リストに追加
-  await prisma.basic_Info_A_Question.deleteMany({});
-  
-  await prisma.assignment.deleteMany({});
-  await prisma.event_Issue_List.deleteMany({});
-  await prisma.programmingProblem.deleteMany({});
-  await prisma.selectProblem.deleteMany({}); // SelectProblem もクリア対象に
+  // 改行やインデントをすべて削除し、1行の文字列にします
+  await prisma.$executeRawUnsafe(
+    `TRUNCATE TABLE "Submissions", "SampleCase", "TestCase", "ProblemFile", "UserAnswer", "Answer_Algorithm", "Basic_Info_A_Question", "Assignment", "Event_Issue_List", "ProgrammingProblem", "SelectProblem", "Questions", "Questions_Algorithm" RESTART IDENTITY CASCADE;`
+  );
 
-  await prisma.questions.deleteMany({});
-  await prisma.questions_Algorithm.deleteMany({});
- 
   console.log('✅ Old problem data cleared.');
 
   // 1. localProblems からのシーディング
@@ -54,6 +40,10 @@ export async function seedProblems(prisma: PrismaClient) {
 
   // 5.基本A問題のシーディング
   await seedBasicInfoAProblems(prisma);
+
+  // 6. 応用情報午前問題のシーディング
+  console.log('🌱 Seeding Applied Info AM problems...');
+  await seedAppliedInfoAmProblems(prisma);
 }
 
 async function seedProblemsFromExcel(prisma: PrismaClient) {
@@ -152,7 +142,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'N個の整数の和',
         problemType: 'コーディング問題',
-        difficultyId: 2,
+        difficulty: 1,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: 'ループ',
@@ -173,7 +163,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '奇数か偶数か',
         problemType: 'コーディング問題',
-        difficultyId: 2,
+        difficulty: 1,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '条件分岐',
@@ -195,7 +185,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '文字列の連結',
         problemType: 'コーディング問題',
-        difficultyId: 2,
+        difficulty: 1,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '文字列操作',
@@ -216,7 +206,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '最大値の発見',
         problemType: 'コーディング問題',
-        difficultyId: 3,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '配列',
@@ -237,7 +227,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'FizzBuzz',
         problemType: 'コーディング問題',
-        difficultyId: 3,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: 'ループと条件分岐',
@@ -257,7 +247,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '配列の逆順',
         problemType: 'コーディング問題',
-        difficultyId: 3,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '配列',
@@ -277,7 +267,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '文字のカウント',
         problemType: 'コーディング問題',
-        difficultyId: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '文字列操作',
@@ -298,7 +288,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '階乗の計算',
         problemType: 'コーディング問題',
-        difficultyId: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '再帰',
@@ -319,7 +309,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '素数判定',
         problemType: 'コーディング問題',
-        difficultyId: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '数学',
@@ -341,7 +331,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '二分探索',
         problemType: 'コーディング問題',
-        difficultyId: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '探索',
@@ -362,7 +352,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'ユークリッドの互除法',
         problemType: 'コーディング問題',
-        difficultyId: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '数学',
@@ -383,7 +373,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'バブルソート',
         problemType: 'コーディング問題',
-        difficultyId: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: 'ソート',
@@ -403,7 +393,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '累積和',
         problemType: 'コーディング問題',
-        difficultyId: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'データ構造',
         topic: '累積和',
@@ -423,7 +413,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '深さ優先探索 (DFS)',
         problemType: 'コーディング問題',
-        difficultyId: 7,
+        difficulty: 4,
         timeLimit: 3,
         category: 'グラフ理論',
         topic: '探索',
@@ -443,7 +433,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '幅優先探索 (BFS)',
         problemType: 'コーディング問題',
-        difficultyId: 7,
+        difficulty: 4,
         timeLimit: 3,
         category: 'グラフ理論',
         topic: '探索',
@@ -463,7 +453,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '動的計画法 (DP): Fibonacci',
         problemType: 'コーディング問題',
-        difficultyId: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'アルゴリズム',
         topic: '動的計画法',
@@ -483,7 +473,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'ナップサック問題',
         problemType: 'コーディング問題',
-        difficultyId: 8,
+        difficulty: 4,
         timeLimit: 3,
         category: 'アルゴリズム',
         topic: '動的計画法',
@@ -503,7 +493,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'ダイクストラ法',
         problemType: 'コーディング問題',
-        difficultyId: 8,
+        difficulty: 4,
         timeLimit: 3,
         category: 'グラフ理論',
         topic: '最短経路',
@@ -523,7 +513,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'カレンダーの計算',
         problemType: 'コーディング問題',
-        difficultyId: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: 'シミュレーション',
         topic: '日付計算',
@@ -544,7 +534,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '括弧の整合性',
         problemType: 'コーディング問題',
-        difficultyId: 6,
+        difficulty: 3,
         timeLimit: 2,
         category: 'データ構造',
         topic: 'スタック',
@@ -566,7 +556,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '座標圧縮',
         problemType: 'コーディング問題',
-        difficultyId: 7,
+        difficulty: 3,
         timeLimit: 3,
         category: 'アルゴリズム',
         topic: '座標圧縮',
@@ -586,7 +576,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '平均点の計算',
         problemType: 'コーディング問題',
-        difficultyId: 2,
+        difficulty: 1,
         timeLimit: 2,
         category: '数学',
         topic: '算術演算',
@@ -607,7 +597,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'ROT13',
         problemType: 'コーディング問題',
-        difficultyId: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: '文字列',
         topic: '暗号',
@@ -628,7 +618,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'カードゲームシミュレーション',
         problemType: 'コーディング問題',
-        difficultyId: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: 'シミュレーション',
         topic: 'シミュレーション',
@@ -648,7 +638,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '約数の列挙',
         problemType: 'コーディング問題',
-        difficultyId: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: '数学',
         topic: '約数',
@@ -668,7 +658,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '回文判定',
         problemType: 'コーディング問題',
-        difficultyId: 4,
+        difficulty: 2,
         timeLimit: 2,
         category: '文字列',
         topic: '回文',
@@ -689,7 +679,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: '行列の積',
         problemType: 'コーディング問題',
-        difficultyId: 7,
+        difficulty: 4,
         timeLimit: 3,
         category: '線形代数',
         topic: '行列',
@@ -709,7 +699,7 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
     {
         title: 'ビット演算: XOR',
         problemType: 'コーディング問題',
-        difficultyId: 5,
+        difficulty: 3,
         timeLimit: 2,
         category: 'ビット演算',
         topic: 'XOR',
@@ -895,6 +885,49 @@ function createImageFileMap(): Map<string, string> {
 }
 
 /**
+ * 応用情報AM問題: 画像ディレクトリをスキャン
+ */
+function createAppliedAmImageFileMap(): Map<string, string> {
+  // 1. /src/public/images/applied_am/ の絶対パスを取得
+  const imageDir = path.join(
+    __dirname, // 現在のディレクトリ (seed/)
+    '..',      // prisma/
+    '..',      // src/
+    'public',
+    'images',
+    'applied_am' //  応用AM用のパスに変更
+  );
+  console.log(` 🔍 Scanning for images in: ${imageDir}`);
+
+  const fileNameMap = new Map<string, string>();
+  
+  try {
+    // 2. ディレクトリ内の全ファイル名を同期的に読み込む
+    const files = fs.readdirSync(imageDir);
+    
+    // 3. ファイル名からIDを抽出するための正規表現 (末尾の "-数字.png" にマッチ)
+    // (もしファイル名の命名規則が違う場合は、この正規表現を調整してください)
+    const idRegex = /-(\d+)\.png$/; 
+
+    for (const fileName of files) {
+      const match = fileName.match(idRegex);
+      
+      if (match && match[1]) {
+        const fileId = match[1];
+        fileNameMap.set(fileId, fileName);
+      }
+    }
+    console.log(` ✅ Found and mapped ${fileNameMap.size} image files.`);
+  } catch (error: any) {
+    // ディレクトリが存在しない場合などのエラー
+    console.error(`❌ Error scanning image directory: ${error.message}`);
+    console.warn(' ⚠️ Image path generation will fail. Make sure the directory exists: /src/public/images/applied_am/');
+  }
+
+  return fileNameMap;
+}
+
+/**
  * answerOptions のテキスト ("アX イY ウZ エW" など、多様な形式に対応) を
  * ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数 [さらに改善版]
  */
@@ -913,7 +946,7 @@ function parseAnswerOptionsText(text: string): string[] | null {
   const markerPositions: { [key: string]: number } = {};
   let searchStartIndex = 0;
 
-  // --- ▼▼▼ 改善点: 全マーカーの位置を先に特定 ▼▼▼ ---
+  //  ▼▼▼ 改善点: 全マーカーの位置を先に特定 ▼▼▼ 
   for (const marker of markers) {
     const index = cleanedText.indexOf(marker, searchStartIndex);
     if (index === -1) {
@@ -925,7 +958,7 @@ function parseAnswerOptionsText(text: string): string[] | null {
     // これにより、選択肢テキスト内に同じマーカー文字があっても影響されにくくなる
     searchStartIndex = index + 1;
   }
-  // --- ▲▲▲ マーカー位置特定ここまで ▲▲▲ ---
+  //   マーカー位置特定ここまで  
 
   const options: string[] = [];
   try {
@@ -963,10 +996,10 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
 
   //const imageFileMap = createImageFileMap();
 
-  // --- ★変更点 1: Excelファイル名とシート名を更新 ---
+  //  変更点 1: Excelファイル名とシート名を更新 
   const excelFileName = 'PBL3基本Aデータ使用.xlsx'; // 新しいファイル名
   const sheetName = '基本情報A問題統合用シート';   // 新しいシート名
-  // --- ▲▲▲ ---
+  //   
 
   const filePath = path.join(process.cwd(), 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
 
@@ -1011,7 +1044,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
       return;
     }
 
-    // --- カテゴリ、難易度、科目のマスタデータ取得とマッピング定義 (変更なし) ---
+    //  カテゴリ、難易度、科目のマスタデータ取得とマッピング定義 (変更なし) 
     const categories = await prisma.category.findMany({ orderBy: { id: 'asc' } });
     const numericCategoryMap: { [key: string]: string } = {
       '1': 'テクノロジ系',
@@ -1122,7 +1155,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
           continue;
       }
 
-      // --- カテゴリマッピング (変更なし、マッピングテーブルは上で更新) ---
+      //  カテゴリマッピング (変更なし、マッピングテーブルは上で更新) 
       const rawCategoryValue = record.category ? String(record.category).trim() : undefined;
       let mappedDbCategoryName: string | undefined = undefined;
       if (rawCategoryValue && categoryNameToDbNameMap[rawCategoryValue]) {
@@ -1137,10 +1170,10 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
         console.warn(` ⚠️ [Category mismatch/unmapped] Row ${processedRowCount + 2}: Excel value: "${rawCategoryValue}". Skipping: "${record.title}"`);
         continue;
       }
-      // --- カテゴリマッピングここまで ---
+      //  カテゴリマッピングここまで 
 
 
-      // --- ★変更点 4: 難易度と科目をExcelから読み込み、無効ならデフォルト値 ---
+      //  変更点 4: 難易度と科目をExcelから読み込み、無効ならデフォルト値 
       let difficultyId = defaultDifficulty.id; // デフォルト値
       const excelDifficultyId = record.difficultyId ? parseInt(String(record.difficultyId).trim(), 10) : NaN;
       if (!isNaN(excelDifficultyId)) {
@@ -1158,31 +1191,31 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
        } else if (record.subjectId) { // I列に何か入っていたが無効な数値だった場合
            console.warn(` ⚠️ Invalid subjectId "${record.subjectId}" found in Excel Row ${processedRowCount + 2}. Using default ID ${defaultSubject.id}.`);
        }
-      // --- ▲▲▲ ---
+      //   
 
 
-      // --- 選択肢パース (V7 - 変更なし) ---
+      //  選択肢パース (V7 - 変更なし) 
       const parsedOptions = parseAnswerOptionsText(record.answerOptions);
       if (!parsedOptions) {
         console.warn(` ⚠️ Failed to parse answerOptions text for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
         continue;
       }
-      // --- 選択肢パースここまで ---
+      //  選択肢パースここまで 
 
 
-      // --- 正解インデックス (変更なし) ---
+      //  正解インデックス (変更なし) 
       const correctAnswerIndex = answerMap[String(record.correctAnswer).trim()];
       if (correctAnswerIndex === undefined) {
          console.warn(` ⚠️ Invalid correct answer "${String(record.correctAnswer).trim()}" for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
          continue;
       }
-      // --- 正解インデックスここまで ---
+      //  正解インデックスここまで 
 
 
-      // --- ★変更点 5: 出典情報の列を調整 (M列=番号, N列=年/区分) ---
+      //  変更点 5: 出典情報の列を調整 (M列=番号, N列=年/区分) 
       const sourceNumber = record.source ? String(record.source).trim() : '不明';      // M列
       const sourceYear = record.sourceYear ? String(record.sourceYear).trim() : '不明'; // N列
-      // --- ▲▲▲ ---
+      //   
 
 
       const rawImageName = record.imageFileName ? String(record.imageFileName).trim() : null;
@@ -1198,7 +1231,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
       }
 
 
-      // --- dataToSave オブジェクト (文字列変換は維持) ---
+      //  dataToSave オブジェクト (文字列変換は維持) 
       const dataToSave = {
           // id: problemId, // create では不要
           title: String(record.title || ""),
@@ -1208,12 +1241,12 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
           correctAnswer: correctAnswerIndex,
           sourceYear: sourceYear,
           sourceNumber: sourceNumber,
-          difficultyId: difficultyId, // ★ 更新
-          subjectId: subjectId,       // ★ 更新
+          difficultyId: difficultyId, //  更新
+          subjectId: subjectId,       //  更新
           categoryId: category.id,
           imagePath: imagePath
       };
-      // --- dataToSave ここまで ---
+      //  dataToSave ここまで 
 
 
       try {
@@ -1222,7 +1255,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
           });
           createdCount++;
       } catch (error: any) {
-          // ★ ID重複エラー (P2002) の場合のログを追加
+          //  ID重複エラー (P2002) の場合のログを追加
           if (error.code === 'P2002' && error.meta?.target?.includes('id')) {
               console.error(`❌ Error saving record for Row ${processedRowCount + 2}: Duplicate ID ${problemId} found in Excel sheet "${sheetName}". Skipping this row. Title: "${record.title}"`);
           } else {
@@ -1238,4 +1271,236 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
   } catch (error) {
     console.error(`❌ Failed to read or process ${excelFileName}:`, error);
   }
+}
+
+/**
+ * 応用情報午前問題 をデータベースにシードする
+ * (seedBasicInfoAProblems をコピーして作成)
+ */
+async function seedAppliedInfoAmProblems(prisma: PrismaClient) {
+  console.log('🌱 Seeding Applied Info AM problems from Excel file...');
+
+  //  変更: 応用AM用の画像マップ関数を呼び出す
+  const imageFileMap = createAppliedAmImageFileMap(); //（現在未使用）
+
+  //  TODO: 応用情報のExcelファイル名とシート名を指定してください 
+  const excelFileName = 'PBL3応用午前統合版.xlsx'; // あなたのファイル名
+  const sheetName = '応用情報午前問題統合用シート';     // あなたのシート名
+  //  TODOここまで 
+
+  //  変更: 応用AM用のデータパス
+  const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'applied_info_morning_problem', 'data', excelFileName);
+
+  try {
+    const workbook = XLSX.readFile(filePath);
+    const sheet = workbook.Sheets[sheetName];
+
+    if (!sheet) {
+      console.warn(` ⚠️ Sheet "${sheetName}" not found in ${excelFileName}. Skipping Applied AM seeding.`);
+      return;
+    }
+
+    // Excelの列構成が基本A問題と同一であると仮定
+    const headers = [ 'id', 'title', 'description', 'explanation', 'answerOptions', 'correctAnswer', 'difficultyId', 'difficulty', 'subjectId', 'subject', 'assignment', 'category', 'source', 'sourceYear', 'imageFileName', ];
+    
+    // データ開始行 (0-indexed なので3行目は 2)
+    const records = XLSX.utils.sheet_to_json(sheet, { header: headers, range: 2 }) as any[];
+
+    console.log(` 🔍 Found ${records.length} records in sheet "${sheetName}".`);
+    if (records.length === 0) {
+      console.warn(' ⚠️ No data records found.');
+      return;
+    }
+
+    // (基本A問題と同一のカテゴリマッピングロジックを使用)
+    const categories = await prisma.category.findMany({ orderBy: { id: 'asc' } });
+    const categoryNameToDbNameMap: { [key: string]: string } = {
+      '1': 'テクノロジ系',
+      '2': 'マネジメント系',
+      '3': 'ストラテジ系',
+      '基礎理論': 'テクノロジ系',
+      'コンピュータシステム': 'テクノロジ系',
+      '開発技術': 'テクノロジ系',
+      'ネットワーク': 'テクノロジ系',
+      'セキュリティ': 'テクノロジ系',
+      'データベース': 'テクノロジ系',
+      'プロジェクトマネジメント': 'マネジメント系',
+      'サービスマネジメント': 'マネジメント系',
+      'システム監査': 'マネジメント系',
+      'システム戦略': 'ストラテジ系',
+      '企業と法務': 'ストラテジ系',
+      '経営戦略': 'ストラテジ系',
+      'AIとディープラーニング': 'テクノロジ系',
+      'モータの回転速度の制御方法': 'テクノロジ系',
+      'オブジェクト指向プログラミング（オーバーライド）': 'テクノロジ系',
+      'USB3.0の技術': 'テクノロジ系',
+      'メモリリーク': 'テクノロジ系',
+      'APIについて': 'テクノロジ系',
+      'DBMSとスキーマ': 'テクノロジ系',
+      'E-R図の説明': 'テクノロジ系',
+      'SQL文の条件式': 'テクノロジ系',
+      'Javaとデータベース、API': 'テクノロジ系',
+      'TCP/IPとプロトコル': 'テクノロジ系',
+      'Webサーバとネット中継': 'テクノロジ系',
+      'リバースブルートフォース攻撃の説明': 'テクノロジ系',
+      'メッセージのハッシュ値とデジタル署名': 'テクノロジ系',
+      'サイバー情報共有イニシアチブ': 'テクノロジ系',
+      'VDIのセキュリティと保護動作': 'テクノロジ系',
+      'オブジェクト指向とカプセル化': 'テクノロジ系',
+      'プログラムのテストとデータ': 'テクノロジ系',
+      'ソフトウェアとリバースエンジニアリング': 'テクノロジ系',
+      'スクラムと生産量': 'マネジメント系',
+      'エクストリームプログラミングとリファクタリング': 'マネジメント系',
+      'オペレーションサービスと必要人数': 'マネジメント系',
+      'システム監査と真正性の検証': 'マネジメント系',
+      'エンタープライスアーキテクチャと業務と情報システム': 'ストラテジ系',
+      'ハイブリッドクラウドとは？': 'ストラテジ系',
+      'CSRの調達': 'ストラテジ系',
+      'プロダクトポートフォリオマネジメントと4つの分類': 'ストラテジ系',
+      '戦略遂行と施策を策定する経営管理手法': 'ストラテジ系',
+      '３PLの説明': 'ストラテジ系',
+      'セル生産方式の利点': 'ストラテジ系',
+      'マトリックス組織について': 'ストラテジ系',
+      '定量発注方式と発注点計算': 'ストラテジ系',
+      '売上原価の計算': 'ストラテジ系',
+      '著作権とクリエイティブコモンズ': 'ストラテジ系',
+      '真理値表': 'テクノロジ系',
+      'ASCIIコード': 'テクノロジ系',
+      'アクセス時間の計算': 'テクノロジ系',
+      '稼働率': 'テクノロジ系',
+      'ロジックマッシュアップ': 'テクノロジ系',
+      '液晶ディスプレイなどの表示装置': 'テクノロジ系',
+      'DBMS に実装すべき原子性': 'テクノロジ系',
+      'LAN 間接続装置': 'テクノロジ系',
+      'ペネトレーションテスト': 'テクノロジ系',
+      'SQL インジェクションの対策': 'テクノロジ系',
+      'ソフトウェアの結合テスト': 'テクノロジ系',
+      'アジャイル開発手法': 'マネジメント系',
+      'アローダイアグラム': 'マネジメント系',
+      '新規サービスの設計及び移行を進めるための方法': 'マネジメント系',
+      'ビッグデータ分析': 'ストラテジ系',
+      'コアコンピタンス': 'ストラテジ系',
+      'ブルーオーシャン': 'ストラテジ系',
+      'HR テック': 'ストラテジ系',
+      '散布図': 'ストラテジ系',
+      '産業財産権': 'ストラテジ系',
+      'テクノロジ系': 'テクノロジ系',
+      'マネジメント系': 'マネジメント系',
+      'ストラテジ系': 'ストラテジ系',
+    };
+
+    //  変更: 応用AMのデフォルト難易度と科目を取得
+    const defaultDifficulty = await prisma.difficulty.findUnique({ where: { name: '応用資格午前問題' } });
+    const defaultSubject = await prisma.subject.findUnique({ where: { name: '応用情報午前問題' } });
+
+    if (!defaultDifficulty || !defaultSubject) {
+        console.error('❌ Master data error: Default Difficulty (応用資格午前問題) or Subject (応用情報午前問題) not found.');
+        return;
+    }
+    const answerMap: { [key: string]: number } = { 'ア': 0, 'イ': 1, 'ウ': 2, 'エ': 3 };
+
+    let createdCount = 0;
+    let processedRowCount = 0;
+
+    for (const record of records) {
+      processedRowCount++;
+
+      const problemId = parseInt(String(record.id).trim(), 10);
+      if (isNaN(problemId)) {
+          console.log(` ⏹️ Found invalid or empty ID at row ${processedRowCount + 2}. Stopping import.`);
+          break;
+      }
+
+      if (!record.title || String(record.title).trim() === '') {
+          console.log(` ⏩ Skipping row ${processedRowCount + 2} due to empty title.`);
+          continue;
+      }
+
+      //  カテゴリマッピング 
+      const rawCategoryValue = record.category ? String(record.category).trim() : undefined;
+      let mappedDbCategoryName: string | undefined = undefined;
+      if (rawCategoryValue && categoryNameToDbNameMap[rawCategoryValue]) {
+           mappedDbCategoryName = categoryNameToDbNameMap[rawCategoryValue];
+      }
+      let category = categories.find(c => c.name === mappedDbCategoryName);
+      if (!category && !rawCategoryValue) {
+          category = categories.find(c => c.name === 'テクノロジ系'); // デフォルト
+      }
+      if (!category) {
+        console.warn(` ⚠️ [Category mismatch/unmapped] Row ${processedRowCount + 2}: Excel value: "${rawCategoryValue}". Skipping: "${record.title}"`);
+        continue;
+      }
+
+      //  難易度と科目 
+      let difficultyId = defaultDifficulty.id; // デフォルトは「応用資格午前問題」
+      const excelDifficultyId = record.difficultyId ? parseInt(String(record.difficultyId).trim(), 10) : NaN;
+      if (!isNaN(excelDifficultyId)) { difficultyId = excelDifficultyId; }
+      
+      let subjectId = defaultSubject.id; // デフォルトは「応用情報午前問題」
+      const excelSubjectId = record.subjectId ? parseInt(String(record.subjectId).trim(), 10) : NaN;
+      if (!isNaN(excelSubjectId)) { subjectId = excelSubjectId; }
+      
+      //  選択肢パース 
+      const parsedOptions = parseAnswerOptionsText(record.answerOptions);
+      if (!parsedOptions) {
+        console.warn(` ⚠️ Failed to parse answerOptions text for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
+        continue;
+      }
+
+      //  正解インデックス 
+      const correctAnswerIndex = answerMap[String(record.correctAnswer).trim()];
+      if (correctAnswerIndex === undefined) {
+         console.warn(` ⚠️ Invalid correct answer "${String(record.correctAnswer).trim()}" for Row ${processedRowCount + 2}, problem: "${record.title}". Skipping.`);
+         continue;
+      }
+
+      //  出典情報 
+      const sourceNumber = record.source ? String(record.source).trim() : '不明';
+      const sourceYear = record.sourceYear ? String(record.sourceYear).trim() : '不明';
+
+      //  画像パス 
+      const rawImageName = record.imageFileName ? String(record.imageFileName).trim() : null;
+      let imagePath = null;
+      if (rawImageName && rawImageName.length > 0) {
+        //  変更: 応用AM用の画像パス
+        imagePath = `/images/applied_am/${rawImageName}`; 
+      } else {
+        // 画像なし（警告は出さない）
+      }
+
+      const dataToSave = {
+        // id: problemId, // create では不要
+        title: String(record.title || ""),
+        description: String(record.description || ""),
+        explanation: String(record.explanation || ""),
+        answerOptions: parsedOptions,
+        correctAnswer: correctAnswerIndex,
+        sourceYear: sourceYear,
+        sourceNumber: sourceNumber,
+        difficultyId: difficultyId,
+        subjectId: subjectId,
+        categoryId: category.id,
+        imagePath: imagePath
+      };
+
+      try {
+        //  変更: 投入先モデルを Applied_am_Question に変更
+        await prisma.applied_am_Question.create({
+          data: dataToSave
+        });
+        createdCount++;
+      } catch (error: any) {
+        if (error.code === 'P2002' && error.meta?.target?.includes('id')) {
+            console.error(`❌ Error saving record for Row ${processedRowCount + 2}: Duplicate ID ${problemId} found in Excel sheet "${sheetName}". Skipping this row. Title: "${record.title}"`);
+        } else {
+            console.error(`❌ Error saving record for Row ${processedRowCount + 2}, ID: ${problemId}, Title: "${record.title}". Error: ${error.message}`);
+        }
+      }
+    } // End of records loop
+
+    console.log(` ✅ Processed ${records.length} rows. Created ${createdCount} Applied Info AM questions.`);
+
+  } catch (error) {
+    console.error(`❌ Failed to read or process ${excelFileName}:`, error);
+  }
 }

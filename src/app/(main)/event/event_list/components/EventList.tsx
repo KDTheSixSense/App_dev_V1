@@ -10,6 +10,7 @@ type イベントデータ = {
   endTime: Date | string | null;
   isStarted: boolean;
   _count?: { participants: number };
+  participantsCount?: number;
 };
 
 /**

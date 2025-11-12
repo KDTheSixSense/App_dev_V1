@@ -1,5 +1,6 @@
 import RankingListItem from "./RankingListItem";
 import type { UserForRanking } from "@/lib/types/ranking"; // 型定義をインポート
+
 // 型定義
 type Props = {
   users: UserForRanking[];
@@ -9,12 +10,11 @@ type Props = {
 export default function RankingList({ users, myRankInfo }: Props) {
   return (
     <div className="mt-4">
-      <ul className="space-y-2">
+      <ul className="space-y-2 max-h-60 overflow-y-auto md:max-h-full md:overflow-y-visible">
         {users.map((user) => (
           <RankingListItem 
             key={user.id} 
             user={user} 
-            // 表示するユーザーがログイン中のユーザーと一致するか判定
             isCurrentUser={user.id === myRankInfo?.id} 
           />
         ))}

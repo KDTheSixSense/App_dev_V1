@@ -91,6 +91,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   const [language, setLanguage] = useState<Language>('ja');
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // AIチャットのローディング状態
 
   // 問題の表示開始時刻を保存
   const [problemStartedAt, setProblemStartedAt] = useState<number>(Date.now());
@@ -181,8 +182,6 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
     recordStudyTime();
   };
 
-  const [isLoading, setIsLoading] = useState(false);
-
   const handleUserMessage = async (message: string) => {
     setChatMessages((prev) => [...prev, { sender: 'user', text: message }]);
     setIsLoading(true);
@@ -203,7 +202,8 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
       });
 
       if (!response.ok) {
-        throw new Error('API request failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'APIからの応答エラー');
       }
 
       const data = await response.json();
