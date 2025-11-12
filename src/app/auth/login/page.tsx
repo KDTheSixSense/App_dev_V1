@@ -8,6 +8,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
+import { FcGoogle } from "react-icons/fc"; // Googleアイコンをインポート
 
 //email/password　の型宣言
 type Inputs = {
@@ -61,6 +62,12 @@ const Login = () => {
 
 
     };
+
+    // [追加] Googleログインボタン用のハンドラ
+    const handleGoogleLogin = () => {
+        // STEP 5 で作成するAPIルートにリダイレクト
+        router.push('/api/auth/google/login');
+    };
 
     //以下で画面表示するフォームの見た目を定義
     return (
@@ -119,6 +126,19 @@ const Login = () => {
                     {errors.password && (
                         <span className="text-sm text-red-600">{errors.password.message}</span>
                     )}
+                </div>
+
+                {/* Googleログインボタン */}
+                <div className=" ">
+                    <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        disabled={loading}
+                        aria-label="Google でログイン" // スクリーンリーダー用のラベル
+                        className={`border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 transition-colors`}
+                    >
+                        <FcGoogle className="w-10 h-10" />
+                    </button>
                 </div>
 
                 {/*ログインボタン*/}
