@@ -15,10 +15,9 @@ type AppliedInfoProblemDetailPageProps = {
 };
 
 // 'async' 関数に変更
-const AppliedInfoProblemDetailPage = async ({ params, searchParams }: AppliedInfoProblemDetailPageProps) => {
-  const resolvedParams = await params;
+const AppliedInfoProblemDetailPage = async ({ params, searchParams }: any) => {
   // 'await params' を削除
-  const problemIdStr = resolvedParams.problemId;
+  const problemIdStr = params.problemId;
   const problemIdNum = parseInt(problemIdStr, 10);
 
   if (isNaN(problemIdNum)) {

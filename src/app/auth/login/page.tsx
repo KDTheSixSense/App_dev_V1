@@ -201,4 +201,12 @@ const Login = () => {
     );
 };
 
-export default Login;
+const LoginPage = () => {
+    return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <Login />
+        </React.Suspense>
+    );
+};
+
+export default LoginPage;

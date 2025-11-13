@@ -148,6 +148,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           const context = { 
             problemTitle: problem.title[currentLang], 
             problemDescription: problem.description[currentLang],
+            problemType: problem.logicType,
             // userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムはないので空文字か、選択肢を渡す
             userCode: '',
             answerOptions: JSON.stringify(problem.answerOptions?.[currentLang]), // AIに選択肢の情報を渡す

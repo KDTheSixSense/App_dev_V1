@@ -24,6 +24,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'ユーザーが見つかりません。' }, { status: 404 });
     }
 
+    if (!user.password) {
+      return NextResponse.json({ message: 'パスワードが設定されていません。' }, { status: 400 });
+    }
+
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
     if (!isPasswordValid) {

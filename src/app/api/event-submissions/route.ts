@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     const { eventIssueId, codeLog, status, startedAt } = body;
     console.log('[API] Request Body:', { eventIssueId, status, startedAt, codeLog: codeLog.substring(0, 100) + '...' });
 
-    const userId = parseInt(session.user.id, 10);
+    const userId = session.user.id;
     const submittedAt = new Date();
 
     if (isNaN(userId)) {
