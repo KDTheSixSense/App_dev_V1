@@ -117,6 +117,8 @@ export const useAdminData = (hashedId: string) => {
                     ...assignment,
                     programmingProblemId: assignment.programmingProblem?.id,
                     selectProblemId: assignment.selectProblem?.id,
+                    // 作成者情報を追加
+                    author: assignment.author,
                 }));
                 setAssignments(formattedAssignments);
             }
@@ -130,7 +132,7 @@ export const useAdminData = (hashedId: string) => {
         setSubmissionsLoading(true);
         try {
             // このAPIエンドポイントは、課題とその提出状況を返すことを想定しています
-            const response = await fetch(`/api/groups/${hashedId}/assignments/submissions`);
+            const response = await fetch(`/api/groups/${hashedId}/assignments`);
             if (response.ok) {
                 const data = await response.json();
                 setAssignmentsWithSubmissions(data.data);

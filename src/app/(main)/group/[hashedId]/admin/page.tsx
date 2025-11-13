@@ -264,9 +264,7 @@ const GroupDetailPage: React.FC = () => {
                                             onDeleteAssignment={deleteAssignment}
                                             onViewAssignmentDetail={handleAssignmentDetail}
                                             onBackToList={handleAssignmentBackToList}
-                                            onAddComment={addComment}
-                                            onEditComment={updateComment}
-                                            onDeleteComment={deleteComment}
+                                            
                                         />
                                     </div>
                                 )}
@@ -281,9 +279,7 @@ const GroupDetailPage: React.FC = () => {
                                         onDeleteAssignment={deleteAssignment}
                                         onViewAssignmentDetail={handleAssignmentDetail}
                                         onBackToList={handleAssignmentBackToList}
-                                        onAddComment={addComment}
-                                        onEditComment={updateComment}
-                                        onDeleteComment={deleteComment}
+                                        
                                     />
                                 )}
                             </div>

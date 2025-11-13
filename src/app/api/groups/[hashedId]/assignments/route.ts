@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
         selectProblem: true,
         // Add the group relation to the select clause
         group: true,
+        author: true, // 作成者情報を追加
         Submissions: {
           select: { id: true },
         }
