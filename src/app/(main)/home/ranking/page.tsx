@@ -28,17 +28,17 @@ export default async function RankingPage() {
     id: number;
     name: string;
     iconUrl: string | null;
-    score: number; // xpをscoreとして取得
+    score: number;
     subjectId: number;
-    rank: number;
-    level: number; // levelプロパティを追加
+    rank: bigint; // rankをbigint型に変更
+    level: number;
   }> = await prisma.$queryRaw(Prisma.sql`
     WITH RankedProgress AS (
       SELECT
         usp.user_id,
         usp.subject_id,
-        usp.level AS score, -- levelをscoreとして取得
-        usp.level AS level, -- levelも選択
+        usp.level AS score,
+        usp.level AS level,
         u.username AS name,
         u.icon AS "iconUrl",
         DENSE_RANK() OVER (PARTITION BY usp.subject_id ORDER BY usp.level DESC) as rank
@@ -53,7 +53,8 @@ export default async function RankingPage() {
       rp."iconUrl",
       rp.score,
       rp.subject_id AS "subjectId",
-      rp.rank
+      rp.rank,
+      rp.level -- levelも選択
     FROM
       RankedProgress rp
     WHERE
@@ -72,8 +73,8 @@ export default async function RankingPage() {
         name: r.name || '名無しさん',
         iconUrl: r.iconUrl || '/images/test_icon.webp',
         score: r.score,
-        rank: r.rank,
-        level: r.level, // levelプロパティを追加
+        rank: Number(r.rank), // bigintをnumberに変換
+        level: r.level,
       }));
   });
 

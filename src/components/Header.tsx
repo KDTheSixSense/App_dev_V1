@@ -60,10 +60,8 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
   // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
     const initialStatus = userWithPet?.status_Kohaku;
-    console.log("[Header Debug] Initializing petStatus. userWithPet:", userWithPet);
     if (initialStatus) {
       const displayState = getPetDisplayState(initialStatus.hungerlevel);
-      console.log("[Header Debug] Initial petStatus from userWithPet:", { hungerlevel: initialStatus.hungerlevel, ...displayState });
       return {
         hungerlevel: initialStatus.hungerlevel,
         ...displayState,

@@ -9,7 +9,6 @@ type Props = {
 };
 
 export default function RankingListItem({ user, isCurrentUser = false }: Props) {
-  
   const renderRankIcon = (rank: number) => {
     let iconSrc = '';
     if (rank === 1) iconSrc = '/images/rank1_icon.png';
@@ -51,7 +50,7 @@ export default function RankingListItem({ user, isCurrentUser = false }: Props) 
       </div>
       
       <div className="ml-auto text-right">
-        <p className="text-sm font-medium text-slate-600">ランク {user.level}</p>
+        <p className="text-sm font-medium text-slate-600">ランク {user.score}</p>
       </div>
     </li>
   );
