@@ -38,7 +38,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
       <hr className="mb-6 border-gray-300" />
 
       {/* 問題文 */}
-      <div className="mb-6 text-base text-gray-800 leading-relaxed whitespace-pre-wrap">
+      <div className="mb-6 text-base text-gray-800 leading-relaxed whitespace-pre-wrap sr-only">
         {description}
       </div>
 
@@ -56,8 +56,6 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
           />
         </div>
       )}
-
-      {/* プログラム表示エリアを削除しました */}
 
       {/* 解答群 */}
       <div className="mb-6">
