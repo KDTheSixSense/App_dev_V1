@@ -4,6 +4,18 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Play, Send, FileText, Code, ChevronDown, Eye, EyeOff, CheckCircle } from 'lucide-react';
 
+interface SubmitResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  result?: string;
+  validation_message?: string;
+  language?: string;
+  expected_output_text?: string;
+  output_text?: string;
+  submitted_code?: string;
+}
+
 const CreateQuestionsPage: React.FC = () => {
   const router = useRouter();
   const [selectedLanguage, setSelectedLanguage] = useState('python');
@@ -13,7 +25,7 @@ const CreateQuestionsPage: React.FC = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showAIHint, setShowAIHint] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitResult, setSubmitResult] = useState<any>(null);
+  const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
 
   const sampleProblem = {
     title: 'for文とif文を組み合わせてみよう',
@@ -211,20 +223,7 @@ class Program {
     );
   };
 
-  // 課題作成ボタンのクリックハンドラ
-  const handleCreateAssignmentClick = () => {
-    router.push('/create_questions/assignment_creation');
-  };
 
-  // 資格作成ボタンのクリックハンドラ
-  const handleCreateQualificationClick = () => {
-    router.push('/create_questions/qualification_creation');
-  };
-
-  // カスタム問題作成ボタンのクリックハンドラ
-  const handleCreateCustomClick = () => {
-    router.push('/create_questions/custom_creation');
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">

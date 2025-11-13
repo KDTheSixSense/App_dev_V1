@@ -22,7 +22,8 @@ const sampleInitialVars = `{
   "counter": 3
 }`;
 
-// --- 型定義 ---
+type VariableValue = string | number | boolean | null | undefined | VariableValue[];
+
 interface ForLoopInfo {
   type: 'for';
   loopVar: string;
@@ -58,7 +59,7 @@ const TraceClient = () => {
   // --- 状態管理 ---
   const [code, setCode] = useState(sampleCode);
   const [initialVarsString, setInitialVarsString] = useState(sampleInitialVars);
-  const [variables, setVariables] = useState<Record<string, any>>({});
+  const [variables, setVariables] = useState<Record<string, VariableValue>>({});
   const [programLines, setProgramLines] = useState<string[]>([]);
   const [currentLine, setCurrentLine] = useState(-1); // -1: 未開始, N: N行目を次に実行
   const [output, setOutput] = useState<string[]>([]);
@@ -76,7 +77,7 @@ const TraceClient = () => {
   // --- ヘルパー関数 ---
 
   // evaluateExpression を修正
-  const evaluateExpression = (expression: string, currentVars: Record<string, any>): any => {
+  const evaluateExpression = (expression: string, currentVars: Record<string, VariableValue>): VariableValue => {
     expression = expression.trim();
 
     expression = expression.replace(/[０-９]/g, (char) => {
@@ -143,8 +144,11 @@ const TraceClient = () => {
                 } else {
                     throw new Error(`数値以外の値 (${typeof lhs}, ${typeof rhs}) に演算子'${op}'は使えません。`);
                 }
-            } catch (e: any) {
-                throw new Error(`式 "${expression}" の評価中にエラー: ${e.message}`);
+            } catch (e) {
+                if (e instanceof Error) {
+                    throw new Error(`式 "${expression}" の評価中にエラー: ${e.message}`);
+                }
+                throw new Error(`式 "${expression}" の評価中に不明なエラーが発生しました。`);
             }
         }
     }
@@ -153,7 +157,7 @@ const TraceClient = () => {
   };
 
   // 条件式を評価する関数 (既存のものを流用、エラーハンドリングを少し追加)
-  const evaluateCondition = (condition: string, currentVars: Record<string, any>): boolean => {
+  const evaluateCondition = (condition: string, currentVars: Record<string, VariableValue>): boolean => {
       condition = condition.trim();
 
       // パターン1: "num が 3と5 で割り切れる"
@@ -206,8 +210,11 @@ const TraceClient = () => {
                       case '==': return lhs == rhs; // 値の比較
                       case '!=': return lhs != rhs; // 値の比較
                   }
-              } catch (e: any) {
-                    throw new Error(`条件式 "${condition}" の評価中にエラー: ${e.message}`);
+              } catch (e) {
+                    if (e instanceof Error) {
+                        throw new Error(`条件式 "${condition}" の評価中にエラー: ${e.message}`);
+                    }
+                    throw new Error(`条件式 "${condition}" の評価中に不明なエラーが発生しました。`);
               }
           }
       }
@@ -216,7 +223,7 @@ const TraceClient = () => {
             const result = evaluateExpression(condition, currentVars);
             // JavaScriptの truthy/falsy に従う
             return Boolean(result);
-      } catch (e) {
+      } catch (_) {
             // ignore, try next
       }
 
@@ -349,7 +356,7 @@ const TraceClient = () => {
 
           declaredItems.forEach(item => {
               const assignmentParts = item.split('←');
-              let varNameWithIndex = assignmentParts[0].trim(); // "arr[5]" または "i"
+              const varNameWithIndex = assignmentParts[0].trim(); // "arr[5]" または "i"
               let varName = varNameWithIndex; // デフォルトは "arr[5]" や "i"
               let initialValue = null; // デフォルト初期値
               let isArray = varType.startsWith('配列型'); // "整数型" の場合は false
@@ -666,11 +673,15 @@ const TraceClient = () => {
           setCurrentLine(nextLine); // 次に実行する行を設定
       }
 
-    } catch (e: any) {
-        setError(`エラー (行 ${lineIndex + 1}): ${e.message}`);
+    } catch (e) {
+        if (e instanceof Error) {
+            setError(`エラー (行 ${lineIndex + 1}): ${e.message}`);
+        } else {
+            setError(`不明なエラー (行 ${lineIndex + 1})`);
+        }
         setIsTraceStarted(false);
     }
-  }, [isTraceStarted, currentLine, programLines, variables, controlFlowStack, findBlockEnd]); //  findBlockEnd を依存配列に追加
+  }, [isTraceStarted, currentLine, programLines, variables, output, controlFlowStack, findBlockEnd, evaluateCondition, evaluateExpression, recordStudyTime]); //  findBlockEnd を依存配列に追加
 
   // --- UIイベントハンドラ ---
   const handleStartTrace = () => {

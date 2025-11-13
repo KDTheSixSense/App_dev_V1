@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 interface Case {
   id: number | null;
@@ -187,9 +187,14 @@ export default function CreateProgrammingQuestionPage() {
 
           console.log('Data loaded successfully');
           
-        } catch (error: any) {
-          console.error('Error loading problem for edit:', error);
-          alert(`問題データの読み込みに失敗しました: ${error.message}`);
+        } catch (error) {
+          if (error instanceof Error) {
+            console.error('Error loading problem for edit:', error);
+            alert(`問題データの読み込みに失敗しました: ${error.message}`);
+          } else {
+            console.error('An unknown error occurred:', error);
+            alert('予期せぬエラーが発生しました。');
+          }
           setIsEditMode(false);
           setProblemId(null); 
         }
@@ -364,10 +369,14 @@ export default function CreateProgrammingQuestionPage() {
     console.log('Update successful:', result);
     alert('問題が正常に更新されました！');
 
-    } catch (error: any) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('Error updating problem:', error);
-      alert(`エラーが発生しました: ${error.message}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error updating problem:', error);
+        alert(`エラーが発生しました: ${error.message}`);
+      } else {
+        console.error('An unknown error occurred:', error);
+        alert('予期せぬエラーが発生しました。');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -460,6 +469,7 @@ export default function CreateProgrammingQuestionPage() {
     }
 
     const problemResult = await problemResponse.json();
+    console.log('Problem published:', problemResult);
     alert('問題が正常に投稿されました！');
 
     // フォームリセット処理
