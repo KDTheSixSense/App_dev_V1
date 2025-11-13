@@ -29,8 +29,6 @@ export async function POST(req: Request) {
     });
 
     if (existingUser) {
-      // 既に存在していた
-      // ... (エラー処理は省略、元のコードのまま)
       session.googleSignupProfile = undefined;
       await session.save();
       return NextResponse.json({ error: 'このアカウントは既に使用されています。' }, { status: 409 });

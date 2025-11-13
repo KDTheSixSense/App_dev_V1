@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     const email = payload.email;
     const name = payload.name;
-    const picture = payload.picture || null; // アイコン画像
+    const picture = null; // payload.picture || null;
 
     // 3. セッションを取得
     const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
@@ -56,11 +56,11 @@ export async function GET(req: NextRequest) {
     if (existingUser) {
       // 5a. 既存ユーザー: ログイン処理を実行
       
-      // アイコンが更新されている可能性があるので、DBを更新
-      await prisma.user.update({
-        where: { id: existingUser.id },
-        data: { icon: picture },
-      });
+       // アイコンが更新されている可能性があるので、DBを更新
+       await prisma.user.update({
+         where: { id: existingUser.id },
+         data: { icon: picture },
+       });
 
       // ログインセッションを作成
       session.user = {

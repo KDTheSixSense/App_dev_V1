@@ -81,7 +81,7 @@ export default function ConfirmGoogleSignup() {
         {profile && (
           <>
             <div className="flex flex-col items-center mb-4">
-              {profile.picture ? (
+                {/*{profile.picture ? (
                 // next.config.ts/mjs に 'lh3.googleusercontent.com' が許可されている必要があります
                 <Image
                   src={profile.picture}
@@ -92,7 +92,7 @@ export default function ConfirmGoogleSignup() {
                 />
               ) : (
                 <div className="w-20 h-20 bg-gray-200 rounded-full mb-2" />
-              )}
+              )} */}
               <p className="text-lg font-medium">{profile.name}</p>
               <p className="text-sm text-gray-600">{profile.email}</p>
             </div>
