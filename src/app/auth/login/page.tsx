@@ -7,7 +7,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FcGoogle } from "react-icons/fc"; // Googleアイコンをインポート
 
 //email/password　の型宣言
@@ -24,6 +24,21 @@ const Login = () => {
     //useFormフックの呼び出し const以下の関数受け取り
     const { register, handleSubmit, formState: { errors } } = useForm<Inputs>();
     const [loading, setLoading] = React.useState(false);
+
+    const searchParams = useSearchParams();
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(() => {
+      const error = searchParams.get('error');
+      if (error === 'google_account_not_found') {
+        return 'このGoogleアカウントは登録されていません。新規登録を行ってください。';
+      }
+      if (error === 'google_callback_failed' || error === 'google_auth_failed') {
+        return 'Googleログインに失敗しました。時間をおいて再度お試しください。';
+      }
+      if (error === 'invalid_flow') {
+        return '不正な操作が検出されました。もう一度お試しください。';
+      }
+      return null; // エラーがなければ null
+    });
 
     //非同期関数
     const onSubmit = async(data: Inputs) => {
@@ -42,6 +57,8 @@ const Login = () => {
       });
       //レスポンスが成功ではない
       if (!res.ok) {
+        const result = await res.json();
+        setErrorMessage(result.error || 'ログインに失敗しました');
         throw new Error('ログイン失敗');
       }
       //JSONデータをJSオブジェクトに変換
@@ -63,7 +80,7 @@ const Login = () => {
 
     };
 
-    // [追加] Googleログインボタン用のハンドラ
+    // Googleログインボタン用のハンドラ
     const handleGoogleLogin = () => {
         // STEP 5 で作成するAPIルートにリダイレクト
         router.push('/api/auth/google/login');
@@ -79,6 +96,13 @@ const Login = () => {
 
                 {/*見出しとラベル*/}
                 <h1 className="mb-4 text-2xl font-medium text-gray-700">ログイン</h1>
+
+                {/* エラーメッセージ表示欄 */}
+                {errorMessage && (
+                    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                      {errorMessage}
+                    </div>
+                )}
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-600">メールアドレス</label>
                     
