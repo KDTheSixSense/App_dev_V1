@@ -6,27 +6,32 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import dynamic from 'next/dynamic';
 
 import type { Problem as SerializableProblem } from '@/lib/types';
 import { recordStudyTimeAction } from '@/lib/actions';
 
-import AceEditor from 'react-ace';
-import ace from 'ace-builds/src-noconflict/ace';
-
-// 1. 必要な「モード」（言語のシンタックスハイライト）
-import 'ace-builds/src-noconflict/mode-python';
-import 'ace-builds/src-noconflict/mode-javascript';
-import 'ace-builds/src-noconflict/mode-typescript';
-import 'ace-builds/src-noconflict/mode-java';
-import 'ace-builds/src-noconflict/mode-c_cpp'; // CとC++
-import 'ace-builds/src-noconflict/mode-csharp';
-import 'ace-builds/src-noconflict/mode-php';
-
-// 2. 必要な「テーマ」（エディタの配色）
-import 'ace-builds/src-noconflict/theme-github';
-
-// 3. 必要な「機能拡張」（非常に重要）
-import 'ace-builds/src-noconflict/ext-language_tools'; // 自動補完とスニペット
+const DynamicAceEditor = dynamic(
+  () => import('@/components/AceEditorWrapper'),
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{
+        height: '100%',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9f9f9',
+        border: '1px solid #e0e0e0',
+        color: '#666',
+        fontSize: '14px',
+      }}>
+        エディタを読み込んでいます...
+      </div>
+    )
+  }
+);
 
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 type ActiveTab = 'input' | 'output';
@@ -149,7 +154,7 @@ const CodeEditorPanel: React.FC<{
 
             {/* --- AceEditor --- */}
             <div className="flex-grow flex min-h-0 relative">
-                <AceEditor
+                <DynamicAceEditor
                     mode={getAceMode(props.selectedLanguage)}
                     theme="github" // テーマ
                     value={props.userCode}
@@ -263,14 +268,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         { value: 'php', label: 'PHP' }
     ];
 
-    useEffect(() => {
-        // Ace Editorのワーカー（自動補完や構文チェック用）の読み込みパスをCDNに設定
-        const cdnBaseUrl = "https://cdn.jsdelivr.net/npm/ace-builds@1.33.0/src-noconflict/";
-        ace.config.set("basePath", cdnBaseUrl);
-        ace.config.set("modePath", cdnBaseUrl);
-        ace.config.set("themePath", cdnBaseUrl);
-        ace.config.set("workerPath", cdnBaseUrl);
-    }, []);
+
 
     useEffect(() => {
         // 静的エラーチェック（リンティング）

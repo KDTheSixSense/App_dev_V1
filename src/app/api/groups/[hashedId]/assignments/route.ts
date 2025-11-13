@@ -19,49 +19,64 @@ export async function GET(req: NextRequest) {
   }
 
   const urlParts = req.url.split('/');
-  const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
+  const hashedId = urlParts[urlParts.length - 2];
 
-    if (!hashedId) {
-        return NextResponse.json({ success: false, message: 'Invalid group ID format.' }, { status: 400 });
-    }
+  if (!hashedId) {
+    return NextResponse.json({ success: false, message: 'Invalid group ID format.' }, { status: 400 });
+  }
 
-    try {
-      const group = await prisma.groups.findUnique({
-        where: { hashedId },
+  try {
+    const { searchParams } = req.nextUrl;
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const skip = (page - 1) * limit;
+
+    const group = await prisma.groups.findUnique({
+      where: { hashedId },
       select: { id: true },
-      });
+    });
 
     if (!group) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
-      
-    const assignments = await prisma.assignment.findMany({
-      where: { groupid: group.id },
-      orderBy: { created_at: 'desc' },
-      // Use `select` to be explicit about the fields, preventing Prisma
-      // from trying to access columns that might not exist in the DB.
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        due_date: true,
-        created_at: true,
-        updated_at: true,
-        programmingProblemId: true,
-        selectProblemId: true,
-        // Include the related records
-        programmingProblem: true,
-        selectProblem: true,
-        // Add the group relation to the select clause
-        group: true,
-        author: true, // 作成者情報を追加
-        Submissions: {
-          select: { id: true },
-        }
-      }
-    });
 
-    return NextResponse.json({ success: true, data: assignments });
+    const [assignments, total] = await Promise.all([
+      prisma.assignment.findMany({
+        where: { groupid: group.id },
+        orderBy: { created_at: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          due_date: true,
+          created_at: true,
+          programmingProblemId: true,
+          selectProblemId: true,
+          _count: {
+            select: { Submissions: true },
+          },
+        },
+        skip: skip,
+        take: limit,
+      }),
+      prisma.assignment.count({
+        where: { groupid: group.id },
+      }),
+    ]);
+
+    // フロントエンドが期待する形式にデータを変換
+    const formattedAssignments = assignments.map(a => ({
+      ...a,
+      Submissions: a._count.Submissions > 0 ? [{ id: 1 }] : [], // フロントのロジック `Submissions.length > 0` に合わせる
+    }));
+
+    return NextResponse.json({
+      success: true,
+      data: formattedAssignments,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error('課題取得エラー:', error);
     return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });

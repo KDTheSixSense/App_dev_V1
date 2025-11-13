@@ -18,8 +18,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const urlParts = req.url.split('/');
-    const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
-    // hashedIdからグループのIDを取得
+    const hashedId = urlParts[urlParts.length - 2];
+
+    const { searchParams } = req.nextUrl;
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const skip = (page - 1) * limit;
+
     const group = await prisma.groups.findUnique({
       where: { hashedId: hashedId },
       select: { id: true },
@@ -29,22 +34,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
 
-    // グループIDに紐づく投稿を、投稿者情報を含めて取得
-    const posts = await prisma.post.findMany({
-      where: { groupId: group.id },
-      include: {
-        author: { // 投稿者の情報（Userモデル）を連結
-          select: {
-            username: true, // ユーザー名だけ取得
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where: { groupId: group.id },
+        include: {
+          author: {
+            select: {
+              username: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc', // 新しい順に並び替え
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: skip,
+        take: limit,
+      }),
+      prisma.post.count({
+        where: { groupId: group.id },
+      }),
+    ]);
 
-    return NextResponse.json({ success: true, data: posts });
+    return NextResponse.json({
+      success: true,
+      data: posts,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
 
   } catch (error) {
     console.error('お知らせ取得エラー:', error);

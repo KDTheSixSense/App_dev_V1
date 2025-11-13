@@ -6,30 +6,33 @@ import { useRouter, useParams } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
 // パネルのリサイズ機能を提供するライブラリのコンポーネントをインポートします
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import dynamic from 'next/dynamic';
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem } from '@/lib/types';
 import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction} from '@/lib/actions';
 
-import AceEditor from 'react-ace';
-import ace from 'ace-builds/src-noconflict/ace';
-
-// 1. 必要な「モード」（言語のシンタックスハイライト）をインポート
-import 'ace-builds/src-noconflict/mode-python';
-import 'ace-builds/src-noconflict/mode-javascript';
-import 'ace-builds/src-noconflict/mode-typescript';
-import 'ace-builds/src-noconflict/mode-java';
-import 'ace-builds/src-noconflict/mode-c_cpp'; // CとC++
-import 'ace-builds/src-noconflict/mode-csharp';
-import 'ace-builds/src-noconflict/mode-php';
-
-// 2. 必要な「テーマ」（エディタの配色）をインポート
-import 'ace-builds/src-noconflict/theme-github';
-import 'ace-builds/src-noconflict/theme-tomorrow_night'; // (ダークモード例)
-
-// 3. 必要な「機能拡張」をインポート (非常に重要)
-import 'ace-builds/src-noconflict/ext-language_tools'; // 自動補完とスニペット
-import 'ace-builds/src-noconflict/ext-beautify'; // (おまけ: コード整形機能)
+const DynamicAceEditor = dynamic(
+  () => import('@/components/AceEditorWrapper'),
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{
+        height: '100%',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9f9f9',
+        border: '1px solid #e0e0e0',
+        color: '#666',
+        fontSize: '14px',
+      }}>
+        エディタを読み込んでいます...
+      </div>
+    )
+  }
+);
 
 // --- 型定義 ---
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
@@ -122,7 +125,7 @@ const CodeEditorPanel: React.FC<{
 
             {/* --- AceEditor (変更なし) --- */}
             <div className="flex-grow flex min-h-0 relative">
-                <AceEditor
+                <DynamicAceEditor
                     mode={getAceMode(props.selectedLanguage)}
                     theme="github"
                     value={props.userCode}
@@ -233,16 +236,7 @@ const ProblemSolverPage = () => {
         { value: 'php', label: 'PHP' }
     ];
 
-    useEffect(() => {
-        // 静的エラーチェック(Linting)や自動補完のワーカー(別ファイル)を
-        // どこから読み込むかをAce Editorに教えます。
-        // CDNを使うのが最も簡単です。
-        const cdnBaseUrl = "https://cdn.jsdelivr.net/npm/ace-builds@1.33.0/src-noconflict/";
-        ace.config.set("basePath", cdnBaseUrl);
-        ace.config.set("modePath", cdnBaseUrl);
-        ace.config.set("themePath", cdnBaseUrl);
-        ace.config.set("workerPath", cdnBaseUrl);
-    }, []);
+
 
     useEffect(() => {
         if (!problemId) return;

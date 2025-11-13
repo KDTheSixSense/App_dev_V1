@@ -2,10 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image'; // Imageコンポーネントをインポート
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
 import PetStatusView from '../profile/Pet/PetStatusview';
 import { updateUserProfileAction } from './actions';
-import DailyActivityChart from './Chart/DailyActivityChart';
+import dynamic from 'next/dynamic';
+
+const DailyActivityChart = dynamic(
+  () => import('./Chart/DailyActivityChart'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="lg:col-span-3" style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '8px' }}>
+        <p>グラフを読み込んでいます...</p>
+      </div>
+    )
+  }
+);
 
 // --- 型定義 ---
 type SerializedUserUnlockedTitle = Omit<UserUnlockedTitle, 'unlockedAt'> & {
@@ -176,7 +189,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
                 {/* アイコンと称号 */}
                 <div className="flex items-center mb-4">
                   <div className="w-24 h-24 mr-6 relative">
-                    <img src={formData.icon || '/images/test_icon.webp'} alt="User Icon" className="w-full h-full rounded-full object-cover" />
+                    <Image src={formData.icon || '/images/test_icon.webp'} alt="User Icon" width={96} height={96} className="w-full h-full rounded-full object-cover" />
                     {isEditing && (
                       <button type="button" onClick={() => setIsIconModalOpen(true)} className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 text-xs" title="アイコンを変更">変更</button>
                     )}
@@ -281,8 +294,8 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
                 <h3 className="text-lg font-semibold mb-4">アイコンを選択</h3>
                 {/* プリセットアイコンの表示 */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
-                    {presetIcons.male.map(icon => <img key={icon} src={icon} alt="icon" className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)}/>)}
-                    {presetIcons.female.map(icon => <img key={icon} src={icon} alt="icon" className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)}/>)}
+                    {presetIcons.male.map(icon => <Image key={icon} src={icon} alt="icon" width={80} height={80} className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)}/>)}
+                    {presetIcons.female.map(icon => <Image key={icon} src={icon} alt="icon" width={80} height={80} className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)}/>)}
                 </div>
                 <button onClick={() => setIsIconModalOpen(false)} className="mt-6 bg-gray-200 text-gray-700 py-2 px-4 rounded w-full">閉じる</button>
             </div>
