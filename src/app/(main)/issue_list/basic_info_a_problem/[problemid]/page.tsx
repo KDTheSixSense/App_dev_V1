@@ -14,11 +14,10 @@ const BasicInfoAProblemDetailPage = async ({
   params,
   searchParams,
 }: {
-  params: Promise<{ problemId: string }>;
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: { problemid: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) => {
-  const resolvedParams = await params;
-  const problemIdStr = resolvedParams.problemId;
+  const problemIdStr = params.problemid;
   const problemIdNum = parseInt(problemIdStr, 10);
   // const resolvedSearchParams = searchParams; // searchParams も await は不要です
 
