@@ -45,7 +45,7 @@ async function runLintProcess(
     }
 
     try {
-        await fs.writeFile(tempFile, codeContent);
+        await fs.writeFile(tempFile, codeContent, 'utf-8');
         
         // 2. コマンドを実行
         const process = spawn(effectiveCommand, effectiveArgs);
@@ -92,7 +92,7 @@ async function lintPython(code: string): Promise<Annotation[]> {
     const { stderr, tempFile } = await runLintProcess(
         'python3',
         ['-m', 'py_compile'],
-        code,
+        '# -*- coding: utf-8 -*-\n' + code,
         '.py'
     );
     await cleanupTempFile(tempFile);
@@ -198,6 +198,7 @@ async function lintJava(code: string): Promise<Annotation[]> {
         
         const process = spawn('javac', [
             '-Xlint:none',
+            '-encoding', 'UTF-8',
             '-d', tempDir,
             '-proc:none',
             tempFile
@@ -276,7 +277,7 @@ async function lintJava(code: string): Promise<Annotation[]> {
 async function lintCpp(code: string): Promise<Annotation[]> {
     const { stderr, tempFile } = await runLintProcess(
         'g++',
-        ['-fsyntax-only', '-pedantic-errors', '-std=c++11'],
+        ['-finput-charset=UTF-8','-fsyntax-only', '-pedantic-errors', '-std=c++11'],
         code,
         '.cpp'
     );
@@ -301,7 +302,7 @@ async function lintCpp(code: string): Promise<Annotation[]> {
 async function lintC(code: string): Promise<Annotation[]> {
     const { stderr, tempFile } = await runLintProcess(
         'gcc',
-        ['-fsyntax-only', '-pedantic-errors', '-std=c99'],
+        ['-finput-charset=UTF-8','-fsyntax-only', '-pedantic-errors', '-std=c99'],
         code,
         '.c'
     );

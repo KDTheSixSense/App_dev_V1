@@ -15,6 +15,14 @@ export async function POST(request: Request ) {
       return NextResponse.json({ error: 'Language and source_code are required.' }, { status: 400 });
     }
 
+    let codeToSend = source_code;
+
+    // Pythonの場合は、ソースコードの先頭にマジックコメントを追加
+    if (language === 'python') {
+      const magicComment = '# -*- coding: utf-8 -*-\n';
+      codeToSend = magicComment + source_code;
+    }
+
     // Step 1: Create a new runner (code execution request)
     console.log('Attempting to connect to Paiza.IO API for create...');
     const createResponse = await fetch(`${PAIZA_IO_API_BASE_URL}/create`, {
@@ -24,7 +32,7 @@ export async function POST(request: Request ) {
       },
       body: JSON.stringify({
         language: language,
-        source_code: source_code,
+        source_code: codeToSend,
         input: input,
         api_key: PAIZA_IO_API_KEY,
       }),
