@@ -688,7 +688,11 @@ export async function ensureDailyMissionProgress(userId: number) {
   // 0. ユーザーの存在を最初に確認
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true }, // IDのみ取得して軽量化
+    select: { 
+      id: true,
+      lastlogin: true,
+      continuouslogin: true
+     }, // IDのみ取得して軽量化
   });
 
   if (!user) {
@@ -698,6 +702,30 @@ export async function ensureDailyMissionProgress(userId: number) {
 
   // 1. 日付を取得
   const missionDate = getMissionDate(); // 今日の日付
+
+  // 2. 最終ログイン日があり、かつ連続ログインが0でない場合のみチェック
+  if (user.lastlogin && user.continuouslogin !== 0) {
+    
+    // 3. 「最終ログイン」のミッション日付を取得
+    const lastLoginMissionDate = getMissionDate(user.lastlogin);
+    
+    // 4. 日付の差を計算 (ミリ秒単位)
+    const diffInMs = missionDate.getTime() - lastLoginMissionDate.getTime();
+    
+    // 5. ミリ秒を日数に変換
+    // (1000ms * 60s * 60m * 24h = 86,400,000)
+    const diffInDays = diffInMs / 86400000;
+
+    // 6. 差が2日以上の場合、連続ログインをリセット
+    // (例: 10日 - 9日 = 1日 (OK) / 10日 - 8日 = 2日 (リセット))
+    if (diffInDays >= 2) {
+      console.log(`[ensureDailyMissionProgress] ユーザーID:${userId} は2日以上ログインがありませんでした。連続ログインをリセットします。`);
+      await prisma.user.update({
+        where: { id: userId },
+        data: { continuouslogin: 0 },
+      });
+    }
+  }
 
   try {
     // 2. 既存のデイリーミッションをカウント
