@@ -6,6 +6,7 @@ import Image from 'next/image'; // Imageコンポーネントをインポート
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
 import PetStatusView from '../profile/Pet/PetStatusview';
 import { updateUserProfileAction } from './actions';
+import { changePasswordAction } from '@/lib/actions';
 import dynamic from 'next/dynamic';
 
 const DailyActivityChart = dynamic(
@@ -135,22 +136,62 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
     if (!isEditing) return;
 
     setIsLoading(true);
+    let success = true;
+    let errorMessage = '';
+
+    // 1. パスワード以外のプロフィール情報を更新
     const dataForAction = {
-      ...formData,
-      icon: formData.icon === null ? undefined : formData.icon,
-    };
+        ...formData,
+        // L171: ★ 修正点: nullをundefinedに変換する (?? 演算子を使用)
+        // formData.icon が null の場合、updateUserProfileAction の icon: string | undefined に合わせるため undefined を渡す
+        icon: formData.icon ?? undefined, // 'Alice Smith' や 'null' が入っている可能性を排除する
+    };
     
-    const result = await updateUserProfileAction(dataForAction);   
+    const profileResult = await updateUserProfileAction(dataForAction);
+    if (profileResult.error) {
+        success = false;
+        errorMessage = profileResult.error;
+    }
+
+    // 2. パスワード変更が要求されている場合、パスワードも更新
+    if (success && showPasswordChange) {
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            success = false;
+            errorMessage = '新しいパスワードが一致しません。';
+        } else if (passwordData.newPassword.length < 8) {
+             success = false;
+             errorMessage = '新しいパスワードは8文字以上である必要があります。';
+        } else {
+            // 新しく作成したServer Actionを呼び出す
+            const passwordResult = await changePasswordAction(
+                passwordData.currentPassword,
+                passwordData.newPassword
+            );
+
+            if (!passwordResult.success) {
+                success = false;
+                errorMessage = '[パスワード変更エラー] :' + passwordResult.error;
+            }
+        }
+    }
+
     setIsLoading(false);
 
-    if (result.error) {
-      alert(result.error);
+    if (success) {
+        // パスワード変更も成功した場合、パスワードフォームをリセット
+        if (showPasswordChange) {
+            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        }
+        setIsEditing(false);
+        setShowPasswordChange(false);
+        // 成功メッセージをアラートで表示することもできます
+        alert('プロフィール情報を更新しました。' + (showPasswordChange ? 'パスワードも変更されました。' : ''));
+        router.refresh();
     } else {
-      setIsEditing(false);
-      setShowPasswordChange(false);
-      router.refresh();
+        // エラーメッセージを表示
+        alert(errorMessage);
     }
-  };
+};
 
   const petBirthdate = initialUser.Status_Kohaku?.[0]?.birthdate;
   let formattedPetBirthdate: string | null = null;
