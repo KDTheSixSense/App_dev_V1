@@ -311,7 +311,7 @@ const AiChatPanel: React.FC<{
                                 alt="コハク" 
                                 width={128}
                                 height={128} 
-                                className="w-8 h-8 rounded-full flex-shrink-0 object-cover" 
+                                className="w-14 h-14 rounded-full flex-shrink-0 object-cover" 
                             />
                         )}
                         <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-xl shadow-sm ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white border'}`}>
