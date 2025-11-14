@@ -97,7 +97,10 @@ export default function ConfirmGoogleSignup() {
               <p className="text-sm text-gray-600">{profile.email}</p>
             </div>
             <p className="mb-6 text-center text-gray-700">
-              INFOPIAにようこそ！<br />このアカウントで新規登録しますか？
+              INFOPIAにようこそ！
+            </p>
+            <p className="mb-1 text-center text-gray-700">
+              新規登録しますか？
             </p>
             <div className="flex flex-col gap-3">
               <button
