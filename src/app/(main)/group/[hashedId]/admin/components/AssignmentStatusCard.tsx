@@ -14,6 +14,10 @@ export type AssignmentWithSubmissions = {
   title: string;
   created_at: string;
   due_date: string;
+  author?: {
+    username?: string;
+    icon?: string;
+  };
   Submissions: Submission[];
 };
 
@@ -62,13 +66,17 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            backgroundColor: '#d32f2f',
+            backgroundColor: '#38b2ac', // フォールバックの背景色
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: '16px',
           }}>
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+            {/* アイコンがあれば表示、なければユーザー名の頭文字を表示 */}
+            {assignment.author?.icon ? <img src={assignment.author.icon} alt={assignment.author.username || ''} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : assignment.author?.username?.charAt(0) || '？'}
           </div>
           <div style={{ flex: 1 }}>
             <h3 style={{

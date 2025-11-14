@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { SelectProblem } from '@prisma/client';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import ProblemStatement from '../components/ProblemStatement';
-import KohakuChat from '../components/KohakuChat';
+import KohakuChat from '@/components/KohakuChat';
 import { recordStudyTimeAction } from '@/lib/actions';
 
 // サーバーから渡されるデータの型

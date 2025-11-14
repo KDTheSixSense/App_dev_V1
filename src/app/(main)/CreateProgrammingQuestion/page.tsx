@@ -508,7 +508,8 @@ export default function CreateProgrammingQuestionPage() {
 
   // レンダリング
     return (
-      <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
+      <>
+        <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
               {/* サイドバー */}
               <div className="w-full lg:w-72 bg-gradient-to-b from-teal-400 to-teal-600 text-white py-8 shadow-lg lg:rounded-r-2xl mb-4 lg:mb-0 lg:mr-8">
                 <div className="px-8 pb-8 text-center">
@@ -627,7 +628,8 @@ export default function CreateProgrammingQuestionPage() {
                                         <option value="コーディング問題">コーディング問題</option>
                                         <option value="アルゴリズム問題">アルゴリズム問題</option>
                                         <option value="データ構造問題">データ構造問題</option>
-                                          <option value="数学問題">数学問題</n                                        </select>
+                                          <option value="数学問題">数学問題</option>
+                                        </select>
                                       </div>
                                       <div className="flex-1">
                                         <label className="flex items-center gap-2 mb-2 font-semibold text-gray-700 text-sm">制限時間（分）</label>
@@ -1155,7 +1157,7 @@ export default function CreateProgrammingQuestionPage() {
                           </div>
                         </div>
                       )}
-                    </div>
-                  )
-                }
+        </>
+    );
+}
               

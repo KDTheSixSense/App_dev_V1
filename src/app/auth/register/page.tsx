@@ -3,6 +3,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";  // App Router用
 import { registerUserAction } from '@/lib/actions'
+import { FcGoogle } from "react-icons/fc"; // Googleアイコンをインポート
 
 type Inputs = {
   username: string;
@@ -30,7 +31,6 @@ const Register = () => {
 
 
   // 送信時の処理
-  // --- ▼▼▼ onSubmit関数をServer Actionを使う形に修正 ▼▼▼ ---
   const onSubmit = async (data: Inputs) => {
     try {
       // Server Actionを直接呼び出す
@@ -54,13 +54,19 @@ const Register = () => {
     }
   };
 
+  // Googleログインボタン用のハンドラ
+    const handleGoogleLogin = () => {
+        // STEP 5 で作成するAPIルートにリダイレクト
+        router.push('/api/auth/google/login');
+    };
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
         <h1 className="mb-6 text-2xl font-bold text-center text-gray-800">新規登録</h1>
 
-        {/* --- ▼▼▼ ユーザー名入力欄を追加 ▼▼▼ --- */}
+        {/* --- ユーザー名入力欄を追加 --- */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-600">ユーザー名</label>
           <input
@@ -133,6 +139,17 @@ const Register = () => {
           </button>
         </div>
       </form>
+      {/* Google新規登録ボタン */}
+      <div className="flex justify-center mt-4">
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="flex items-center px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100"
+        >
+          <FcGoogle className="mr-2 w-6 h-6" />
+          Googleで新規登録
+        </button>
+      </div>
     </div>
   );
 };

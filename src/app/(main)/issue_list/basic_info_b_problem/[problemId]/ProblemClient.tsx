@@ -275,12 +275,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   };
 
   const handleUserMessage = async (message: string) => {
+    // ユーザーのメッセージは常にチャット履歴に追加
+    setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
+
     if (credits <= 0) {
       setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
       return;
     }
 
-    setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
     setIsAiLoading(true);
 
     try {
@@ -296,6 +298,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         answerOptions: JSON.stringify(problem.answerOptions?.[currentLang] || []),
         correctAnswer: problem.correctAnswer,
         explanation: problem.explanationText?.[currentLang] || '',
+        problemType: problem.logicType, // 問題の種類を追加
       };
       const hint = await getHintFromAI(message, context);
       setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);

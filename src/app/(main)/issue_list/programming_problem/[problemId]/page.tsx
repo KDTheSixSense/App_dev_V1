@@ -6,30 +6,33 @@ import { useRouter, useParams } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
 // パネルのリサイズ機能を提供するライブラリのコンポーネントをインポートします
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import dynamic from 'next/dynamic';
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem } from '@/lib/types';
 import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction} from '@/lib/actions';
 
-import AceEditor from 'react-ace';
-import ace from 'ace-builds/src-noconflict/ace';
-
-// 1. 必要な「モード」（言語のシンタックスハイライト）をインポート
-import 'ace-builds/src-noconflict/mode-python';
-import 'ace-builds/src-noconflict/mode-javascript';
-import 'ace-builds/src-noconflict/mode-typescript';
-import 'ace-builds/src-noconflict/mode-java';
-import 'ace-builds/src-noconflict/mode-c_cpp'; // CとC++
-import 'ace-builds/src-noconflict/mode-csharp';
-import 'ace-builds/src-noconflict/mode-php';
-
-// 2. 必要な「テーマ」（エディタの配色）をインポート
-import 'ace-builds/src-noconflict/theme-github';
-import 'ace-builds/src-noconflict/theme-tomorrow_night'; // (ダークモード例)
-
-// 3. 必要な「機能拡張」をインポート (非常に重要)
-import 'ace-builds/src-noconflict/ext-language_tools'; // 自動補完とスニペット
-import 'ace-builds/src-noconflict/ext-beautify'; // (おまけ: コード整形機能)
+const DynamicAceEditor = dynamic(
+  () => import('@/components/AceEditorWrapper'),
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{
+        height: '100%',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9f9f9',
+        border: '1px solid #e0e0e0',
+        color: '#666',
+        fontSize: '14px',
+      }}>
+        エディタを読み込んでいます...
+      </div>
+    )
+  }
+);
 
 // --- 型定義 ---
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
@@ -86,11 +89,13 @@ const CodeEditorPanel: React.FC<{
     userCode: string; setUserCode: (code: string) => void;
     stdin: string; setStdin: (stdin: string) => void;
     selectedLanguage: string; languages: { value: string; label: string }[]; onLanguageSelect: (lang: string) => void;
+    selectedTheme: string; themes: { value: string; label: string }[]; onThemeSelect: (theme: string) => void;
     onExecute: () => void; onSubmit: () => void; isSubmitting: boolean;
     executionResult: string; submitResult: SubmitResult | null;
     annotations: AceAnnotation[];
 }> = memo((props) => { // memoでラップ
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+    const [showThemeDropdown, setShowThemeDropdown] = useState(false);
     const [activeTab, setActiveTab] = useState<ActiveTab>('input');
 
     const getAceMode = (langValue: string) => {
@@ -112,19 +117,46 @@ const CodeEditorPanel: React.FC<{
             {/* --- ヘッダー（言語選択） --- */}
             <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Code className="h-5 w-5 text-gray-600" />コード入力</h2>
-                <div className="relative">
-                    <button onClick={() => setShowLanguageDropdown(!showLanguageDropdown)} className="flex items-center justify-between w-40 px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                        <span>{props.languages.find(l => l.value === props.selectedLanguage)?.label}</span><ChevronDown className="h-4 w-4 text-gray-400" />
-                    </button>
-                    {showLanguageDropdown && (<div className="absolute right-0 mt-1 w-40 bg-white border border-gray-300 rounded-md shadow-lg z-20">{props.languages.map((lang) => (<button key={lang.value} onClick={() => { props.onLanguageSelect(lang.value); setShowLanguageDropdown(false); }} className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100">{lang.label}</button>))}</div>)}
+                {/* テーマ選択と言語選択を並べる */}
+                <div className="flex gap-4">
+                    {/* --- テーマ選択プルダウン --- */}
+                    <div className="relative">
+                        <button onClick={() => setShowThemeDropdown(!showThemeDropdown)} className="flex items-center justify-between w-40 px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            <span>{props.themes.find(t => t.value === props.selectedTheme)?.label}</span><ChevronDown className="h-4 w-4 text-gray-400" />
+                        </button>
+                        {showThemeDropdown && (
+                            <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-20">
+                                {props.themes.map((theme) => (
+                                    <button 
+                                        key={theme.value} 
+                                        onClick={() => { 
+                                            props.onThemeSelect(theme.value); 
+                                            setShowThemeDropdown(false); 
+                                        }} 
+                                        className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100"
+                                    >
+                                        {theme.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* --- 言語選択プルダウン（既存） --- */}
+                    <div className="relative">
+                        <button onClick={() => setShowLanguageDropdown(!showLanguageDropdown)} className="flex items-center justify-between w-40 px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            <span>{props.languages.find(l => l.value === props.selectedLanguage)?.label}</span><ChevronDown className="h-4 w-4 text-gray-400" />
+                        </button>
+                        {showLanguageDropdown && (<div className="absolute right-0 mt-1 w-40 bg-white border border-gray-300 rounded-md shadow-lg z-20">{props.languages.map((lang) => (<button key={lang.value} onClick={() => { props.onLanguageSelect(lang.value); setShowLanguageDropdown(false); }} className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100">{lang.label}</button>))}</div>)}
+                    </div>
                 </div>
             </div>
 
             {/* --- AceEditor (変更なし) --- */}
             <div className="flex-grow flex min-h-0 relative">
-                <AceEditor
+                <DynamicAceEditor
                     mode={getAceMode(props.selectedLanguage)}
-                    theme="github"
+                    theme={props.selectedTheme}
                     value={props.userCode}
                     onChange={props.setUserCode}
                     name="CODE_EDITOR_MAIN"
@@ -209,6 +241,7 @@ const ProblemSolverPage = () => {
     const [problem, setProblem] = useState<SerializableProblem | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedLanguage, setSelectedLanguage] = useState('python');
+    const [selectedTheme, setSelectedTheme] = useState('solarized_light');
     const [userCode, setUserCode] = useState('');
     const [stdin, setStdin] = useState('');
     const [executionResult, setExecutionResult] = useState('');
@@ -233,16 +266,24 @@ const ProblemSolverPage = () => {
         { value: 'php', label: 'PHP' }
     ];
 
-    useEffect(() => {
-        // 静的エラーチェック(Linting)や自動補完のワーカー(別ファイル)を
-        // どこから読み込むかをAce Editorに教えます。
-        // CDNを使うのが最も簡単です。
-        const cdnBaseUrl = "https://cdn.jsdelivr.net/npm/ace-builds@1.33.0/src-noconflict/";
-        ace.config.set("basePath", cdnBaseUrl);
-        ace.config.set("modePath", cdnBaseUrl);
-        ace.config.set("themePath", cdnBaseUrl);
-        ace.config.set("workerPath", cdnBaseUrl);
-    }, []);
+    // 利用可能なテーマのリスト
+    const themes = [
+        // --- 黒系 (Dark) テーマ ---
+        { value: 'tomorrow_night', label: 'Tomorrow Night' },
+        { value: 'monokai', label: 'Monokai (Dark)' },
+        { value: 'dracula', label: 'Dracula (Dark)' },          
+        { value: 'nord_dark', label: 'Nord Dark (Dark)' },      
+        { value: 'terminal', label: 'Terminal (Dark)' },
+        { value: 'merbivore_soft', label: 'Merbivore Soft' },
+        
+        // --- 白系 (Light) テーマ ---
+        { value: 'solarized_light', label: 'Solarized Light' },
+        { value: 'chrome', label: 'Chrome (Light)' },
+        { value: 'github', label: 'GitHub (Light)' },
+        { value: 'xcode', label: 'Xcode (Light)' },             
+        { value: 'textmate', label: 'TextMate (Light)' },       
+        { value: 'kuroir', label: 'Kuroir (Light)' },
+    ];
 
     useEffect(() => {
         if (!problemId) return;
@@ -394,7 +435,7 @@ const ProblemSolverPage = () => {
                         userCode: userCode,
                         answerOptions: JSON.stringify(problem.answerOptions?.ja || []),
                         correctAnswer: problem.correctAnswer || '',
-                        explanation: problem.explanation?.ja || '',
+                        explanation: (problem as any).explanation?.ja || '',
                     },
                 }),
             });
@@ -441,6 +482,8 @@ const ProblemSolverPage = () => {
                                 stdin={stdin} setStdin={setStdin}
                                 selectedLanguage={selectedLanguage} languages={languages}
                                 onLanguageSelect={setSelectedLanguage}
+                                selectedTheme={selectedTheme} themes={themes}
+                                onThemeSelect={setSelectedTheme}
                                 onExecute={handleExecute} onSubmit={handleSubmit}
                                 isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
                                 annotations={annotations}

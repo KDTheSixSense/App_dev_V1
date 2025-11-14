@@ -20,9 +20,9 @@ export async function GET() {
     const userWithPet = await prisma.user.findUnique({
       where: { id: userId },
       select: {
-        level: true,           // 1. ランク(レベル)
-        continuouslogin: true, // 2. 連続ログイン日数
-        status_Kohaku: {     // 3. ペット情報
+        level: true,            // 1. ランク(レベル)
+        continuouslogin: true,  // 2. 連続ログイン日数
+        status_Kohaku: {        // 3. ペット情報
           select: {
             hungerlevel: true,
           }

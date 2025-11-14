@@ -198,6 +198,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         problemDescription: problem.description[currentLang],
         userCode: '', // A問題にはコードがない
         answerOptions: JSON.stringify(problem.answerOptions?.[currentLang] || []),
+        problemType: '基本情報A問題', // 問題の種類を追加
         correctAnswer: problem.correctAnswer,
         explanation: problem.explanationText?.[currentLang] || '',
       };

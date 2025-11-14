@@ -31,7 +31,10 @@ const KohakuChat: React.FC<KohakuChatProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // メッセージが初期状態(1つ)より多い場合のみスクロールを実行
+    if (messages.length > 1) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isLoading]);
 
   const handleSend = () => {
@@ -116,4 +119,3 @@ const KohakuChat: React.FC<KohakuChatProps> = ({
 };
 
 export default KohakuChat;
-

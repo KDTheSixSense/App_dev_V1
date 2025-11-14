@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { GroupLayout } from '../../GroupLayout';
 import Link from 'next/link';
@@ -8,7 +8,6 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 // === 型定義 ===
-// ※PostやAPIからのデータ型に合わせて調整してください
 interface Post {
     id: number;
     content: string;
@@ -28,7 +27,6 @@ interface Kadai {
     selectProblemId?: number;
 }
 
-
 interface GroupDetail {
     id: number;
     hashedId: string;
@@ -36,12 +34,6 @@ interface GroupDetail {
     description: string;
     memberCount: number;
     teacher: string;
-}
-
-interface Member {
-    id: number;
-    name: string;
-    avatar: string;
 }
 
 const MemberGroupPage: React.FC = () => {
@@ -55,13 +47,21 @@ const MemberGroupPage: React.FC = () => {
     const [kadaiList, setKadaiList] = useState<Kadai[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'お知らせ' | '課題' | 'メンバー'>('お知らせ');
+    const [activeTab, setActiveTab] = useState<'お知らせ' | '課題'>('お知らせ');
+
+    // お知らせのページネーションstate
+    const [postsPage, setPostsPage] = useState(1);
+    const [hasMorePosts, setHasMorePosts] = useState(false);
+    const [loadingMorePosts, setLoadingMorePosts] = useState(false);
+
+    // 課題のページネーションstate
+    const [kadaiPage, setKadaiPage] = useState(1);
+    const [hasMoreKadai, setHasMoreKadai] = useState(false);
+    const [loadingMoreKadai, setLoadingMoreKadai] = useState(false);
 
     // 課題表示関連
     const [selectedKadai, setSelectedKadai] = useState<Kadai | null>(null);
     const [kadaiViewMode, setKadaiViewMode] = useState<'list' | 'detail'>('list');
-    const [showSubmissionOptions, setShowSubmissionOptions] = useState(false);
-
 
     // === データ取得 ===
     useEffect(() => {
@@ -69,18 +69,16 @@ const MemberGroupPage: React.FC = () => {
             const fetchGroupData = async () => {
                 try {
                     setLoading(true);
-                    // グループ詳細、投稿、課題を並行して取得
                     const [groupRes, postsRes, assignmentsRes] = await Promise.all([
                         fetch(`/api/groups/${hashedId}`),
-                        fetch(`/api/groups/${hashedId}/posts`),      // お知らせ取得API（要実装）
-                        fetch(`/api/groups/${hashedId}/assignments`) // 課題取得API（要実装）
+                        fetch(`/api/groups/${hashedId}/posts?page=1&limit=20`),
+                        fetch(`/api/groups/${hashedId}/assignments?page=1&limit=20`)
                     ]);
 
                     if (!groupRes.ok) throw new Error('グループの読み込みに失敗しました');
                     const groupData = await groupRes.json();
                     setGroup({ teacher: '管理者', ...groupData });
 
-                     // APIレスポンスをフロントエンドの型に合わせて整形
                     if (postsRes.ok) {
                         const postsData = await postsRes.json();
                         const formattedPosts: Post[] = postsData.data.map((post: any) => ({
@@ -91,22 +89,25 @@ const MemberGroupPage: React.FC = () => {
                             createdAt: new Date(post.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }),
                         }));
                         setPosts(formattedPosts);
+                        setPostsPage(postsData.page);
+                        setHasMorePosts(postsData.page < postsData.totalPages);
                     }
                     
                     if (assignmentsRes.ok) {
                         const assignmentsData = await assignmentsRes.json();
-                        // APIからのデータ(スネークケース)をフロントエンドの型(キャメルケース)に変換
                         const formattedKadai: Kadai[] = assignmentsData.data.map((kadai: any) => ({
                             id: kadai.id,
                             title: kadai.title,
                             description: kadai.description,
-                            dueDate: kadai.due_date,       // due_date -> dueDate
-                            createdAt: kadai.created_at,   // created_at -> createdAt
-                            completed: kadai.Submissions && kadai.Submissions.length > 0, // 提出済みかどうかを判定
-                            programmingProblemId: kadai.programmingProblem?.id, // 関連データからIDを取得
-                            selectProblemId: kadai.selectProblem?.id,           // 関連データからIDを取得
+                            dueDate: kadai.due_date,
+                            createdAt: kadai.created_at,
+                            completed: kadai.Submissions && kadai.Submissions.length > 0,
+                            programmingProblemId: kadai.programmingProblemId,
+                            selectProblemId: kadai.selectProblemId,
                         }));
                         setKadaiList(formattedKadai);
+                        setKadaiPage(assignmentsData.page);
+                        setHasMoreKadai(assignmentsData.page < assignmentsData.totalPages);
                     }
 
                 } catch (err) {
@@ -120,30 +121,65 @@ const MemberGroupPage: React.FC = () => {
     }, [hashedId]);
 
     // === イベントハンドラ ===
+    const handleLoadMorePosts = useCallback(async () => {
+        if (loadingMorePosts || !hasMorePosts) return;
+        setLoadingMorePosts(true);
+        try {
+            const nextPage = postsPage + 1;
+            const res = await fetch(`/api/groups/${hashedId}/posts?page=${nextPage}&limit=20`);
+            const newData = await res.json();
+            const formattedPosts: Post[] = newData.data.map((post: any) => ({
+                id: post.id,
+                content: post.content,
+                authorName: post.author.username || '不明なユーザー',
+                authorAvatar: post.author.username?.charAt(0) || '?',
+                createdAt: new Date(post.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }),
+            }));
+            setPosts(prev => [...prev, ...formattedPosts]);
+            setPostsPage(newData.page);
+            setHasMorePosts(newData.page < newData.totalPages);
+        } catch (err) {
+            console.error("お知らせの追加読み込みに失敗しました", err);
+        } finally {
+            setLoadingMorePosts(false);
+        }
+    }, [postsPage, hasMorePosts, loadingMorePosts, hashedId]);
 
-    // 課題詳細表示
+    const handleLoadMoreKadai = useCallback(async () => {
+        if (loadingMoreKadai || !hasMoreKadai) return;
+        setLoadingMoreKadai(true);
+        try {
+            const nextPage = kadaiPage + 1;
+            const res = await fetch(`/api/groups/${hashedId}/assignments?page=${nextPage}&limit=20`);
+            const newData = await res.json();
+            const formattedKadai: Kadai[] = newData.data.map((kadai: any) => ({
+                id: kadai.id,
+                title: kadai.title,
+                description: kadai.description,
+                dueDate: kadai.due_date,
+                createdAt: kadai.created_at,
+                completed: kadai.Submissions && kadai.Submissions.length > 0,
+                programmingProblemId: kadai.programmingProblemId,
+                selectProblemId: kadai.selectProblemId,
+            }));
+            setKadaiList(prev => [...prev, ...formattedKadai]);
+            setKadaiPage(newData.page);
+            setHasMoreKadai(newData.page < newData.totalPages);
+        } catch (err) {
+            console.error("課題の追加読み込みに失敗しました", err);
+        } finally {
+            setLoadingMoreKadai(false);
+        }
+    }, [kadaiPage, hasMoreKadai, loadingMoreKadai, hashedId]);
+
     const handleKadaiDetail = (kadai: Kadai): void => {
         setSelectedKadai(kadai);
         setKadaiViewMode('detail');
     };
 
-    // 課題一覧に戻る
     const handleBackToKadaiList = (): void => {
         setSelectedKadai(null);
         setKadaiViewMode('list');
-    };
-    
-    // メンバーリスト生成 (ダミー)
-    const generateMembers = (count: number): Member[] => {
-        const members: Member[] = [];
-        for (let i = 0; i < count; i++) {
-            members.push({
-                id: i + 1,
-                name: i === 0 ? group?.teacher || 'あなた' : `メンバー ${i}`,
-                avatar: i === 0 ? 'あ' : 'メ'
-            });
-        }
-        return members;
     };
 
     // === レンダリング処理 ===
@@ -185,7 +221,7 @@ const MemberGroupPage: React.FC = () => {
 
                     {/* タブナビゲーション */}
                     <div style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#fff', padding: '0 24px' }}>
-                        {(['お知らせ', '課題', 'メンバー'] as const).map(tab => (
+                        {(['お知らせ', '課題'] as const).map(tab => (
                             <button key={tab} onClick={() => setActiveTab(tab)} style={{
                                 padding: '16px 24px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer',
                                 fontSize: '14px', fontWeight: '500', marginRight: '16px',
@@ -203,7 +239,6 @@ const MemberGroupPage: React.FC = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {posts.length > 0 ? posts.map(post => (
                                     <div key={post.id} style={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px' }}>
-                                        {/* お知らせアイテムのUI */}
                                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                                             <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#4CAF50', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', fontWeight: 'bold' }}>
                                                 {post.authorAvatar}
@@ -216,6 +251,11 @@ const MemberGroupPage: React.FC = () => {
                                         <p>{post.content}</p>
                                     </div>
                                 )) : <p>お知らせはありません。</p>}
+                                {hasMorePosts && (
+                                    <button onClick={handleLoadMorePosts} disabled={loadingMorePosts} style={{ marginTop: '16px', padding: '10px 16px', border: '1px solid #00bcd4', color: '#00bcd4', backgroundColor: 'white', borderRadius: '4px', cursor: 'pointer' }}>
+                                        {loadingMorePosts ? '読み込み中...' : 'もっと見る'}
+                                    </button>
+                                )}
                             </div>
                         )}
 
@@ -231,27 +271,35 @@ const MemberGroupPage: React.FC = () => {
                                                 onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
                                                 onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
                                             >
-                                                <div style={{
-                                                    width: '32px', height: '32px', borderRadius: '50%',
-                                                    backgroundColor: kadai.completed ? '#4caf50' : '#d32f2f',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '16px', flexShrink: 0
-                                                }}>
-                                                    {kadai.completed ? (
-                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                                                    ) : (
-                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                                                    )}
+                                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                    <div style={{
+                                                        width: '32px', height: '32px', borderRadius: '50%',
+                                                        backgroundColor: kadai.completed ? '#4caf50' : '#d32f2f',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '16px', flexShrink: 0
+                                                    }}>
+                                                        {kadai.completed ? (
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                                        ) : (
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <h3 style={{ margin: '0 0 4px 0' }}>{kadai.title}</h3>
+                                                        <p style={{ fontSize: '14px', color: '#5f6368', margin: 0 }}>期限: {kadai.dueDate ? new Date(kadai.dueDate).toLocaleString('ja-JP') : '未設定'}</p>
+                                                    </div>
                                                 </div>
-                                                <h3 style={{ margin: '0 0 8px 0' }}>{kadai.title}</h3>
-                                                <p style={{ fontSize: '14px', color: '#5f6368', margin: 0 }}>期限: {kadai.dueDate ? new Date(kadai.dueDate).toLocaleString('ja-JP') : '未設定'}</p>
                                             </div>
                                         )) : <p>課題はありません。</p>}
+                                        {hasMoreKadai && (
+                                            <button onClick={handleLoadMoreKadai} disabled={loadingMoreKadai} style={{ marginTop: '16px', padding: '10px 16px', border: '1px solid #00bcd4', color: '#00bcd4', backgroundColor: 'white', borderRadius: '4px', cursor: 'pointer' }}>
+                                                {loadingMoreKadai ? '読み込み中...' : 'もっと見る'}
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                                 
                                 {kadaiViewMode === 'detail' && selectedKadai && (
                                     <div style={{ display: 'flex', gap: '24px' }}>
-                                        {/* メインコンテンツ */}
                                         <div style={{ flex: 1 }}>
                                             <button onClick={handleBackToKadaiList} style={{ background: 'none', border: 'none', color: '#1976d2', cursor: 'pointer', fontSize: '14px', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
                                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '8px' }}>
@@ -268,7 +316,7 @@ const MemberGroupPage: React.FC = () => {
                                                         {selectedKadai.selectProblemId ? (
                                                             <Link
                                                                 href={{
-                                                                    pathname: `/group/select-page/${selectedKadai.selectProblemId}`, // 修正: パス名を 'selects_page' から 'select-page' へ
+                                                                    pathname: `/group/select-page/${selectedKadai.selectProblemId}`,
                                                                     query: { assignmentId: selectedKadai.id, hashedId: hashedId },
                                                                 }}
                                                                 style={{ display: 'inline-block', padding: '10px 20px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}
@@ -291,7 +339,6 @@ const MemberGroupPage: React.FC = () => {
                                              </div>
                                         </div>
 
-                                        {/* サイドバー (提出用) */}
                                         <div style={{ width: '300px', backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px' }}>
                                             <h3 style={{ fontSize: '16px', fontWeight: '500', color: '#3c4043', margin: '0 0 16px 0' }}>あなたの課題</h3>
                                              <button onClick={() => alert('提出用のファイル選択などを表示')} style={{ width: '100%', padding: '12px', border: '1px solid #1976d2', backgroundColor: 'transparent', color: '#1976d2', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
@@ -303,22 +350,6 @@ const MemberGroupPage: React.FC = () => {
                                          </div>
                                     </div>
                                 )}
-                            </div>
-                        )}
-
-                        {activeTab === 'メンバー' && (
-                            <div>
-                                <h3 style={{ fontSize: '18px', color: '#3c4043', margin: '0 0 16px 0', fontWeight: '500' }}>メンバー ({group.memberCount}人)</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
-                                    {generateMembers(group.memberCount).map(member => (
-                                        <div key={member.id} style={{ display: 'flex', alignItems: 'center', padding: '8px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #eee' }}>
-                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', backgroundColor: '#00bcd4', color: '#fff', fontSize: '12px' }}>
-                                                {member.avatar}
-                                            </div>
-                                            <span style={{ fontSize: '12px', color: '#3c4043' }}>{member.name}</span>
-                                        </div>
-                                    ))}
-                                </div>
                             </div>
                         )}
                     </div>

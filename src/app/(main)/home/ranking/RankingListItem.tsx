@@ -9,7 +9,6 @@ type Props = {
 };
 
 export default function RankingListItem({ user, isCurrentUser = false }: Props) {
-  
   const renderRankIcon = (rank: number) => {
     let iconSrc = '';
     if (rank === 1) iconSrc = '/images/rank1_icon.png';
@@ -17,7 +16,7 @@ export default function RankingListItem({ user, isCurrentUser = false }: Props) 
     else if (rank === 3) iconSrc = '/images/rank3_icon.png';
     
     if (!iconSrc) return null;
-    return <Image src={iconSrc} alt={`${rank}位の王冠`} width={24} height={24} />;
+    return <Image src={iconSrc} alt={`${rank}位の王冠`} width={24} height={24} unoptimized />;
   };
 
   // isCurrentUserがtrueなら背景色を変える
@@ -25,8 +24,10 @@ export default function RankingListItem({ user, isCurrentUser = false }: Props) 
 
   return (
     <li className={`flex items-center p-3 m-0 transition-colors rounded-lg ${bgColor}`}>
-      <div className="flex items-center justify-end w-20 shrink-0 gap-4 pr-5">
-        {renderRankIcon(user.rank)}
+      <div className="relative flex items-center justify-end w-20 shrink-0 pr-5"> {/* relativeを追加 */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2"> {/* アイコンを絶対配置 */}
+          {renderRankIcon(user.rank)}
+        </div>
         <span className="text-slate-500 font-bold text-lg">{user.rank}</span>
       </div>
       

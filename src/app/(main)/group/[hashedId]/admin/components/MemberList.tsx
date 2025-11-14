@@ -24,27 +24,7 @@ export const MemberList: React.FC<MemberListProps> = ({
 }) => {
     const [emailInput, setEmailInput] = useState('');
 
-    // メンバー追加処理
-    const handleAddMember = async () => {
-        if (!emailInput.trim()) {
-            alert('メールアドレスを入力してください');
-            return;
-        }
-
-        try {
-            await onAddMember(emailInput);
-            setEmailInput('');
-        } catch (error) {
-            console.error('メンバー追加エラー:', error);
-        }
-    };
-
-    // Enterキーでメンバー追加
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            handleAddMember();
-        }
-    };
+    
 
     return (
         <div>
@@ -65,7 +45,7 @@ export const MemberList: React.FC<MemberListProps> = ({
                         <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1976d2' }}>
                             {memberStats.totalMembers}
                         </div>
-                        <div style={{ fontSize: '14px', color: '#5f6368' }}>総メンバー数</div>
+                        <div style={{ fontSize: '14px', color: '#5f6368' }}>グループ参加人数</div>
                     </div>
                     <div style={{
                         backgroundColor: '#f8f9fa',
@@ -87,56 +67,12 @@ export const MemberList: React.FC<MemberListProps> = ({
                         <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
                             {memberStats.studentCount}
                         </div>
-                        <div style={{ fontSize: '14px', color: '#5f6368' }}>学生数</div>
+                        <div style={{ fontSize: '14px', color: '#5f6368' }}>メンバー数</div>
                     </div>
                 </div>
             )}
 
-            {/* メンバー追加セクション */}
-            <div style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '24px'
-            }}>
-                <h4 style={{ fontSize: '16px', color: '#3c4043', margin: '0 0 12px 0', fontWeight: '500' }}>
-                    新しいメンバーを招待
-                </h4>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <input
-                        type="email"
-                        placeholder="メールアドレスを入力..."
-                        value={emailInput}
-                        onChange={(e) => setEmailInput(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        style={{
-                            flex: 1,
-                            padding: '8px 12px',
-                            border: '1px solid #e0e0e0',
-                            borderRadius: '4px',
-                            fontSize: '14px',
-                            outline: 'none'
-                        }}
-                    />
-                    <button
-                        onClick={handleAddMember}
-                        style={{
-                            padding: '8px 16px',
-                            border: 'none',
-                            backgroundColor: '#1976d2',
-                            color: '#fff',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '500'
-                        }}
-                    >
-                        招待
-                    </button>
-                </div>
-            </div>
-
+            
             {/* メンバー一覧ヘッダー */}
             <div style={{
                 display: 'flex',
@@ -282,15 +218,7 @@ export const MemberList: React.FC<MemberListProps> = ({
                                         {member.isAdmin ? '管理者' : 'メンバー'}
                                     </span>
 
-                                    {/* オンライン状態インジケーター */}
-                                    <div style={{
-                                        width: '8px',
-                                        height: '8px',
-                                        borderRadius: '50%',
-                                        backgroundColor:
-                                            member.onlineStatus === 'online' ? '#4caf50' :
-                                            member.onlineStatus === 'away' ? '#ff9800' : '#9e9e9e'
-                                    }} />
+                                    
                                 </div>
 
                                 {/* メンバー統計 */}
@@ -300,12 +228,7 @@ export const MemberList: React.FC<MemberListProps> = ({
                                     fontSize: '11px',
                                     color: '#5f6368'
                                 }}>
-                                    {member.level && (
-                                        <span>Lv.{member.level}</span>
-                                    )}
-                                    {member.xp && (
-                                        <span>{member.xp}XP</span>
-                                    )}
+                                    
                                 </div>
                             </div>
 

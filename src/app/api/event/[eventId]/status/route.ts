@@ -7,10 +7,9 @@ const prismaClient = prisma;
  */
 export async function GET(
   request: Request,
-  { params }: { params: { eventId: string } }
+  { params }: any
 ) {
-  // params オブジェクトを await してからプロパティにアクセスします
-  const eventId = parseInt((await params).eventId, 10);
+  const eventId = parseInt(params.eventId, 10);
 
   if (isNaN(eventId)) {
     return NextResponse.json({ error: 'Invalid event ID' }, { status: 400 });

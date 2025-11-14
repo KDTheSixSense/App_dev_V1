@@ -73,6 +73,67 @@ export async function registerUserAction(data: { username: string, email: string
 }
 
 /**
+ * ユーザーのパスワードを検証し、新しいパスワードに更新する
+ * @param currentPassword - ユーザーが入力した現在のパスワード
+ * @param newPassword - ユーザーが入力した新しいパスワード
+ */
+export async function changePasswordAction(currentPassword: string, newPassword: string) {
+    'use server';
+
+    const session = await getSession();
+    const userSession = session.user;
+
+    // 1. 認証チェック
+    if (!userSession?.id) {
+        return { success: false, error: '認証セッションが無効です。' };
+    }
+    const userId = Number(userSession.id);
+    if (isNaN(userId)) {
+        return { success: false, error: 'ユーザーIDが無効です。' };
+    }
+    if (!currentPassword || !newPassword) {
+        return { success: false, error: '現在のパスワードと新しいパスワードを入力してください。' };
+    }
+    if (newPassword.length < 8) {
+        return { success: false, error: '新しいパスワードは8文字以上である必要があります。' };
+    }
+
+    try {
+        // 2. ユーザーのハッシュ化されたパスワードを取得
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { password: true }, // password フィールドのみを取得
+        });
+
+        if (!user || !user.password) {
+            // パスワードが設定されていないユーザー（例: Google認証のみ）またはユーザーが見つからない場合
+            return { success: false, error: 'パスワード情報が見つかりません。' };
+        }
+
+        // 3. 現在のパスワードを検証
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return { success: false, error: '現在のパスワードが正しくありません。' };
+        }
+
+        // 4. 新しいパスワードをハッシュ化
+        const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // 5. データベースを更新
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: newHashedPassword },
+        });
+
+        return { success: true, message: 'パスワードが正常に変更されました。' };
+
+    } catch (error) {
+        console.error("Password change failed:", error);
+        return { success: false, error: 'パスワードの更新中に予期せぬエラーが発生しました。' };
+    }
+}
+
+/**
  * 次の問題のIDを取得するサーバーアクション
  */
 export async function getNextProblemId(currentId: number, category: string): Promise<number | null> {
@@ -140,7 +201,7 @@ export async function getNextProblemId(currentId: number, category: string): Pro
 export async function awardXpForCorrectAnswer(problemId: number, eventId: number | undefined, subjectid?: number, problemStartedAt?: string | number) {
   'use server';
 
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const session = await getSession();
   const user = session.user;
 
   if (!user) {

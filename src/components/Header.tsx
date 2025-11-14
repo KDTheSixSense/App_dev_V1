@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useState, useEffect } from 'react';
+import Image from 'next/image'; // Imageコンポーネントをインポート
 // Link, Image, useRouter はNext.js固有のため削除
 import type { User, Status_Kohaku } from '@prisma/client';
 
@@ -17,7 +18,7 @@ type HeaderProps = {
 
 type PetDisplayStatus = {
   hungerlevel: number;
-  icon?: string;
+  icon: string; // undefinedの可能性を排除
   colorClass?: string;
 };
 
@@ -59,10 +60,8 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
   // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
     const initialStatus = userWithPet?.status_Kohaku;
-    console.log("[Header Debug] Initializing petStatus. userWithPet:", userWithPet);
     if (initialStatus) {
       const displayState = getPetDisplayState(initialStatus.hungerlevel);
-      console.log("[Header Debug] Initial petStatus from userWithPet:", { hungerlevel: initialStatus.hungerlevel, ...displayState });
       return {
         hungerlevel: initialStatus.hungerlevel,
         ...displayState,
@@ -159,7 +158,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         {/* Linkをaタグに変更 */}
         <a href="/home" className="transition-opacity hover:opacity-80">
           {/* Imageをimgタグに変更 */}
-          <img
+          <Image
             src="/images/infopia_logo.png"
             alt='Infopia'
             width={200}
@@ -175,14 +174,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
             <li key={item.label}>
               {/* router.pushをwindow.location.hrefに変更 */}
               <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
-                <img src={item.icon} alt={item.label} width={40} height={40} />
+                <Image src={item.icon} alt={item.label} width={40} height={40} />
                 <span className='text-[#546E7A] text-sm mt-1 font-bold'>{item.label}</span>
               </button>
             </li>
           ))}
           <li>
             <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
-              <img src="/images/logout_slateblue.png" alt="ログアウト" width={40} height={40} />
+              <Image src="/images/logout_slateblue.png" alt="ログアウト" width={40} height={40} />
               <span className='text-[#546E7A] text-sm mt-1 font-bold'>ログアウト</span>
             </button>
           </li>
@@ -193,7 +192,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
       {petStatus && (
         <div className="flex items-center gap-2 ml-auto">
             {/* アイコンをStateから動的に設定 */}
-            <img src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
+            <Image src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
             <div className="w-50">
                 <div className="w-full bg-gray-300 rounded-full h-5 overflow-hidden">
                     <div
@@ -211,7 +210,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         {/* ランクとログイン日数 */}
         <div className="flex flex-col">
           <div className="relative group flex items-center gap-2">
-            <img src="/images/rank.png" alt="ランク" width={45} height={15} />
+            <Image src="/images/rank.png" alt="ランク" width={45} height={15} />
             <div className='flex ml-auto'>
               <p className="text-[#5FE943] text-2xl font-bold select-none">{rank}</p>
             </div>
@@ -223,7 +222,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
           </div>
           <div className="relative group flex items-center gap-2">
             <div className='flex ml-3'>
-              <img src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} />
+              <Image src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} />
             </div>
             <div className='flex ml-auto'>
               <p className="text-[#feb75c] text-2xl font-bold select-none">{continuousLogin}</p>
@@ -239,7 +238,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         {/* プロフィールアイコン */}
         <div className="w-14 h-14">
           <a href="/profile">
-            <img
+            <Image
               src={user?.icon || "/images/test_icon.webp"}
               alt="ユーザーアイコン"
               width={56}

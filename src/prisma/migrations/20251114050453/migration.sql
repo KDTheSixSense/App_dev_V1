@@ -8,7 +8,7 @@ CREATE TYPE "DailyMissionType" AS ENUM ('Answer_the_Question', 'Feed_Them', 'Gai
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "hash" TEXT,
     "username" TEXT,
     "year" INTEGER,
@@ -376,6 +376,7 @@ CREATE TABLE "Assignment" (
     "due_date" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "authorId" INTEGER,
     "programmingProblemId" INTEGER,
     "selectProblemId" INTEGER,
 
@@ -758,6 +759,9 @@ ALTER TABLE "Groups_User" ADD CONSTRAINT "Groups_User_user_id_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "Groups_User" ADD CONSTRAINT "Groups_User_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Groups"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_programmingProblemId_fkey" FOREIGN KEY ("programmingProblemId") REFERENCES "ProgrammingProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;

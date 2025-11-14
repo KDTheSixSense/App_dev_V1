@@ -71,6 +71,10 @@ export interface Assignment {
     showComments?: boolean;
     comments?: Comment[];
     completed?: boolean;
+    author?: {
+        username?: string | null;
+        icon?: string | null;
+    };
 }
 
 // プログラミング問題の型
