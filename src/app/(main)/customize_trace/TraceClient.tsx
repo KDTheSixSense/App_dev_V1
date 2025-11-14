@@ -202,11 +202,19 @@ const TraceClient = () => {
               try {
                   const lhs = evaluateExpression(parts[0], currentVars);
                   const rhs = evaluateExpression(parts[1], currentVars);
+
+                  // 数値比較の場合、両方が数値であることを確認
+                  if (['>', '<', '>=', '<='].includes(op)) {
+                      if (typeof lhs !== 'number' || typeof rhs !== 'number') {
+                          throw new Error(`数値以外の値 (${typeof lhs}, ${typeof rhs}) に比較演算子'${op}'は使えません。`);
+                      }
+                  }
+
                   switch(op) {
-                      case '>': return lhs > rhs;
-                      case '<': return lhs < rhs;
-                      case '>=': return lhs >= rhs;
-                      case '<=': return lhs <= rhs;
+                      case '>': return (lhs as number) > (rhs as number);
+                      case '<': return (lhs as number) < (rhs as number);
+                      case '>=': return (lhs as number) >= (rhs as number);
+                      case '<=': return (lhs as number) <= (rhs as number);
                       case '==': return lhs == rhs; // 値の比較
                       case '!=': return lhs != rhs; // 値の比較
                   }
@@ -616,7 +624,11 @@ const TraceClient = () => {
 
             if (currentFor?.type === 'for' && currentFor.startLine === lineIndex) {
                 // ループ継続判定 (endforから戻ってきた場合)
-                if (tempVariables[loopVar] <= currentFor.endVal) {
+                const loopVarValue = tempVariables[loopVar];
+                if (typeof loopVarValue !== 'number') {
+                    throw new Error(`forループ変数 "${loopVar}" の値が数値ではありません。`);
+                }
+                if (loopVarValue <= currentFor.endVal) {
                     nextLine = lineIndex + 1; // ループ本体へ
                 } else {
                     tempControlFlowStack.pop(); // ループ終了
@@ -626,6 +638,11 @@ const TraceClient = () => {
                 // 新規ループ開始
                 const startVal = evaluateExpression(startExpr, tempVariables);
                 const endVal = evaluateExpression(endExpr, tempVariables);
+
+                if (typeof startVal !== 'number' || typeof endVal !== 'number') {
+                    throw new Error(`forループの開始値または終了値が数値ではありません。`);
+                }
+
                 tempVariables[loopVar] = startVal; // ループ変数初期化
                 if (startVal <= endVal) {
                     tempControlFlowStack.push({ type: 'for', loopVar, startVal, endVal, step, startLine: lineIndex, endLine });
@@ -639,7 +656,14 @@ const TraceClient = () => {
             const currentFor = tempControlFlowStack.length > 0 ? tempControlFlowStack[tempControlFlowStack.length - 1] : null;
             if (currentFor?.type === 'for' && currentFor.endLine === lineIndex) {
                 // ループ変数をインクリメント
-                tempVariables[currentFor.loopVar] += currentFor.step;
+                const loopVarName = currentFor.loopVar;
+                const loopVarValue = tempVariables[loopVarName];
+                const stepValue = currentFor.step;
+
+                if (typeof loopVarValue !== 'number' || typeof stepValue !== 'number') {
+                    throw new Error(`forループ変数 "${loopVarName}" またはステップの値が数値ではありません。`);
+                }
+                tempVariables[loopVarName] = loopVarValue + stepValue;
                 nextLine = currentFor.startLine; // for文の先頭に戻って条件を再評価
                 jumped = true;
             } else {

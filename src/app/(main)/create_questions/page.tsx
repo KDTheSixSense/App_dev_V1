@@ -410,7 +410,7 @@ class Program {
                         </div>
                       )}
 
-                      {submitResult.expected_output && (
+                      {submitResult.expected_output_text && (
                         <div>
                           <span className="font-medium">期待する出力:</span>
                           <pre className="bg-white p-3 rounded border mt-2 text-xs font-mono overflow-x-auto">

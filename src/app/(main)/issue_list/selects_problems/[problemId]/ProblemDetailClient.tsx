@@ -6,6 +6,18 @@ import { SelectProblem } from '@prisma/client';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '../components/KohakuChat';
+
+interface LocalKohakuChatProps {
+  messages: { sender: 'user' | 'kohaku'; text: string }[];
+  onSendMessage: (message: string) => void;
+  language: 'ja' | 'en';
+  textResources: any;
+  isLoading: boolean;
+  isDisabled?: boolean;
+  credits?: number;
+}
+
+const TypedKohakuChat = KohakuChat as React.FC<LocalKohakuChatProps>;
 import { recordStudyTimeAction } from '@/lib/actions';
 
 // サーバーから渡されるデータの型
@@ -246,7 +258,8 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
           </>
         </div>
         <div className="w-full lg:w-96 flex flex-col">
-          <KohakuChat messages={chatMessages} onSendMessage={handleUserMessage} language={language} textResources={t} isLoading={isLoading} />
+          <TypedKohakuChat messages={chatMessages} onSendMessage={handleUserMessage} language={language} textResources={t} isLoading={isLoading} />
+
         </div>
       </div>
       {isAnswered && (

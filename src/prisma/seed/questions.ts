@@ -719,17 +719,17 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
   ];
 
   for (const p of spreadsheetProblems) {
-    const { difficultyId, ...restOfProblemData } = p;
+    const problemDifficultyId = p.difficultyId ?? p.difficulty ?? 0; // difficultyId または difficulty を取得し、なければ0をデフォルトとする
 
     // ユーザーの指示に基づき eventDifficultyId を決定
     // 難易度6以上は、eventDifficultyId を 1 にする
     // それ以外は、元の difficulty の値をそのまま使う
-    const eventDifficultyId = difficultyId >= 6 ? 1 : difficultyId;
+    const eventDifficultyId = problemDifficultyId >= 6 ? 1 : problemDifficultyId;
 
     await prisma.programmingProblem.create({
       data: {
-        ...restOfProblemData,
-        difficulty: difficultyId, // difficultyId の値を difficulty フィールドに割り当てる
+        ...p,
+        difficulty: problemDifficultyId, // difficultyId の値を difficulty フィールドに割り当てる
         eventDifficultyId: eventDifficultyId,
       },
     });

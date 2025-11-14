@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 
 // --- 型定義 ---
-interface KohakuChatProps {
+export interface KohakuChatProps {
   messages: { sender: 'user' | 'kohaku'; text: string }[];
   onSendMessage: (message: string) => void;
   language: 'ja' | 'en';
