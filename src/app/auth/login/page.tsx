@@ -166,7 +166,7 @@ const Login = () => {
                   })}
                   type="email"
                   placeholder="mail@example.com"
-                  className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
                 />
                 {errors.email && <span className="text-sm text-red-500">{errors.email.message}</span>}
               </div>
@@ -186,7 +186,7 @@ const Login = () => {
 
                   })}
                   type="password"
-                  className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
                 />
                 {errors.password && <span className="text-sm text-red-500">{errors.password.message}</span>}
               </div>

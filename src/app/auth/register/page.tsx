@@ -109,11 +109,10 @@ const Register = () => {
             <div className="mb-4">
               <label className="block text-sm font-medium text-slate-300">ユーザー名</label>
               <input
-                {...register("username", { required: "ユーザー名は必須です" })}
-                type="text"
-                placeholder="例：山田 太郎"
-                className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-              />
+                                  {...register("username", { required: "ユーザー名は必須です" })}
+                                  type="text"
+                                  placeholder="例：山田 太郎"
+                                  className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"              />
               {errors.username && <span className="text-sm text-red-500">{errors.username.message}</span>}
             </div>
 
@@ -130,7 +129,7 @@ const Register = () => {
                 })}
                 type="email"
                 placeholder="mail@example.com"
-                className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
               />
               {errors.email && <span className="text-sm text-red-500">{errors.email.message}</span>}
             </div>
@@ -144,7 +143,7 @@ const Register = () => {
                   minLength: { value: 8, message: "8文字以上のパスワードを設定してください" },
                 })}
                 type="password"
-                className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
               />
               {errors.newpassword && <span className="text-sm text-red-500">{errors.newpassword.message}</span>}
             </div>
@@ -158,7 +157,7 @@ const Register = () => {
                   validate: (value) => value === getValues("newpassword") || "パスワードが一致しません",
                 })}
                 type="password"
-                className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
               />
               {errors.anspassword && <span className="text-sm text-red-500">{errors.anspassword.message}</span>}
             </div>
@@ -169,7 +168,7 @@ const Register = () => {
               <input
                 {...register("birth")}
                 type="date"
-                className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 [color-scheme:dark]"
+                className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01] [color-scheme:dark]"
               />
             </div>
 
