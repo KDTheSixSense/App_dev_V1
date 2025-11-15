@@ -6,25 +6,27 @@ import Link from 'next/link';
 export default function LandingPage() {
   return (
     
-      <main 
-        className="relactive min-h-screen w-full overflow-hidden bg-slate-900 text-white flex flex-col"
-      >
-          <Image
-          src="/images/Infopia_Background.png" 
-          alt="Background Image"
-          fill
-          priority
-          className='object-cover'
-          />
+    <main 
+      className="relative min-h-screen w-full overflow-hidden text-white selection:bg-cyan-500 selection:text-slate-900"
+    >
+      {/* Background Image */}
+      <Image
+        src="/images/Infopia_Background.webp"
+        alt="Background"
+        fill
+        priority
+        className="object-cover z-0"
+      />
       
       {/* --- 背景の装飾 (オーバーレイ) --- */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-10">
         <div className="absolute inset-0 bg-slate-950/60" /> 
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent opacity-70"></div>
       </div>
 
-      {/* --- コンテンツラッパー (z-10で背景より手前に表示) --- */}
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* --- コンテンツラッパー (z-20で背景より手前に表示) --- */}
+      <div className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
         
         {/* ==========================================
             ① ヘッダー (ロゴ中央、ログイン右端)
