@@ -89,31 +89,118 @@ function getJavaClassName(code: string): string {
 }
 
 async function lintPython(code: string): Promise<Annotation[]> {
-    const { stderr, tempFile } = await runLintProcess(
-        'python3',
-        ['-m', 'py_compile'],
-        '# -*- coding: utf-8 -*-\n' + code,
-        '.py'
-    );
-    await cleanupTempFile(tempFile);
+    
+    // 1. `pyflakes` を実行し、複数のエラーをリストアップする
+    const { stdout, stderr, tempFile } = await runLintProcess(
+        'python3',           // コマンド
+        ['-m', 'pyflakes'],  // 引数で '-m pyflakes' を指定
+        code,
+        '.py'
+    );
+    await cleanupTempFile(tempFile);
 
-    if (!stderr) return [];
+    const output = stdout + stderr;
+    const annotations: Annotation[] = [];
 
-    const lineMatch = stderr.match(/line (\d+)/);
-    const messageMatch = stderr.match(/SyntaxError: (.*)/);
+    if (!output || output.trim() === '') {
+        // pyflakes がエラーを検知しなかった場合はエラーなし
+        return [];
+    }
 
-    if (lineMatch && messageMatch) {
-        const line = parseInt(lineMatch[1], 10);
-        const message = messageMatch[1];
-        
-        return [{
-            row: line - 1,
-            column: 0,
-            text: message,
-            type: 'error',
-        }];
-    }
-    return [];
+    // 2. pyflakes の出力形式を解析する正規表現
+    // 例: <stdin>:4: invalid syntax
+    // 例: <stdin>:13: invalid syntax
+    const regex = /^(.*?):(\d+):(?:\d+:)? (.*)$/gm;
+    let match;
+
+    while ((match = regex.exec(output)) !== null) {
+        // match[2] = 行番号 (1-based)
+        // match[3] = エラーメッセージ (例: "invalid syntax")
+        
+        const row = parseInt(match[2], 10) - 1; // 0-basedに変換
+        let text = match[3];
+
+        // "invalid syntax" の場合は、より分かりやすいメッセージに補足する
+        if (text.includes('invalid syntax')) {
+            text = '構文エラー (コロン ":" やインデントなどを確認してください)';
+        }
+
+        annotations.push({
+            row: row,
+            column: 0, // pyflakesは正確な列番号を返さないため、行頭(0)に設定
+            text: text,
+            type: 'error',
+        });
+    }
+
+    // 3. ast.parse の補助関数呼び出しを「削除」します
+    // await lintPythonWithAst(code, annotations); // ← この行を削除またはコメントアウト
+
+    return annotations;
+}
+
+/**
+ * 補助関数: ast.parse を実行し、既存のエラー情報をリッチにする
+ * 【lintPythonから呼び出されなくなったため、この関数は削除してもOKです】
+ */
+async function lintPythonWithAst(code: string, annotations: Annotation[]): Promise<void> {
+    const pythonValidatorScript = `
+        import ast
+        import sys
+        import json
+        try:
+            file_path = sys.argv[1]
+            with open(file_path, 'r', encoding='utf-8') as f:
+                source = f.read()
+            ast.parse(source)
+        except SyntaxError as e:
+            # 構文エラーの時だけJSONを返す
+            error_data = {'row': e.lineno, 'column': e.offset, 'text': e.msg, 'type': 'error'}
+            print(json.dumps(error_data))
+        except Exception:
+            pass # 構文エラー以外は pyflakes に任せる
+            `;
+
+    const { stdout, tempFile } = await runLintProcess(
+        'python3',
+        ['-c', pythonValidatorScript],
+        code,
+        '.py'
+    );
+    await cleanupTempFile(tempFile);
+
+    if (!stdout || stdout.trim() === '') {
+        return; // ast.parse ではエラーなし
+    }
+
+    try {
+        const errorInfo = JSON.parse(stdout);
+        const row = (errorInfo.row ? errorInfo.row : 1) - 1;
+        
+        // 既に pyflakes が同じ行に "invalid syntax" を報告しているか確認
+        const pyflakesError = annotations.find(a => a.row === row && a.text.includes('invalid syntax'));
+
+        if (pyflakesError) {
+            // pyflakes のエラーを、より詳細な ast.parse のエラーで上書きする
+            pyflakesError.text = errorInfo.text; // 例: "expected ':'"
+            if (typeof errorInfo.column === 'number' && errorInfo.column > 0) {
+                pyflakesError.column = errorInfo.column - 1; // 0-basedに補正
+            }
+        } else {
+            // pyflakes が検知しなかった構文エラー（稀）の場合、新規追加
+            const alreadyExists = annotations.some(a => a.row === row);
+            if (!alreadyExists) {
+                annotations.push({
+                    row: row,
+                    column: (typeof errorInfo.column === 'number' && errorInfo.column > 0) ? errorInfo.column - 1 : 0,
+                    text: errorInfo.text,
+                    type: 'error',
+                });
+            }
+        }
+    } catch (e) {
+        console.error('Failed to parse AST fallback output:', e);
+    }
 }
 
 /**
