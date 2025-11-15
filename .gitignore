@@ -1,4 +1,4 @@
-.env
+/.devcontainer/.env
 .env.local
 .env.*.local
 src/.eslintrc.json
