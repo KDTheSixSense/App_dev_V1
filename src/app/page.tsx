@@ -1,21 +1,21 @@
-
-
+import { BUTTON_CLASS_NAME } from 'ace-builds/src-noconflict/ext-command_bar';
 import Image from 'next/image';
 import Link from 'next/link';
-import { } from 'react';
+
+
 export default function LandingPage() {
   return (
-    <main 
-      className="relative min-h-screen w-full overflow-hidden text-white selection:bg-cyan-500 selection:text-slate-900"
-    >
-      {/* Background Image */}
-      <Image
-        src="/images/Infopia_Background.webp"
-        alt="Background"
-        fill
-        priority
-        className="object-cover"
-      />
+    
+      <main 
+        className="relactive min-h-screen w-full overflow-hidden bg-slate-900 text-white flex flex-col"
+      >
+          <Image
+          src="/images/Infopia_Background.png" 
+          alt="Background Image"
+          fill
+          priority
+          className='object-cover'
+          />
       
       {/* --- 背景の装飾 (オーバーレイ) --- */}
       <div className="absolute inset-0 z-0">
@@ -178,8 +178,8 @@ export default function LandingPage() {
                  <Image 
                    src="/images/basic_info_b_trace.png" 
                    alt="トレース機能のプレビュー"
-                   width={1200} 
-                   height={672}
+                   width={2500} 
+                   height={1400}
                    className="object-contain"
                  />
               </div>
