@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation';
 
 // --- 型定義 ---
@@ -42,12 +42,15 @@ interface AnswerOption {
   text: string;
 }
 
-// プログラミング問題作成ページのメインコンポーネント（修正版）
+// プログラミング問題作成ページのメインコンポーネント（FOUC対策版）
 export default function CreateProgrammingQuestionPage() {
   // フォームの状態管理
   const router = useRouter();
   const searchParams = useSearchParams();
   
+  // FOUC対策: マウント状態を管理するステートを追加
+  const [mounted, setMounted] = useState(false);
+
   const [problemId, setProblemId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('basic') // アクティブなタブ
   const [selectedCategory, setSelectedCategory] = useState('programming') // 選択されたカテゴリ
@@ -56,7 +59,7 @@ export default function CreateProgrammingQuestionPage() {
     title: '',
     problemType: 'コーディング問題',
     difficulty: 4,
-    timeLimit: 10,
+    timeLimit: 10, // UIからは削除するが、内部データとして保持
     category: 'プログラミング基礎',
     topic: '標準入力',
     tags: [],
@@ -90,7 +93,7 @@ export default function CreateProgrammingQuestionPage() {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // トピックリスト（重要な項目のみ）
+  // トピックリスト
   const topics = [
     '標準入力',
     '配列操作',
@@ -102,8 +105,11 @@ export default function CreateProgrammingQuestionPage() {
     'アルゴリズム'
   ]
 
-  // 初期化処理: URLクエリパラメータからIDとタイプを取得
+  // 初期化処理
   useEffect(() => {
+    // FOUC対策: コンポーネントがマウントされたらフラグを立てる
+    setMounted(true);
+
     const idFromQuery = searchParams.get('id');
     const typeFromQuery = searchParams.get('type');
     
@@ -133,7 +139,7 @@ export default function CreateProgrammingQuestionPage() {
     }
   }, [searchParams]);
 
-  // 編集モード時に、カテゴリに応じたデータを取得するuseEffect
+  // 編集モード時にデータを取得するuseEffect
   useEffect(() => {
     if (problemId && isEditMode) {
       const fetchProblemData = async () => {
@@ -192,46 +198,6 @@ export default function CreateProgrammingQuestionPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problemId, isEditMode, selectedCategory, router]);
-
-  // マークダウンツールバー用の関数
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const insertMarkdown = (before: string, after: string = '', placeholder: string = '') => {
-    const textarea = textareaRef.current
-    if (!textarea) return
-
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const selectedText = formData.description.substring(start, end)
-    const textToInsert = selectedText || placeholder
-
-    const newText = formData.description.substring(0, start) + 
-                   before + textToInsert + after + 
-                   formData.description.substring(end)
-
-    setFormData(prev => ({ ...prev, description: newText }))
-
-    setTimeout(() => {
-      textarea.focus()
-      if (selectedText) {
-        textarea.setSelectionRange(start, start + before.length + textToInsert.length + after.length)
-      } else {
-        textarea.setSelectionRange(start + before.length, start + before.length + textToInsert.length)
-      }
-    }, 0)
-  }
-
-  const handleBold = () => insertMarkdown('**', '**', '太字テキスト')
-  const handleItalic = () => insertMarkdown('*', '*', '斜体テキスト')
-  const handleUnderline = () => insertMarkdown('<u>', '</u>', '下線テキスト')
-  const handleStrikethrough = () => insertMarkdown('~~', '~~', '打ち消しテキスト')
-  const handleCode = () => insertMarkdown('`', '`', 'コード')
-  const handleLink = () => {
-    const url = prompt('リンクURLを入力してください:', 'https://')
-    if (url) {
-      insertMarkdown('[', `](${url})`, 'リンクテキスト')
-    }
-  }
 
   // カテゴリリスト
   const categories = [
@@ -307,29 +273,6 @@ export default function CreateProgrammingQuestionPage() {
     setTestCases(prev => prev.filter(c => c.id !== id))
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files) return;
-    const uploadedFiles = Array.from(event.target.files)
-    const filesWithPreview = uploadedFiles.map(file => ({
-      file,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: URL.createObjectURL(file)
-    }))
-    setFiles(prev => [...prev, ...filesWithPreview])
-  }
-
-  const handlePreviewFile = (file: UploadedFile) => {
-    setPreviewFile(file)
-    setShowPreview(true)
-  }
-
-  const closePreview = () => {
-    setShowPreview(false)
-    setPreviewFile(null)
-  }
-
   // 問題更新処理
   const handleUpdateProblem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -379,64 +322,11 @@ export default function CreateProgrammingQuestionPage() {
     }
   };
 
-  const removeFile = (index: number) => {
-    const fileToRemove = files[index]
-    if (fileToRemove.url) {
-      URL.revokeObjectURL(fileToRemove.url)
-    }
-    setFiles(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const isImageFile = (file: UploadedFile) => {
-    return file.type && file.type.startsWith('image/')
-  }
-
-  const isTextFile = (file: UploadedFile) => {
-    const textTypes = ['text/', 'application/json', 'application/xml']
-    return textTypes.some(type => file.type && file.type.startsWith(type))
-  }
-
-  // 下書き保存処理
-  const handleSaveDraft = async () => {
-    setIsSubmitting(true)
-    try {
-      const response = await fetch('/api/problems/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          sampleCases: sampleCases.filter(sc => sc.input || sc.expectedOutput),
-          testCases: testCases.filter(tc => tc.input || tc.expectedOutput),
-          isDraft: true
-        }),
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json(); 
-        const errorMessage = errorData.message || '不明なエラーが発生しました'; 
-        throw new Error(`下書きの保存に失敗しました: ${errorMessage}`); 
-      }
-      
-      alert('下書きが保存されました！')
-      // 下書き保存後は自分の問題リストへ遷移
-      router.push('/issue_list/mine_issue_list/problems');
-      
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('Error:', error);
-      alert(`エラーが発生しました: ${message}`);
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   // 問題投稿処理
   const handlePublishProblem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      let problemResult: any = null;
-      
       if (selectedCategory === 'itpassport') {
         const requestBody = {
           title: formData.title,
@@ -452,7 +342,7 @@ export default function CreateProgrammingQuestionPage() {
           body: JSON.stringify(requestBody),
         });
         if (!response.ok) throw new Error((await response.json()).message || '選択問題の作成に失敗しました。');
-        problemResult = await response.json();
+        await response.json();
         alert('選択問題が正常に投稿されました！');
       } else {
         const problemData = {
@@ -466,7 +356,7 @@ export default function CreateProgrammingQuestionPage() {
           body: JSON.stringify(problemData),
         });
         if (!response.ok) throw new Error((await response.json()).error || 'コーディング問題の投稿に失敗しました');
-        problemResult = await response.json();
+        await response.json();
         alert('コーディング問題が正常に投稿されました！');
       }
       
@@ -481,15 +371,6 @@ export default function CreateProgrammingQuestionPage() {
       setIsSubmitting(false);
     }
   };
-
-  const handleEditMode = () => {
-    setIsEditMode(!isEditMode)
-    if (!isEditMode) {
-      alert('編集モードに切り替えました。問題を修正できます。')
-    } else {
-      alert('編集モードを終了しました。')
-    }
-  }
 
   const resetForm = (category = selectedCategory) => {
     setFormData({
@@ -514,25 +395,34 @@ export default function CreateProgrammingQuestionPage() {
 
     setSampleCases([{ id: 1, input: '', expectedOutput: '', description: '' }])
     setTestCases([{ id: 1, name: 'ケース1', input: '', expectedOutput: '', description: '' }])
-    setFiles([])
     setActiveTab('basic')
     setIsEditMode(false)
   } 
 
+  // プログラミング用のタブ（ファイルタブを削除）
   const programmingTabs = [
     { id: 'basic', label: '基本情報' },
     { id: 'description', label: '問題文' },
     { id: 'sample-cases', label: 'サンプルケース' },
     { id: 'test-cases', label: 'テストケース' },
-    { id: 'files', label: 'ファイル' },
     { id: 'settings', label: '設定' },
   ];
+  // 選択問題用のタブ（設定タブは非表示に）
   const selectProblemTabs = [
     { id: 'basic', label: '基本情報' },
-    { id: 'files', label: 'ファイル' },
-    { id: 'settings', label: '設定' },
   ];
   const tabsToRender = selectedCategory === 'itpassport' ? selectProblemTabs : programmingTabs;
+
+  // FOUC対策: マウントされていない間はローディング（または空）を表示
+  if (!mounted) {
+    // ページ背景色と同じ色で塗りつぶしたローディング画面を表示し、ちらつきを防ぐ
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)' }}>
+        {/* 必要であればここにスピナーなどを入れる */}
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-teal-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -765,72 +655,9 @@ export default function CreateProgrammingQuestionPage() {
                           </div>
                       </div>
                   )}
-                  {/* ファイルタブと設定タブはプログラミング問題と共通のものを表示 */}
-                  {activeTab === 'files' && (
-                      <div className="card">
-                          <div className="card-header">ファイル管理</div>
-                          <div className="card-body">
-                              {/* ファイルアップロードUI (内容はプログラミング問題と同じ) */}
-                              <div className="form-group">
-                                   <label className="form-label">添付ファイル</label>
-                                   <div className="file-upload-area" onClick={() => document.getElementById('file-input')?.click()} >
-                                        <div className="upload-icon">📁</div>
-                                        <div className="upload-text">ファイルをドラッグ&ドロップまたはクリックして選択</div>
-                                        <div className="upload-hint">画像、テキスト、PDFなど様々な形式に対応</div>
-                                        <input id="file-input" type="file" multiple onChange={handleFileUpload} style={{ display: 'none' }} />
-                                   </div>
-                                   {files.length > 0 && (
-                                       <div className="file-list">
-                                            {files.map((file, index) => (
-                                                <div key={index} className="file-item">
-                                                     <div className="file-info">
-                                                          <div className="file-icon">{file.type.startsWith('image/') ? '🖼️' : file.type.includes('text') ? '📄' : file.type.includes('pdf') ? '📕' : '📎'}</div>
-                                                          <div className="file-details">
-                                                               <div className="file-name">{file.name}</div>
-                                                               <div className="file-size">{(file.size / 1024).toFixed(1)} KB</div>
-                                                          </div>
-                                                     </div>
-                                                     <div className="file-actions">
-                                                          <button type="button" className="btn btn-primary btn-small" onClick={() => handlePreviewFile(file)}>プレビュー</button>
-                                                          <button type="button" className="btn btn-secondary btn-small" onClick={(e) => { e.stopPropagation(); removeFile(index); }}>削除</button>
-                                                     </div>
-                                                </div>
-                                            ))}
-                                       </div>
-                                   )}
-                              </div>
-                          </div>
-                      </div>
-                  )}
-                  {activeTab === 'settings' && (
-                      <div className="card">
-                          <div className="card-header">公開設定</div>
-                          <div className="card-body">
-                              {/* 公開設定UI (内容はプログラミング問題と同じ) */}
-                              <div className="checkbox-group">
-                                  <label className="checkbox"><input type="checkbox" checked={formData.isPublic} onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))} /><span className="checkbox-custom"></span></label>
-                                  <label className="checkbox-label">問題を公開する</label>
-                              </div>
-                              <div className="checkbox-group">
-                                   <label className="checkbox"><input type="checkbox" checked={formData.allowTestCaseView} onChange={(e) => setFormData(prev => ({ ...prev, allowTestCaseView: e.target.checked }))} /><span className="checkbox-custom"></span></label>
-                                   <label className="checkbox-label">テストケースの閲覧を許可する</label>
-                              </div>
-                              <div className="form-group" style={{ marginTop: '2rem' }}>
-                                   <button type="button" className="btn btn-warning" onClick={handleEditMode}>{isEditMode ? '編集モード終了' : '編集モード開始'}</button>
-                              </div>
-                          </div>
-                      </div>
-                  )}
+              
                   {/* アクションボタン */}
               <div className="action-buttons">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleSaveDraft}
-                  disabled={isSubmitting}
-                >
-                  下書き保存
-                </button>
                 
                 {isEditMode ? (
                   <button
@@ -892,17 +719,7 @@ export default function CreateProgrammingQuestionPage() {
                           <option value="数学問題">数学問題</option>
                         </select>
                       </div>
-                      <div className="form-col">
-                        <label className="form-label">制限時間（分）</label>
-                        <input
-                          type="number"
-                          className="form-input"
-                          value={formData.timeLimit}
-                          onChange={(e) => setFormData(prev => ({ ...prev, timeLimit: parseInt(e.target.value) }))}
-                          min="1"
-                          max="180"
-                        />
-                      </div>
+                      {/* 制限時間の入力欄を削除しました */}
                     </div>
 
                     <div className="form-group">
@@ -992,28 +809,8 @@ export default function CreateProgrammingQuestionPage() {
                         <span className="required-badge">必須</span>
                         問題文
                       </label>
-                      <div className="markdown-toolbar">
-                        <button type="button" className="toolbar-btn" onClick={handleBold}>
-                          <strong>B</strong> 太字
-                        </button>
-                        <button type="button" className="toolbar-btn" onClick={handleItalic}>
-                          <em>I</em> 斜体
-                        </button>
-                        <button type="button" className="toolbar-btn" onClick={handleUnderline}>
-                          <u>U</u> 下線
-                        </button>
-                        <button type="button" className="toolbar-btn" onClick={handleStrikethrough}>
-                          <s>S</s> 打消
-                        </button>
-                        <button type="button" className="toolbar-btn" onClick={handleCode}>
-                          {'<>'} コード
-                        </button>
-                        <button type="button" className="toolbar-btn" onClick={handleLink}>
-                          🔗 リンク
-                        </button>
-                      </div>
+                      {/* Markdownツールバーは削除されました */}
                       <textarea
-                        ref={textareaRef}
                         className="form-textarea"
                         value={formData.description}
                         onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -1059,7 +856,7 @@ export default function CreateProgrammingQuestionPage() {
                       {sampleCases.map((sampleCase, index) => (
                         <div key={sampleCase.id ?? `new-sample-${index}`} className="case-item">
                           <div className="case-header">
-                            <div className="case-title">サンプル {sampleCase.id}</div>
+                            <div className="case-title">サンプル {index + 1}</div>
                             {sampleCases.length > 1 && (
                               <button
                                 type="button"
@@ -1219,73 +1016,6 @@ export default function CreateProgrammingQuestionPage() {
                 </div>
               )}
 
-              {/* ファイルタブ */}
-              {activeTab === 'files' && (
-                <div className="card">
-                  <div className="card-header">
-                    ファイル管理
-                  </div>
-                  <div className="card-body">
-                    <div className="form-group">
-                      <label className="form-label">添付ファイル</label>
-                      <div className="file-upload-area" onClick={() => document.getElementById('file-input')?.click()} >
-                        <div className="upload-icon">📁</div>
-                        <div className="upload-text">ファイルをドラッグ&ドロップまたはクリックして選択</div>
-                        <div className="upload-hint">画像、テキスト、PDFなど様々な形式に対応</div>
-                        <input
-                          id="file-input"
-                          type="file"
-                          multiple
-                          onChange={handleFileUpload}
-                          style={{ display: 'none' }}
-                        />
-                      </div>
-
-                      {files.length > 0 && (
-                        <div className="file-list">
-                          {files.map((file, index) => (
-                            <div key={index} className="file-item">
-                              <div className="file-info">
-                                <div className="file-icon">
-                                  {file.type.startsWith('image/') ? '🖼️' : 
-                                   file.type.includes('text') ? '📄' : 
-                                   file.type.includes('pdf') ? '📕' : '📎'}
-                                </div>
-                                <div className="file-details">
-                                  <div className="file-name">{file.name}</div>
-                                  <div className="file-size">
-                                    {(file.size / 1024).toFixed(1)} KB
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="file-actions">
-                                <button
-                                  type="button"
-                                  className="btn btn-primary btn-small"
-                                  onClick={() => handlePreviewFile(file)}
-                                >
-                                  プレビュー
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary btn-small"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    removeFile(index)
-                                  }}
-                                >
-                                  削除
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* 設定タブ */}
               {activeTab === 'settings' && (
                 <div className="card">
@@ -1320,31 +1050,12 @@ export default function CreateProgrammingQuestionPage() {
                         テストケースの閲覧を許可する
                       </label>
                     </div>
-
-                    <div className="form-group" style={{ marginTop: '2rem' }}>
-                      <button
-                        type="button"
-                        className="btn btn-warning"
-                        onClick={handleEditMode}
-                      >
-                        {isEditMode ? '編集モード終了' : '編集モード開始'}
-                      </button>
-                    </div>
                   </div>
                 </div>
               )}
 
               {/* アクションボタン */}
               <div className="action-buttons">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleSaveDraft}
-                  disabled={isSubmitting}
-                >
-                  下書き保存
-                </button>
-                
                 {isEditMode ? (
                   <button
                     type="submit"
@@ -1371,37 +1082,6 @@ export default function CreateProgrammingQuestionPage() {
           </div>
         </div>
       </div>
-
-      {/* プレビューモーダル */}
-      {showPreview && previewFile && (
-        <div className="preview-modal" onClick={closePreview}>
-          <div className="preview-content" onClick={(e) => e.stopPropagation()}>
-            <div className="preview-header">
-              <div className="preview-title">{previewFile.name}</div>
-              <button className="preview-close" onClick={closePreview}>
-                ×
-              </button>
-            </div>
-            
-            {isImageFile(previewFile) ? (
-              <img 
-                src={previewFile.url} 
-                alt={previewFile.name}
-                className="preview-image"
-              />
-            ) : isTextFile(previewFile) ? (
-              <div className="preview-text">
-                {/* テキストファイルの内容をここに表示 */}
-                テキストファイルのプレビューは実装中です
-              </div>
-            ) : (
-              <div className="preview-text">
-                このファイル形式はプレビューできません
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
