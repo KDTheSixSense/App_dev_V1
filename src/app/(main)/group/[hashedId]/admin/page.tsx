@@ -51,7 +51,8 @@ const GroupDetailPage: React.FC = () => {
         addMember,
         copyInviteCode,
         fetchAvailableProblems,
-        fetchAvailableSelectionProblems
+        fetchAvailableSelectionProblems,
+        toggleAdmin
     } = useAdminData(hashedId);
 
     // UI関連のstate
@@ -166,12 +167,23 @@ const GroupDetailPage: React.FC = () => {
     // === レンダリング処理 ===
     return (
         <GroupLayout>
-            {/* ローディング状態の表示 */}
-            {loading && <div style={{padding: '2rem'}}>読み込み中...</div>}
-            {/* エラー状態の表示 */}
-            {error && <div style={{padding: '2rem', color: 'red'}}>エラー: {error}</div>}
-            {/* グループが見つからない場合の表示 */}
-            {!loading && !group && <div style={{padding: '2rem'}}>グループが見つかりません。</div>}
+            {/* エラーがあり、かつグループデータがない場合のみエラー表示 */}
+            {error && !group && (
+                <div style={{ padding: '2rem', color: 'red', textAlign: 'center' }}>
+                    <p>エラーが発生しました: {error}</p>
+                    <button onClick={() => window.location.reload()} style={{ marginTop: '1rem', padding: '8px 16px', cursor: 'pointer' }}>
+                        再読み込み
+                    </button>
+                </div>
+            )}
+
+            {/* ローディング中で、かつグループデータがない場合のみ「読み込み中」を表示 */}
+            {loading && !group && !error && (
+                <div style={{ padding: '4rem', textAlign: 'center', color: '#666' }}>
+                    <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p>データを読み込んでいます...</p>
+                </div>
+            )}
 
             {/* グループが存在する場合のメインコンテンツ */}
             {group && (
@@ -295,6 +307,7 @@ const GroupDetailPage: React.FC = () => {
                                 inviteCode={group.invite_code}
                                 onAddMember={addMember}
                                 onCopyInviteCode={copyInviteCode}
+                                toggleAdmin={toggleAdmin}
                             />
                         )}
 
