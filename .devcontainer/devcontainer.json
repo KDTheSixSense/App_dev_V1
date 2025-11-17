@@ -11,6 +11,7 @@
   // コンテナ内でVS Codeを実行するユーザー
   "remoteUser": "node",
 
+  
   // コンテナ内のユーザーのUID/GIDをホストに合わせ、パーミッションの問題を解決する
   "updateRemoteUserUID": true,
   // ★★★ 修正点 1 ★★★
