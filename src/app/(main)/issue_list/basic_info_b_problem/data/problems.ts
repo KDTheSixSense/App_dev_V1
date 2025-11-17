@@ -362,11 +362,51 @@ export const problems: Problem[] = [
             ja: "リスト構造では、要素を削除する際に、削除する要素の1つ前の要素と、1つ後ろの要素をつなぎ変える必要があります。\n\n・`pos = 1` の場合: 先頭要素を削除します。これは、`listHead` を現在の2番目の要素 (`listHead.next`) に更新することで実現できます。\n\n・`pos > 1` の場合: まずforループで、削除対象の1つ前の要素まで `prev` ポインタを進めます。例えば `pos = 3` (3番目を削除) の場合、ループを1回実行し、`prev` は2番目の要素を指します。\n次に、`prev` の `next` ポインタを、削除対象の `next` が指している要素、つまり `prev.next.next` に付け替えます。これにより、削除対象の要素がリストの連結から外れ、削除が完了します。\n\nしたがって、空欄には「カ」の `prev.next.next` が入ります。",
             en: "In a list structure, deleting an element requires re-linking the element before the one being deleted to the one after it.\n\n- If `pos = 1`: The head element is deleted. This is achieved by updating `listHead` to point to the current second element (`listHead.next`).\n\n- If `pos > 1`: The `for` loop advances the `prev` pointer to the element just before the target element. For example, if `pos = 3` (deleting the 3rd element), the loop runs once, making `prev` point to the 2nd element.\nNext, the `next` pointer of `prev` is re-linked to the element that the target's `next` was pointing to, which is `prev.next.next`. This removes the target element from the list's linkage.\n\nTherefore, the correct answer for the blank is 'F', `prev.next.next`."
         },
+        // initialVariables を null にリセット
         initialVariables: {
-            pos: 3, // 3番目の要素'C'を削除するケース
+            listData: null,
+            listHead: null,
+            pos: null, 
             i: null,
             prev: null,
-            // listData と listHead はロジック側で初期化
+            initialized: false, // トレースロジックで使用
+        },
+        // presets と logicVariants を追加
+        traceOptions: {
+            presets_array: [
+                { 
+                    label: 'Case 1: pos = 1 (先頭を削除)', 
+                    value: { 
+                        pos: 1, 
+                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: null }],
+                        listHead: 0
+                    } 
+                },
+                { 
+                    label: 'Case 2: pos = 3 (3番目を削除)', 
+                    value: { 
+                        pos: 3,
+                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: 3 }, { val: 'D', next: null }],
+                        listHead: 0
+                    }
+                },
+                { 
+                    label: 'Case 3: pos = 2 (2番目を削除)', 
+                    value: { 
+                        pos: 2,
+                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: null }],
+                        listHead: 0
+                    }
+                },
+            ],
+            logicVariants: [
+                { id: 'ア', label: 'ア: prev.next ← listHead' },
+                { id: 'イ', label: 'イ: prev.next ← listHead.next' },
+                { id: 'ウ', label: 'ウ: prev.next ← listHead.next.next' },
+                { id: 'エ', label: 'エ: prev.next ← prev' },
+                { id: 'オ', label: 'オ: prev.next ← prev.next' },
+                { id: 'カ', label: 'カ: prev.next ← prev.next.next' },
+            ]
         },
         traceLogic: [],
         calculateNextLine: undefined,

@@ -59,17 +59,32 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
   const showLogicVariants = problem.traceOptions?.logicVariants;
   // プリセットが選択されたかを判定するフラグ
   const isNumSet = variables?.num !== null;
-  const isDataSet = variables.data !== null && variables.target !== null;
+  // listData が存在するかどうかで判定するように
+  const isDataSet = variables.listData !== null ||
+                    variables.data !== null && (
+                      variables.target !== null || 
+                      variables.qVal !== null || 
+                      variables.c1 !== null || 
+                      variables.edgeList !== null
+                    );
   // disabledのロジックを汎用化
   const isNextButtonDisabled = isTraceFinished || 
-    ((showPresets) && !isNumSet) ||
-    ((showArrayPresets) && !isPresetSelected) ||
-    (showLogicVariants && !selectedLogicVariant);
+    // (A) 数値プリセット *だけ* があり、かつ未選択の場合
+    (showPresets && !showArrayPresets && !showLogicVariants && !isNumSet) ||
+    // (B) 配列プリセット *だけ* があり、かつ未選択の場合
+    (showArrayPresets && !showPresets && !showLogicVariants && !isPresetSelected) ||
+    // (C) ロジック選択 *だけ* があり、かつ未選択の場合
+    (showLogicVariants && !showPresets && !showArrayPresets && !selectedLogicVariant) ||
+    
+    // (D) ロジック選択 *かつ* 配列プリセットがあり、どちらかが未選択の場合
+    (showLogicVariants && showArrayPresets && (!selectedLogicVariant || !isPresetSelected)) ||
+    // (E) ロジック選択 *かつ* 数値プリセットがあり、どちらかが未選択の場合
+    (showLogicVariants && showPresets && (!selectedLogicVariant || !isNumSet));
   // ステップ番号を動的に計算
   let stepCounter = 1;
   const logicStepNum = showLogicVariants ? stepCounter++ : null;
   const dataStepNum = (showPresets || showArrayPresets) ? stepCounter++ : null;
-  const varStepNum = stepCounter++;
+  const varStepNum = dataStepNum ? dataStepNum : stepCounter++;
   const traceStepNum = stepCounter++;
 
   return (
@@ -98,7 +113,7 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
         </div>
       )}
 
-      {/* ✅ [修正] プリセット選択 (番号を動的に) */}
+      {/* プリセット選択 (番号を動的に) */}
       {(showPresets || showArrayPresets) && (
         <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
           <p className="text-center font-semibold mb-3 text-gray-700">
@@ -112,9 +127,11 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
                  <button 
                    key={preset.label} 
                    onClick={() => onSetData(preset.value)}
-                   // ✅ [修正] プリセットが選択されているかの判定を、より厳密に変更
                    className={`px-3 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 ${
-                     isPresetSelected && JSON.stringify(variables.data) === JSON.stringify(preset.value.data)
+                     isPresetSelected && (
+                       JSON.stringify(variables.listData) === JSON.stringify(preset.value.listData) ||
+                       JSON.stringify(variables.data) === JSON.stringify(preset.value.data)
+                     )
                        ? 'bg-emerald-500 ring-2 ring-emerald-300'
                        : 'bg-indigo-500 hover:bg-indigo-600'
                    }`}
@@ -148,7 +165,7 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
       
       {/* --- 変数表示エリア --- */}
       <div className="w-full mb-6">
-        <p className="text-center font-semibold mb-3 text-gray-700">2. 変数の状態</p>
+        <p className="text-center font-semibold mb-3 text-gray-700">{varStepNum}. 変数の状態</p>
         <div className="grid grid-cols-1 gap-2 max-w-xs mx-auto">
           {Object.entries(variables).map(([name, value]) => {
             // initialized フラグはUIに表示しない
@@ -165,6 +182,11 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
                 else if (name === 'queue' && typeof value[0] === 'object' && value[0] !== null) {
                     const queueItems = value as QueueItem[];
                     displayValue = `[${queueItems.map(item => `"${item.value}"(${item.prio})`).join(', ')}]`;
+                }
+                //listData の表示を改善
+                else if (name === 'listData' && typeof value[0] === 'object' && value[0] !== null) {
+                    const listItems = value as {val: string, next: number | null}[];
+                    displayValue = `[${listItems.map((item, idx) => `(idx:${idx}, val:${item.val}, next:${item.next === null ? 'null' : item.next})`).join(', ')}]`;
                 }
                 else if (name === 'callStack' && Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
               const stackFrames = value as any[];
@@ -202,7 +224,7 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
 
       {/* --- トレース操作ボタン --- */}
       <div className="w-full">
-        <p className="text-center font-semibold mb-3 text-gray-700">3. トレース実行</p>
+        <p className="text-center font-semibold mb-3 text-gray-700">{traceStepNum}. トレース実行</p>
         <div className="flex w-full gap-4">
           <button
             onClick={onResetTrace}
