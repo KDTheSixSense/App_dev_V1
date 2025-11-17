@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -17,6 +17,29 @@ import { problemLogicsMap } from '../data/problem-logics';
 // --- 型定義 ---
 import type { SerializableProblem } from '@/lib/data';
 import type { VariablesState } from '../data/problems';
+
+
+const MAX_HUNGER = 200;
+
+const getPetDisplayState = (hungerLevel: number) => {
+  if (hungerLevel >= 150) {
+    return {
+      icon: '/images/Kohaku/kohaku-full.png',
+    };
+  } else if (hungerLevel >= 100) {
+    return {
+      icon: '/images/Kohaku/kohaku-normal.png',
+    };
+  } else if (hungerLevel >= 50) {
+    return {
+      icon: '/images/Kohaku/kohaku-hungry.png',
+    };
+  } else {
+    return {
+      icon: '/images/Kohaku/kohaku-starving.png',
+    };
+  }
+};
 
 // --- 多言語リソース ---
 const textResources = {
@@ -108,6 +131,33 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [credits, setCredits] = useState(initialCredits);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const startTimeRef = useRef<number | null>(null);
+
+  const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+
+  // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
+  const refetchPetStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/pet/status');
+      if (res.ok) {
+        const { data } = await res.json();
+        if (data) {
+          const displayState = getPetDisplayState(data.hungerlevel);
+          setKohakuIcon(displayState.icon);
+        }
+      }
+    } catch (error) {
+      console.error("ペット情報の取得に失敗:", error);
+    }
+  }, []);
+
+  // 初期ロード時とイベントリスナー設定
+  useEffect(() => {
+    refetchPetStatus();
+    window.addEventListener('petStatusUpdated', refetchPetStatus);
+    return () => {
+      window.removeEventListener('petStatusUpdated', refetchPetStatus);
+    };
+  }, [refetchPetStatus]);
 
   useEffect(() => {
     let problemData = initialProblem;
@@ -380,6 +430,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
                       textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
                       isLoading={isAiLoading}
                       isDisabled={credits <= 0}
+                      kohakuIcon={kohakuIcon}
                     />
                   </div>
                 )}

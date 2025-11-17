@@ -8,10 +8,13 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && npm install -g npm@11.4.2 \
 # サーバーサイド・リンティング (/api/lint_code) に必要なパッケージを追加
     && apt-get -y install --no-install-recommends \
+        python3 \
+        python3-pip \
+        python3-pyflakes \
         openjdk-17-jdk \  
         build-essential \ 
         mono-mcs \        
-        php-cli \        
+        php-cli \
 # apt-get のキャッシュをクリーンアップ
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

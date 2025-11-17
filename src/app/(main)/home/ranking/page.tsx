@@ -1,49 +1,82 @@
-'use server';
+
 
 import { prisma } from "@/lib/prisma";
 import RankingContainer from "@/components/RankingContainer";
 import { assignRanks } from "@/lib/ranking";
+import { Prisma } from '@prisma/client'; // Prisma.sql を使うためにインポート
 
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions } from '@/lib/session';
-
-interface SessionData {
-  user?: {
-    id: string;
-    email: string;
-  };
-}
+export const revalidate = 300; // 5分間キャッシュ
 
 export default async function RankingPage() {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
-  // 総合ランキングのデータを準備
-  const allUsersOverall = await prisma.user.findMany({ orderBy: { xp: 'desc' } });
+  // 総合ランキングのデータを準備 (上位100件のみ取得)
+  const allUsersOverall = await prisma.user.findMany({
+    orderBy: { level: 'desc' },
+    take: 100,
+  });
   const overallRankingFull = assignRanks(allUsersOverall.map(user => ({
     id: user.id,
     name: user.username || '名無しさん',
     iconUrl: user.icon || '/images/test_icon.webp',
     score: user.level,
+    level: user.level, // levelプロパティを追加
   })));
 
-  // 科目別ランキングのデータを準備
-  const subjects = await prisma.subject.findMany();
-  const subjectRankingsFull: { [key: string]: any[] } = {};
+  // 科目別ランキングのデータを準備 (Raw Queryを使用)
+  const subjects = await prisma.subject.findMany(); // 科目リストは引き続き必要
 
-  for (const subject of subjects) {
-    const allProgress = await prisma.userSubjectProgress.findMany({
-      where: { subject_id: subject.id },
-      orderBy: { xp: 'desc' },
-      include: { user: true },
-    });
-    subjectRankingsFull[subject.name] = assignRanks(allProgress.map(p => ({
-      id: p.user.id,
-      name: p.user.username || '名無しさん',
-      iconUrl: p.user.icon || '/images/test_icon.webp',
-      score: p.level,
-    })));
-  }
+  const rawRankings: Array<{
+    id: number;
+    name: string;
+    iconUrl: string | null;
+    score: number;
+    subjectId: number;
+    rank: bigint; // rankをbigint型に変更
+    level: number;
+  }> = await prisma.$queryRaw(Prisma.sql`
+    WITH RankedProgress AS (
+      SELECT
+        usp.user_id,
+        usp.subject_id,
+        usp.level AS score,
+        usp.level AS level,
+        u.username AS name,
+        u.icon AS "iconUrl",
+        DENSE_RANK() OVER (PARTITION BY usp.subject_id ORDER BY usp.level DESC) as rank
+      FROM
+        "UserSubjectProgress" usp
+      JOIN
+        "User" u ON usp.user_id = u.id
+    )
+    SELECT
+      rp.user_id AS id,
+      rp.name,
+      rp."iconUrl",
+      rp.score,
+      rp.subject_id AS "subjectId",
+      rp.rank,
+      rp.level -- levelも選択
+    FROM
+      RankedProgress rp
+    WHERE
+      rp.rank <= 100
+    ORDER BY
+      rp.subject_id, rp.rank;
+  `);
+
+  // Raw Queryの結果をsubjectRankingsFullの形式に整形
+  const subjectRankingsFull: { [key: string]: any[] } = {};
+  subjects.forEach(subject => {
+    subjectRankingsFull[subject.name] = rawRankings
+      .filter(r => r.subjectId === subject.id)
+      .map(r => ({
+        id: r.id,
+        name: r.name || '名無しさん',
+        iconUrl: r.iconUrl || '/images/test_icon.webp',
+        score: r.score,
+        rank: Number(r.rank), // bigintをnumberに変換
+        level: r.level,
+      }));
+  });
 
   // 表示用のデータを準備
   const allRankingsForDisplay = {
@@ -69,7 +102,6 @@ export default async function RankingPage() {
           tabs={tabs}
           allRankings={allRankingsForDisplay}
           allRankingsFull={allRankingsFull}
-          userId={userId}
         />
       </div>
     </div>

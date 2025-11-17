@@ -84,16 +84,16 @@ const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterPr
             {userWithPet && (
               <div className="p-3 mb-4 bg-gray-50 rounded-lg shadow-sm">
                 <div className="flex items-center mb-2">
-                  <img src="/images/rank.png" alt="レベル" width={24} height={24} className="w-6 h-6 mr-3" />
+                  <Image src="/images/rank.png" alt="レベル" width={24} height={24} className="w-6 h-6 mr-3" />
                   <span className="font-bold text-gray-800">レベル: {userWithPet.level}</span>
                 </div>
                 <div className="flex items-center mb-2">
-                  <img src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} className="w-6 h-6 mr-3" />
+                  <Image src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} className="w-6 h-6 mr-3" />
                   <span className="font-bold text-gray-800">連続ログイン日数: {userWithPet.continuouslogin ?? 0}</span>
                 </div>
                 {userWithPet.status_Kohaku && (
                   <div className="flex items-center">
-                    <img src={getPetDisplayState(userWithPet.status_Kohaku.hungerlevel).icon} alt="コハク" width={24} height={24} className="w-6 h-6 mr-3" />
+                    <Image src={getPetDisplayState(userWithPet.status_Kohaku.hungerlevel).icon} alt="コハク" width={24} height={24} className="w-6 h-6 mr-3" />
                     <span className="font-bold text-gray-800">コハク満腹度: {userWithPet.status_Kohaku.hungerlevel}/{MAX_HUNGER}</span>
                   </div>
                 )}

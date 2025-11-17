@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image'; // Imageコンポーネントをインポート
 // Link, Image, useRouter はNext.js固有のため削除
 import type { User, Status_Kohaku } from '@prisma/client';
 
@@ -17,7 +18,7 @@ type HeaderProps = {
 
 type PetDisplayStatus = {
   hungerlevel: number;
-  icon?: string;
+  icon: string; // undefinedの可能性を排除
   colorClass?: string;
 };
 
@@ -59,10 +60,8 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
   // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
     const initialStatus = userWithPet?.status_Kohaku;
-    console.log("[Header Debug] Initializing petStatus. userWithPet:", userWithPet);
     if (initialStatus) {
       const displayState = getPetDisplayState(initialStatus.hungerlevel);
-      console.log("[Header Debug] Initial petStatus from userWithPet:", { hungerlevel: initialStatus.hungerlevel, ...displayState });
       return {
         hungerlevel: initialStatus.hungerlevel,
         ...displayState,
@@ -77,51 +76,76 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
     console.log("[Header Debug] Initial petStatus (no userWithPet): null");
     return null;  });
 
-    // ペットのステータスをAPIから再取得して、Stateを更新する関数
-  const refetchPetStatus = async () => {
-    console.log("[Header Debug] refetchPetStatus called.");
-    try {
-      const res = await fetch('/api/pet/status');
-      if (res.ok) {
-        const { data } = await res.json();
-        console.log("[Header Debug] API /api/pet/status response data:", data);
-        if (data) {
-          const displayState = getPetDisplayState(data.hungerlevel);
-          setPetStatus({
-            hungerlevel: data.hungerlevel,
-            ...displayState,
-          });
-          setRank(data.level);
-
-          // 3. 連続ログイン日数を更新
-          setContinuousLogin(data.continuouslogin);
-          console.log('ヘッダーのペット情報を更新しました。');
-        }
-      } else {
-        console.error("[Header Debug] Failed to fetch pet status. Response not OK:", res.status, await res.text());
-      }
-    } catch (error) {
-      console.error("[Header Debug] ペット情報の再取得に失敗:", error);
-    }
-  };
+    // 4. ペットのステータスをAPIから再取得して、Stateを更新する関数
+  // (useCallbackでラップ)
+  const refetchPetStatus = useCallback(async (isPeriodicCheck: boolean = false) => {
+    console.log("[Header Debug] refetchPetStatus called.");
+    try {
+      const res = await fetch('/api/pet/status', { cache: 'no-store' }); // キャッシュを無効化
+      if (res.ok) {
+        const { data } = await res.json();
+        if (data) {
+          const displayState = getPetDisplayState(data.hungerlevel);
+          
+          let hungerLevelChanged = false;
+          setPetStatus(prevStatus => {
+            if (prevStatus?.hungerlevel !== data.hungerlevel) {
+              hungerLevelChanged = true;
+            }
+            return {
+              hungerlevel: data.hungerlevel,
+              ...displayState,
+            };
+          });
+          
+          setRank(data.level);
+          setContinuousLogin(data.continuouslogin);
+          
+          // 定期チェックで満腹度が変わっていたら、イベントを発火
+          if (isPeriodicCheck && hungerLevelChanged) {
+            console.log("[Header Debug] Hunger level changed on periodic check. Dispatching event.");
+            window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+          }
+        }
+      } else {
+        console.error("[Header Debug] Failed to fetch pet status. Response not OK:", res.status, await res.text());
+      }
+    } catch (error) {
+      console.error("[Header Debug] ペット情報の再取得に失敗:", error);
+    }
+  }, []); // 空の依存配列
 
   // レンダリング直前にpetStatus.iconの値をログ出力
   console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
 
   useEffect(() => {
+      // ページ読み込み時にも最新の情報を取得
+    if (userWithPet) { // ログインしている場合のみ
+      refetchPetStatus();
+    }
 
-        // ページ読み込み時にも最新の情報を取得
-    if (userWithPet) { // ログインしている場合のみ
-      refetchPetStatus();
-    }
-    // 'petStatusUpdated' という名前のカスタムイベントをウィンドウで監視します
-    window.addEventListener('petStatusUpdated', refetchPetStatus);
+    // addEventListener 用のラッパー関数を定義
+    const handlePetStatusUpdate = () => {
+      refetchPetStatus(false); // isPeriodicCheck = false
+    };
 
-    // コンポーネントが不要になった時に、イベントリスナーを解除してメモリリークを防ぎます
-    return () => {
-      window.removeEventListener('petStatusUpdated', refetchPetStatus);
-    };
-  }, [userWithPet]); // userWithPetを依存配列に追加
+    // ラッパー関数をリスナーに登録
+    window.addEventListener('petStatusUpdated', handlePetStatusUpdate);
+
+    // 満腹度減少を同期間隔タイマー（1分ごと）
+    const timerId = setInterval(() => {
+      if (userWithPet) {
+        refetchPetStatus(true); // 定期チェックであることを示すフラグを立てる
+      }
+    }, 60000); // 60000ms = 1分
+
+    // コンポーネントが不要になった時に、イベントリスナーとタイマーを解除
+    return () => {
+      // ラッパー関数を解除
+      window.removeEventListener('petStatusUpdated', handlePetStatusUpdate);
+      clearInterval(timerId); // タイマーを解除
+    };
+  }, [userWithPet, refetchPetStatus]); // 依存配列に refetchPetStatus を追加
 
   // ログアウト処理を行う非同期関数
   const handleLogout = async () => {
@@ -159,7 +183,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         {/* Linkをaタグに変更 */}
         <a href="/home" className="transition-opacity hover:opacity-80">
           {/* Imageをimgタグに変更 */}
-          <img
+          <Image
             src="/images/infopia_logo.png"
             alt='Infopia'
             width={200}
@@ -175,14 +199,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
             <li key={item.label}>
               {/* router.pushをwindow.location.hrefに変更 */}
               <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
-                <img src={item.icon} alt={item.label} width={40} height={40} />
+                <Image src={item.icon} alt={item.label} width={40} height={40} />
                 <span className='text-[#546E7A] text-sm mt-1 font-bold'>{item.label}</span>
               </button>
             </li>
           ))}
           <li>
             <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
-              <img src="/images/logout_slateblue.png" alt="ログアウト" width={40} height={40} />
+              <Image src="/images/logout_slateblue.png" alt="ログアウト" width={40} height={40} />
               <span className='text-[#546E7A] text-sm mt-1 font-bold'>ログアウト</span>
             </button>
           </li>
@@ -193,7 +217,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
       {petStatus && (
         <div className="flex items-center gap-2 ml-auto">
             {/* アイコンをStateから動的に設定 */}
-            <img src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
+            <Image src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
             <div className="w-50">
                 <div className="w-full bg-gray-300 rounded-full h-5 overflow-hidden">
                     <div
@@ -211,7 +235,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         {/* ランクとログイン日数 */}
         <div className="flex flex-col">
           <div className="relative group flex items-center gap-2">
-            <img src="/images/rank.png" alt="ランク" width={45} height={15} />
+            <Image src="/images/rank.png" alt="ランク" width={45} height={15} />
             <div className='flex ml-auto'>
               <p className="text-[#5FE943] text-2xl font-bold select-none">{rank}</p>
             </div>
@@ -223,7 +247,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
           </div>
           <div className="relative group flex items-center gap-2">
             <div className='flex ml-3'>
-              <img src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} />
+              <Image src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} />
             </div>
             <div className='flex ml-auto'>
               <p className="text-[#feb75c] text-2xl font-bold select-none">{continuousLogin}</p>
@@ -239,7 +263,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         {/* プロフィールアイコン */}
         <div className="w-14 h-14">
           <a href="/profile">
-            <img
+            <Image
               src={user?.icon || "/images/test_icon.webp"}
               alt="ユーザーアイコン"
               width={56}
