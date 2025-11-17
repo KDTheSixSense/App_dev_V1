@@ -14,6 +14,7 @@ import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from
 import { useNotification } from '@/app/contexts/NotificationContext';
 import type { SerializableProblem } from '@/lib/data';
 import { getHintFromAI } from '@/lib/actions/hintactions';
+import AnswerEffect from '@/components/AnswerEffect';
 
 const MAX_HUNGER = 200;
 
@@ -101,6 +102,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [language, setLanguage] = useState<Language>('ja');
   const startTimeRef = useRef<number | null>(null);
   const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+  const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null);
   
     // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
     const refetchPetStatus = useCallback(async () => {
@@ -155,6 +157,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setSelectedAnswer(selectedValue);
     setIsAnswered(true);
     const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
+    setAnswerEffectType(correct ? 'correct' : 'incorrect');
 
     if (correct) {
       const numericId = parseInt(problem.id, 10);
@@ -177,6 +180,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
   };
+
+  const handleAnimationEnd = useCallback(() => {
+    setAnswerEffectType(null);
+  }, []);
 
   const handleUserMessage = async (message: string) => {
         if (credits <= 0) {
@@ -225,7 +232,9 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
-
+      {answerEffectType && (
+        <AnswerEffect type={answerEffectType} onAnimationEnd={handleAnimationEnd} />
+      )}
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start">
         <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[600px] flex flex-col lg:col-span-8 lg:col-start-3">
           {/* 出典情報があれば表示するエリア（オプション） */}

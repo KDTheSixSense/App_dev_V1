@@ -30,7 +30,11 @@
 
 * {
 
-  cursor: none;
+
+
+  cursor: none !important;
+
+
 
 }
 
@@ -38,27 +42,45 @@
 
 .custom-cursor {
 
+
+
   position: fixed;
 
-  width: 20px;
 
-  height: 30px;
 
-  background: linear-gradient(to bottom right, #87ceeb, #add8e6);
+  width: 40px; /* 画像の幅 */
 
-  border-radius: 50% 0;
+
+
+  height: 40px; /* 画像の高さ */
+
+
 
   pointer-events: none;
 
-  transform: translate(-10px, -10px) rotate(45deg);
+
+
+  transform: translate(-20%, -20%) rotate(45deg); /* 画像のホットスポットに合わせて調整 */
+
+
 
   transition: transform 0.1s ease-out;
 
+
+
   z-index: 9999;
 
-  box-shadow: 0 0 5px rgba(135, 206, 235, 0.7);
+
+
+  object-fit: contain; /* 画像がコンテナに収まるように */
+
+
 
 }
+
+
+
+
 
 
 
@@ -66,7 +88,15 @@
 
 
 
+
+
+
+
   position: fixed;
+
+
+
+
 
 
 
@@ -74,11 +104,27 @@
 
 
 
+
+
+
+
   z-index: 10000;
 
 
 
+
+
+
+
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -90,7 +136,15 @@
 
 
 
+
+
+
+
   width: 20px;
+
+
+
+
 
 
 
@@ -98,7 +152,47 @@
 
 
 
-  color: #ffd700; /* Yellow color for stars */
+
+
+
+
+  font-size: 24px;
+
+
+
+
+
+
+
+  background-image: linear-gradient(to bottom, #87ceeb, #ffffff);
+
+
+
+
+
+
+
+  -webkit-background-clip: text;
+
+
+
+
+
+
+
+  background-clip: text;
+
+
+
+
+
+
+
+  color: transparent;
+
+
+
+
 
 
 
@@ -106,7 +200,15 @@
 
 
 
+
+
+
+
   text-align: center;
+
+
+
+
 
 
 
@@ -114,7 +216,19 @@
 
 
 
+
+
+
+
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -126,11 +240,23 @@
 
 
 
+
+
+
+
   from {
 
 
 
-    opacity: 1;
+
+
+
+
+    opacity: 0.7;
+
+
+
+
 
 
 
@@ -138,7 +264,15 @@
 
 
 
+
+
+
+
   }
+
+
+
+
 
 
 
@@ -146,7 +280,15 @@
 
 
 
+
+
+
+
     opacity: 0;
+
+
+
+
 
 
 
@@ -154,11 +296,879 @@
 
 
 
+
+
+
+
   }
 
 
 
+
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@keyframes answerEffectFadeOut {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  from {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    opacity: 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    transform: translate(-50%, -50%) scale(0.5);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  to {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    opacity: 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    transform: translate(-50%, -50%) scale(1.5);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.answer-effect-backdrop {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  position: fixed;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  top: 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  left: 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  width: 100vw;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  height: 100vh;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  background-color: rgba(255, 255, 255, 0.3); /* 明るい半透明の背景 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  backdrop-filter: blur(8px); /* 背景をぼかす */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  display: flex;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  justify-content: center;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  align-items: center;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  z-index: 10001;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.answer-effect-container {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  display: flex;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  align-items: center;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  font-size: 80px;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  font-weight: bold;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  color: #333; /* テキストの色を濃いグレーに */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.7);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  animation: answerEffectFadeOut 1s forwards;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.answer-effect-symbol {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  margin-right: 20px; /* 記号とテキストの間にスペース */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  font-size: 1.2em; /* 記号を少し大きく */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.answer-effect-text {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /* テキストのスタイル */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.correct-effect {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /* colorはcontainerで設定 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.incorrect-effect {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /* colorはcontainerで設定 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
