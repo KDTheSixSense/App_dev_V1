@@ -7,6 +7,7 @@ import type { Problem as SerializableProblem } from '@/lib/types';
 import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '@/components/KohakuChat';
 import { recordStudyTimeAction } from '@/lib/actions';
+import AnswerEffect from '@/components/AnswerEffect';
 
 const MAX_HUNGER = 200;
 
@@ -115,6 +116,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   const [alertMessage, setAlertMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false); // AIチャットのローディング状態
   const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+  const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null);
 
   // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
   const refetchPetStatus = useCallback(async () => {
@@ -225,10 +227,16 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
     if (isAnswered) return;
     setSelectedAnswer(selectedValue);
     setIsAnswered(true);
+    const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
+    setAnswerEffectType(correct ? 'correct' : 'incorrect');
     const hint = generateKohakuResponse(true, selectedValue);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
     recordStudyTime();
   };
+
+  const handleAnimationEnd = useCallback(() => {
+    setAnswerEffectType(null);
+  }, []);
 
   const handleUserMessage = async (message: string) => {
     setChatMessages((prev) => [...prev, { sender: 'user', text: message }]);
@@ -273,6 +281,9 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
       {showAlert && <CustomAlertModal message={alertMessage} onClose={handleCloseAlert} />}
+      {answerEffectType && (
+        <AnswerEffect type={answerEffectType} onAnimationEnd={handleAnimationEnd} />
+      )}
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start">
         <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col">
           <>

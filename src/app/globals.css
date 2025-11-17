@@ -38,27 +38,45 @@
 
 .custom-cursor {
 
+
+
   position: fixed;
 
-  width: 20px;
 
-  height: 30px;
 
-  background: linear-gradient(to bottom right, #87ceeb, #add8e6);
+  width: 40px; /* 画像の幅 */
 
-  border-radius: 50% 0;
+
+
+  height: 40px; /* 画像の高さ */
+
+
 
   pointer-events: none;
 
-  transform: translate(-10px, -10px) rotate(45deg);
+
+
+  transform: translate(-20%, -20%) rotate(45deg); /* 画像のホットスポットに合わせて調整 */
+
+
 
   transition: transform 0.1s ease-out;
 
+
+
   z-index: 9999;
 
-  box-shadow: 0 0 5px rgba(135, 206, 235, 0.7);
+
+
+  object-fit: contain; /* 画像がコンテナに収まるように */
+
+
 
 }
+
+
+
+
 
 
 
@@ -66,7 +84,15 @@
 
 
 
+
+
+
+
   position: fixed;
+
+
+
+
 
 
 
@@ -74,11 +100,27 @@
 
 
 
+
+
+
+
   z-index: 10000;
 
 
 
+
+
+
+
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -90,23 +132,63 @@
 
 
 
-  position: relative;
 
 
 
-  width: 30px;
+
+  width: 20px;
 
 
 
-  height: 30px;
 
 
 
-  background-color: #add8e6; /* Light blue for the main pad */
+
+  height: 20px;
 
 
 
-  border-radius: 50%;
+
+
+
+
+  font-size: 24px;
+
+
+
+
+
+
+
+  background-image: linear-gradient(to bottom, #87ceeb, #ffffff);
+
+
+
+
+
+
+
+  -webkit-background-clip: text;
+
+
+
+
+
+
+
+  background-clip: text;
+
+
+
+
+
+
+
+  color: transparent;
+
+
+
+
 
 
 
@@ -114,7 +196,23 @@
 
 
 
-  opacity: 0.7;
+
+
+
+
+  text-align: center;
+
+
+
+
+
+
+
+  line-height: 20px;
+
+
+
+
 
 
 
@@ -126,91 +224,7 @@
 
 
 
-.click-effect::before, .click-effect::after {
 
-
-
-  content: '';
-
-
-
-  position: absolute;
-
-
-
-  background-color: #add8e6; /* Light blue for the toe pads */
-
-
-
-  border-radius: 50%;
-
-
-
-}
-
-
-
-
-
-
-
-.click-effect::before {
-
-
-
-  width: 15px;
-
-
-
-  height: 15px;
-
-
-
-  top: -5px;
-
-
-
-  left: 5px;
-
-
-
-  transform: rotate(-30deg);
-
-
-
-}
-
-
-
-
-
-
-
-.click-effect::after {
-
-
-
-  width: 15px;
-
-
-
-  height: 15px;
-
-
-
-  top: -5px;
-
-
-
-  right: 5px;
-
-
-
-  transform: rotate(30deg);
-
-
-
-}
 
 
 
@@ -306,7 +320,191 @@
 
 
 
-.answer-effect-container {
+@keyframes answerEffectFadeOut {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  from {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    opacity: 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    transform: translate(-50%, -50%) scale(0.5);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  to {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    opacity: 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    transform: translate(-50%, -50%) scale(1.5);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.answer-effect-backdrop {
+
+
+
+
+
+
+
+
 
 
 
@@ -322,7 +520,6 @@
 
 
 
-  top: 50%;
 
 
 
@@ -330,7 +527,8 @@
 
 
 
-  left: 50%;
+
+  top: 0;
 
 
 
@@ -338,7 +536,6 @@
 
 
 
-  transform: translate(-50%, -50%);
 
 
 
@@ -346,7 +543,8 @@
 
 
 
-  font-size: 80px;
+
+  left: 0;
 
 
 
@@ -354,7 +552,6 @@
 
 
 
-  font-weight: bold;
 
 
 
@@ -362,7 +559,112 @@
 
 
 
-  pointer-events: none;
+
+  width: 100vw;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  height: 100vh;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  background-color: rgba(255, 255, 255, 0.3); /* 明るい半透明の背景 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  backdrop-filter: blur(8px); /* 背景をぼかす */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  display: flex;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  justify-content: center;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  align-items: center;
+
+
+
+
+
+
+
+
 
 
 
@@ -378,7 +680,7 @@
 
 
 
-  animation: answerEffectFadeOut 1s forwards;
+
 
 
 
@@ -387,6 +689,326 @@
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.answer-effect-container {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  display: flex;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  align-items: center;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  font-size: 80px;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  font-weight: bold;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  color: #333; /* テキストの色を濃いグレーに */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.7);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  animation: answerEffectFadeOut 1s forwards;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.answer-effect-symbol {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  margin-right: 20px; /* 記号とテキストの間にスペース */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  font-size: 1.2em; /* 記号を少し大きく */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.answer-effect-text {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /* テキストのスタイル */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -410,7 +1032,23 @@
 
 
 
-  color: #4CAF50; /* Green */
+
+
+
+
+
+
+
+
+  /* colorはcontainerで設定 */
+
+
+
+
+
+
+
+
 
 
 
@@ -419,6 +1057,22 @@
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -442,7 +1096,23 @@
 
 
 
-  color: #F44336; /* Red */
+
+
+
+
+
+
+
+
+  /* colorはcontainerで設定 */
+
+
+
+
+
+
+
+
 
 
 
@@ -466,7 +1136,6 @@
 
 
 
-@keyframes answerEffectFadeOut {
 
 
 
@@ -474,7 +1143,6 @@
 
 
 
-  from {
 
 
 
@@ -482,63 +1150,9 @@
 
 
 
-    opacity: 1;
 
 
 
-
-
-
-
-    transform: translate(-50%, -50%) scale(0.5);
-
-
-
-
-
-
-
-  }
-
-
-
-
-
-
-
-  to {
-
-
-
-
-
-
-
-    opacity: 0;
-
-
-
-
-
-
-
-    transform: translate(-50%, -50%) scale(1.5);
-
-
-
-
-
-
-
-  }
-
-
-
-
-
-
-
-}
 
 
 
