@@ -1,5 +1,5 @@
 // app/api/groups/[hashedId]/assignments/[assignmentId]/comments/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
@@ -13,9 +13,10 @@ interface SessionData {
 }
 
 export async function GET(
-  request: Request,
-  { params }: { params: { hashedId: string, assignmentId: string } }
+  request: NextRequest,
+  context: { params: Promise<{ hashedId: string, assignmentId: string }> }
 ) {
+  const params = await context.params;
   try {
     const assignmentId = parseInt(params.assignmentId);
     if (isNaN(assignmentId)) {
@@ -46,9 +47,10 @@ export async function GET(
 }
 
 export async function POST(
-  request: Request,
-  { params }: { params: { hashedId: string, assignmentId: string } }
+  request: NextRequest,
+  context: { params: Promise<{ hashedId: string, assignmentId: string }> }
 ) {
+  const params = await context.params;
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: '認証されていません。' }, { status: 401 });

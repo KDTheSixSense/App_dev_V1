@@ -1,11 +1,11 @@
 // src/app/api/groups/[hashedId]/members/route.ts
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 
-export async function GET(request: Request, context: any) {
-  const { params } = context;
+export async function GET(request: NextRequest, context: { params: Promise<{ hashedId: string }> }) {
+  const params = await context.params;
   try {
     const session = await getSession();
     if (!session.user) {
@@ -71,8 +71,8 @@ export async function GET(request: Request, context: any) {
 }
 
 // メンバーの権限を変更するPUTメソッド
-export async function PUT(request: Request, context: any) {
-    const { params } = context;
+export async function PUT(request: NextRequest, context: { params: Promise<{ hashedId: string }> }) {
+    const params = await context.params;
     try {
         const session = await getSession();
         if (!session.user) {
