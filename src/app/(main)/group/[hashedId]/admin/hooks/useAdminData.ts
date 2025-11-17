@@ -44,14 +44,19 @@ export const useAdminData = (hashedId: string) => {
             setLoading(true);
             setError(null);
             
-            // 新しく作成した高速化APIを呼び出す
-            const response = await fetch(`/api/groups/${hashedId}/admin-dashboard`);
-            const result = await response.json();
+            // 2つのAPIを並列で呼び出して高速化
+            const [dashboardRes, submissionsRes] = await Promise.all([
+                fetch(`/api/groups/${hashedId}/admin-dashboard`),
+                fetch(`/api/groups/${hashedId}/assignments?withSubmissions=true`)
+            ]);
+
+            const dashboardResult = await dashboardRes.json();
+            const submissionsResult = await submissionsRes.json();
 
             if (!isMounted.current) return;
 
-            if (result.success) {
-                const { group, members, memberStats, posts, assignments } = result.data;
+            if (dashboardResult.success) {
+                const { group, members, memberStats, posts, assignments } = dashboardResult.data;
 
                 setGroup(group);
                 setMembers(members);
@@ -72,9 +77,13 @@ export const useAdminData = (hashedId: string) => {
                 setPosts(formattedPosts);
 
                 setAssignments(assignments);
-                setAssignmentsWithSubmissions(assignments); // 初期状態では同じデータを入れる
+
+                // 提出状況一覧のデータもここでセット
+                if (submissionsResult.success) {
+                    setAssignmentsWithSubmissions(submissionsResult.data);
+                }
             } else {
-                setError(result.message || 'データの取得に失敗しました');
+                setError(dashboardResult.message || 'データの取得に失敗しました');
             }
 
         } catch (err) {
@@ -109,23 +118,6 @@ export const useAdminData = (hashedId: string) => {
         }
     };
 
-    // 課題一覧のリロード（提出状況含む）
-    const fetchAssignmentsWithSubmissions = async () => {
-        // すでにデータがある場合はローディングを表示しない（UX向上）
-        if (assignmentsWithSubmissions.length === 0) setSubmissionsLoading(true);
-        try {
-             const response = await fetch(`/api/groups/${hashedId}/assignments-with-submissions`); // 既存のエンドポイントを使用
-             if (response.ok) {
-                 const data = await response.json();
-                 if(isMounted.current) setAssignmentsWithSubmissions(data.data);
-             }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            if (isMounted.current) setSubmissionsLoading(false);
-        }
-    };
-    
     // 問題一覧取得 (並列化)
     const fetchAllProblems = async () => {
         setIsLoadingProblems(true);
@@ -252,7 +244,8 @@ export const useAdminData = (hashedId: string) => {
              selectProblemId: body.selectProblemId,
              programmingProblem: problem && problem.type !== 'select' ? problem : undefined, // プレビュー用
              selectProblem: problem && problem.type === 'select' ? problem : undefined,     // プレビュー用
-             author: { username: 'あなた', icon: null } // 仮
+             author: { username: 'あなた', icon: null }, // 仮
+             comments: [] // 必須プロパティ`comments`を追加
         };
         setAssignments([newAssignment, ...assignments]);
     };
@@ -295,7 +288,6 @@ export const useAdminData = (hashedId: string) => {
         // 最適化した関数をエクスポート
         fetchAvailableProblems: fetchAllProblems, // 名前を合わせて中身は統合版を使用
         fetchAvailableSelectionProblems: () => {}, // 上記でまとめて取得するので空関数でOK
-        fetchAssignmentsWithSubmissions,
         toggleAdmin,
         refreshData: fetchAllInitialData
     };

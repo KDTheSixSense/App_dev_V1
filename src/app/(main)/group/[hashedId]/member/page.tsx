@@ -1,9 +1,11 @@
+//app/(main)/group/[hashedId]/member/page.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { GroupLayout } from '../../GroupLayout';
-import Link from 'next/link';
+import type { AssignmentComment } from '../admin/types/AdminTypes';
+import { AssignmentDetailView } from './components/AssignmentDetailView';
 
 export const dynamic = 'force-dynamic';
 
@@ -182,6 +184,13 @@ const MemberGroupPage: React.FC = () => {
         setKadaiViewMode('list');
     };
 
+    const handleAssignmentSubmit = (kadaiId: number) => {
+        // 提出成功後、課題リストを更新して提出済みステータスを反映
+        setKadaiList(prev => prev.map(k => k.id === kadaiId ? { ...k, completed: true } : k));
+        // 詳細画面を閉じて一覧に戻る
+        handleBackToKadaiList();
+    };
+
     // === レンダリング処理 ===
     return (
         <GroupLayout>
@@ -248,7 +257,7 @@ const MemberGroupPage: React.FC = () => {
                                                 <div style={{ fontSize: '12px', color: '#888' }}>{post.createdAt}</div>
                                             </div>
                                         </div>
-                                        <p>{post.content}</p>
+                                        <div dangerouslySetInnerHTML={{ __html: post.content }} />
                                     </div>
                                 )) : <p>お知らせはありません。</p>}
                                 {hasMorePosts && (
@@ -299,56 +308,12 @@ const MemberGroupPage: React.FC = () => {
                                 )}
                                 
                                 {kadaiViewMode === 'detail' && selectedKadai && (
-                                    <div style={{ display: 'flex', gap: '24px' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <button onClick={handleBackToKadaiList} style={{ background: 'none', border: 'none', color: '#1976d2', cursor: 'pointer', fontSize: '14px', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '8px' }}>
-                                                     <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-                                                 </svg>
-                                                 課題一覧に戻る
-                                             </button>
-                                            <div style={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '24px' }}>
-                                                 <h1 style={{ fontSize: '24px', fontWeight: '500', color: '#3c4043', margin: '0 0 4px 0' }}>{selectedKadai.title}</h1>
-                                                 <div style={{ fontSize: '14px', color: '#5f6368', marginBottom: '16px' }}>期限: {selectedKadai.dueDate ? new Date(selectedKadai.dueDate).toLocaleString('ja-JP') : '未設定'}</div>
-                                                 {selectedKadai.description && <div dangerouslySetInnerHTML={{ __html: selectedKadai.description }} style={{ lineHeight: '1.6' }} />}
-                                                 {(selectedKadai.programmingProblemId || selectedKadai.selectProblemId) && (
-                                                    <div style={{ marginTop: '24px' }}>
-                                                        {selectedKadai.selectProblemId ? (
-                                                            <Link
-                                                                href={{
-                                                                    pathname: `/group/select-page/${selectedKadai.selectProblemId}`,
-                                                                    query: { assignmentId: selectedKadai.id, hashedId: hashedId },
-                                                                }}
-                                                                style={{ display: 'inline-block', padding: '10px 20px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}
-                                                            >
-                                                                問題に挑戦する
-                                                            </Link>
-                                                        ) : selectedKadai.programmingProblemId ? (
-                                                            <Link
-                                                                href={{
-                                                                    pathname: `/group/coding-page/${selectedKadai.programmingProblemId}`,
-                                                                    query: { assignmentId: selectedKadai.id, hashedId: hashedId },
-                                                                }}
-                                                                style={{ display: 'inline-block', padding: '10px 20px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}
-                                                            >
-                                                                問題に挑戦する
-                                                            </Link>
-                                                        ) : null}
-                                                    </div>
-                                                )}
-                                             </div>
-                                        </div>
-
-                                        <div style={{ width: '300px', backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px' }}>
-                                            <h3 style={{ fontSize: '16px', fontWeight: '500', color: '#3c4043', margin: '0 0 16px 0' }}>あなたの課題</h3>
-                                             <button onClick={() => alert('提出用のファイル選択などを表示')} style={{ width: '100%', padding: '12px', border: '1px solid #1976d2', backgroundColor: 'transparent', color: '#1976d2', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
-                                                 ＋ 追加または作成
-                                             </button>
-                                             <button onClick={() => alert('提出処理を実行')} style={{ width: '100%', padding: '12px', border: 'none', backgroundColor: '#1976d2', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', marginTop: '12px' }}>
-                                                 提出
-                                             </button>
-                                         </div>
-                                    </div>
+                                    <AssignmentDetailView
+                                        kadai={selectedKadai}
+                                        hashedId={hashedId}
+                                        onBack={handleBackToKadaiList}
+                                        onAssignmentSubmit={handleAssignmentSubmit}
+                                    />
                                 )}
                             </div>
                         )}

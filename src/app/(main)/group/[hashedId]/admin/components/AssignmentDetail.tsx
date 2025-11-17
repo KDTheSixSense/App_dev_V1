@@ -1,18 +1,69 @@
+//app/(main)/group/[hashedId]/admin/components/AssignmentDetail.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Assignment } from '../types/AdminTypes';
+import { Assignment, AssignmentComment, User } from '../types/AdminTypes';
 
 interface AssignmentDetailProps {
     assignment: Assignment;
     onBackToList: () => void;
 }
 
+// コメントの型定義（APIから受け取るデータ構造に合わせます）
+type CommentWithAuthor = AssignmentComment & {
+    author: {
+        id: number;
+        username: string | null;
+        icon: string | null;
+    };
+};
+
 export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, onBackToList }) => {
     const params = useParams();
     const problemTitle = assignment.programmingProblem?.title || assignment.selectProblem?.title;
+    
+    const [comments, setComments] = useState<CommentWithAuthor[]>([]);
+    const [newComment, setNewComment] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false); // isSubmittingCommentからisSubmittingに変更
+    const fetchComments = React.useCallback(async () => {
+        try {
+            const res = await fetch(`/api/groups/${params.hashedId}/assignments/${assignment.id}/comments`);
+            if (!res.ok) throw new Error('コメントの取得に失敗しました');
+            const data = await res.json();
+            setComments(data);
+        } catch (error) {
+            console.error(error);
+        }
+    }, [assignment.id, params.hashedId]);
+
+    useEffect(() => {
+        fetchComments();
+    }, [fetchComments]);
+
+    const handleCommentSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newComment.trim()) return;
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch(`/api/groups/${params.hashedId}/assignments/${assignment.id}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: newComment }),
+            });
+            if (!res.ok) throw new Error('コメントの投稿に失敗しました');
+            // 投稿後にコメントを再取得
+            await fetchComments();
+            setNewComment('');
+        } catch (error) {
+            console.error(error);
+            alert('コメントの投稿に失敗しました。');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <div style={{ display: 'flex', gap: '24px' }}>
@@ -51,7 +102,7 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                                 {assignment.title}
                             </h1>
                             <div style={{ fontSize: '14px', color: '#5f6368' }}>
-                                管理者 • {new Date(assignment.created_at).toLocaleDateString('ja-JP')}
+                                {new Date(assignment.created_at).toLocaleDateString('ja-JP')}
                             </div>
                             
                         </div>
@@ -101,6 +152,66 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                             </p>
                         )}
                     </div>
+
+                    {/* --- ▼▼▼ コメント機能 ▼▼▼ --- */}
+                    <div style={{ marginTop: '32px', borderTop: '1px solid #e0e0e0', paddingTop: '24px' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: '500', color: '#3c4043', margin: '0 0 16px 0' }}>コメント</h3>
+                        
+                        {/* コメントリスト */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                            {comments.length > 0 ? (
+                                comments.map(comment => (
+                                    <div key={comment.id} style={{ display: 'flex', gap: '12px' }}>
+                                        <img src={comment.author.icon || '/default-icon.png'} alt={comment.author.username || 'user'} style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                                        <div>
+                                            <span style={{ fontWeight: '500', fontSize: '14px' }}>{comment.author.username || '名無しさん'}</span>
+                                            <span style={{ color: '#5f6368', fontSize: '12px', marginLeft: '8px' }}>{new Date(comment.createdAt).toLocaleString('ja-JP')}</span>
+                                            <p style={{ margin: '4px 0 0 0', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{comment.content}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p style={{ color: '#5f6368', fontSize: '14px' }}>まだコメントはありません。</p>
+                            )}
+                        </div>
+
+                        {/* コメント投稿フォーム */}
+                        <form onSubmit={handleCommentSubmit} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                            {/* 現在のユーザーアイコンなどを表示 (必要に応じてcurrentUserから取得) */}
+                            {/* <img src={'/default-icon.png'} style={{ width: '40px', height: '40px', borderRadius: '50%' }} /> */}
+                            <div style={{ flex: 1 }}>
+                                <textarea
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    placeholder="コメントを追加..."
+                                    rows={3}
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '8px 12px', 
+                                        border: '1px solid #ccc', 
+                                        borderRadius: '4px', 
+                                        fontSize: '14px', 
+                                        resize: 'vertical',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmitting || !newComment.trim()} 
+                                    style={{ 
+                                        marginTop: '8px', 
+                                        padding: '8px 16px', 
+                                        backgroundColor: '#1976d2', 
+                                        color: 'white', border: 'none', 
+                                        borderRadius: '4px', cursor: 'pointer', 
+                                        opacity: (isSubmitting || !newComment.trim()) ? 0.5 : 1 
+                                    }}>
+                                    {isSubmitting ? '投稿中...' : '投稿'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    {/* --- ▲▲▲ コメント機能 ▲▲▲ --- */}
                 </div>
             </div>
         </div>

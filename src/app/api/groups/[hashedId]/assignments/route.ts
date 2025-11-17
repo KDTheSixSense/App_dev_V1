@@ -14,6 +14,7 @@ interface SessionData {
 // 課題一覧を取得 (GET)
 export async function GET(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const userId = session.user?.id ? Number(session.user.id) : null;
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = req.nextUrl;
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const withSubmissions = searchParams.get('withSubmissions') === 'true';
     const skip = (page - 1) * limit;
 
     const group = await prisma.groups.findUnique({
@@ -40,39 +42,70 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
 
-    const [assignments, total] = await Promise.all([
-      prisma.assignment.findMany({
-        where: { groupid: group.id },
-        orderBy: { created_at: 'desc' },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          due_date: true,
-          created_at: true,
-          programmingProblemId: true,
-          selectProblemId: true,
-          _count: {
-            select: { Submissions: true },
-          },
-        },
-        skip: skip,
-        take: limit,
-      }),
-      prisma.assignment.count({
-        where: { groupid: group.id },
-      }),
-    ]);
+    let assignments;
+    let total;
 
-    // フロントエンドが期待する形式にデータを変換
-    const formattedAssignments = assignments.map(a => ({
-      ...a,
-      Submissions: a._count.Submissions > 0 ? [{ id: 1 }] : [], // フロントのロジック `Submissions.length > 0` に合わせる
-    }));
+    if (withSubmissions) {
+      // === Admin: 提出状況一覧用のデータ取得ロジック ===
+      const [rawAssignments, totalAssignments] = await Promise.all([
+        prisma.assignment.findMany({
+          where: { groupid: group.id },
+          orderBy: { created_at: 'desc' },
+          skip,
+          take: limit,
+        }),
+        prisma.assignment.count({ where: { groupid: group.id } }),
+      ]);
+      total = totalAssignments;
+
+      const groupMembers = await prisma.groups_User.findMany({
+        where: { group_id: group.id },
+        include: { user: { select: { id: true, username: true, icon: true } } },
+      });
+
+      assignments = await Promise.all(
+        rawAssignments.map(async (assignment) => {
+          const submissionsInDb = await prisma.submissions.findMany({
+            where: { assignment_id: assignment.id },
+          });
+
+          const memberSubmissions = groupMembers.map(member => {
+            const submission = submissionsInDb.find(s => s.userid === member.user_id);
+            return {
+              user: {
+                id: member.user.id,
+                username: member.user.username,
+                icon: member.user.icon,
+              },
+              status: submission ? submission.status : '未提出',
+            };
+          });
+
+          return { ...assignment, Submissions: memberSubmissions };
+        })
+      );
+    } else {
+      // === Member: 通常の課題一覧用のデータ取得ロジック ===
+      const [rawAssignments, totalAssignments] = await Promise.all([
+        prisma.assignment.findMany({
+          where: { groupid: group.id },
+          include: {
+            // ログインユーザー自身の提出状況のみを取得
+            Submissions: { where: { userid: userId ?? -1 } },
+          },
+          orderBy: { created_at: 'desc' },
+          skip,
+          take: limit,
+        }),
+        prisma.assignment.count({ where: { groupid: group.id } }),
+      ]);
+      assignments = rawAssignments;
+      total = totalAssignments;
+    }
 
     return NextResponse.json({
       success: true,
-      data: formattedAssignments,
+      data: assignments,
       total,
       page,
       totalPages: Math.ceil(total / limit),

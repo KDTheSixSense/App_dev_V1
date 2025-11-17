@@ -45,6 +45,7 @@ model User {
   eventSubmissions         Event_Submission[] // このユーザーのイベントでの提出（EventSubmissionとの対向リレーション）
   dailyActivitySummaries   DailyActivitySummary[] // 日別アクティビティのサマリ（DailyActivitySummaryとの対向リレーション）
   aiAdviceCredits          Int                   @default(5)
+  assignmentComments       AssignmentComment[]
   dailyMissionProgresses UserDailyMissionProgress[]
 }
 
@@ -513,6 +514,7 @@ model Assignment {
   group       Groups                  @relation(fields: [groupid], references: [id])
   Submissions Submissions[]
   problems    Basic_Info_A_Question[]
+  comments    AssignmentComment[]
   appliedAmQuestions Applied_am_Question[]
 }
 
@@ -752,3 +754,19 @@ model EventDifficulty {
     programmingProblems ProgrammingProblem[]
   }
   
+/// 課題へのコメントを保存するモデル
+model AssignmentComment {
+  id           Int      @id @default(autoincrement())
+  content      String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // --- リレーション ---
+  assignmentId Int
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId])
+}
