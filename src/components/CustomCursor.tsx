@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 interface ClickEffect {
   id: number;
@@ -13,12 +13,13 @@ const CustomCursor: React.FC = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [effects, setEffects] = useState<ClickEffect[]>([]);
   const [isMouseDown, setIsMouseDown] = useState(false);
+  const nextId = useRef(0);
 
   const addStars = useCallback((count: number, x: number, y: number) => {
     const newEffects: ClickEffect[] = [];
     for (let i = 0; i < count; i++) {
       newEffects.push({
-        id: Date.now() + Math.random(),
+        id: nextId.current++,
         x: x + (Math.random() - 0.5) * 80,
         y: y + (Math.random() - 0.5) * 80,
         rotation: Math.random() * 360,
