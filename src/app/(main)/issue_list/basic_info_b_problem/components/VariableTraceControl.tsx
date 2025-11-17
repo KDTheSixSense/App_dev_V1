@@ -31,6 +31,8 @@ interface VariableTraceControlProps {
   onSetNum: (num: number) => void;
   onSetData: (data: Record<string, any>) => void;
   isPresetSelected: boolean;
+  selectedLogicVariant: string | null;
+  onSetLogicVariant: (variant: string) => void;
 }
 
 /**
@@ -48,62 +50,99 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
   onSetNum,
   onSetData,
   isPresetSelected,
+  selectedLogicVariant,
+  onSetLogicVariant,
 }) => {
   
   const showPresets = problem.traceOptions?.presets;
   const showArrayPresets = problem.traceOptions?.presets_array;
-  
+  const showLogicVariants = problem.traceOptions?.logicVariants;
   // プリセットが選択されたかを判定するフラグ
   const isNumSet = variables?.num !== null;
   const isDataSet = variables.data !== null && variables.target !== null;
-  // ★★★ disabledのロジックを汎用化 ★★★
-  const isNextButtonDisabled = isTraceFinished || ((showPresets || showArrayPresets) && !isPresetSelected);
+  // disabledのロジックを汎用化
+  const isNextButtonDisabled = isTraceFinished || 
+    ((showPresets) && !isNumSet) ||
+    ((showArrayPresets) && !isPresetSelected) ||
+    (showLogicVariants && !selectedLogicVariant);
+  // ステップ番号を動的に計算
+  let stepCounter = 1;
+  const logicStepNum = showLogicVariants ? stepCounter++ : null;
+  const dataStepNum = (showPresets || showArrayPresets) ? stepCounter++ : null;
+  const varStepNum = stepCounter++;
+  const traceStepNum = stepCounter++;
 
   return (
     <div className="p-4 flex flex-col items-center">
       <h3 className="text-xl font-bold mb-4 text-gray-800">{t.variableSectionTitle}</h3>
 
-      {showArrayPresets && (
+      {/* ロジック選択ボタン (問4専用) */}
+      {showLogicVariants && (
         <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
-            <p className="text-center font-semibold mb-3 text-gray-700">1. 入力データを選択してトレース</p>
-            <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
-                {(showArrayPresets as {label: string, value: any}[]).map((preset) => (
-                    <button 
-                        key={preset.label} 
-                        onClick={() => onSetData(preset.value)}
-                        className={`px-3 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 ${
-                            isPresetSelected && JSON.stringify(variables) === JSON.stringify({...problem.initialVariables, ...preset.value})
-                                ? 'bg-emerald-500 ring-2 ring-emerald-300'
-                                : 'bg-indigo-500 hover:bg-indigo-600'
-                        }`}
-                    >
-                       {preset.label}
-                    </button>
-                ))}
-            </div>
-        </div>
-      )}
-
-      {showPresets && (
-        <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
-          <p className="text-center font-semibold mb-3 text-gray-700">
-            1. `num` の値を選択
-          </p>
-          <div className="flex gap-3 justify-center">
-            {showPresets.map((num) => (
-              <button
-                key={num}
-                onClick={() => onSetNum(num)}
-                className={`flex-1 px-4 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105
-                  ${variables.num === num 
-                    ? 'bg-emerald-500 ring-2 ring-emerald-300' 
+          <p className="text-center font-semibold mb-3 text-gray-700">{logicStepNum}. トレースするロジックを選択</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {showLogicVariants.map((variant) => (
+              <button 
+                key={variant.id} 
+                onClick={() => onSetLogicVariant(variant.id)}
+                className={`px-3 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 text-left text-sm
+                  ${selectedLogicVariant === variant.id
+                    ? 'bg-emerald-500 ring-2 ring-emerald-300'
                     : 'bg-indigo-500 hover:bg-indigo-600'
                   }`}
               >
-                {num}
+                {variant.label}
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ✅ [修正] プリセット選択 (番号を動的に) */}
+      {(showPresets || showArrayPresets) && (
+        <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
+          <p className="text-center font-semibold mb-3 text-gray-700">
+            {dataStepNum}. {showPresets ? '`num` の値を選択' : '入力データを選択してトレース'}
+          </p>
+          
+          {/* (配列プリセットのボタン) */}
+          {showArrayPresets && (
+             <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
+               {(showArrayPresets as {label: string, value: any}[]).map((preset) => (
+                 <button 
+                   key={preset.label} 
+                   onClick={() => onSetData(preset.value)}
+                   // ✅ [修正] プリセットが選択されているかの判定を、より厳密に変更
+                   className={`px-3 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 ${
+                     isPresetSelected && JSON.stringify(variables.data) === JSON.stringify(preset.value.data)
+                       ? 'bg-emerald-500 ring-2 ring-emerald-300'
+                       : 'bg-indigo-500 hover:bg-indigo-600'
+                   }`}
+                 >
+                   {preset.label}
+                 </button>
+               ))}
+             </div>
+          )}
+
+          {/* (数値プリセットのボタン) */}
+          {showPresets && (
+            <div className="flex gap-3 justify-center">
+              {showPresets.map((num) => (
+                <button
+                  key={num}
+                  onClick={() => onSetNum(num)}
+                  className={`flex-1 px-4 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105
+                    ${variables.num === num 
+                      ? 'bg-emerald-500 ring-2 ring-emerald-300' 
+                      : 'bg-indigo-500 hover:bg-indigo-600'
+                    }`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       
@@ -173,15 +212,11 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
           </button>
           <button
             onClick={onNextTrace}
-            // ✅【修正点】disabledの条件を、配列プリセットの場合も考慮するように変更
-            disabled={
-              isTraceFinished ||
-              (showPresets && !isNumSet) ||
-              (showArrayPresets && !isDataSet)
-            }
+            // disabledの条件を、配列プリセットの場合も考慮するように変更
+            disabled={isNextButtonDisabled}
             className={`flex-1 py-3 px-6 text-xl font-semibold text-white rounded-lg shadow-sm transition-colors
-              ${ // ✅【修正点】classNameの条件もdisabledと同期させる
-                (isTraceFinished || (showPresets && !isNumSet) || (showArrayPresets && !isDataSet))
+              ${ // クラスもdisabledロジックと同期
+                isNextButtonDisabled
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-500 hover:bg-blue-600'
               }`}

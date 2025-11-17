@@ -92,7 +92,7 @@ const arraySumLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine:
     },
 };
 
-const gcdSubtractionLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+const gcdSubtractionLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState,variant: string | null) => number } = {
   traceLogic: [
     (vars) => vars, // 1: ○整数型: gcd(整数型: num1, 整数型: num2)
     (vars) => ({ ...vars, x: vars.num1 }), // 2: 整数型: x ← num1
@@ -106,42 +106,117 @@ const gcdSubtractionLogic: { traceLogic: TraceStep[]; calculateNextLine: (curren
     (vars) => vars, // 10: [ c ] (endwhile)
     (vars) => vars, // 11: return x
   ],
-  calculateNextLine: (currentLine, vars) => {
+  calculateNextLine: (currentLine, vars, variant) => {
     const x = vars.x as number;
     const y = vars.y as number;
 
-    switch (currentLine) {
-      // 初期化フェーズ
-      case 0: return 1; // 1 -> 2
-      case 1: return 2; // 2 -> 3
-      case 2: return 3; // 3 -> 4 (while)
-
-      // ループと分岐
-      case 3: // 4行目(while)評価後
-        if (x === null || y === null) return 3; // 初期化が終わるまで待機
-        return (x !== y) ? 4 : 10; // 条件がtrueなら5行目(if)へ、falseなら11行目(return)へ
-
-      case 4: // 5行目(if)評価後
-        return (x > y) ? 5 : 6; // 条件がtrueなら6行目(x-=y)へ、falseなら7行目(else)へ
-
-      case 5: // 6行目(x-=y)実行後
-        return 8; // 9行目(endif)へ
-
-      case 6: // 7行目(else)実行後
-        return 7; // 8行目(y-=x)へ
-
-      case 7: // 8行目(y-=x)実行後
-        return 8; // 9行目(endif)へ
-
-      case 8: // 9行目(endif)実行後
-        return 9; // 10行目(endwhile)へ
-
-      case 9: // 10行目(endwhile)実行後
-        return 3; // 4行目(while)の条件評価に戻る
-
-      default:
-        return currentLine + 1; // それ以外の行は単純に次の行へ
+    // variantが選択されていない場合は、トレースを進めない
+    if (variant === null) {
+      // num1, num2の初期化だけは許可する
+      if (currentLine < 2) return currentLine + 1;
+      return currentLine; // ロジックが選択されるまで待機
     }
+    
+    // -----------------------------------------------------------------
+    // 選択肢「ア」のロジック: a: if, b: x < y, c: endif
+    // -----------------------------------------------------------------
+    if (variant === 'ア') {
+      switch (currentLine) {
+        case 0: return 1; // 1 -> 2
+        case 1: return 2; // 2 -> 3
+        case 2: return 3; // 3 -> 4 (if)
+        case 3: // 4: if (x ≠ y)
+          if (x === null || y === null) return 3;
+          return (x !== y) ? 4 : 9; // -> 5 (if) or 10 (c: endif)
+        case 4: // 5: if (x < y)
+          return (x < y) ? 5 : 6; // -> 6 (x=x-y) or 7 (else)
+        case 5: // 6: x ← x - y
+          return 8; // -> 9 (endif)
+        case 6: // 7: else
+          return 7; // -> 8 (y=y-x)
+        case 7: // 8: y ← y - x
+          return 8; // -> 9 (endif)
+        case 8: // 9: endif (inner)
+          return 9; // -> 10 (c: endif)
+        case 9: // 10: endif (outer)
+          return 10; // -> 11 (return)
+        default:
+          return 99; // 終了
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // 選択肢「イ」のロジック: a: if, b: x > y, c: endif
+    // -----------------------------------------------------------------
+    if (variant === 'イ') {
+      switch (currentLine) {
+        case 0: return 1;
+        case 1: return 2;
+        case 2: return 3;
+        case 3: // 4: if (x ≠ y)
+          if (x === null || y === null) return 3;
+          return (x !== y) ? 4 : 9; // -> 5 (if) or 10 (c: endif)
+        case 4: // 5: if (x > y)
+          return (x > y) ? 5 : 6; // 「イ」のロジック
+        case 5: return 8;
+        case 6: return 7;
+        case 7: return 8;
+        case 8: return 9;
+        case 9: return 10;
+        default:
+          return 99;
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // 選択肢「ウ」のロジック: a: while, b: x < y, c: endwhile
+    // -----------------------------------------------------------------
+    if (variant === 'ウ') {
+      switch (currentLine) {
+        case 0: return 1;
+        case 1: return 2;
+        case 2: return 3;
+        case 3: // 4: while (x ≠ y)
+          if (x === null || y === null) return 3;
+          return (x !== y) ? 4 : 10; // -> 5 (if) or 11 (return)
+        case 4: // 5: if (x < y)
+          return (x < y) ? 5 : 6; // 「ウ」のロジック
+        case 5: return 8;
+        case 6: return 7;
+        case 7: return 8;
+        case 8: return 9;
+        case 9: // 10: endwhile
+          return 3; // 4 (while) に戻る
+        default:
+          return 99;
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // 選択肢「エ」のロジック (元のロジック)
+    // -----------------------------------------------------------------
+    if (variant === 'エ') {
+      switch (currentLine) {
+        case 0: return 1;
+        case 1: return 2;
+        case 2: return 3;
+        case 3: // 4: while (x ≠ y)
+          if (x === null || y === null) return 3;
+          return (x !== y) ? 4 : 10;
+        case 4: // 5: if (x > y)
+          return (x > y) ? 5 : 6; // 「エ」のロジック
+        case 5: return 8;
+        case 6: return 7;
+        case 7: return 8;
+        case 8: return 9;
+        case 9: // 10: endwhile
+          return 3; // 4 (while) に戻る
+        default:
+          return 99;
+      }
+    }
+    // デフォルト (variantが不明な場合)
+    return currentLine;
   },
 };
 
@@ -163,61 +238,115 @@ const expressionEvalLogic: { traceLogic: TraceStep[] } = {
     },
   ],
 };
-const bitReverseLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
-  // トレースの各ステップ（行）に対応する処理を定義
-  traceLogic: [
-    (vars) => vars, // 1: ○8ビット型: rev(...) - 関数定義行、変数の変化なし
+
+// 8ビットの2進数文字列に変換
+const toBin8 = (num: number): string => num.toString(2).padStart(8, '0');
+// 8ビットの2進数文字列を数値に変換 (符号なし)
+const fromBin = (bin: string): number => parseInt(bin, 2);
+
+// 各選択肢のロジック (6行目/インデックス5)
+const bitReverseStepLogics: Record<string, TraceStep> = {
+    'ア': (vars) => {
+        const rNum = fromBin(vars.r as string);
+        const rbyteNum = fromBin(vars.rbyte as string);
+        const newRNum = (rNum << 1) | (rbyteNum & 1);
+        const newRbyteNum = rbyteNum >> 1;
+        return {
+            ...vars,
+            r: toBin8(newRNum & 0xFF), // 8ビットマスク
+            rbyte: toBin8(newRbyteNum),
+        };
+    },
+    'イ': (vars) => {
+        const rNum = fromBin(vars.r as string);
+        const rbyteNum = fromBin(vars.rbyte as string);
+        const newRNum = (rNum << 7) | (rbyteNum & 1); // << 7
+        const newRbyteNum = rbyteNum >> 7; // >> 7
+        return {
+            ...vars,
+            r: toBin8(newRNum & 0xFF), 
+            rbyte: toBin8(newRbyteNum),
+        };
+    },
+    'ウ': (vars) => {
+        const rbyteNum = fromBin(vars.rbyte as string);
+        const newRNum = ((rbyteNum << 1) & 0xFF) | (rbyteNum >> 7); // (rbyte << 1) ∨ (rbyte >> 7)
+        const newRbyte = newRNum; // rbyte ← r
+        return {
+            ...vars,
+            r: toBin8(newRNum),
+            rbyte: toBin8(newRbyte),
+        };
+    },
+    'エ': (vars) => {
+        const rbyteNum = fromBin(vars.rbyte as string);
+        const newRNum = (rbyteNum >> 1) | ((rbyteNum << 7) & 0xFF); // (rbyte >> 1) ∨ (rbyte << 7)
+        const newRbyte = newRNum; // rbyte ← r
+        return {
+            ...vars,
+            r: toBin8(newRNum),
+            rbyte: toBin8(newRbyte),
+        };
+    },
+    'default': (vars) => vars, // ロジックが選択されていない場合
+};
+
+// 固定のトレースステップ
+const staticBitReverseTraceLogic: TraceStep[] = [
+    (vars) => vars, // 1: ○8ビット型: rev(...)
     (vars) => ({ ...vars, rbyte: vars.byte }), // 2: rbyte ← byte
     (vars) => ({ ...vars, r: '00000000' }), // 3: r ← 00000000
-    (vars) => vars, // 4: 整数型: i - 変数宣言のみ
-    (vars) => { // 5: for (i を 1 から 8 まで...) - ループ開始、iを初期化
-        // 初回のみiを1に設定
+    (vars) => vars, // 4: 整数型: i
+    (vars) => { // 5: for (i を 1 から 8 まで...)
         if (vars.i === null) return { ...vars, i: 1 };
         return vars;
     },
-    (vars) => { // 6: ループ本体の処理
-        // 現在の変数の値を文字列から数値に変換
-        const rNum = parseInt(vars.r as string, 2);
-        const rbyteNum = parseInt(vars.rbyte as string, 2);
-
-        // 正解ロジック: r ← (r << 1) v (rbyte ^ 00000001)
-        // 1. rbyteの最下位ビットを取得 (rbyte & 1)
-        // 2. rを1ビット左にシフト (rNum << 1)
-        // 3. 上記2つの結果の論理和をとる
-        const newRNum = (rNum << 1) | (rbyteNum & 1);
-
-        // 正解ロジック: rbyte ← rbyte >> 1
-        const newRbyteNum = rbyteNum >> 1;
-
-        // 計算結果を8桁のバイナリ文字列に戻して状態を更新
-        return {
-            ...vars,
-            r: newRNum.toString(2).padStart(8, '0'),
-            rbyte: newRbyteNum.toString(2).padStart(8, '0'),
-        };
-    },
-    (vars) => { // 7: endfor - ループカウンタiをインクリメント
+    (vars) => vars, // 6: [ ] (ここは動的ステップで上書き)
+    (vars) => { // 7: endfor
         const currentI = vars.i as number;
         return { ...vars, i: currentI + 1 };
     },
-    (vars) => vars, // 8: return r - 変数の変化なし
-  ],
-  // 次に実行すべき行を計算するロジック (forループの制御)
-  calculateNextLine: (currentLine, vars) => {
-      const i = vars.i as number | null;
-      if (i === null) return currentLine + 1; // 初期化が終わるまで待機
+    (vars) => vars, // 8: return r
+];
 
-      switch (currentLine) {
-          case 4: // for文の評価
-              return i <= 8 ? 5 : 7; // ループ継続なら6行目(本体)へ、終了なら8行目(return)へ
-          case 5: // ループ本体の実行後
-              return 6; // endforへ
-          case 6: // endforの実行後
-              return 4; // for文の評価に戻る
-          default:
-              return currentLine + 1;
-      }
-  },
+const bitReverseLogic: { 
+    getTraceStep: (line: number, variant: string | null) => TraceStep;
+    calculateNextLine: (currentLine: number, vars: VariablesState, variant: string | null) => number 
+} = {
+    // getTraceStep: variantに応じて、実行するべき関数(TraceStep)を返す
+    getTraceStep: (line, variant) => {
+        if (line === 5) { // 6行目 (インデックス5) の処理を要求された場合
+            // variant（'ア'など）に応じた関数を返す
+            return bitReverseStepLogics[variant || 'default'] || bitReverseStepLogics['default'];
+        }
+        // それ以外の行は、静的な定義から関数を返す
+        return staticBitReverseTraceLogic[line] || ((vars) => vars);
+    },
+    // calculateNextLine: 次にジャンプすべき行番号を返す
+    calculateNextLine: (currentLine, vars, variant) => {
+        // variantが選択されていない場合は、トレースを進めない
+        if (variant === null) {
+            if (currentLine < 4) return currentLine + 1; // 5行目(for)の手前までは許可
+            return currentLine; // ロジックが選択されるまで待機
+        }
+
+        const i = vars.i as number | null;
+        if (i === null && currentLine < 4) return currentLine + 1; // 初期化が終わるまで待機
+        if (i === null && currentLine >= 4) return currentLine; // iが初期化されるのを待つ (5行目)
+
+        switch (currentLine) {
+            case 4: // for文(5行目)の評価
+                return i! <= 8 ? 5 : 7; // ループ継続なら6行目(本体)へ、終了なら8行目(return)へ
+            case 5: // ループ本体(6行目)の実行後
+                return 6; // 7行目(endfor)へ
+            case 6: // endfor(7行目)の実行後
+                return 4; // 5行目(for)の評価に戻る
+            case 7: // 8行目(return)
+                return 99; // 終了
+            default:
+                return currentLine + 1;
+        }
+    },
 };
 
 const recursiveFactorialLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
