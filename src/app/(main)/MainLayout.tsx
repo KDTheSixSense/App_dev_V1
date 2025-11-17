@@ -3,7 +3,7 @@
 import Header from '@/components/Header';
 import MobileFooter from '@/components/MobileFooter';
 import { UserWithPetStatus } from './layout';
-import React, 'react';
+import React from 'react';
 import { Toaster } from 'react-hot-toast';
 import CustomCursor from '@/components/CustomCursor';
 

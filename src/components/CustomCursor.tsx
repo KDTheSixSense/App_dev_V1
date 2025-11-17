@@ -85,12 +85,13 @@ const CustomCursor: React.FC = () => {
             top: `${effect.y - 10}px`,
             transform: `rotate(${effect.rotation}deg)`,
           }}
-        >
-          <div className="click-effect">★</div>
-        </div>
-      ))}
-    </>
-  );
-};
-
-export default CustomCursor;
+                >
+                  <div className="click-effect"></div>
+                </div>
+              ))}
+            </>
+          );
+        };
+        
+        export default CustomCursor;
+        

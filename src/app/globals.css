@@ -90,15 +90,23 @@
 
 
 
-  width: 20px;
+  position: relative;
 
 
 
-  height: 20px;
+  width: 30px;
 
 
 
-  color: #ffd700; /* Yellow color for stars */
+  height: 30px;
+
+
+
+  background-color: #add8e6; /* Light blue for the main pad */
+
+
+
+  border-radius: 50%;
 
 
 
@@ -106,11 +114,99 @@
 
 
 
-  text-align: center;
+  opacity: 0.7;
 
 
 
-  line-height: 20px;
+}
+
+
+
+
+
+
+
+.click-effect::before, .click-effect::after {
+
+
+
+  content: '';
+
+
+
+  position: absolute;
+
+
+
+  background-color: #add8e6; /* Light blue for the toe pads */
+
+
+
+  border-radius: 50%;
+
+
+
+}
+
+
+
+
+
+
+
+.click-effect::before {
+
+
+
+  width: 15px;
+
+
+
+  height: 15px;
+
+
+
+  top: -5px;
+
+
+
+  left: 5px;
+
+
+
+  transform: rotate(-30deg);
+
+
+
+}
+
+
+
+
+
+
+
+.click-effect::after {
+
+
+
+  width: 15px;
+
+
+
+  height: 15px;
+
+
+
+  top: -5px;
+
+
+
+  right: 5px;
+
+
+
+  transform: rotate(30deg);
 
 
 
@@ -126,11 +222,23 @@
 
 
 
+
+
+
+
   from {
 
 
 
-    opacity: 1;
+
+
+
+
+    opacity: 0.7;
+
+
+
+
 
 
 
@@ -138,7 +246,15 @@
 
 
 
+
+
+
+
   }
+
+
+
+
 
 
 
@@ -146,7 +262,15 @@
 
 
 
+
+
+
+
     opacity: 0;
+
+
+
+
 
 
 
@@ -154,11 +278,279 @@
 
 
 
+
+
+
+
   }
 
 
 
+
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.answer-effect-container {
+
+
+
+
+
+
+
+  position: fixed;
+
+
+
+
+
+
+
+  top: 50%;
+
+
+
+
+
+
+
+  left: 50%;
+
+
+
+
+
+
+
+  transform: translate(-50%, -50%);
+
+
+
+
+
+
+
+  font-size: 80px;
+
+
+
+
+
+
+
+  font-weight: bold;
+
+
+
+
+
+
+
+  pointer-events: none;
+
+
+
+
+
+
+
+  z-index: 10001;
+
+
+
+
+
+
+
+  animation: answerEffectFadeOut 1s forwards;
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.correct-effect {
+
+
+
+
+
+
+
+  color: #4CAF50; /* Green */
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.incorrect-effect {
+
+
+
+
+
+
+
+  color: #F44336; /* Red */
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@keyframes answerEffectFadeOut {
+
+
+
+
+
+
+
+  from {
+
+
+
+
+
+
+
+    opacity: 1;
+
+
+
+
+
+
+
+    transform: translate(-50%, -50%) scale(0.5);
+
+
+
+
+
+
+
+  }
+
+
+
+
+
+
+
+  to {
+
+
+
+
+
+
+
+    opacity: 0;
+
+
+
+
+
+
+
+    transform: translate(-50%, -50%) scale(1.5);
+
+
+
+
+
+
+
+  }
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

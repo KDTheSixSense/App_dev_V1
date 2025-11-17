@@ -13,6 +13,7 @@ import { getHintFromAI } from '@/lib/actions/hintactions';
 import { getNextProblemId, awardXpForCorrectAnswer,recordStudyTimeAction } from '@/lib/actions';
 import { useNotification } from '@/app/contexts/NotificationContext';
 import { problemLogicsMap } from '../data/problem-logics';
+import AnswerEffect from '@/components/AnswerEffect'; // AnswerEffect コンポーネントをインポート
 
 // --- 型定義 ---
 import type { SerializableProblem } from '@/lib/data';
@@ -131,6 +132,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [credits, setCredits] = useState(initialCredits);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const startTimeRef = useRef<number | null>(null);
+  const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null); // エフェクトタイプを追加
 
   const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
 
@@ -249,6 +251,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setIsAnswered(true);
     const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
 
+    setAnswerEffectType(correct ? 'correct' : 'incorrect'); // エフェクトタイプを設定
+
     if (correct) {
       try {
         const problemId = parseInt(problem.id, 10);
@@ -267,6 +271,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
   };
+
+  const handleAnimationEnd = useCallback(() => {
+    setAnswerEffectType(null); // アニメーション終了後にエフェクトを非表示にする
+  }, []);
 
   const handleNextTrace = () => {
     if (!problem || !problem.programLines) return;
@@ -453,6 +461,9 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           </div>
         )}
       </div>
+      {answerEffectType && (
+        <AnswerEffect type={answerEffectType} onAnimationEnd={handleAnimationEnd} />
+      )}
     </div>
   );
 };
