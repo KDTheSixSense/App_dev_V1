@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import Notification from "@/components/Notification";
+import CustomCursor from "@/components/CustomCursor";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
         // ★ <body>はbg-transparent（透明）にし、<html>の背景が見えるようにする
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-transparent`}
       ><NotificationProvider>
+        <CustomCursor />
         {children}
         <Notification />
       </NotificationProvider></body></html>

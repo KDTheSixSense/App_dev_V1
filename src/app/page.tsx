@@ -150,7 +150,7 @@ export default function LandingPage() {
               {/* コハク画像 */}
               <div className="relative h-64 w-64 md:h-80 md:w-80 lg:h-96 lg:w-96">
                  <Image 
-                   src="/images/Kohaku/kohaku.png" 
+                   src="/images/Kohaku/kohaku-talk.png" 
                    alt="AI Character Kohaku"
                    fill
                    className="object-contain drop-shadow-[0_0_25px_rgba(34,211,238,0.6)]"

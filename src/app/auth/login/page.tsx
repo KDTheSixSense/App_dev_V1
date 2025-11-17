@@ -182,7 +182,7 @@ const Login = () => {
                     //     message: "パスワードは4文字以上でなくてはなりません",
                     // },
                     // ★ Registerコンポーネントに合わせて8文字に変更 (もし4文字が良い場合は上を有効化してください)
-                    minLength: { value: 8, message: "8文字以上のパスワードを入力してください" },
+                    minLength: { value: 4, message: "4文字以上のパスワードを入力してください" },
 
                   })}
                   type="password"
