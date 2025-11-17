@@ -768,7 +768,6 @@ const handleCreateGroup = async () => {
                                             padding: '16px 24px',
                                             border: 'none',
                                             backgroundColor: 'transparent',
-                                            cursor: 'pointer',
                                             fontSize: '14px',
                                             fontWeight: '500',
                                             marginRight: '16px',

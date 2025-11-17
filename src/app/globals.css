@@ -30,7 +30,11 @@
 
 * {
 
-  cursor: none;
+
+
+  cursor: none !important;
+
+
 
 }
 

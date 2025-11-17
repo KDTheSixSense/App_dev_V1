@@ -72,6 +72,7 @@ const CustomCursor: React.FC = () => {
 
   return (
     <>
+
       <img
         src="/images/Kohaku/kohaku_pointer.png"
         alt="Fox Tail Cursor"
