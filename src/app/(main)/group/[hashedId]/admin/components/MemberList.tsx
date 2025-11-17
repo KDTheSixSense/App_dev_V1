@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Member, MemberStats } from '../types/AdminTypes';
+import { toggleCssClass } from 'ace-builds-internal/lib/dom';
 
 interface MemberListProps {
     members: Member[];
@@ -11,6 +12,7 @@ interface MemberListProps {
     inviteCode?: string;
     onAddMember: (email: string) => Promise<void>;
     onCopyInviteCode: () => void;
+    toggleAdmin?: (userId: number, currentStatus: boolean) => Promise<void>;
 }
 
 export const MemberList: React.FC<MemberListProps> = ({
@@ -20,11 +22,36 @@ export const MemberList: React.FC<MemberListProps> = ({
     error,
     inviteCode,
     onAddMember,
-    onCopyInviteCode
+    onCopyInviteCode,
+    toggleAdmin
 }) => {
     const [emailInput, setEmailInput] = useState('');
 
-    
+    const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // メニュー外クリックで閉じる処理
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setActiveMenuId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleToggleMenu = (e: React.MouseEvent, memberId: number) => {
+        e.stopPropagation();
+        setActiveMenuId(activeMenuId === memberId ? null : memberId);
+    };
+
+    const handleToggleAdminAction = (member: Member) => {
+        if (toggleAdmin) {
+            toggleAdmin(member.id, member.isAdmin);
+            setActiveMenuId(null); // 処理後にメニューを閉じる
+        }
+    };
 
     return (
         <div>
@@ -233,12 +260,10 @@ export const MemberList: React.FC<MemberListProps> = ({
                             </div>
 
                             {/* メンバー管理メニュー */}
+                            {/* メンバー管理メニュー (ここを修正) */}
                             <div style={{ position: 'relative' }}>
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        alert(`${member.name}の管理メニュー（実装予定）`);
-                                    }}
+                                    onClick={(e) => handleToggleMenu(e, member.id)}
                                     style={{
                                         background: 'none',
                                         border: 'none',
@@ -254,6 +279,45 @@ export const MemberList: React.FC<MemberListProps> = ({
                                         <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                                     </svg>
                                 </button>
+
+                                {/* ドロップダウンメニュー */}
+                                {activeMenuId === member.id && (
+                                    <div
+                                        ref={menuRef}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            right: 0,
+                                            backgroundColor: '#fff',
+                                            border: '1px solid #e0e0e0',
+                                            borderRadius: '4px',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                            zIndex: 10,
+                                            minWidth: '140px',
+                                            overflow: 'hidden'
+                                        }}
+                                    >
+                                        <button
+                                            onClick={() => handleToggleAdminAction(member)}
+                                            style={{
+                                                display: 'block',
+                                                width: '100%',
+                                                padding: '8px 12px',
+                                                textAlign: 'left',
+                                                border: 'none',
+                                                background: 'none',
+                                                fontSize: '13px',
+                                                color: '#3c4043',
+                                                cursor: 'pointer'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            {member.isAdmin ? '管理者を解除' : '管理者にする'}
+                                        </button>
+                                        {/* 必要に応じて他のメニュー項目を追加 */}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

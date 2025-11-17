@@ -103,9 +103,10 @@ export async function POST(req: NextRequest) {
     if (!title || !dueDate) {
       return NextResponse.json({ success: false, message: 'タイトルと期日は必須です。' }, { status: 400 });
     }
-    if (!programmingProblemId && !selectProblemId) {
-      return NextResponse.json({ success: false, message: '課題となる問題が指定されていません。' }, { status: 400 });
-    }
+    // 課題がなくても投稿できるようにする場合は、以下のチェックをコメントアウト
+    // if (!programmingProblemId && !selectProblemId) {
+    //   return NextResponse.json({ success: false, message: '課題となる問題が指定されていません。' }, { status: 400 });
+    // }
 
     if (typeof hashedId !== 'string') {
       return NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });
