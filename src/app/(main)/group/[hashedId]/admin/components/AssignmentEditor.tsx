@@ -69,9 +69,9 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         try {
             // APIに渡すデータオブジェクトを構築
             const assignmentData: any = {
-                title,
-                description,
-                dueDate,
+                title: title,
+                description: description,
+                dueDate: new Date(dueDate).toISOString(), // ローカル時刻をUTCのISO文字列に変換
             };
 
             if (problemPreview) {
