@@ -5,6 +5,8 @@ import React from 'react';
 import { FaHome, FaList, FaTasks, FaUsers, FaCalendarAlt, FaBars, FaTimes, FaUser } from 'react-icons/fa'; // Importing icons
 import Image from 'next/image';
 import { UserWithPetStatus } from '@/app/(main)/layout';
+import type { User, Status_Kohaku } from '@prisma/client';
+
 
 const MAX_HUNGER = 200; // 満腹度の最大値
 
@@ -32,10 +34,13 @@ const getPetDisplayState = (hungerLevel: number) => {
   }
 };
 
+type UserWithPetStatus = User & {
+  status_Kohaku: Status_Kohaku | null;
+};
 type MobileFooterProps = {
+  userWithPet: UserWithPetStatus | null; // Adjust the type as necessary
   isMenuOpen: boolean;
   setIsMenuOpen: (isOpen: boolean) => void;
-  userWithPet: UserWithPetStatus | null;
 };
 
 const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterProps) => {

@@ -4,6 +4,7 @@ import "./globals.css";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import Notification from "@/components/Notification";
 import CustomCursor from "@/components/CustomCursor";
+import ResponsiveHelpButton from "@/components/responsive-help/ResponsiveHelpButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,6 +40,7 @@ export default function RootLayout({
         <CustomCursor />
         {children}
         <Notification />
+        <ResponsiveHelpButton />
       </NotificationProvider></body></html>
   );
 }

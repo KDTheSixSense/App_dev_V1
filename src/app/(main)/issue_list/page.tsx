@@ -67,7 +67,7 @@ const QuestionsPage: React.FC = () => {
   // 画面の構造をJSX（HTMLに似た記法）で記述します。
   return (
     // ページ全体のコンテナ。背景色や最小の高さなどを設定。
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
+    <div className="min-h-screen flex flex-col items-center py-10">
       
       {/* メインコンテンツエリア */}
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8">

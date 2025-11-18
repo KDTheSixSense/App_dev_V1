@@ -17,7 +17,7 @@ import AnswerEffect from '@/components/AnswerEffect'; // AnswerEffect コンポ�
 
 // --- 型定義 ---
 import type { SerializableProblem } from '@/lib/data';
-import type { VariablesState } from '../data/problems';
+import type { VariablesState, TraceStep } from '../data/problems';
 
 
 const MAX_HUNGER = 200;
@@ -135,6 +135,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null); // エフェクトタイプを追加
 
   const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+  const [selectedLogicVariant, setSelectedLogicVariant] = useState<string | null>(null);
 
   // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
   const refetchPetStatus = useCallback(async () => {
@@ -279,26 +280,43 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const handleNextTrace = () => {
     if (!problem || !problem.programLines) return;
 
-    if (currentTraceLine < problem.programLines[language].length) { // ★修正: 行数チェックを programLines の長さに変更
+    // 1. 最初にトレースが終了しているかチェック
+    const traceFinished = currentTraceLine >= 99 || (currentTraceLine >= (problem.programLines[language]?.length || 99));
+
+    if (!traceFinished) { // トレースが終了していない場合のみ実行
       const logic = problemLogicsMap[problem.logicType as keyof typeof problemLogicsMap];
       if (!logic) return;
 
-      // calculateNextLineが先に呼ばれるように変更
+      // 2. 次にジャンプすべき行番号(nextLine)を決定
       let nextLine = currentTraceLine + 1; // デフォルトは次の行
       if ('calculateNextLine' in logic && logic.calculateNextLine) {
-        nextLine = logic.calculateNextLine(currentTraceLine, variables);
+        nextLine = logic.calculateNextLine(currentTraceLine, variables, selectedLogicVariant);
       }
 
-      // traceLogic は calculateNextLine の *後* で実行されるようにする (行番号に対応する状態変化)
-      const traceStepFunction = logic.traceLogic[currentTraceLine]; // 現在の行に対応するロジック
+      // 3. 現在の行(currentTraceLine)の実行内容(traceStepFunction)を取得
+      let traceStepFunction: TraceStep | undefined = undefined;
+
+      if ('getTraceStep' in logic && typeof (logic as any).getTraceStep === 'function') {
+        // --- (A) getTraceStep を持つロジック (問6: ビット反転) ---
+        traceStepFunction = (logic as any).getTraceStep(currentTraceLine, selectedLogicVariant);
+      
+      } else if ('traceLogic' in logic) { 
+        // --- (B) 従来の traceLogic 配列を持つロジック (問4など) ---
+        traceStepFunction = (logic as any).traceLogic[currentTraceLine];
+      
+      } else {
+        // --- (C) どちらも持たない場合 (エラー) ---
+        console.error(`Logic for ${problem.logicType} has neither getTraceStep nor traceLogic.`);
+        traceStepFunction = (vars) => vars; // 何もしない
+      }
+      
+      // 4. 現在の行を実行して、変数を更新
       const nextVariables = traceStepFunction ? traceStepFunction(variables) : { ...variables };
 
       setVariables(nextVariables); // 状態を更新
       setCurrentTraceLine(nextLine); // 次の行番号をセット
     } else {
-        // トレースがプログラムの最終行を超えた場合（無限ループ防止）
-        console.warn("Trace attempted beyond program lines length.");
-        // 必要に応じてトレース完了の処理を追加
+      console.warn("Trace attempted beyond program lines length.");
     }
   };
 
@@ -307,6 +325,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setVariables(problem.initialVariables);
     setCurrentTraceLine(0);
     setIsPresetSelected(false);
+    setSelectedLogicVariant(null);
     setChatMessages(prev => [...prev, { sender: 'kohaku', text: "トレースをリセットしました。" }]);
   };
 
@@ -314,12 +333,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setVariables({ ...problem.initialVariables, ...dataToSet, initialized: false }); // initializedをfalseにリセット
     setCurrentTraceLine(0);
     setIsPresetSelected(true);
+    setSelectedLogicVariant(null);
   };
 
  const handleSetNum = (num: number) => {
     setVariables({ ...problem.initialVariables, num: num, initialized: false }); // initializedをfalseにリセット
     setCurrentTraceLine(0); // トレース行をリセット
     setIsPresetSelected(true); // プリセットが選択されたことを示すフラグを立てる
+    setSelectedLogicVariant(null);
  };
 
   const handleNextProblem = async () => {
@@ -403,7 +424,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
               </div>
               {/* 変数・トレース制御 (変更なし) */}
               <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                <VariableTraceControl problem={problem} variables={variables} onNextTrace={handleNextTrace} isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)} onResetTrace={handleResetTrace} currentTraceLine={currentTraceLine} language={language} textResources={t} onSetData={handleSetData} isPresetSelected={isPresetSelected} onSetNum={handleSetNum} />
+                <VariableTraceControl problem={problem} variables={variables} onNextTrace={handleNextTrace} isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)} onResetTrace={handleResetTrace} currentTraceLine={currentTraceLine} language={language} textResources={t} onSetData={handleSetData} isPresetSelected={isPresetSelected} onSetNum={handleSetNum} selectedLogicVariant={selectedLogicVariant} onSetLogicVariant={setSelectedLogicVariant}/>
               </div>
 
               {/* ★ AIチャット (アコーディオン形式に変更) */}
