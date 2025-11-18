@@ -103,7 +103,9 @@ const MemberGroupPage: React.FC = () => {
                             description: kadai.description,
                             dueDate: kadai.due_date,
                             createdAt: kadai.created_at,
-                            completed: kadai.Submissions && kadai.Submissions.length > 0,
+                            completed: kadai.Submissions?.some(
+                                (sub: any) => sub.status === '提出済み'
+                            ),
                             programmingProblemId: kadai.programmingProblemId,
                             selectProblemId: kadai.selectProblemId,
                         }));
@@ -160,7 +162,9 @@ const MemberGroupPage: React.FC = () => {
                 description: kadai.description,
                 dueDate: kadai.due_date,
                 createdAt: kadai.created_at,
-                completed: kadai.Submissions && kadai.Submissions.length > 0,
+                completed: kadai.Submissions?.some(
+                    (sub: any) => sub.status === '提出済み'
+                ),
                 programmingProblemId: kadai.programmingProblemId,
                 selectProblemId: kadai.selectProblemId,
             }));

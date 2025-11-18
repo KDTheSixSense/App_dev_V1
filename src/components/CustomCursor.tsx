@@ -77,7 +77,7 @@ const CustomCursor: React.FC = () => {
         src="/images/Kohaku/kohaku_pointer.png"
         alt="Fox Tail Cursor"
         className="custom-cursor"
-        style={{ left: `${position.x}px`, top: `${position.y}px` }}
+        style={{ left: `${position.x}px`, top: `${position.y}px`, transform: 'rotate(-45deg)', zIndex: 99999 }}
       />
       {effects.map(effect => (
         <div
