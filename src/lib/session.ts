@@ -31,6 +31,7 @@ declare module 'iron-session' {
       email: string;
       username: string | null;
       lastlogin?: Date | null;
+      openid?: string | null;
     };
     // Google新規登録確認用の一時データ
     googleSignupProfile?: {

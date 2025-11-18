@@ -15,6 +15,7 @@ export async function GET() {
 
   // ユーザーに要求する情報 (email と profile)
   const scopes = [
+    'openid',
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile',
   ];
