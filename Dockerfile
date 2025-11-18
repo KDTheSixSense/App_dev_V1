@@ -1,60 +1,47 @@
 # --------------------------------------------------------------------
-# ステージ1: ビルダー (Builder)
+# ステージ1: ビルダー (Builder / キッチン)
 # --------------------------------------------------------------------
 FROM node:20-alpine AS builder
 
 ARG DATABASE_URL
-# その引数の値を環境変数として設定
 ENV DATABASE_URL=$DATABASE_URL
 
-
-# Next.jsプロジェクトのルートを作業ディレクトリにする
 WORKDIR /app
-
-# 依存関係のファイルを先にコピー
 COPY src/package.json src/package-lock.json* ./
-
-# 依存関係をインストール
-RUN npm install
-
-# プロジェクトのソースコードを全部コピー
+# prismaもdependenciesに含めておく
+RUN npm ci
 COPY src/ .
-
-# ★★★★★★★★★★★★★★★★★★★★★★★
-# ★ ここに Prisma Client を生成するコマンドを追加！ ★
-# ★★★★★★★★★★★★★★★★★★★★★★★
 RUN npx prisma generate
-
-# Next.jsアプリをビルド (next.config.js に output: 'standalone' がある前提)
 RUN npm run build
 
-
 # --------------------------------------------------------------------
-# ステージ2: ランナー (Runner)
+# ステージ2: ランナー (Runner / アプリ用のお弁当箱)
 # --------------------------------------------------------------------
 FROM node:20-alpine AS runner
 
+# Add packages for linting
+RUN apk add --no-cache openjdk17 build-base mono php postgresql-client
+
 WORKDIR /app
 
-# 実行に必要な最小限のユーザーを作成
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# ビルダー(builder)ステージから、実行に必要なファイルだけをコピー
-# standaloneモードの出力を使うと、これだけでOK
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Prismaのスキーマファイルも実行環境にコピーする
-# これがないと、実行時にPrismaがスキーマを見つけられずにエラーになることがある
-COPY --from=builder /app/prisma ./prisma
+# schema.prismaは実行時にも必要
+COPY --from=builder /app/prisma/schema.prisma ./prisma/schema.prisma
 
 USER nextjs
-
 EXPOSE 3000
-
 ENV NODE_ENV=production
-
-# アプリケーションを起動
 CMD ["node", "server.js"]
+
+# --------------------------------------------------------------------
+# ★★★ ステージ3: マイグレーター (Migrator / マイグレーション用のキッチン) ★★★
+# --------------------------------------------------------------------
+FROM builder AS migrator
+
+# このイメージのデフォルトの動作を設定
+CMD ["npm", "run", "db:deploy"]
