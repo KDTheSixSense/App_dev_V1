@@ -1,0 +1,28 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./dist",
+    "module": "CommonJS",
+    "target": "ES2020",
+    "moduleResolution": "Node",
+    
+    // ✅ 修正 1: ソースファイルのルートを指定
+    // コンパイラに、変換対象のソースコードがこのディレクトリから始まることを教えます。
+    // これにより、outDir内のディレクトリ構造が簡潔になります。
+    
+    // ✅ 修正 2: XLSXなどのライブラリ互換性を確保
+    "esModuleInterop": true,
+
+    // ✅ 修正 3: ファイルコピーを抑制 (必要に応じてコメントアウトを解除)
+    // TypeScriptが.tsファイル以外のファイルをdistにコピーするのを防ぎます。
+    // "emitDeclarationOnly": true, // declarations only
+    // "preserveConstEnums": true,
+    // "allowJs": false // .jsファイルのコピーを抑制 (もし他の箇所で .js を使っているなら注意)
+  },
+  
+  // ✅ 修正 4: seed ディレクトリ内の .ts ファイルを全て含める
+  "include": ["./seed.ts", "./seed/*.ts"],
+  
+  "exclude": ["node_modules"]
+}

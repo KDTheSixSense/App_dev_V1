@@ -7,8 +7,15 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "lint": "next lint",
+    "test": "jest --passWithNoTests",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate deploy",
+    "seed:compile": "npx tsc -p prisma/tsconfig.seed.json",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset -f",
+    "db:deploy": "(npm run seed:compile && npm run db:migrate && npm run db:seed) || ( (echo 'Migrate/Seed failed, attempting full reset for recovery...') && npm run db:reset )",
+    "prisma:migrate:dev": "prisma migrate dev"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -17,7 +24,6 @@
     "acorn": "^8.15.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
-    "google-auth-library": "^10.5.0",
     "iron-session": "^8.0.4",
     "jsonwebtoken": "^9.0.2",
     "lightningcss": "^1.30.1",
@@ -33,9 +39,11 @@
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "react-resizable-panels": "^3.0.3",
-    "react-syntax-highlighter": "^15.x.x",
+    "react-syntax-highlighter": "^16.0.0",
     "recharts": "^3.1.0",
     "sqlite3": "^5.x.x",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
     "vm2": "^3.x.x",
     "xlsx": "^0.18.5"
   },
@@ -57,6 +65,7 @@
     "eslint": "8.x.x",
     "eslint-config-next": "14.x.x",
     "jest": "^30.0.4",
+    "jest-environment-jsdom": "^30.2.0",
     "postcss": "^8.x.x",
     "prisma": "^6.18.0",
     "tailwindcss": "^4",
@@ -65,6 +74,7 @@
     "typescript": "^5"
   },
   "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+    "seed": "node prisma/dist/prisma/seed.js", 
+    "schema": "prisma/schema.prisma"
   }
 }

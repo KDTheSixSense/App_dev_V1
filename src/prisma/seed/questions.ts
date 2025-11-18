@@ -4,6 +4,8 @@ import * as XLSX from 'xlsx';
 import { problems as localProblems } from '../../app/(main)/issue_list/basic_info_b_problem/data/problems';
 import fs from 'fs';
 
+const WORKSPACE_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
+
 export async function seedProblems(prisma: PrismaClient) {
 
   console.log('🌱 Seeding problems...');
@@ -48,7 +50,7 @@ export async function seedProblems(prisma: PrismaClient) {
 
 async function seedProblemsFromExcel(prisma: PrismaClient) {
   const excelFileName = 'PBL2 科目B問題.xlsx';
-  const filePath = path.join(__dirname, '..','..', 'app', '(main)', 'issue_list', 'basic_info_b_problem', 'data', excelFileName);
+  const filePath = path.join(__dirname, '..','..','..','..', 'app', '(main)', 'issue_list', 'basic_info_b_problem', 'data', excelFileName);
 
   const lastLocalQuestion = await prisma.questions.findFirst({ orderBy: { id: 'desc' } });
   let nextId = (lastLocalQuestion?.id || 0) + 1;
@@ -846,13 +848,11 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
 function createImageFileMap(): Map<string, string> {
   // 1. /src/public/images/basic_a/ の絶対パスを取得
   const imageDir = path.join(
-    __dirname, // 現在のディレクトリ (seed/)
-    '..',      // prisma/
-    '..',      // src/
-    'public',
-    'images',
-    'basic_a'
-  );
+    WORKSPACE_ROOT,
+    'public',
+    'images',
+    'basic_a'
+  );
   console.log(` 🔍 Scanning for images in: ${imageDir}`);
 
   const fileNameMap = new Map<string, string>();
@@ -889,13 +889,13 @@ function createImageFileMap(): Map<string, string> {
  */
 function createAppliedAmImageFileMap(): Map<string, string> {
   // 1. /src/public/images/applied_am/ の絶対パスを取得
-  const imageDir = path.join(
-    __dirname, // 現在のディレクトリ (seed/)
-    '..',      // prisma/
-    '..',      // src/
+const imageDir = path.join(
+    // ❌ 古いパス: __dirname, '..',  '..',  '..', 'public', ...
+    // ✅ 修正: WORKSPACE_ROOT から 'src' と 'public' を結合
+    WORKSPACE_ROOT,
     'public',
     'images',
-    'applied_am' //  応用AM用のパスに変更
+    'basic_a'
   );
   console.log(` 🔍 Scanning for images in: ${imageDir}`);
 
@@ -1001,7 +1001,7 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
   const sheetName = '基本情報A問題統合用シート';   // 新しいシート名
   //   
 
-  const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
+  const filePath = path.join(__dirname, '..','..','..','..', 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
 
   try {
     const workbook = XLSX.readFile(filePath);
@@ -1289,7 +1289,7 @@ async function seedAppliedInfoAmProblems(prisma: PrismaClient) {
   //  TODOここまで 
 
   //  変更: 応用AM用のデータパス
-  const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'applied_info_morning_problem', 'data', excelFileName);
+  const filePath = path.join(__dirname,'..','..','..','..', 'app', '(main)', 'issue_list', 'applied_info_morning_problem', 'data', excelFileName);
 
   try {
     const workbook = XLSX.readFile(filePath);
