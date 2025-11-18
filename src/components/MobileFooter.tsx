@@ -4,7 +4,7 @@ import Link from 'next/link';
 import React from 'react';
 import { FaHome, FaList, FaTasks, FaUsers, FaCalendarAlt, FaBars, FaTimes, FaUser } from 'react-icons/fa'; // Importing icons
 import Image from 'next/image';
-import { UserWithPetStatus } from '@/app/(main)/layout';
+
 import type { User, Status_Kohaku } from '@prisma/client';
 
 
