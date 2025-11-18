@@ -1,4 +1,3 @@
-// /workspaces/my-next-app/src/app/api/auth/google/callback/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { getIronSession, IronSessionData } from 'iron-session';
@@ -56,11 +55,11 @@ export async function GET(req: NextRequest) {
     if (existingUser) {
       // 5a. 既存ユーザー: ログイン処理を実行
       
-       // アイコンが更新されている可能性があるので、DBを更新
-       await prisma.user.update({
-         where: { id: existingUser.id },
-         data: { icon: picture },
-       });
+      // アイコンが更新されている可能性があるので、DBを更新
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { icon: picture },
+      });
 
       // ログインセッションを作成
       session.user = {
@@ -93,8 +92,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/auth/google/confirm`);
     }
 
-  } catch (error) {
-    console.error('Google callback error:', error);
+  } catch (error: any) { // 👈 エラーの詳細を取得
+    console.error('--- Google callback error details ---');
+    
+    // Google APIからの詳細なレスポンス（特に 'invalid_grant' など）を出力
+    if (error.response?.data) {
+        console.error('Google Response Data:', JSON.stringify(error.response.data));
+    } else {
+        console.error('General Error Message:', error.message);
+    }
+    console.error('-------------------------------------');
+
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=google_callback_failed`
     );
