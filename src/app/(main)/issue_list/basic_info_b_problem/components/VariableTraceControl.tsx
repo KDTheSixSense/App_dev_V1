@@ -121,26 +121,34 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
           </p>
           
           {/* (配列プリセットのボタン) */}
-          {showArrayPresets && (
-             <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
-               {(showArrayPresets as {label: string, value: any}[]).map((preset) => (
-                 <button 
-                   key={preset.label} 
-                   onClick={() => onSetData(preset.value)}
-                   className={`px-3 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 ${
-                     isPresetSelected && (
-                       JSON.stringify(variables.listData) === JSON.stringify(preset.value.listData) ||
-                       JSON.stringify(variables.data) === JSON.stringify(preset.value.data)
-                     )
-                       ? 'bg-emerald-500 ring-2 ring-emerald-300'
-                       : 'bg-indigo-500 hover:bg-indigo-600'
-                   }`}
-                 >
-                   {preset.label}
-                 </button>
-               ))}
-             </div>
-          )}
+          {showArrayPresets && (
+             <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
+               {(showArrayPresets as {label: string, value: any}[]).map((preset) => {
+                // プリセット(preset.value)内のすべてのキー(例: 'data', 'target')が
+                // 現在の変数(variables)と一致するかを判定する
+                const presetValue = preset.value;
+                const isActive = Object.keys(presetValue).every(key => {
+                  // JSON.stringifyで配列やオブジェクトも正しく比較
+                  return JSON.stringify(variables[key]) === JSON.stringify(presetValue[key]);
+                });
+
+                 return (
+                   <button 
+                    key={preset.label} 
+                    onClick={() => onSetData(preset.value)}
+                    // classNameの判定を新しい `isActive` 変数に変更
+                    className={`px-3 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 ${
+                      isActive
+                        ? 'bg-emerald-500 ring-2 ring-emerald-300' // Green
+                        : 'bg-indigo-500 hover:bg-indigo-600' // Blue
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+               })}
+             </div>
+          )}
 
           {/* (数値プリセットのボタン) */}
           {showPresets && (

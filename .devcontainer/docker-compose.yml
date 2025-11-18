@@ -20,8 +20,8 @@ services:
     depends_on:
       - db
     ports:
-      - "3000"
-      - "5555"
+      - "3000:3000"
+      - "5555:5555"
     # このコンテナが.envファイルを読むように設定
     env_file:
 
@@ -35,7 +35,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
-      - "5432"
+      - "5432:5432"
     # このコンテナも.envファイルを読むように設定
     # これにより、POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DBが自動で設定される
     env_file:
