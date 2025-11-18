@@ -41,7 +41,6 @@ type MobileFooterProps = {
   userWithPet: UserWithPetStatus | null; // Adjust the type as necessary
   isMenuOpen: boolean;
   setIsMenuOpen: (isOpen: boolean) => void;
-  userWithPet: UserWithPetStatus | null;
 };
 
 const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterProps) => {
