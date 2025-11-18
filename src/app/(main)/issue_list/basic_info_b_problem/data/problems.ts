@@ -62,6 +62,7 @@ export interface Problem {
     presets?: number[];
     presets_array?: { label: string; value: any }[];
     presets_case?: { label: string; value: any }[];
+    logicVariants?: { id: string; label: string }[];
   };
 
   /**
@@ -134,6 +135,14 @@ export const problems: Problem[] = [
         correctAnswer: 'a: while (x ≠ y), b: x > y, c: endwhile',
         explanationText: { ja: "まず、a と c に入る制御文ですが、(1)の説明に「最大公約数が num1 と num2 が等しくなったときの num1 の値である」という説明があります。2つの正の整数について、(2)または(3)の処理を1回行っただけでは num1 と num2 が等しくなるとは限らず、両者が等しくなるまで(2)または(3)の処理を繰り返す必要があるので、繰返し処理を行うwhile文が当てはまります。よって、正解肢は「ウ」または「エ」に絞られます。\n\n次に b ですが、条件に合致するときに x ← x - y、つまり、num1 に num1 - num2 を代入する処理を行っています。(2)の説明より、この処理を行うのは num1 が num2 より大きいときですから、x > y が当てはまるとわかります。\n\n逆に x < y のときにこの処理を行ってしまうと、x の値は負数となり、それ以後 x < y ⇒ x ← x - y が永遠に繰り返されることにより、繰返し処理が終了しなくなってしまいます。また、2つの正の整数の最大公約数が負数ということはありません。よって、x < y を入れるのは不適切です。\n\nしたがって、while文と x > y の組合せである「エ」が適切です。", en: "First, for the control statements in a and c, property (1) states that the GCD is the value of num1 when num1 and num2 become equal. Since one application of property (2) or (3) does not guarantee equality, a loop is needed to repeat the process. Therefore, a 'while' statement is appropriate, narrowing the choices to C or D.\n\nNext, for b, the operation 'x ← x - y' corresponds to property (2), which applies when num1 > num2. Thus, the condition must be 'x > y'.\n\nIf we were to use 'x < y', 'x' would become negative, leading to an infinite loop. The GCD of positive integers cannot be negative. Therefore, 'x < y' is incorrect.\n\nConsequently, the correct combination is 'while' and 'x > y', which is choice D." },
         initialVariables: { num1: 36, num2: 60, x: null, y: null },
+        traceOptions: {
+        logicVariants: [
+            { id: 'ア', label: 'ア: a: if (x ≠ y), b: x < y, c: endif' },
+            { id: 'イ', label: 'イ: a: if (x ≠ y), b: x > y, c: endif' },
+            { id: 'ウ', label: 'ウ: a: while (x ≠ y), b: x < y, c: endwhile' },
+            { id: 'エ', label: 'エ: a: while (x ≠ y), b: x > y, c: endwhile' }
+            ]
+        },
         traceLogic: [],
         calculateNextLine: undefined,
         difficultyId: 7
@@ -162,6 +171,15 @@ export const problems: Problem[] = [
         correctAnswer: 'r ← (r << 1) ∨ (rbyte ∧ 00000001)\nrbyte ← rbyte >> 1',
         explanationText: { ja: "この問題は、入力されたバイト(`rbyte`)のビットを1つずつ右端（最下位ビット）から取り出し、結果を格納するバイト(`r`)の左端（最上位ビット）から詰めていくことで、ビットの並びを反転させます。\n\n1. `r ← (r << 1) ...`: まず、結果`r`を1ビット左にシフトします。これにより、新しいビットを右端に挿入するためのスペースが作られます。\n2. `... ∨ (rbyte ∧ 00000001)`: `rbyte ∧ 00000001`は、`rbyte`の最下位ビットだけを取り出す操作です（マスク処理）。結果は`00000001`または`00000000`になります。これを左シフトした`r`と論理和(∨)を取ることで、取り出したビットを`r`の最下位ビットに設定します。\n3. `rbyte ← rbyte >> 1`: 処理済みの最下位ビットを`rbyte`から捨てるため、`rbyte`全体を1ビット右にシフトします。これにより、次のループでは、その隣のビットが最下位ビットになります。\n\nこの3つの処理を8回繰り返すことで、`rbyte`のビットが逆順で`r`に格納されます。したがって、「ア」が正解です。", en: "This problem reverses the bit order by taking bits one by one from the right end (LSB) of the input byte (`rbyte`) and placing them into the left end (MSB) of the result byte (`r`).\n\n1. `r ← (r << 1) ...`: First, the result `r` is shifted left by one bit. This makes space to insert a new bit at the right end.\n2. `... ∨ (rbyte ∧ 00000001)`: `rbyte ∧ 00000001` is an operation to extract only the least significant bit of `rbyte` (a masking operation). The result will be `00000001` or `00000000`. Taking a bitwise OR (∨) with the left-shifted `r` sets the extracted bit as the new LSB of `r`.\n3. `rbyte ← rbyte >> 1`: To discard the processed LSB from `rbyte`, `rbyte` is shifted right by one bit. This makes the next bit the new LSB for the next loop iteration.\n\nBy repeating these three steps eight times, the bits of `rbyte` are stored in `r` in reverse order. Therefore, 'A' is the correct answer." },
         initialVariables: { byte: '01001011', rbyte: null, r: null, i: null, },
+        // ユーザーが選択するロジックの選択肢を定義
+        traceOptions: {
+          logicVariants: [
+            { id: 'ア', label: 'ア: r ← (r << 1) ∨ (rbyte ∧ 1)\nrbyte ← rbyte >> 1' },
+            { id: 'イ', label: 'イ: r ← (r << 7) ∨ (rbyte ∧ 1)\nrbyte ← rbyte >> 7' },
+            { id: 'ウ', label: 'ウ: r ← (rbyte << 1) ∨ (rbyte >> 7)\nrbyte ← r' },
+            { id: 'エ', label: 'エ: r ← (rbyte >> 1) ∨ (rbyte << 7)\nrbyte ← r' },
+          ]
+        },
         traceLogic: [],
         calculateNextLine: undefined,
         difficultyId: 7

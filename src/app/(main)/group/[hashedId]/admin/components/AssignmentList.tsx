@@ -165,7 +165,18 @@ export const AssignmentList: React.FC<AssignmentListProps> = ({
                                 color: '#5f6368',
                                 marginLeft: '44px'
                             }}>
-                                期限: {assignment.due_date ? new Date(assignment.due_date).toLocaleString('ja-JP') : '未設定'}
+                                期限: {assignment.due_date ? (() => {
+                                    const date = new Date(assignment.due_date);
+                                    const formatter = new Intl.DateTimeFormat('ja-JP', {
+                                        timeZone: 'Asia/Tokyo',
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    });
+                                    return formatter.format(date);
+                                })() : '未設定'}
                             </div>
 
                         </div>

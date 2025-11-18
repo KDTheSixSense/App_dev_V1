@@ -63,6 +63,7 @@ const ClassroomApp: React.FC = () => {
     // 状態管理
     const [currentView, setCurrentView] = useState<'empty' | 'groups' | 'detail' | 'settings'>('empty');
     const [groups, setGroups] = useState<Group[]>([]);
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
     const [activeTab, setActiveTab] = useState<'お知らせ' | '課題' | 'メンバー'>('お知らせ');
     const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
@@ -114,6 +115,10 @@ const ClassroomApp: React.FC = () => {
 
             if (!result.success) {
                 throw new Error(result.error || 'グループの読み込みに失敗しました');
+            }
+
+            if (result.currentUserId) {
+                setCurrentUserId(result.currentUserId);
             }
             
             // Actionから返されたデータを整形する
@@ -350,9 +355,25 @@ const handleCreateGroup = async () => {
     };
     // グループクリック処理
     const handleGroupClick = (group: Group) => {
-        router.push(`/group/${group.hashedId}`); // ルーティングを使わずに状態管理で表示切り替え
-        // setSelectedGroup(group);
-        // setCurrentView('detail');
+        // 中間ページを経由せず、権限を見て直接ページへ飛ばす
+        
+        if (currentUserId) {
+            // メンバーリストの中から自分を探す
+            const myMembership = group.members.find(m => m.user.id === currentUserId);
+            
+            if (myMembership) {
+                // 自分が管理者なら /admin、そうでなければ /member へ直接遷移
+                const targetPath = myMembership.admin_flg 
+                    ? `/group/${group.hashedId}/admin`
+                    : `/group/${group.hashedId}/member`;
+                router.push(targetPath);
+                return;
+            }
+        }
+
+        // 万が一IDが取得できていない場合などのフォールバック（従来のリダイレクトページへ）
+        router.push(`/group/${group.hashedId}`);
+        // ▲▲▲ 修正ここまで ▲▲▲
     };
 
     
@@ -747,7 +768,6 @@ const handleCreateGroup = async () => {
                                             padding: '16px 24px',
                                             border: 'none',
                                             backgroundColor: 'transparent',
-                                            cursor: 'pointer',
                                             fontSize: '14px',
                                             fontWeight: '500',
                                             marginRight: '16px',

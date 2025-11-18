@@ -69,7 +69,7 @@ export interface Assignment {
     programmingProblem?: ProgrammingProblem; // 追加
     selectProblem?: ProgrammingProblem;      // 追加
     showComments?: boolean;
-    comments?: Comment[];
+    comments?: AssignmentComment[];
     completed?: boolean;
     author?: {
         username?: string | null;
@@ -85,6 +85,23 @@ export interface ProgrammingProblem {
     type: 'programming' | 'select';
 }
 
+// 課題コメントの型
+export interface AssignmentComment {
+    id: number;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  assignmentId: number;
+  authorId: number;
+  author: User;
+}
+
+// ユーザーの基本的な型
+export interface User {
+    id: number;
+    username: string | null;
+    icon: string | null;
+}
 // フォーマット状態の型
 export interface FormatState {
     bold: boolean;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useTransition, useRef } from 'react';
+import React, { useState, useEffect, useTransition, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -14,6 +14,29 @@ import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from
 import { useNotification } from '@/app/contexts/NotificationContext';
 import type { SerializableProblem } from '@/lib/data';
 import { getHintFromAI } from '@/lib/actions/hintactions';
+import AnswerEffect from '@/components/AnswerEffect';
+
+const MAX_HUNGER = 200;
+
+const getPetDisplayState = (hungerLevel: number) => {
+  if (hungerLevel >= 150) {
+    return {
+      icon: '/images/Kohaku/kohaku-full.png',
+    };
+  } else if (hungerLevel >= 100) {
+    return {
+      icon: '/images/Kohaku/kohaku-normal.png',
+    };
+  } else if (hungerLevel >= 50) {
+    return {
+      icon: '/images/Kohaku/kohaku-hungry.png',
+    };
+  } else {
+    return {
+      icon: '/images/Kohaku/kohaku-starving.png',
+    };
+  }
+};
 
 // --- 多言語対応テキストリソース ---
 const textResources = {
@@ -78,6 +101,33 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
   const startTimeRef = useRef<number | null>(null);
+  const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+  const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null);
+  
+    // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
+    const refetchPetStatus = useCallback(async () => {
+      try {
+        const res = await fetch('/api/pet/status');
+        if (res.ok) {
+          const { data } = await res.json();
+          if (data) {
+            const displayState = getPetDisplayState(data.hungerlevel);
+            setKohakuIcon(displayState.icon);
+          }
+        }
+      } catch (error) {
+        console.error("ペット情報の取得に失敗:", error);
+      }
+    }, []);
+  
+    // 初期ロード時とイベントリスナー設定
+    useEffect(() => {
+      refetchPetStatus();
+      window.addEventListener('petStatusUpdated', refetchPetStatus);
+      return () => {
+        window.removeEventListener('petStatusUpdated', refetchPetStatus);
+      };
+    }, [refetchPetStatus]);
 
   useEffect(() => {
     setProblem(initialProblem);
@@ -107,6 +157,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setSelectedAnswer(selectedValue);
     setIsAnswered(true);
     const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
+    setAnswerEffectType(correct ? 'correct' : 'incorrect');
 
     if (correct) {
       const numericId = parseInt(problem.id, 10);
@@ -129,6 +180,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
   };
+
+  const handleAnimationEnd = useCallback(() => {
+    setAnswerEffectType(null);
+  }, []);
 
   const handleUserMessage = async (message: string) => {
         if (credits <= 0) {
@@ -177,7 +232,9 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
-
+      {answerEffectType && (
+        <AnswerEffect type={answerEffectType} onAnimationEnd={handleAnimationEnd} />
+      )}
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start">
         <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[600px] flex flex-col lg:col-span-8 lg:col-start-3">
           {/* 出典情報があれば表示するエリア（オプション） */}
@@ -221,6 +278,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
             isLoading={isPending || isAiLoading}
             isDisabled={credits <= 0 || isPending || isAiLoading}
+            kohakuIcon={kohakuIcon}
           />
         </div>
       </div>

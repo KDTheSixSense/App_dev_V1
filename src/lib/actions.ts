@@ -1098,7 +1098,7 @@ export async function getGroupsAction() {
       },
     });
     console.log('[DEBUG] getGroupsAction: Raw groups from DB:', JSON.stringify(groups, null, 2));
-    return { success: true, data: groups };
+    return { success: true, data: groups, currentUserId: userId };
   } catch (error) {
     console.error("Failed to fetch groups:", error);
     return { error: 'グループの取得に失敗しました。' };

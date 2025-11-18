@@ -1,12 +1,35 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SelectProblem } from '@prisma/client';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '@/components/KohakuChat';
 import { recordStudyTimeAction } from '@/lib/actions';
+import AnswerEffect from '@/components/AnswerEffect';
+
+const MAX_HUNGER = 200;
+
+const getPetDisplayState = (hungerLevel: number) => {
+  if (hungerLevel >= 150) {
+    return {
+      icon: '/images/Kohaku/kohaku-full.png',
+    };
+  } else if (hungerLevel >= 100) {
+    return {
+      icon: '/images/Kohaku/kohaku-normal.png',
+    };
+  } else if (hungerLevel >= 50) {
+    return {
+      icon: '/images/Kohaku/kohaku-hungry.png',
+    };
+  } else {
+    return {
+      icon: '/images/Kohaku/kohaku-starving.png',
+    };
+  }
+};
 
 // サーバーから渡されるデータの型
 interface ProblemDetailClientProps {
@@ -92,6 +115,33 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false); // AIチャットのローディング状態
+  const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+  const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null);
+
+  // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
+  const refetchPetStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/pet/status');
+      if (res.ok) {
+        const { data } = await res.json();
+        if (data) {
+          const displayState = getPetDisplayState(data.hungerlevel);
+          setKohakuIcon(displayState.icon);
+        }
+      }
+    } catch (error) {
+      console.error("ペット情報の取得に失敗:", error);
+    }
+  }, []);
+
+  // 初期ロード時とイベントリスナー設定
+  useEffect(() => {
+    refetchPetStatus();
+    window.addEventListener('petStatusUpdated', refetchPetStatus);
+    return () => {
+      window.removeEventListener('petStatusUpdated', refetchPetStatus);
+    };
+  }, [refetchPetStatus]);
 
   // 問題の表示開始時刻を保存
   const [problemStartedAt, setProblemStartedAt] = useState<number>(Date.now());
@@ -177,10 +227,16 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
     if (isAnswered) return;
     setSelectedAnswer(selectedValue);
     setIsAnswered(true);
+    const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
+    setAnswerEffectType(correct ? 'correct' : 'incorrect');
     const hint = generateKohakuResponse(true, selectedValue);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
     recordStudyTime();
   };
+
+  const handleAnimationEnd = useCallback(() => {
+    setAnswerEffectType(null);
+  }, []);
 
   const handleUserMessage = async (message: string) => {
     setChatMessages((prev) => [...prev, { sender: 'user', text: message }]);
@@ -225,6 +281,9 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
       {showAlert && <CustomAlertModal message={alertMessage} onClose={handleCloseAlert} />}
+      {answerEffectType && (
+        <AnswerEffect type={answerEffectType} onAnimationEnd={handleAnimationEnd} />
+      )}
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start">
         <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col">
           <>
@@ -246,7 +305,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
           </>
         </div>
         <div className="w-full lg:w-96 flex flex-col">
-          <KohakuChat messages={chatMessages} onSendMessage={handleUserMessage} language={language} textResources={t} isLoading={isLoading} />
+          <KohakuChat messages={chatMessages} onSendMessage={handleUserMessage} language={language} textResources={t} isLoading={isLoading} kohakuIcon={kohakuIcon} />
         </div>
       </div>
       {isAnswered && (

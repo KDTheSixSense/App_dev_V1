@@ -14,8 +14,9 @@ interface KohakuChatProps {
   language: 'ja' | 'en';
   textResources: any;
   isLoading: boolean;
-  isDisabled?: boolean; // ★ 修正点: `isDisabled` プロパティを（任意で）受け取れるように追加
-  credits?: number;     // ★ 追加: 残りクレジット数を表示するために追加
+  isDisabled?: boolean; // `isDisabled` プロパティを（任意で）受け取れるように追加
+  credits?: number;     // 残りクレジット数を表示するために追加
+  kohakuIcon?: string;  // コハクのアイコン画像パスを受け取るために追加
 }
 
 const KohakuChat: React.FC<KohakuChatProps> = ({
@@ -26,6 +27,7 @@ const KohakuChat: React.FC<KohakuChatProps> = ({
   isLoading,
   isDisabled = false, // デフォルト値を false に設定
   credits,
+  kohakuIcon
 }) => {
   const [inputMessage, setInputMessage] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -54,7 +56,7 @@ const KohakuChat: React.FC<KohakuChatProps> = ({
       {/* チャットヘッダー部分 */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-700 flex items-center">
-          <Image src="/images/kohaku.png" alt="コハク" width={40} height={40} className="rounded-full mr-2" />
+          <Image src={kohakuIcon || "/images/kohaku.png"} alt="コハク" width={40} height={40} className="rounded-full mr-2 object-cover w-10 h-10" />
           {t.kohakuChatTitle}
         </h2>
         {typeof credits !== 'undefined' && (

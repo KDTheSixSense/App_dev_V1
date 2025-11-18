@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 // Link, Image, useRouter はNext.js固有のため削除
 import type { User, Status_Kohaku } from '@prisma/client';
@@ -76,51 +76,76 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
     console.log("[Header Debug] Initial petStatus (no userWithPet): null");
     return null;  });
 
-    // ペットのステータスをAPIから再取得して、Stateを更新する関数
-  const refetchPetStatus = async () => {
-    console.log("[Header Debug] refetchPetStatus called.");
-    try {
-      const res = await fetch('/api/pet/status');
-      if (res.ok) {
-        const { data } = await res.json();
-        console.log("[Header Debug] API /api/pet/status response data:", data);
-        if (data) {
-          const displayState = getPetDisplayState(data.hungerlevel);
-          setPetStatus({
-            hungerlevel: data.hungerlevel,
-            ...displayState,
-          });
-          setRank(data.level);
-
-          // 3. 連続ログイン日数を更新
-          setContinuousLogin(data.continuouslogin);
-          console.log('ヘッダーのペット情報を更新しました。');
-        }
-      } else {
-        console.error("[Header Debug] Failed to fetch pet status. Response not OK:", res.status, await res.text());
-      }
-    } catch (error) {
-      console.error("[Header Debug] ペット情報の再取得に失敗:", error);
-    }
-  };
+    // 4. ペットのステータスをAPIから再取得して、Stateを更新する関数
+  // (useCallbackでラップ)
+  const refetchPetStatus = useCallback(async (isPeriodicCheck: boolean = false) => {
+    console.log("[Header Debug] refetchPetStatus called.");
+    try {
+      const res = await fetch('/api/pet/status', { cache: 'no-store' }); // キャッシュを無効化
+      if (res.ok) {
+        const { data } = await res.json();
+        if (data) {
+          const displayState = getPetDisplayState(data.hungerlevel);
+          
+          let hungerLevelChanged = false;
+          setPetStatus(prevStatus => {
+            if (prevStatus?.hungerlevel !== data.hungerlevel) {
+              hungerLevelChanged = true;
+            }
+            return {
+              hungerlevel: data.hungerlevel,
+              ...displayState,
+            };
+          });
+          
+          setRank(data.level);
+          setContinuousLogin(data.continuouslogin);
+          
+          // 定期チェックで満腹度が変わっていたら、イベントを発火
+          if (isPeriodicCheck && hungerLevelChanged) {
+            console.log("[Header Debug] Hunger level changed on periodic check. Dispatching event.");
+            window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+          }
+        }
+      } else {
+        console.error("[Header Debug] Failed to fetch pet status. Response not OK:", res.status, await res.text());
+      }
+    } catch (error) {
+      console.error("[Header Debug] ペット情報の再取得に失敗:", error);
+    }
+  }, []); // 空の依存配列
 
   // レンダリング直前にpetStatus.iconの値をログ出力
   console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
 
   useEffect(() => {
+      // ページ読み込み時にも最新の情報を取得
+    if (userWithPet) { // ログインしている場合のみ
+      refetchPetStatus();
+    }
 
-        // ページ読み込み時にも最新の情報を取得
-    if (userWithPet) { // ログインしている場合のみ
-      refetchPetStatus();
-    }
-    // 'petStatusUpdated' という名前のカスタムイベントをウィンドウで監視します
-    window.addEventListener('petStatusUpdated', refetchPetStatus);
+    // addEventListener 用のラッパー関数を定義
+    const handlePetStatusUpdate = () => {
+      refetchPetStatus(false); // isPeriodicCheck = false
+    };
 
-    // コンポーネントが不要になった時に、イベントリスナーを解除してメモリリークを防ぎます
-    return () => {
-      window.removeEventListener('petStatusUpdated', refetchPetStatus);
-    };
-  }, [userWithPet]); // userWithPetを依存配列に追加
+    // ラッパー関数をリスナーに登録
+    window.addEventListener('petStatusUpdated', handlePetStatusUpdate);
+
+    // 満腹度減少を同期間隔タイマー（1分ごと）
+    const timerId = setInterval(() => {
+      if (userWithPet) {
+        refetchPetStatus(true); // 定期チェックであることを示すフラグを立てる
+      }
+    }, 60000); // 60000ms = 1分
+
+    // コンポーネントが不要になった時に、イベントリスナーとタイマーを解除
+    return () => {
+      // ラッパー関数を解除
+      window.removeEventListener('petStatusUpdated', handlePetStatusUpdate);
+      clearInterval(timerId); // タイマーを解除
+    };
+  }, [userWithPet, refetchPetStatus]); // 依存配列に refetchPetStatus を追加
 
   // ログアウト処理を行う非同期関数
   const handleLogout = async () => {
