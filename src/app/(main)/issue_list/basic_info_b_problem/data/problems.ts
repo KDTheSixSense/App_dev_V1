@@ -1627,13 +1627,22 @@ export const problems: Problem[] = [
             en: "This program implements the quicksort algorithm. Let's trace the execution when `sort(1, 5)` is first called.\n1. The `data` array is `{2, 1, 3, 5, 4}`.\n2. The `pivot` is set to `data[floor((1+5)/2)]`, which is `data[3]`, so `pivot = 3`.\n3. `i` is initialized to `1`, `j` to `5`.\n4. In the first `while(data[i] < pivot)` loop, `i` is incremented until `data[i]` is not less than `3`. This happens when `i` reaches `3`.\n5. In the next `while(pivot < data[j])` loop, `j` is decremented until `data[j]` is not greater than `3`. This happens when `j` reaches `3`.\n6. At this point, `i=3` and `j=3`, so the condition `if(i >= j)` becomes true.\n7. The `while(true)` loop terminates. Note that the swap operation was never executed.\n8. The line `/*** α ***/` is reached, and the elements of the `data` array are printed. Since the array has not been modified, the output is the initial sequence: `2 1 3 5 4`.\nTherefore, 'D' is the correct answer."
         },
         initialVariables: {
-            data: [2, 1, 3, 5, 4],
-            callStack: [],
-            pivot: null,
-            i: null,
-            j: null,
-            output: null,
-        },
+            data: null,
+            callStack: [],
+            pivot: null,
+            i: null,
+            j: null,
+            output: null,
+        },
+        // presets_array を追加
+        traceOptions: {
+            presets_array: [
+              { label: 'ア: data:{1, 2, 3, 4, 5}', value: { data: [1, 2, 3, 4, 5] } },
+              { label: 'イ: data:{1, 2, 3, 5, 4}', value: { data: [1, 2, 3, 5, 4] } },
+              { label: 'ウ: data:{2, 1, 3, 4, 5}', value: { data: [2, 1, 3, 4, 5] } },
+              { label: 'エ: data:{2, 1, 3, 5, 4}', value: { data: [2, 1, 3, 5, 4] } },
+            ]
+        },
         traceLogic: [],
         calculateNextLine: undefined,
         difficultyId: 8
@@ -1685,18 +1694,39 @@ export const problems: Problem[] = [
             en: "Regarding 'a': This if statement checks if the list is empty..."
         },
         initialVariables: {
-            case: null,
-            initialized: false,
-            listData: null,
-            listHead: null,
-            qVal: null,
-            prev: null,
-            curr: null,
+        initialized: false,
+        listData: null,
+        listHead: null,
+        qVal: null,
+        prev: null,
+        curr: null,
         },
+        // 2: traceOptions の 'value' が実際のデータをセットするように変更
         traceOptions: {
             presets_array: [
-                { label: 'Case1: 空のリストに "A" を追加', value: { case: 'EMPTY_LIST' } },
-                { label: 'Case2: 既存リストに "D" を追加', value: { case: 'NON_EMPTY_LIST' } },
+                { 
+                    label: 'Case1: 空のリストに "A" を追加', 
+                    value: { 
+                        listData: [], 
+                        listHead: null,
+                        qVal: 'A',
+                        prev: null,
+                        curr: null,
+                        initialized: false 
+                    } 
+                },
+                { 
+                    label: 'Case2: 既存リストに "D" を追加', 
+                    value: { 
+                        // 既存のリストデータ (A->B->C)
+                        listData: [{val: 'A', next: 1}, {val: 'B', next: 2}, {val: 'C', next: null}], 
+                        listHead: 0,
+                        qVal: 'D',
+                        prev: null,
+                        curr: null,
+                        initialized: false 
+                    } 
+                },
             ]
         },
         traceLogic: [],
@@ -1901,9 +1931,9 @@ export const problems: Problem[] = [
             en: "The function `maximum` is intended to return the largest of the three arguments `x`, `y`, and `z`. Looking at the program structure, the first `if` statement returns `x`. Therefore, the condition of this `if` statement must be one that determines if 'x is the maximum value'.\n\nFor `x` to be the maximum, it must satisfy two conditions simultaneously: 1) `x` is greater than `y`, AND 2) `x` is greater than `z`. This 'and' relationship is expressed with a logical AND.\n\nTherefore, option 'B', `x > y and x > z`, is the correct answer for the blank."
         },
         initialVariables: {
-            x: 10,
-            y: 5,
-            z: 1,
+            x: null,
+            y: null,
+            z: null,
             result: null,
         },
         traceOptions: {
@@ -1971,7 +2001,7 @@ export const problems: Problem[] = [
             en: "This program converts a binary string to a decimal number by evaluating it from the leftmost digit. In this method, the calculation of multiplying the current result by 2 and adding the value of the new digit is repeated.\n\nFor example, consider \"10010\":\n1. `result`=0\n2. i=1 (char is \"1\"): `result` ← 0 * 2 + 1 = 1\n3. i=2 (char is \"0\"): `result` ← 1 * 2 + 0 = 2\n4. i=3 (char is \"0\"): `result` ← 2 * 2 + 0 = 4\n5. i=4 (char is \"1\"): `result` ← 4 * 2 + 1 = 9\n6. i=5 (char is \"0\"): `result` ← 9 * 2 + 0 = 18\n\nThus, in each step of the loop, the value of `result` is multiplied by 2, and the integer value of the character at the i-th position is added. Therefore, the correct choice for the blank is 'D', `result * 2 + int(character at i of binary)`."
         },
         initialVariables: {
-            binary: "10010",
+            binary: null,
             i: 0,
             length: 0,
             result: 0,
