@@ -1030,65 +1030,134 @@ const admissionFeeLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentL
   },
 };
 
-const arrayReverseLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
-    traceLogic: [
-        /* 1 */ (vars) => ({ ...vars, array: [1, 2, 3, 4, 5] }),
-        /* 2 */ (vars) => ({ ...vars, right: null, left: null }),
-        /* 3 */ (vars) => ({ ...vars, tmp: null }),
-        /* 4 */ (vars) => vars, // 空行
-        /* 5 */ (vars) => { // forループ開始
-            if (vars.left === null) {
-                return { ...vars, left: 1 };
-            }
-            return vars;
-        },
-        /* 6 */ (vars) => { // a: rightの計算
-            const array = vars.array as number[];
-            const left = vars.left as number;
-            return { ...vars, right: array.length - left + 1 };
-        },
-        /* 7 */ (vars) => { // tmpへの代入
-            const array = vars.array as number[];
-            const right = vars.right as number;
-            return { ...vars, tmp: array[right - 1] }; // 1-based index to 0-based
-        },
-        /* 8 */ (vars) => { // array[right]への代入
-            const newArray = [...(vars.array as number[])];
-            const left = vars.left as number;
-            const right = vars.right as number;
-            newArray[right - 1] = newArray[left - 1];
-            return { ...vars, array: newArray };
-        },
-        /* 9 */ (vars) => { // b: array[left]への代入
-            const newArray = [...(vars.array as number[])];
-            const left = vars.left as number;
-            const tmp = vars.tmp as number;
-            newArray[left - 1] = tmp;
-            return { ...vars, array: newArray };
-        },
-        /* 10 */ (vars) => { // endfor: leftのインクリメント
-             return { ...vars, left: (vars.left as number) + 1 };
-        },
-    ],
-    calculateNextLine(currentLine, vars) {
-        // 初期化が終わるまで待機
-        if (vars.array === null) return currentLine;
+const arrayReverseStep_A: Record<string, TraceStep> = {
+    'ア': (vars) => { // a: arrayの要素数 - left
+        const array = vars.array as number[];
+        const left = vars.left as number;
+        return { ...vars, right: array.length - left };
+    },
+    'イ': (vars) => { // a: arrayの要素数 - left
+        const array = vars.array as number[];
+        const left = vars.left as number;
+        return { ...vars, right: array.length - left };
+    },
+    'ウ': (vars) => { // a: arrayの要素数 - left + 1 (正解)
+        const array = vars.array as number[];
+        const left = vars.left as number;
+        return { ...vars, right: array.length - left + 1 };
+    },
+    'エ': (vars) => { // a: arrayの要素数 - left + 1
+        const array = vars.array as number[];
+        const left = vars.left as number;
+        return { ...vars, right: array.length - left + 1 };
+    },
+    'default': (vars) => vars,
+};
 
-        const lineNum = currentLine + 1; // 1-indexedの行番号
+// line 9 (index 8) の 'b' のロジック
+const arrayReverseStep_B: Record<string, TraceStep> = {
+    'ア': (vars) => { // b: array[left] ← tmp
+        const newArray = [...(vars.array as number[])];
+        const left = vars.left as number;
+        const tmp = vars.tmp as number;
+        newArray[left - 1] = tmp; // 1-based to 0-based
+        return { ...vars, array: newArray };
+    },
+    'イ': (vars) => { // b: array[right] ← tmp
+        const newArray = [...(vars.array as number[])];
+        const right = vars.right as number;
+        const tmp = vars.tmp as number;
+        newArray[right - 1] = tmp; // 1-based to 0-based
+        return { ...vars, array: newArray };
+    },
+    'ウ': (vars) => { // b: array[left] ← tmp (正解)
+        const newArray = [...(vars.array as number[])];
+        const left = vars.left as number;
+        const tmp = vars.tmp as number;
+        newArray[left - 1] = tmp; // 1-based to 0-based
+        return { ...vars, array: newArray };
+    },
+    'エ': (vars) => { // b: array[right] ← tmp
+        const newArray = [...(vars.array as number[])];
+        const right = vars.right as number;
+        const tmp = vars.tmp as number;
+        newArray[right - 1] = tmp; // 1-based to 0-based
+        return { ...vars, array: newArray };
+    },
+    'default': (vars) => vars,
+};
+
+// 静的なトレースステップ (line 6 と 9 以外)
+const staticArrayReverseTraceLogic: TraceStep[] = [
+    /* 0: Line 1 */ (vars) => ({ ...vars, array: [1, 2, 3, 4, 5] }), // プログラム通り初期化
+    /* 1: Line 2 */ (vars) => ({ ...vars, right: null, left: null }),
+    /* 2: Line 3 */ (vars) => ({ ...vars, tmp: null }),
+    /* 3: Line 4 */ (vars) => vars, // 空行
+    /* 4: Line 5 */ (vars) => { // forループ (iの更新)
+        if (vars.left === null) {
+            return { ...vars, left: 1 }; // 1回目
+        }
+        return { ...vars, left: (vars.left as number) + 1 }; // 2回目以降
+    },
+    /* 5: Line 6 */ (vars) => vars, // a (動的ステップで上書き)
+    /* 6: Line 7 */ (vars) => { // tmp ← array[right]
+        const array = vars.array as number[];
+        const right = vars.right as number;
+        return { ...vars, tmp: array[right - 1] }; // 1-based to 0-based
+    },
+    /* 7: Line 8 */ (vars) => { // array[right] ← array[left]
+        const newArray = [...(vars.array as number[])];
+        const left = vars.left as number;
+        const right = vars.right as number;
+        newArray[right - 1] = newArray[left - 1];
+        return { ...vars, array: newArray };
+    },
+    /* 8: Line 9 */ (vars) => vars, // b (動的ステップで上書き)
+    /* 9: Line 10 */ (vars) => vars, // endfor
+];
+
+// 問22のロジック本体
+const arrayReverseLogic: { 
+    getTraceStep: (line: number, variant: string | null) => TraceStep;
+    calculateNextLine: (currentLine: number, vars: VariablesState, variant: string | null) => number 
+} = {
+    getTraceStep: (line, variant) => {
+        if (line === 5) { // Line 6 [a]
+            return arrayReverseStep_A[variant || 'default'] || arrayReverseStep_A['default'];
+        }
+        if (line === 8) { // Line 9 [b]
+            return arrayReverseStep_B[variant || 'default'] || arrayReverseStep_B['default'];
+        }
+        return staticArrayReverseTraceLogic[line] || ((vars) => vars);
+    },
+
+    calculateNextLine: (currentLine, vars, variant) => {
+        // ロジックが選択されていない場合は、トレースを進めない
+        if (variant === null) {
+            if (currentLine < 4) return currentLine + 1; // 5行目(for)の手前までは許可
+            return currentLine; // ロジックが選択されるまで待機
+        }
+
         const array = vars.array as number[];
         const left = vars.left as number;
 
-        switch(lineNum) {
-            case 5: // for ループの条件判定
+        switch (currentLine) {
+            case 0: return 1;
+            case 1: return 2;
+            case 2: return 3;
+            case 3: return 4; // -> 5 (for)
+            case 4: // 5: for
+                const loopVar = (left === null) ? 1 : left;
                 // (要素数 / 2) の商までループ
-                return left <= Math.floor(array.length / 2) ? 5 : 10; // -> 6 (本体) or 11(終了)
-            case 6: return 6; // -> 7
-            case 7: return 7; // -> 8
-            case 8: return 8; // -> 9
-            case 9: return 9; // -> 10 (endfor)
-            case 10: return 4; // -> 5 (forループの先頭へ戻る)
+                return loopVar <= Math.floor(array.length / 2) ? 5 : 9; // -> 6 (body) or 10 (endfor)
+            case 5: return 6; // 6 -> 7
+            case 6: return 7; // 7 -> 8
+            case 7: return 8; // 8 -> 9
+            case 8: return 9; // 9 -> 10
+            case 9: // 10: endfor
+                return 4; // -> 5 (forループの先頭へ戻る)
             default:
-                return lineNum;
+                return 99; // 終了
         }
     },
 };

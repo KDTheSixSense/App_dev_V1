@@ -1074,11 +1074,20 @@ export const problems: Problem[] = [
             en: "This program reverses an array by swapping elements from the beginning (`left`) and the end (`right`), moving towards the center. The `for` loop runs up to the middle of the array..."
         },
         initialVariables: {
-            array: null,
-            left: null,
-            right: null,
-            tmp: null,
-        },
+            array: null,
+            left: null,
+            right: null,
+            tmp: null,
+        },
+        //logicVariants を追加
+        traceOptions: {
+            logicVariants: [
+              { id: 'ア', label: 'ア: a: arrayの要素数 - left, b: array[left]' },
+              { id: 'イ', label: 'イ: a: arrayの要素数 - left, b: array[right]' },
+              { id: 'ウ', label: 'ウ: a: arrayの要素数 - left + 1, b: array[left]' },
+              { id: 'エ', label: 'エ: a: arrayの要素数 - left + 1, b: array[right]' },
+            ]
+        },
         traceLogic: [],
         calculateNextLine: undefined,
         difficultyId: 7
