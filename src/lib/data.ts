@@ -360,3 +360,43 @@ export async function getAppliedInfoAmProblem(id: number): Promise<SerializableP
     return null;
   }
 }
+
+/**
+ * ログイン中のユーザーの、未提出の課題「数」のみを取得する
+ */
+export async function getUnsubmittedAssignmentCount(): Promise<number> {
+  
+  // 1. セッションからユーザーIDを取得
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return 0; // ログインしていない
+  }
+  const userId = Number(session.user.id);
+  if (isNaN(userId)) {
+    return 0; // 無効なID
+  }
+
+  try {
+    // 2. getUnsubmittedAssignments と同じロジックで件数(count)のみを取得
+    const count = await prisma.assignment.count({
+      where: {
+        group: {
+          groups_User: {
+            some: { user_id: userId },
+          },
+        },
+        Submissions: {
+          some: {
+            userid: userId,
+            status: "未提出", // "未提出" のステータスを持つもの
+          },
+        },
+      },
+    });
+    return count;
+
+  } catch (error) {
+    console.error("Failed to count unsubmitted assignments:", error);
+    return 0; // エラー時は0を返す
+  }
+}
