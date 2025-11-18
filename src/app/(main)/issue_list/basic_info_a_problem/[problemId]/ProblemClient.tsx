@@ -284,7 +284,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       )}
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start w-full">
         {/* 左側: 問題表示エリア */}
-        <div className="lg:w-1/2 w-full bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col">
+        <div className="lg:w-1/2 w-full bg-white p-8 rounded-lg min-h-[800px] flex flex-col">
           {/* 出典情報 */}
           <div className="text-center text-gray-600 mb-2">
             {problem.sourceYear && problem.sourceNumber ? `${problem.sourceYear} ${problem.sourceNumber}` : t.title}

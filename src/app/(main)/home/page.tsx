@@ -8,6 +8,7 @@ import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions } from '@/lib/session';
 import { prisma } from "@/lib/prisma";
+import { getUnsubmittedAssignmentCount } from '@/lib/data';
 
 // セッションデータの型を定義
 interface SessionData {
@@ -26,6 +27,7 @@ export default async function HomePage({
   // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? Number(session.user.id) : null;
+  const assignmentCount = await getUnsubmittedAssignmentCount();
 
   // ログインユーザーの全情報を取得
   const user = userId ? await prisma.user.findUnique({
@@ -37,7 +39,7 @@ export default async function HomePage({
     <div className='bg-white select-none'>
       <main className="grid grid-cols-1 md:grid-cols-2 justify-center min-h-screen text-center py-10 px-4 sm:px-6 lg:px-8 gap-10">
         <div className="order-1 md:col-start-1 md:row-start-1">
-          <User user={user}/>
+          <User user={user} unsubmittedAssignmentCount={assignmentCount}/>
         </div>
         <div className="order-4 md:col-start-1 md:row-start-2">
           <Ranking />

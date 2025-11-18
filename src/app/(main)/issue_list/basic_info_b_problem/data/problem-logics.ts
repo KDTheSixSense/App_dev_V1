@@ -546,53 +546,135 @@ const binaryTreeTraversalLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
 };
 
 // リンクリストの削除ロジック 未完成なので後で修正入れる
-const linkedListDeleteLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
-    traceLogic: Array(15).fill((vars: VariablesState) => vars), // traceLogicは使いません
-    calculateNextLine(currentLine, vars) {
-        // ステップの最初に変数を確実に初期化/リセットする
-        if (!vars.initialized) {
-            vars.listData = [
-                { val: 'A', next: 1 }, { val: 'B', next: 2 },
-                { val: 'C', next: 3 }, { val: 'D', next: null },
-            ];
-            vars.listHead = 0;
-            vars.i = null;
-            vars.prev = null;
-            vars.initialized = true; // 初期化済みフラグ
+const linkedListDeleteStepLogics: Record<string, TraceStep> = {
+    'ア': (vars) => { // prev.next ← listHead
+        const newListData = (vars.listData as any[]).map(item => ({...item})); // ディープコピー
+        if (vars.prev !== null) newListData[vars.prev as number].next = vars.listHead;
+        return { ...vars, listData: newListData };
+    },
+    'イ': (vars) => { // prev.next ← listHead.next
+        const newListData = (vars.listData as any[]).map(item => ({...item}));
+        const listHeadNode = newListData[vars.listHead as number];
+        if (vars.prev !== null) newListData[vars.prev as number].next = listHeadNode.next;
+        return { ...vars, listData: newListData };
+    },
+    'ウ': (vars) => { // prev.next ← listHead.next.next
+        const newListData = (vars.listData as any[]).map(item => ({...item}));
+        const listHeadNode = newListData[vars.listHead as number];
+        const listHeadNextNode = listHeadNode.next !== null ? newListData[listHeadNode.next] : null;
+        if (vars.prev !== null) newListData[vars.prev as number].next = listHeadNextNode ? listHeadNextNode.next : null;
+        return { ...vars, listData: newListData };
+    },
+    'エ': (vars) => { // prev.next ← prev
+        const newListData = (vars.listData as any[]).map(item => ({...item}));
+        if (vars.prev !== null) newListData[vars.prev as number].next = vars.prev; // 自己参照
+        return { ...vars, listData: newListData };
+    },
+    'オ': (vars) => { // prev.next ← prev.next
+        // 何もしない (prev.next は prev.next のまま)
+        return vars;
+    },
+    'カ': (vars) => { // prev.next ← prev.next.next (正解)
+        const newListData = (vars.listData as any[]).map(item => ({...item})); // ディープコピー
+        if (vars.prev === null) return vars;
+        const prevNode = newListData[vars.prev as number];
+        const nodeToDelete = prevNode.next !== null ? newListData[prevNode.next] : null;
+        if (nodeToDelete) {
+            prevNode.next = nodeToDelete.next; // 削除対象の次を指す
+        }
+        return { ...vars, listData: newListData };
+    },
+    'default': (vars) => vars, // ロジック未選択
+};
+
+// 静的なトレースステップ (line 14 / index 13 以外)
+const staticLinkedListDeleteTraceLogic: TraceStep[] = [
+    /* 0: Line 1 */ (vars) => vars,
+    /* 1: Line 2 */ (vars) => vars,
+    /* 2: Line 3 */ (vars) => vars, // ○delNode
+    /* 3: Line 4 */ (vars) => ({ ...vars, prev: null }),
+    /* 4: Line 5 */ (vars) => ({ ...vars, i: null }),
+    /* 5: Line 6 */ (vars) => vars, // if (pos == 1)
+    /* 6: Line 7 */ (vars) => { // listHead ← listHead.next
+        const listData = vars.listData as any[];
+        const listHead = vars.listHead as number;
+        return { ...vars, listHead: listData[listHead].next };
+    },
+    /* 7: Line 8 */ (vars) => vars, // else
+    /* 8: Line 9 */ (vars) => ({ ...vars, prev: vars.listHead }),
+    /* 9: Line 10 */ (vars) => vars, // comment
+    /* 10: Line 11 */ (vars) => { // for
+        if (vars.i === null) return { ...vars, i: 2 }; // iの初期化
+        return { ...vars, i: (vars.i as number) + 1 }; // iのインクリメント
+    },
+    /* 11: Line 12 */ (vars) => { // prev <- prev.next
+        const listData = vars.listData as any[];
+        const prev = vars.prev as number;
+        return { ...vars, prev: listData[prev].next };
+    },
+    /* 12: Line 13 */ (vars) => vars, // endfor
+    /* 13: Line 14 */ (vars) => vars, // [ ] (動的ステップで上書き)
+    /* 14: Line 15 */ (vars) => vars, // endif
+];
+
+// 問10のロジック本体
+const linkedListDeleteLogic: { 
+    getTraceStep: (line: number, variant: string | null) => TraceStep;
+    calculateNextLine: (currentLine: number, vars: VariablesState, variant: string | null) => number 
+} = {
+    getTraceStep: (line, variant) => {
+        if (line === 13) { // 14行目 [ ] の処理
+            return linkedListDeleteStepLogics[variant || 'default'] || linkedListDeleteStepLogics['default'];
+        }
+        return staticLinkedListDeleteTraceLogic[line] || ((vars) => vars);
+    },
+
+    calculateNextLine: (currentLine, vars, variant) => {
+        // プリセットが選択されるまで待機
+        if (vars.listData === null || vars.pos === null) {
+            if (currentLine < 2) return currentLine + 1; // 3行目(○delNode)の手前までは許可
+            return currentLine;
+        }
+        
+        // 14行目 [ ] を実行する場合は、ロジックが選択されているかチェック
+        // (line 12 -> 13 -> 14 の流れなので、line 12 (endfor) の時点でチェック)
+        if (currentLine === 12 && !variant) {
+            return currentLine; // ロジックが選択されるまで待機
+        }
+        // 14行目(index 13)の実行後
+        if (currentLine === 13) {
+            return 14; // -> 15 (endif)
         }
 
-        const executedLine = currentLine + 1;
         const pos = vars.pos as number;
-        const listData = vars.listData as { val: string; next: number | null }[];
+        const i = vars.i as number;
 
-        switch (executedLine) {
-            case 4: // ○delNode
-                return 5; // -> if文へ
-            case 6: // if (pos == 1)
-                return pos === 1 ? 6 : 8; // -> line 7 or 9
-            case 7: // listHead ← listHead.next
-                vars.listHead = listData[vars.listHead as number].next;
-                return 14; // -> endif
-            case 9: // prev ← listHead
-                vars.prev = vars.listHead;
-                vars.i = 2;
-                return 10; // -> for
-            case 11: // for
-                return (vars.i as number) < pos ? 11 : 13; // -> loop body or after
-            case 12: // prev ← prev.next
-                vars.prev = listData[vars.prev as number].next;
-                vars.i = (vars.i as number) + 1;
-                return 10; // -> back to for
-            case 14: {
-                const prevNodeIndex = vars.prev as number;
-                const nodeToDeleteIndex = listData[prevNodeIndex].next;
-                if (nodeToDeleteIndex !== null) {
-                    const nodeAfterDeletedIndex = listData[nodeToDeleteIndex].next;
-                    listData[prevNodeIndex].next = nodeAfterDeletedIndex;
-                }
-                return 14; // -> endif
-            }
-            case 15: // endif
+        switch (currentLine) {
+            case 0: return 1;
+            case 1: return 2;
+            case 2: return 3; // Line 3 -> 4
+            case 3: return 4; // Line 4 -> 5
+            case 4: return 5; // Line 5 -> 6 (if)
+            case 5: // Line 6: if (pos == 1)
+                return (pos === 1) ? 6 : 7; // -> 7 (listHead=) or 8 (else)
+            case 6: // Line 7: listHead <- ...
+                return 14; // -> 15 (endif)
+            case 7: // Line 8: else
+                return 8; // -> 9 (prev=)
+            case 8: // Line 9: prev <- listHead
+                return 9; // -> 10 (comment)
+            case 9: // Line 10: comment
+                return 10; // -> 11 (for)
+            case 10: // Line 11: for
+                const loopVar = (i === null) ? 2 : i; // iの初期化(i=2)
+                return (loopVar <= pos - 1) ? 11 : 12; // -> 12 (loop body) or 13 (endfor)
+            case 11: // Line 12: prev <- prev.next
+                return 10; // -> 11 (for - iのインクリメント)
+            case 12: // Line 13: endfor
+                // ロジックが選択されているか、ここで最終チェック
+                if (!variant) return 12; // 待機
+                return 13; // -> 14 ([ ])
+            case 14: // Line 15: endif
                 return 99; // 終了
             default:
                 return currentLine + 1;

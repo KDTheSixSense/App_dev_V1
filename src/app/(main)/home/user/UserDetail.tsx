@@ -9,9 +9,10 @@ type UserWithTitle = User & {
 // 親コンポーネントからuser情報を受け取るためのPropsを定義
 interface UserDetailProps {
   user: UserWithTitle | null;
+  unsubmittedAssignmentCount: number;
 }
 
-export default async function UserDetail({ user }: UserDetailProps) {
+export default async function UserDetail({ user, unsubmittedAssignmentCount }: UserDetailProps) {
 
  
 
@@ -71,7 +72,7 @@ export default async function UserDetail({ user }: UserDetailProps) {
                     </div>
                     <div className="flex flex-col justify-center items-center px-4 py-2 w-30 h-25 gap-2">
                         <span className="text-sm text-gray-600">課題</span>
-                        <span className="text-2xl font-bold text-gray-800">12</span>
+                        <span className="text-2xl font-bold text-gray-800">{unsubmittedAssignmentCount}</span> {/* ←ここ */}
                     </div>
                 </div>
             </div>

@@ -415,63 +415,71 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             />
           </div>
 
-          {/* 右カラム (トレース画面とAIチャット) */}
-          {showTraceUI && (
-            <div className="lg:col-span-5 flex flex-col gap-8 sticky top-10">
-              {/* トレース画面 (変更なし) */}
-              <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                <TraceScreen programLines={problem.programLines?.[currentLang] || []} currentLine={currentTraceLine} language={language} textResources={t} />
-              </div>
-              {/* 変数・トレース制御 (変更なし) */}
-              <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                <VariableTraceControl problem={problem} variables={variables} onNextTrace={handleNextTrace} isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)} onResetTrace={handleResetTrace} currentTraceLine={currentTraceLine} language={language} textResources={t} onSetData={handleSetData} isPresetSelected={isPresetSelected} onSetNum={handleSetNum} selectedLogicVariant={selectedLogicVariant} onSetLogicVariant={setSelectedLogicVariant}/>
-              </div>
-
-              {/* ★ AIチャット (アコーディオン形式に変更) */}
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <button
-                  onClick={() => setIsChatOpen(!isChatOpen)}
-                  className="w-full p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors flex justify-between items-center cursor-pointer" // cursor-pointer を追加
-                >
-                  <span className="font-semibold text-gray-700">{t.kohakuChatTitle}</span>
-                  {/* クレジット表示 */}
-                  <div className="text-sm text-gray-600 flex items-center gap-1"> {/* flexとgapを追加 */}
-                    {t.creditsLabel} {/* ラベルを使用 */}
-                    <span className="font-bold text-lg text-blue-600">{credits}</span>
-                    {t.creditsUnit} {/* 単位を使用 */}
-                    {credits <= 0 && (
-                      <Link href="/profile" className="text-xs text-blue-500 hover:underline ml-1">
-                        {t.increaseCreditsLink} {/* リンクテキストを使用 */}
-                      </Link>
-                    )}
-                  </div>
-                   {/* 開閉アイコン */}
-                  <span className={`transform transition-transform duration-200 ${isChatOpen ? 'rotate-180' : 'rotate-0'}`}>▼</span> {/* durationを追加 */}
-                </button>
-
-                {/* チャット本体 (isChatOpenがtrueの時だけ表示) */}
-                {isChatOpen && (
-                  <div className="p-0"> {/* KohakuChat側でpaddingを持つ想定 */}
-                    <KohakuChat
-                      messages={chatMessages}
-                      onSendMessage={handleUserMessage}
-                      language={language}
-                      textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
-                      isLoading={isAiLoading}
-                      isDisabled={credits <= 0}
-                      kohakuIcon={kohakuIcon}
+          <div className="lg:col-span-5 flex flex-col gap-8 sticky top-10">
+            
+            {/* 2a. トレース関連 (showTraceUIがtrueの場合のみ表示) */}
+            {showTraceUI && (
+              <>
+                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                  <TraceScreen programLines={problem.programLines?.[currentLang] || []} currentLine={currentTraceLine} language={language} textResources={t} />
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                  <VariableTraceControl 
+                      problem={problem} 
+                      variables={variables} 
+                      onNextTrace={handleNextTrace} 
+                      isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)} 
+                      onResetTrace={handleResetTrace} 
+                      currentTraceLine={currentTraceLine} 
+                      language={language} 
+                      textResources={t} 
+                      onSetData={handleSetData} 
+                      isPresetSelected={isPresetSelected} 
+                      onSetNum={handleSetNum}
+                      selectedLogicVariant={selectedLogicVariant}
+                      onSetLogicVariant={setSelectedLogicVariant}
                     />
-                  </div>
-                )}
-              </div>
-              {/* ★ AIチャットここまで */}
+                </div>
+              </>
+            )}
 
-            </div>
-          )}
+            {/* 2b. AIチャット (常に表示) */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setIsChatOpen(!isChatOpen)}
+                className="w-full p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors flex justify-between items-center cursor-pointer"
+              >
+                <span className="font-semibold text-gray-700">{t.kohakuChatTitle}</span>
+                <div className="text-sm text-gray-600 flex items-center gap-1">
+                  {t.creditsLabel}
+                  <span className="font-bold text-lg text-blue-600">{credits}</span>
+                  {t.creditsUnit}
+                  {credits <= 0 && (
+                    <Link href="/profile" className="text-xs text-blue-500 hover:underline ml-1">
+                      {t.increaseCreditsLink}
+                    </Link>
+                  )}
+                </div>
+                <span className={`transform transition-transform duration-200 ${isChatOpen ? 'rotate-180' : 'rotate-0'}`}>▼</span>
+              </button>
 
-          {/* ★ 画面右下固定の要素は削除 */}
-
-        </div>
+              {isChatOpen && (
+                <div className="p-0">
+                  <KohakuChat
+                    messages={chatMessages}
+                    onSendMessage={handleUserMessage}
+                    language={language}
+                    textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
+                    isLoading={isAiLoading}
+                      // ✅ [バグ修正] isAiLoading と credits の両方で無効化
+                    isDisabled={isAiLoading || credits <= 0}
+                    kohakuIcon={kohakuIcon}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* 次の問題へボタン (変更なし) */}
         {isAnswered && (
