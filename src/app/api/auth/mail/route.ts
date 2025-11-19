@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       // 環境変数からベースURLを取得
       // const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-      const resetUrl = `https://infopia.nqg1t0/reset-password/${rawToken}`;
+      const resetUrl = `https://infopia.nqg1t0.com/reset-password/${rawToken}`;
       console.log(`[開発用] リセットURL: ${resetUrl}`);
 
       // --- Nodemailer (Gmail) メール送信ロジック ---

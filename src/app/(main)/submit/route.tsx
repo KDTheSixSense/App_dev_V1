@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     
     try {
       // Call execute_code API to get real output
-      const executeResponse = await fetch(`https://infopia.nqg1t0/api/execute_code`, {
+      const executeResponse = await fetch(`https://infopia.nqg1t0.com/api/execute_code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

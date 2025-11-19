@@ -5,7 +5,7 @@ import { OAuth2Client } from 'google-auth-library';
 
 export async function GET() {
   // コールバックURLを環境変数から正しく構築します
-  const redirectUri = `https://infopia.nqg1t0/api/auth/google/callback`;
+  const redirectUri = `https://infopia.nqg1t0.com/api/auth/google/callback`;
 
   const oAuth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
