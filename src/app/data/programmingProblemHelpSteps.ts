@@ -9,7 +9,7 @@ export const programmingProblemHelpSteps: HelpStep[] = [
   {
     id: "programming_problem_overview",
     title: "プログラミング問題の概要",
-    description: "このページでは、プログラミング問題を解くことができます。左側に問題文、中央にコードエディタ、右側にAIチャットがあります。問題をよく読み、サンプルケースを理解してからコードを書いてください。",
+    description: "このページでは、プログラミング問題を解くことができます。左側に問題文、右側にコードエディタ、コハクに対しチャットができます。問題をよく読み、サンプルケースを理解してからコードを書いてください。",
     imagePath: "/images/help/programing1.png",
     targetSelector: ".h-screen.bg-gray-100.p-4.overflow-hidden",
     order: 1,
@@ -27,7 +27,7 @@ export const programmingProblemHelpSteps: HelpStep[] = [
   {
     id: "code_editor_intro",
     title: "コードエディタの使い方",
-    description: "中央パネルでコードを書きます。まず、右上のドロップダウンからプログラミング言語を選択してください。Python、JavaScript、Java、C、C++、C#、PHPから選べます。",
+    description: "中央パネルでコードを書きます。まず、右上のドロップダウンからPython、JavaScript、Java、C、C++、C#、PHPのプログラミング言語を選択して問題を解答してください。",
     imagePath: "/images/help/programing1.png",
     targetSelector: ".p-4.border-b.flex.justify-between.items-center.flex-shrink-0",
     order: 3,
@@ -36,7 +36,7 @@ export const programmingProblemHelpSteps: HelpStep[] = [
   {
     id: "code_input_execution",
     title: "コード入力と実行",
-    description: "選択した言語でコードを入力してください。下部の「標準入力」タブでテスト用の入力を設定し、「実行」ボタンをクリックしてコードをテストできます。実行結果は「実行結果」タブに表示されます。",
+    description: "下部の「標準入力」タブでテスト用の入力(引数)を設定し、「実行」ボタンをクリックしてコードをテストできます。実行結果は「実行結果」タブに表示されます。",
     imagePath: "/images/help/programing1.png",
     targetSelector: ".flex.border.border-gray-300.rounded-md.p-0\\.5",
     order: 4,
@@ -54,7 +54,7 @@ export const programmingProblemHelpSteps: HelpStep[] = [
   {
     id: "ai_chat_help",
     title: "AIチャット (コハク)",
-    description: "右パネルのAIチャットでヒントをもらいましょう。質問を入力すると、AIが問題解決のヒントを提供します。分からない部分があれば、積極的に質問してください。",
+    description: "コハクに対してチャット形式で投げかけることができ、あなたの質問に対しコハクがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。",
     imagePath: "/images/help/programing1.png",
     targetSelector: ".p-4.border-b.flex-shrink-0",
     order: 6,

@@ -18,7 +18,7 @@ export const selectsProblemsHelpSteps: HelpStep[] = [
   {
     id: "problem_statement_selects",
     title: "解答選択と解説表示",
-    description: "正解の場合は緑色、不正解の場合は赤色で表示され、その下に説明が表示されます。",
+    description: "正解の場合は緑色、不正解の場合は赤色で表示され、その下に解説が表示されます。",
     imagePath: "/images/help/4taku2.png",
     targetSelector: ".container",
     order: 2,
@@ -27,7 +27,7 @@ export const selectsProblemsHelpSteps: HelpStep[] = [
   {
     id: "problem_statement_selects",
     title: "AIチャット (コハク)",
-    description: "AIコハクが生成したインタラクティブな質問に答えることができます。チャット形式で質問が表示され、あなたの回答に対してAIがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。回答が正しい場合は緑色、不正解の場合は赤色で表示され、AIからのアドバイスを確認できます。",
+    description: "コハクに対してチャット形式で投げかけることができ、あなたの質問に対しコハクがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。",
     imagePath: "/images/help/kihongA3.png",
     targetSelector: ".container",
     order: 3,
