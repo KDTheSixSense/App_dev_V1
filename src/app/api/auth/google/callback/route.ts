@@ -12,11 +12,11 @@ export async function GET(req: NextRequest) {
 
   if (!code) {
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=google_auth_failed`
+      `https://infopia.nqg1t0/auth/login?error=google_auth_failed`
     );
   }
 
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
+  const redirectUri = `https://infopia.nqg1t0/api/auth/google/callback`;
 
   const oAuth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       console.log(`Google Callback: 既存ユーザー ${email} (ID: ${existingUser.id}) でログインしました。`);
 
       // ホーム画面にリダイレクト
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/home`);
+      return NextResponse.redirect(`https://infopia.nqg1t0/home`);
     } else {
       // 5b. 新規ユーザー: 一時セッションに保存し、確認画面へリダイレクト
       session.googleSignupProfile = {
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
       console.log(`Google Callback: 新規ユーザー ${email} を確認待ちセッションに保存しました。`);
       
       // 新規登録確認ページにリダイレクト
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/auth/google/confirm`);
+      return NextResponse.redirect(`https://infopia.nqg1t0/auth/google/confirm`);
     }
 
   } catch (error: any) { // 👈 エラーの詳細を取得
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
     console.error('-------------------------------------');
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=google_callback_failed`
+      `https://infopia.nqg1t0/auth/login?error=google_callback_failed`
     );
   }
 }
