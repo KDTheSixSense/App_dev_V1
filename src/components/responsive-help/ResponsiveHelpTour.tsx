@@ -56,13 +56,13 @@ const ResponsiveHelpTour: React.FC<ResponsiveHelpTourProps> = ({ steps, onClose 
   if (!currentStep) return null;
 
   return (
-    // Spotlight effect: White overlay with a hole for the target element
+    // Spotlight effect: Dark overlay with a hole for the target element
     <div className="help-tour-overlay fixed inset-0 z-[9999]">
-      {/* Semi-transparent white overlay */}
-      <div className="absolute inset-0 bg-white/80"></div>
+      {/* Semi-transparent dark overlay */}
+      <div className="absolute inset-0 bg-black/50"></div>
 
       {/* Help modal positioned near the spotlight - Responsive */}
-      <div className="help-tour-modal absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/4 bg-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-xl w-full max-w-[90vw] sm:w-[600px] md:w-[800px] lg:w-[1200px] relative z-10 transition-all">
+      <div className="help-tour-modal absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-xl w-full max-w-[90vw] sm:w-[600px] md:w-[800px] lg:w-[1200px] relative z-10 transition-all">
         <h3 className="text-2xl sm:text-3xl font-bold mb-1 text-gray-900">{currentStep.title}</h3>
         <p className="text-gray-700 mb-2 whitespace-pre-wrap text-lg sm:text-xl leading-relaxed">{currentStep.description}</p>
 

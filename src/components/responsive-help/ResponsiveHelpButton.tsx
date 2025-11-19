@@ -61,6 +61,11 @@ const ResponsiveHelpButton: React.FC = () => {
     page = 'group_assignments_create_programming';
   }
 
+  // Special handling for group select-page problem detail pages
+  if (pathname.startsWith('/group/select-page/')) {
+    page = 'group/select-page';
+  }
+
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [helpSteps, setHelpSteps] = useState<HelpStep[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -73,7 +78,7 @@ const ResponsiveHelpButton: React.FC = () => {
   // Check if modal is open
   useEffect(() => {
     const checkModal = () => {
-      const modal = document.querySelector('.modal, .overlay, [role="dialog"]');
+      const modal = document.querySelector('.modal, .overlay, [role="dialog"], div.fixed.inset-0.bg-black\\/30, div.fixed.inset-0.bg-gray-600');
       setIsModalOpen(!!modal);
     };
 
@@ -111,8 +116,8 @@ const ResponsiveHelpButton: React.FC = () => {
     }
   }, [page, pathname]);
 
-  // Hide help button on login page or register page or when modal is open, except for group assignments create programming page
-  if (!isClient || pathname === '/auth/login' || pathname === '/auth/register' || (isModalOpen && page !== 'group_assignments_create_programming')) {
+  // Hide help button on login page, register page, google confirm page, home page or when modal is open, except for group assignments create programming page
+  if (!isClient || pathname === '/auth/login' || pathname === '/auth/register' || pathname === '/auth/google/confirm' || pathname === '/' || (isModalOpen && page !== 'group_assignments_create_programming')) {
     return null;
   }
 
