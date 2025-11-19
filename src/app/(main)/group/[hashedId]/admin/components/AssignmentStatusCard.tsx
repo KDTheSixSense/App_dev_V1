@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { returnSubmission } from '@/lib/actions/submissionActions';
-import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 type Submission = {
   status: string;
@@ -37,12 +37,14 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
   onSelect,
   groupId,
 }) => {
+  const router = useRouter();
 
   const handleReturnSubmission = async (userId: number) => {
     if (confirm('この提出を差し戻しますか？')) {
       const result = await returnSubmission(assignment.id, userId, groupId);
       if (result.success) {
         alert('提出を差し戻しました。');
+        router.refresh();
       } else {
         alert('差し戻しに失敗しました。');
       }
