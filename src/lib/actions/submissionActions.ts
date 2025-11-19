@@ -35,3 +35,31 @@ export async function returnSubmission(assignmentId: number, userId: number, gro
     return { success: false, message: 'Failed to return submission' };
   }
 }
+
+export async function returnMultipleSubmissions(assignmentId: number, userIds: number[], groupId: string) {
+  try {
+    if (userIds.length === 0) {
+      return { success: true }; // No users to process
+    }
+
+    await prisma.submissions.updateMany({
+      where: {
+        assignment_id: assignmentId,
+        userid: {
+          in: userIds,
+        },
+        status: '提出済み', //念のため提出済みのものだけを対象にする
+      },
+      data: {
+        status: '差し戻し',
+      },
+    });
+
+    revalidatePath(`/group/${groupId}/admin`);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to return multiple submissions:', error);
+    return { success: false, message: 'Failed to return multiple submissions' };
+  }
+}
+

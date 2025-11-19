@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 type AssignmentWithSubmissions = any;
 import { AssignmentStatusCard } from './AssignmentStatusCard';
 
@@ -11,8 +12,12 @@ interface AssignmentStatusListProps {
 }
 
 export const AssignmentStatusList: React.FC<AssignmentStatusListProps> = ({ assignments, loading, groupId }) => {
+  const searchParams = useSearchParams();
+  const selectedIdFromQuery = searchParams.get('selectedAssignment');
+  const initialSelectedId = selectedIdFromQuery ? parseInt(selectedIdFromQuery, 10) : null;
+
   // クリックされた課題のIDを管理するためのState
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(initialSelectedId);
 
   // カードがクリックされたときの処理
   const handleSelectAssignment = (assignmentId: number) => {

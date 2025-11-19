@@ -121,30 +121,33 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
   useEffect(() => {
       // ページ読み込み時にも最新の情報を取得
     if (userWithPet) { // ログインしている場合のみ
-      refetchPetStatus();
+      const timerId = setTimeout(() => {
+        refetchPetStatus();
+      }, 500); // 500ms遅延実行
+
+      // addEventListener 用のラッパー関数を定義
+      const handlePetStatusUpdate = () => {
+        refetchPetStatus(false); // isPeriodicCheck = false
+      };
+
+      // ラッパー関数をリスナーに登録
+      window.addEventListener('petStatusUpdated', handlePetStatusUpdate);
+
+      // 満腹度減少を同期間隔タイマー（1分ごと）
+      const intervalId = setInterval(() => {
+        if (userWithPet) {
+          refetchPetStatus(true); // 定期チェックであることを示すフラグを立てる
+        }
+      }, 60000); // 60000ms = 1分
+
+      // コンポーネントが不要になった時に、イベントリスナーとタイマーを解除
+      return () => {
+        clearTimeout(timerId); // 遅延実行タイマーを解除
+        // ラッパー関数を解除
+        window.removeEventListener('petStatusUpdated', handlePetStatusUpdate);
+        clearInterval(intervalId); // 定期実行タイマーを解除
+      };
     }
-
-    // addEventListener 用のラッパー関数を定義
-    const handlePetStatusUpdate = () => {
-      refetchPetStatus(false); // isPeriodicCheck = false
-    };
-
-    // ラッパー関数をリスナーに登録
-    window.addEventListener('petStatusUpdated', handlePetStatusUpdate);
-
-    // 満腹度減少を同期間隔タイマー（1分ごと）
-    const timerId = setInterval(() => {
-      if (userWithPet) {
-        refetchPetStatus(true); // 定期チェックであることを示すフラグを立てる
-      }
-    }, 60000); // 60000ms = 1分
-
-    // コンポーネントが不要になった時に、イベントリスナーとタイマーを解除
-    return () => {
-      // ラッパー関数を解除
-      window.removeEventListener('petStatusUpdated', handlePetStatusUpdate);
-      clearInterval(timerId); // タイマーを解除
-    };
   }, [userWithPet, refetchPetStatus]); // 依存配列に refetchPetStatus を追加
 
   // ログアウト処理を行う非同期関数

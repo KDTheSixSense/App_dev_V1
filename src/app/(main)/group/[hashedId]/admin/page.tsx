@@ -74,6 +74,8 @@ const GroupDetailPage: React.FC = () => {
         // タブの設定（課題タブが指定された場合）
         if (tabParam === '課題') {
             setActiveTab('課題'); // 課題タブに自動的に切り替え
+        } else if (tabParam === 'assignments') {
+            setActiveTab('提出状況一覧');
         }
 
         // エディター展開の設定（課題作成エディターを展開）
