@@ -18,7 +18,7 @@ export const appliedInfoMorningHelpSteps: HelpStep[] = [
   {
     id: "applied_info_morning_problem_overview",
     title: "問題文",
-    description: "問題の説明が表示されます。内容をよく読んで理解してください。",
+    description: "問題の解説が表示されます。内容をよく読んで理解してください。",
     imagePath: "/images/help/oyo2.png",
     targetSelector: ".container",
     order: 2,
@@ -27,7 +27,7 @@ export const appliedInfoMorningHelpSteps: HelpStep[] = [
   {
     id: "applied_info_morning_problem_overview",
     title: "AIチャット (コハク)",
-    description: "AIコハクが生成したインタラクティブな質問に答えることができます。チャット形式で質問が表示され、あなたの回答に対してAIがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。回答が正しい場合は緑色、不正解の場合は赤色で表示され、AIからのアドバイスを確認できます。",
+    description: "コハクに対してチャット形式で投げかけることができ、あなたの質問に対しコハクがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。",
     imagePath: "/images/help/oyo3.png",
     targetSelector: ".container",
     order: 3,

@@ -18,7 +18,7 @@ export const basicInfoBHelpSteps: HelpStep[] = [
   {
     id: "basic_info_b_problem_overview",
     title: "解答選択と解説表示",
-    description: "正解の場合は緑色、不正解の場合は赤色で表示され、その下に説明が表示されます。",
+    description: "正解の場合は緑色、不正解の場合は赤色で表示され、その下に解説が表示されます。",
     imagePath: "/images/help/kihongB2.png",
     targetSelector: ".bg-white.p-6.sm\\:p-8.rounded-xl.shadow-lg.border.border-gray-200.min-h-\\[calc\\(100vh-120px\\)\\].flex.flex-col",
     order: 2,
@@ -27,7 +27,7 @@ export const basicInfoBHelpSteps: HelpStep[] = [
   {
     id: "basic_info_b_problem_overview",
     title: "トレース画面と変数セクション",
-    description: "トレースの開始、リセット、次のステップの実行が可能です。プリセットデータを選択してトレースを開始すると、現在実行中のコード行がハイライトされます。これにより、トレース実行中に変数の値がどのように変化するかを直接確認できます。",
+    description: "トレースの開始、リセット、次のステップの実行が可能です。ボタンを選択してトレースを開始すると、現在実行中のコード行がハイライトされます。これにより、トレース実行中に変数の値がどのように変化するかを行単位で直接確認できます。\n\n〇トレースとは、プログラムの実行過程を一歩一歩追いかけることです。コードの各行がどのように実行され、変数がどのように変化するかを理解するのに役立ちます。\n\n〇変数とは、プログラム内でデータを保存するための名前付きの場所(箱)です。トレースボタンの上に変数の状態が表示され、トレースの進行に伴って変数の値がどのように変わるかを確認できます。",
     imagePath: "/images/help/kihongB3.png",
     targetSelector: ".bg-white.p-6.rounded-xl.shadow-lg.border.border-gray-200",
     order: 4,
@@ -36,7 +36,7 @@ export const basicInfoBHelpSteps: HelpStep[] = [
   {
     id: "basic_info_b_problem_overview",
     title: "AIチャット (コハク)",
-    description: "AIアシスタントのコハクに質問できます。問題の理解が難しい場合にヒントをもらえます。クレジットを使用して質問してください。",
+    description: "コハクに対してチャット形式で投げかけることができ、あなたの質問に対しコハクがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。",
     imagePath: "/images/help/kihongB4.png",
     targetSelector: ".bg-white.rounded-xl.shadow-lg.border.border-gray-200.overflow-hidden",
     order: 5,

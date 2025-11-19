@@ -92,14 +92,14 @@ const HelpTour: React.FC<HelpTourProps> = ({ steps, onClose }) => {
             onClick={goToNextStep}
             className="px-6 py-3 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-lg"
           >
-            {currentStepIndex === steps.length - 1 ? "ツアーを終了" : "次へ"}
+            {currentStepIndex === steps.length - 1 ? "終了" : "次へ"}
           </button>
         </div>
 
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl"
-          aria-label="ツアーを閉じる"
+          aria-label="閉じる"
         >
           &times;
         </button>
