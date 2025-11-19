@@ -11,7 +11,7 @@ import { getSession } from './session';
 import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid'; // 招待コード生成に使う
 import { sessionOptions } from '../lib/session';
-import type { Problem as SerializableProblem } from '@/lib/types';
+import type { Problem as SerializableProblem } from '@/lib/problem-types';
 import { TitleType } from '@prisma/client';
 import { getMissionDate } from './utils';
 

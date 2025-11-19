@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import type { Problem } from '@/lib/types'; // 既存のProblem型を再利用
+import type { Problem } from '@/lib/problem-types'; // 既存のProblem型を再利用
 
 const prisma = new PrismaClient();
 

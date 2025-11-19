@@ -8,7 +8,7 @@ import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, TextCur
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 // --- データと型のインポート ---
-import type { Problem as SerializableProblem, SampleCase } from '@/lib/types';
+import type { Problem as SerializableProblem, SampleCase } from '@/lib/problem-types';
 import { getProblemByIdAction, getNextProgrammingProblemId } from '@/lib/actions';
 
 // --- 型定義 ---

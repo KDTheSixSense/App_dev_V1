@@ -1,5 +1,5 @@
 // /workspaces/my-next-app/src/lib/issue_list/selects_problems/problem.ts
-import type { Problem } from '@/lib/types'; // 共通の型定義をインポート
+import type { Problem } from '@/lib/problem-types'; // 共通の型定義をインポート
 
 export const pythonProblems: Problem[] = [
   {

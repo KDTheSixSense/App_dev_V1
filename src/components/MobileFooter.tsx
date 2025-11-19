@@ -6,6 +6,7 @@ import { FaHome, FaList, FaTasks, FaUsers, FaCalendarAlt, FaBars, FaTimes, FaUse
 import Image from 'next/image';
 
 import type { User, Status_Kohaku } from '@prisma/client';
+import type { UserWithPetStatus } from '@/lib/types';
 
 
 const MAX_HUNGER = 200; // 満腹度の最大値

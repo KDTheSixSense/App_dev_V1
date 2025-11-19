@@ -1,5 +1,5 @@
 // src/lib/issue_list/basic_info_a_problem/problem.ts
-import type { Problem } from '@/lib/types';
+import type { Problem } from '@/lib/problem-types';
 
 export const basicInfoAProblems: Problem[] = [
   // 基本情報A問題令和5年度版

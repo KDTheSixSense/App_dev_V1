@@ -13,9 +13,7 @@ interface SessionData {
   };
 }
 
-export type UserWithPetStatus = User & {
-  status_Kohaku: Status_Kohaku | null;
-};
+import type { UserWithPetStatus } from '@/lib/types';
 
 export default async function MainPagesLayout({
   children,

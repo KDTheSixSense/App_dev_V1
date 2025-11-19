@@ -1,4 +1,5 @@
 // src/lib/types/index.ts
+import type { User, Status_Kohaku } from '@prisma/client';
 
 /**
  * @interface AnswerOption
@@ -58,3 +59,7 @@ export interface Problem {
    */
   calculateNextLine?: (currentLine: number, vars: VariablesState) => number;
 }
+
+export type UserWithPetStatus = User & {
+  status_Kohaku: Status_Kohaku | null;
+};

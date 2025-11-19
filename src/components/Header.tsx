@@ -5,10 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 // Link, Image, useRouter はNext.js固有のため削除
 import type { User, Status_Kohaku } from '@prisma/client';
-
-type UserWithPetStatus = User & {
-  status_Kohaku: Status_Kohaku | null;
-};
+import type { UserWithPetStatus } from '@/lib/types';
 
 type HeaderProps = {
   userWithPet: UserWithPetStatus | null; // ユーザー情報を受け取る

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SelectProblem } from '@prisma/client';
-import type { Problem as SerializableProblem } from '@/lib/types';
+import type { Problem as SerializableProblem } from '@/lib/problem-types';
 import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '@/components/KohakuChat';
 import { recordStudyTimeAction } from '@/lib/actions';

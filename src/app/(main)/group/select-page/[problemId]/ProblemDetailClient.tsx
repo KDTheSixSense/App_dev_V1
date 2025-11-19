@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SelectProblem } from '@prisma/client';
-import type { Problem as SerializableProblem } from '@/lib/types';
+import type { Problem as SerializableProblem } from '@/lib/problem-types';
 import ProblemStatement from '../components/ProblemStatement';
 import { recordStudyTimeAction } from '@/lib/actions';
 

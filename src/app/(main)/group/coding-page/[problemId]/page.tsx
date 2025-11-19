@@ -4,7 +4,7 @@ import React from 'react';
 import { notFound, useSearchParams } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import ProblemSolverClient from './ProblemSolverClient';
-import type { Problem as SerializableProblem } from '@/lib/types';
+import type { Problem as SerializableProblem } from '@/lib/problem-types';
 
 type ProblemSolverPageProps = {
   params: Promise<{ problemId: string }>;

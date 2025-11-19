@@ -1,5 +1,5 @@
 // src/lib/issue_list/applied_info_afternoon_problem/problem.ts
-import type { Problem } from '@/lib/types'; // '@/lib/types'のパスとProblem型が正しいことを確認
+import type { Problem } from '@/lib/problem-types'; // '@/lib/types'のパスとProblem型が正しいことを確認
 
 export const appliedInfoAfternoonProblems: Problem[] = [
   {
