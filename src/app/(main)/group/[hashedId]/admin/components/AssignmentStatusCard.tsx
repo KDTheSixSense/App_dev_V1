@@ -1,16 +1,19 @@
 'use client';
 
 import React from 'react';
+import { returnSubmission } from '@/lib/actions/submissionActions';
+import { useParams } from 'next/navigation';
 
 type Submission = {
   status: string;
   user: {
-    id: string | number;
+    id: number;
     username?: string;
   };
 };
 
 export type AssignmentWithSubmissions = {
+  id: number;
   title: string;
   created_at: string;
   due_date: string;
@@ -25,15 +28,30 @@ interface AssignmentStatusCardProps {
   assignment: AssignmentWithSubmissions;
   isSelected: boolean;
   onSelect: () => void;
+  groupId: string;
 }
 
 export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
   assignment,
   isSelected,
   onSelect,
+  groupId,
 }) => {
+
+  const handleReturnSubmission = async (userId: number) => {
+    if (confirm('この提出を差し戻しますか？')) {
+      const result = await returnSubmission(assignment.id, userId, groupId);
+      if (result.success) {
+        alert('提出を差し戻しました。');
+      } else {
+        alert('差し戻しに失敗しました。');
+      }
+    }
+  };
+
   const submitted = assignment.Submissions.filter(sub => sub.status === '提出済み');
   const notSubmitted = assignment.Submissions.filter(sub => sub.status === '未提出');
+  const returned = assignment.Submissions.filter(sub => sub.status === '差し戻し');
 
   return (
     <div
@@ -109,6 +127,12 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
                     {notSubmitted.length}
                 </div>
             </div>
+            <div>
+                <span style={{ fontSize: '12px', color: '#5f6368' }}>差し戻し</span>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#dd6b20' }}>
+                    {returned.length}
+                </div>
+            </div>
         </div>
 
       </div>
@@ -128,11 +152,30 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {submitted.map(sub => (
-                  <div key={sub.user.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#c6f6d5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#276749' }}>
-                      {sub.user.username?.charAt(0)}
+                  <div key={sub.user.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#c6f6d5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#276749' }}>
+                        {sub.user.username?.charAt(0)}
+                      </div>
+                      <span style={{ fontSize: '14px' }}>{sub.user.username}</span>
                     </div>
-                    <span style={{ fontSize: '14px' }}>{sub.user.username}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReturnSubmission(sub.user.id);
+                      }}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        color: '#dd6b20',
+                        backgroundColor: 'transparent',
+                        border: '1px solid #dd6b20',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      差し戻し
+                    </button>
                   </div>
                 ))}
                 {submitted.length === 0 && <span style={{fontSize: '12px', color: '#718096'}}>まだ誰も提出していません。</span>}
@@ -155,6 +198,22 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
                 ))}
                 {notSubmitted.length === 0 && <span style={{fontSize: '12px', color: '#718096'}}>全員が提出済みです！</span>}
               </div>
+            </div>
+          </div>
+          <div style={{ padding: '16px', borderTop: '1px solid #e0e0e0' }}>
+            <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: '#dd6b20' }}>
+              差し戻し済み ({returned.length}人)
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {returned.map(sub => (
+                <div key={sub.user.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#feebc8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#9c4221' }}>
+                    {sub.user.username?.charAt(0)}
+                  </div>
+                  <span style={{ fontSize: '14px' }}>{sub.user.username}</span>
+                </div>
+              ))}
+              {returned.length === 0 && <span style={{fontSize: '12px', color: '#718096'}}>差し戻し済みの提出はありません。</span>}
             </div>
           </div>
         </div>

@@ -315,6 +315,7 @@ const GroupDetailPage: React.FC = () => {
                           <AssignmentStatusList
                             assignments={assignmentsWithSubmissions}
                             loading={submissionsLoading}
+                            groupId={hashedId}
                           />
                         )}
                     </div>

@@ -7,9 +7,10 @@ import { AssignmentStatusCard } from './AssignmentStatusCard';
 interface AssignmentStatusListProps {
   assignments: AssignmentWithSubmissions[];
   loading: boolean;
+  groupId: string;
 }
 
-export const AssignmentStatusList: React.FC<AssignmentStatusListProps> = ({ assignments, loading }) => {
+export const AssignmentStatusList: React.FC<AssignmentStatusListProps> = ({ assignments, loading, groupId }) => {
   // クリックされた課題のIDを管理するためのState
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null);
 
@@ -40,6 +41,7 @@ export const AssignmentStatusList: React.FC<AssignmentStatusListProps> = ({ assi
           assignment={assignment}
           isSelected={selectedAssignmentId === assignment.id}
           onSelect={() => handleSelectAssignment(assignment.id)}
+          groupId={groupId}
         />
       ))}
     </div>
