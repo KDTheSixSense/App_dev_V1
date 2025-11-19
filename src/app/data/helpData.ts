@@ -23,6 +23,7 @@ import { createProgrammingQuestionHelpSteps } from "./createProgrammingQuestionH
 import { groupAssignmentsCreateProgrammingHelpSteps } from "./groupAssignmentsCreateProgrammingHelpSteps";
 import { groupHelpSteps } from "./groupHelpSteps";
 import { groupCodingPageHelpSteps } from "./groupCodingPageHelpSteps";
+import { groupSelectPageHelpSteps } from "./groupSelectPageHelpSteps";
 import { unsubmittedAssignmentsHelpSteps } from "./unsubmittedAssignmentsHelpSteps";
 import { eventHelpSteps } from "./eventHelpSteps";
 import { eventDetailProblemHelpSteps } from "./eventDetailProblemHelpSteps";
@@ -48,6 +49,7 @@ export const helpSteps: HelpStep[] = [
   ...groupAssignmentsCreateProgrammingHelpSteps,
   ...groupHelpSteps,
   ...groupCodingPageHelpSteps,
+  ...groupSelectPageHelpSteps,
   ...unsubmittedAssignmentsHelpSteps,
   ...eventHelpSteps,
   ...eventDetailProblemHelpSteps,
