@@ -155,6 +155,11 @@ const HelpButton: React.FC = () => {
         </div>
       )}
 
+      {/* Overlay */}
+      {isTourOpen && (
+        <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm z-40" onClick={() => setIsTourOpen(false)}></div>
+      )}
+
       {/* ヘルプツアーの表示 */}
       {isTourOpen && helpSteps.length > 0 && (
         <HelpTour steps={helpSteps} onClose={handleCloseTour} />

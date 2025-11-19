@@ -12,6 +12,7 @@ interface Kadai {
     dueDate: string;
     createdAt: string;
     completed?: boolean;
+    submissionStatus?: string; // 提出状況を追加
     programmingProblemId?: number;
     selectProblemId?: number;
 }
@@ -24,7 +25,7 @@ interface AssignmentDetailViewProps {
     kadai: Kadai;
     hashedId: string;
     onBack: () => void;
-    onAssignmentSubmit: (kadaiId: number) => void;
+    onAssignmentSubmit: (kadaiId: number, newStatus: string) => void; // newStatusを受け取るように変更
 }
 
 export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kadai, hashedId, onBack, onAssignmentSubmit }) => {
@@ -37,6 +38,12 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
+
+    // 提出状況に応じてボタンのテキストと状態を決定
+    const isSubmitted = kadai.submissionStatus === '提出済み';
+    const isRemanded = kadai.submissionStatus === '差し戻し';
+    const submitButtonText = isSubmitted ? '提出済み' : isRemanded ? '再提出' : '提出';
+    const isSubmitButtonDisabled = isSubmitted || isSubmittingAssignment || !selectedFile;
 
     const fetchComments = useCallback(async () => {
         try {
@@ -99,7 +106,7 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
             });
             if (!res.ok) throw new Error('課題の提出に失敗しました。');
             alert('課題を提出しました！');
-            onAssignmentSubmit(kadai.id); // 親コンポーネントに通知
+            onAssignmentSubmit(kadai.id, '提出済み'); // 提出ステータスを渡す
         } catch (err) {
             console.error(err);
             alert(err instanceof Error ? err.message : '予期せぬエラーが発生しました。');
@@ -118,7 +125,33 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
                     課題一覧に戻る
                 </button>
                 <div style={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '24px' }}>
-                    <h1 style={{ fontSize: '24px', fontWeight: '500', color: '#3c4043', margin: '0 0 4px 0' }}>{kadai.title}</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                      <h1 style={{ fontSize: '24px', fontWeight: '500', color: '#3c4043', margin: '0' }}>{kadai.title}</h1>
+                      {kadai.submissionStatus === '提出済み' && (
+                        <span style={{
+                          marginLeft: '12px', padding: '4px 8px', borderRadius: '4px',
+                          backgroundColor: '#e6fffa', color: '#38a169', fontSize: '12px', fontWeight: 'bold'
+                        }}>
+                          提出済み
+                        </span>
+                      )}
+                      {kadai.submissionStatus === '差し戻し' && (
+                        <span style={{
+                          marginLeft: '12px', padding: '4px 8px', borderRadius: '4px',
+                          backgroundColor: '#fffaf0', color: '#dd6b20', fontSize: '12px', fontWeight: 'bold'
+                        }}>
+                          差し戻し済み
+                        </span>
+                      )}
+                      {kadai.submissionStatus === null && (
+                        <span style={{
+                          marginLeft: '12px', padding: '4px 8px', borderRadius: '4px',
+                          backgroundColor: '#fee2e2', color: '#e53e3e', fontSize: '12px', fontWeight: 'bold'
+                        }}>
+                          未提出
+                        </span>
+                      )}
+                    </div>
                     <div style={{ fontSize: '14px', color: '#5f6368', marginBottom: '16px' }}>期限: {kadai.dueDate ? new Date(kadai.dueDate).toLocaleString('ja-JP') : '未設定'}</div>
                     {kadai.description && <div dangerouslySetInnerHTML={{ __html: kadai.description }} style={{ lineHeight: '1.6' }} />}
                     {(kadai.programmingProblemId || kadai.selectProblemId) && (
@@ -169,6 +202,17 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
             {/* ファイル提出サイドバー */}
             <div style={{ width: '300px', backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', alignSelf: 'flex-start' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '500', color: '#3c4043', margin: '0 0 16px 0' }}>あなたの課題</h3>
+                {kadai.submissionStatus === '提出済み' && (
+                  <p style={{ color: '#38a169', fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>提出済みです。</p>
+                )}
+                {kadai.submissionStatus === '差し戻し' && (
+                  <p style={{ color: '#dd6b20', fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>
+                    差し戻し済みです。再提出してください。
+                  </p>
+                )}
+                {kadai.submissionStatus === null && (
+                  <p style={{ color: '#e53e3e', fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>未提出です。</p>
+                )}
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
 
                 {selectedFile && (
@@ -183,15 +227,15 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
                 </button>
                 <button
                     onClick={handleAssignmentSubmit}
-                    disabled={!selectedFile || isSubmittingAssignment || kadai.completed}
+                    disabled={isSubmitButtonDisabled}
                     style={{
                         width: '100%', padding: '12px', border: 'none',
                         backgroundColor: '#1976d2', color: '#fff', borderRadius: '4px',
                         cursor: 'pointer', fontSize: '14px', fontWeight: '500', marginTop: '12px',
-                        opacity: (!selectedFile || isSubmittingAssignment || kadai.completed) ? 0.5 : 1
+                        opacity: isSubmitButtonDisabled ? 0.5 : 1
                     }}
                 >
-                    {isSubmittingAssignment ? '提出中...' : (kadai.completed ? '提出済み' : '提出')}
+                    {submitButtonText}
                 </button>
             </div>
         </div>

@@ -28,9 +28,9 @@ export async function seedProblems(prisma: PrismaClient) {
   }
   console.log(`✅ Created ${localProblems.length} questions from local data.`);
 
-  // 2. Excel からのシーディング
-  console.log('🌱 Seeding problems from Excel file...');
-  await seedProblemsFromExcel(prisma);
+  // 2. Excel からのシーディング 修正する際非効率になるため一旦コメントアウト
+  // console.log('🌱 Seeding problems from Excel file...');
+  // await seedProblemsFromExcel(prisma);
 
   // 3. スプレッドシートからのプログラミング問題のシーディング
   console.log('🌱 Seeding programming problems from spreadsheet data...');

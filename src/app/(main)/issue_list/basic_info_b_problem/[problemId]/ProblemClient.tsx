@@ -164,6 +164,11 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
   useEffect(() => {
     let problemData = initialProblem;
+    // ここで problemId を variables に注入する
+    const initialVarsWithId = {
+        ...problemData.initialVariables,
+        problemId: problemData.id // これを追加
+    };
 
     // 問13のデータがサーバーから不完全に渡された場合に備え、クライアント側でデータを補う
     if (initialProblem.id.toString() === '13') {
@@ -208,6 +213,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     }
 
     setProblem(problemData);
+    setVariables(initialVarsWithId);
     setCurrentTraceLine(0);
     setVariables(problemData.initialVariables);
     setSelectedAnswer(null);
@@ -309,9 +315,9 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         console.error(`Logic for ${problem.logicType} has neither getTraceStep nor traceLogic.`);
         traceStepFunction = (vars) => vars; // 何もしない
       }
-      
-      // 4. 現在の行を実行して、変数を更新
-      const nextVariables = traceStepFunction ? traceStepFunction(variables) : { ...variables };
+
+      const varsWithContext = { ...variables, currentLine: currentTraceLine, problemId: problem.id };
+      const nextVariables = traceStepFunction ? traceStepFunction(varsWithContext) : { ...variables };
 
       setVariables(nextVariables); // 状態を更新
       setCurrentTraceLine(nextLine); // 次の行番号をセット
@@ -322,7 +328,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
 
   const handleResetTrace = () => {
-    setVariables(problem.initialVariables);
+    setVariables({ 
+      ...problem.initialVariables,
+      problemId: problem.id // ★念のため明示
+    });
     setCurrentTraceLine(0);
     setIsPresetSelected(false);
     setSelectedLogicVariant(null);
@@ -330,14 +339,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   };
 
   const handleSetData = (dataToSet: Record<string, any>) => {
-    setVariables({ ...problem.initialVariables, ...dataToSet, initialized: false }); // initializedをfalseにリセット
+    setVariables({ ...problem.initialVariables, ...dataToSet, initialized: false, problemId: problem.id }); // initializedをfalseにリセット
     setCurrentTraceLine(0);
     setIsPresetSelected(true);
     setSelectedLogicVariant(null);
   };
 
  const handleSetNum = (num: number) => {
-    setVariables({ ...problem.initialVariables, num: num, initialized: false }); // initializedをfalseにリセット
+    setVariables({ ...problem.initialVariables, num: num, initialized: false, problemId: problem.id }); // initializedをfalseにリセット
     setCurrentTraceLine(0); // トレース行をリセット
     setIsPresetSelected(true); // プリセットが選択されたことを示すフラグを立てる
     setSelectedLogicVariant(null);

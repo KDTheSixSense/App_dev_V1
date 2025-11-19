@@ -34,9 +34,6 @@ const getPetDisplayState = (hungerLevel: number) => {
   }
 };
 
-type UserWithPetStatus = User & {
-  status_Kohaku: Status_Kohaku | null;
-};
 type MobileFooterProps = {
   userWithPet: UserWithPetStatus | null; // Adjust the type as necessary
   isMenuOpen: boolean;
