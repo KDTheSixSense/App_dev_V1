@@ -10,7 +10,7 @@ export const eventDetailProblemHelpSteps: HelpStep[] = [
   {
     id: "event_problem_overview",
     title: "問題の概要",
-    description: "このページでは、イベント内の特定のプログラミング問題を確認できます。問題文を読み、解答を準備しましょう。",
+    description: "このページでは、イベント内の特定のプログラミング問題を確認できます。問題文を読み、解答しましょう。",
     imagePath: "/images/help/eventdetail1.png",
     targetSelector: ".problem-statement",
     order: 1,
