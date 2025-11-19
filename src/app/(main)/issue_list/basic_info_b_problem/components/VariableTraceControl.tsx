@@ -177,7 +177,7 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
         <div className="grid grid-cols-1 gap-2 max-w-xs mx-auto">
           {Object.entries(variables).map(([name, value]) => {
             // initialized フラグはUIに表示しない
-            if (name === 'initialized') return null;
+            if (['initialized', 'problemId', 'currentLine'].includes(name)) return null;
 
             let displayValue: string;
             
