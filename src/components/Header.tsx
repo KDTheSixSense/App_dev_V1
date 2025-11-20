@@ -182,15 +182,15 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
     <header className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
       
       {/* 左側：ロゴ */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 ml-3">
         {/* Linkをaタグに変更 */}
         <a href="/home" className="transition-opacity hover:opacity-80">
           {/* Imageをimgタグに変更 */}
           <Image
-            src="/images/infopia_logo.png"
+            src="/images/Infopia_logo.png"
             alt='Infopia'
-            width={200}
-            height={50}
+            width={150}
+            height={75}
           />
         </a>
       </div>

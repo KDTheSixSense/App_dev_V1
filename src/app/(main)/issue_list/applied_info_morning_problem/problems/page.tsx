@@ -40,12 +40,12 @@ const AppliedInfoMorningProblemsListPage = async () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
+    <div className="min-h-screen py-10">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           応用情報 午前問題一覧
         </h1>
-        <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-4xl mx-auto">
           {problems.length > 0 ? (
             <ul>
               {problems.map((problem) => (

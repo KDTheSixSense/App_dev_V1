@@ -386,9 +386,11 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
 
   updateDailyMissionProgress(1, 1); // デイリーミッションの「問題を解く」進捗を1増やす
 
+  //subjectidがundefinedの場合は0に設定
   if(!subjectid){
     subjectid = 0;
   }
+
   // 5. 経験値を付与
   const { unlockedTitle } = await addXp(userId, subjectid, difficultyId);
   // 6. コハクの満腹度を回復

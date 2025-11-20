@@ -598,7 +598,7 @@ const ProblemSolverPage = () => {
     if (!problem) return <div className="flex justify-center items-center h-screen bg-gray-100">問題が見つかりませんでした。</div>;
 
     return (
-        <div className="h-screen bg-gray-100 p-4 overflow-hidden">
+        <div className="h-screen p-4 overflow-hidden">
             {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
             
             {/* 既存の水平パネルグループ */}

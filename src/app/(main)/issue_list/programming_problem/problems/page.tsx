@@ -47,7 +47,7 @@ const ProgrammingProblemsListPage = async () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
+    <div className="min-h-screen py-10">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           プログラミングコーディング問題一覧

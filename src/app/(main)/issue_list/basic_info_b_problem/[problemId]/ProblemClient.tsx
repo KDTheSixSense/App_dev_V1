@@ -401,7 +401,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const currentLang = language;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-6 sm:py-10">
+    <div className="min-h-screen flex flex-col items-center py-6 sm:py-10">
       <div className="container mx-auto px-4 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
