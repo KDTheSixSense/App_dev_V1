@@ -37,7 +37,7 @@ export default function LandingPage() {
             className="relative h-full w-full max-w-5xl" 
           >
              <Image 
-               src="/images/Infopia_logo_poster.png"
+               src="/images/Infopia_logo.png"
                alt="Infopia Logo"
                fill
                priority 
