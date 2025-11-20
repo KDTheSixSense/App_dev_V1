@@ -527,6 +527,7 @@ model Submissions {
   user          User     @relation(fields: [userid], references: [id], onDelete: Cascade)
   codingid      Int
   submitted_at  DateTime @default(now())
+  file_path    String?
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 

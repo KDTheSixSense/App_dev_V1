@@ -8,9 +8,11 @@ type Submission = {
     id: string | number;
     username?: string;
   };
+  file_path?: string;
 };
 
 export type AssignmentWithSubmissions = {
+  id: number;
   title: string;
   created_at: string;
   due_date: string;
@@ -132,7 +134,12 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
                     <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#c6f6d5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#276749' }}>
                       {sub.user.username?.charAt(0)}
                     </div>
-                    <span style={{ fontSize: '14px' }}>{sub.user.username}</span>
+                    <span style={{ fontSize: '14px' }}>
+                      {sub.user.username}
+                      {sub.file_path && (
+                        <a href={sub.file_path} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '8px', fontSize: '12px', color: '#3182ce' }}>ファイル表示</a>
+                      )}
+                    </span>
                   </div>
                 ))}
                 {submitted.length === 0 && <span style={{fontSize: '12px', color: '#718096'}}>まだ誰も提出していません。</span>}

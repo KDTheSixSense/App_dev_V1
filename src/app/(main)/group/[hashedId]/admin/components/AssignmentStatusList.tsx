@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-type AssignmentWithSubmissions = any;
-import { AssignmentStatusCard } from './AssignmentStatusCard';
+import { AssignmentStatusCard, AssignmentWithSubmissions } from './AssignmentStatusCard';
 
 interface AssignmentStatusListProps {
   assignments: AssignmentWithSubmissions[];

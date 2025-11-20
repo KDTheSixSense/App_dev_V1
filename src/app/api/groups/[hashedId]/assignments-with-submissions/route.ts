@@ -37,9 +37,10 @@ export async function GET(
       include: {
         // 各課題に紐づく提出状況を全て取得
         Submissions: {
-          orderBy: { submitted_at: 'desc' },
-          include: {
-            // 提出したユーザーの情報も一緒に取得
+          select: { // `include`から`select`に変更して、含めるフィールドを明示的に指定
+            status: true,
+            submitted_at: true,
+            file_path: true, // 👈 ファイルパスを取得する
             user: {
               select: {
                 id: true,
@@ -48,6 +49,7 @@ export async function GET(
               },
             },
           },
+          orderBy: { submitted_at: 'desc' },
         },
       },
     });

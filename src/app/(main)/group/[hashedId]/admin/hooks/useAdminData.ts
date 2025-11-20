@@ -47,7 +47,7 @@ export const useAdminData = (hashedId: string) => {
             // 2つのAPIを並列で呼び出して高速化
             const [dashboardRes, submissionsRes] = await Promise.all([
                 fetch(`/api/groups/${hashedId}/admin-dashboard`),
-                fetch(`/api/groups/${hashedId}/assignments?withSubmissions=true`)
+                fetch(`/api/groups/${hashedId}/assignments-with-submissions`)
             ]);
 
             const dashboardResult = await dashboardRes.json();
