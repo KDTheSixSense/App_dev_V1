@@ -543,6 +543,18 @@ CREATE TABLE "EventDifficulty" (
 );
 
 -- CreateTable
+CREATE TABLE "AssignmentComment" (
+    "id" SERIAL NOT NULL,
+    "content" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "assignmentId" INTEGER NOT NULL,
+    "authorId" INTEGER NOT NULL,
+
+    CONSTRAINT "AssignmentComment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_Applied_am_QuestionToUserAnswer" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL,
@@ -639,6 +651,9 @@ CREATE UNIQUE INDEX "DailyActivitySummary_userId_date_key" ON "DailyActivitySumm
 
 -- CreateIndex
 CREATE UNIQUE INDEX "EventDifficulty_difficultyName_key" ON "EventDifficulty"("difficultyName");
+
+-- CreateIndex
+CREATE INDEX "AssignmentComment_assignmentId_idx" ON "AssignmentComment"("assignmentId");
 
 -- CreateIndex
 CREATE INDEX "_Applied_am_QuestionToUserAnswer_B_index" ON "_Applied_am_QuestionToUserAnswer"("B");
@@ -816,6 +831,12 @@ ALTER TABLE "UserDailyMissionProgress" ADD CONSTRAINT "UserDailyMissionProgress_
 
 -- AddForeignKey
 ALTER TABLE "DailyActivitySummary" ADD CONSTRAINT "DailyActivitySummary_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AssignmentComment" ADD CONSTRAINT "AssignmentComment_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "Assignment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AssignmentComment" ADD CONSTRAINT "AssignmentComment_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_Applied_am_QuestionToUserAnswer" ADD CONSTRAINT "_Applied_am_QuestionToUserAnswer_A_fkey" FOREIGN KEY ("A") REFERENCES "Applied_am_Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;

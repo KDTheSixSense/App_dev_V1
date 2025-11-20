@@ -38,6 +38,7 @@ export interface UnsubmittedAssignment {
   groupHashedId: string;
   programmingProblemId?: number | null;
   selectProblemId?: number | null;
+  submissionStatus?: string | null; // 新しく追加
 }
 
 /**
@@ -145,21 +146,22 @@ export async function getUnsubmittedAssignments() {
     throw new Error('無効なユーザーIDです');
   }
 
-  // Prismaで未提出の課題を検索するロジック
+  // Prismaで未提出または差し戻しの課題を検索するロジック
   const assignmentsFromDb = await prisma.assignment.findMany({
     where: {
-      // ユーザーが所属しているグループの課題である、という条件はそのまま
       group: {
         groups_User: {
           some: { user_id: userId },
         },
       },
-      // かつ、そのユーザーからの提出記録(Submissions)が「存在し」、
-      // そのステータスが「未提出」である課題に絞り込む
+      // ユーザーからの提出記録(Submissions)が「存在し」、
+      // そのステータスが「未提出」または「差し戻し」である課題に絞り込む
       Submissions: {
         some: {
           userid: userId,
-          status: "未提出", // statusが"未提出"のものを探す
+          status: { // statusが"未提出"または"差し戻し"のものを探す
+            in: ["未提出", "差し戻し"],
+          },
         },
       },
     },
@@ -175,6 +177,11 @@ export async function getUnsubmittedAssignments() {
           hashedId: true,
         },
       },
+      Submissions: { // submissionStatusを取得するためにSubmissionsも選択
+        where: { userid: userId },
+        select: { status: true },
+        take: 1, // ユーザーの最新の提出ステータスを取得（複数ある場合は最初の一つ）
+      },
     },
     orderBy: {
       due_date: 'asc',
@@ -189,6 +196,7 @@ export async function getUnsubmittedAssignments() {
     groupHashedId: assignment.group.hashedId,
     programmingProblemId: assignment.programmingProblemId,
     selectProblemId: assignment.selectProblemId,
+    submissionStatus: assignment.Submissions[0]?.status || null, // 提出状況を追加
   }));
 
   // --- ▼▼▼ ここからが新しい処理です ▼▼▼ ---

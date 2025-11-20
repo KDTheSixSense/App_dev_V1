@@ -71,13 +71,12 @@ const CustomCursor: React.FC = () => {
   }, [isMouseDown, position, addStars]);
 
   return (
-    <>
-
+    <div style={{ pointerEvents: 'none' }}>
       <img
         src="/images/Kohaku/kohaku_pointer.png"
         alt="Fox Tail Cursor"
         className="custom-cursor"
-        style={{ left: `${position.x}px`, top: `${position.y}px`, transform: 'rotate(-45deg)', zIndex: 99999 }}
+        style={{ left: `${position.x}px`, top: `${position.y}px`, transform: 'translate(-3px, -3px) rotate(-45deg)', zIndex: 99999 }}
       />
       {effects.map(effect => (
         <div
@@ -88,13 +87,12 @@ const CustomCursor: React.FC = () => {
             top: `${effect.y - 10}px`,
             transform: `rotate(${effect.rotation}deg)`,
           }}
-                >
-                  <div className="click-effect">★</div>
-                </div>
-              ))}
-            </>
-          );
-        };
-        
-        export default CustomCursor;
-        
+        >
+          <div className="click-effect">★</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default CustomCursor;
