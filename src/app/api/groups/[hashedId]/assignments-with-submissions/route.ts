@@ -33,7 +33,7 @@ export async function GET(
     // 課題とその課題に対する提出状況を全て取得
     const assignmentsWithSubmissions = await prisma.assignment.findMany({
       where: { groupid: group.id },
-      orderBy: { due_date: 'asc' },
+      orderBy: { created_at: 'desc' },
       include: {
         // 各課題に紐づく提出状況を全て取得
         Submissions: {
