@@ -61,14 +61,15 @@ const textResources = {
       nextProblemButton: "次の問題へ",
       traceScreenTitle: "トレース画面",
       variableSectionTitle: "変数",
-      resetTraceButton: "もう一度トレース",
+      resetTraceButton: "リセット",
+      prevTraceButton: "前のトレース",
       nextTraceButton: "次のトレース",
       traceCompletedButton: "トレース完了",
       noCreditsMessage: "アドバイス回数が残っていません。プロフィールページでXPと交換できます。",
       noCreditsPlaceholder: "アドバイス回数がありません",
-      creditsLabel: "AIアドバイス残り:", // ★ クレジット表示用ラベル追加
-      creditsUnit: "回", // ★ クレジット表示用単位追加
-      increaseCreditsLink: "(XPで増やす)", // ★ クレジット増加リンクテキスト追加
+      creditsLabel: "AIアドバイス残り:", // クレジット表示用ラベル追加
+      creditsUnit: "回", // クレジット表示用単位追加
+      increaseCreditsLink: "(XPで増やす)", // クレジット増加リンクテキスト追加
     },
   },
   en: {
@@ -89,7 +90,8 @@ const textResources = {
       traceScreenTitle: "Trace Screen",
       variableSectionTitle: "Variables",
       resetTraceButton: "Trace Again",
-      nextTraceButton: "Next Trace",
+      nextTraceButton: "Next Step",
+      prevTraceButton: "Prev Step",
       traceCompletedButton: "Trace Complete",
       noCreditsMessage: "No advice credits remaining. You can exchange XP for credits on your profile page.",
       noCreditsPlaceholder: "No credits remaining",
@@ -115,6 +117,12 @@ interface ProblemClientProps {
   initialCredits: number;
 }
 
+// 履歴データの型定義を追加
+type TraceHistoryItem = {
+  line: number;
+  variables: VariablesState;
+};
+
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits }) => {
   const router = useRouter();
   const { showNotification } = useNotification();
@@ -125,6 +133,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [currentTraceLine, setCurrentTraceLine] = useState(0);
   const [variables, setVariables] = useState<VariablesState>(initialProblem.initialVariables);
+  const [traceHistory, setTraceHistory] = useState<TraceHistoryItem[]>([]);　// 履歴管理用のStateを追加
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
@@ -215,6 +224,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setProblem(problemData);
     setVariables(initialVarsWithId);
     setCurrentTraceLine(0);
+    setTraceHistory([]);
     setVariables(problemData.initialVariables);
     setSelectedAnswer(null);
     setIsAnswered(false);
@@ -290,6 +300,13 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     const traceFinished = currentTraceLine >= 99 || (currentTraceLine >= (problem.programLines[language]?.length || 99));
 
     if (!traceFinished) { // トレースが終了していない場合のみ実行
+      // 1. 現在の状態を履歴に保存 (ディープコピーで保存してバグを防ぐ)
+      // 配列やオブジェクトが参照渡しにならないように JSON.parse(JSON.stringify(...)) を使用
+      const currentSnapshot: TraceHistoryItem = {
+        line: currentTraceLine,
+        variables: JSON.parse(JSON.stringify(variables))
+      };
+      setTraceHistory(prev => [...prev, currentSnapshot]);
       const logic = problemLogicsMap[problem.logicType as keyof typeof problemLogicsMap];
       if (!logic) return;
 
@@ -327,12 +344,29 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   };
 
 
+  // 前のトレースに戻る関数
+  const handlePrevTrace = () => {
+    if (traceHistory.length === 0) return;
+
+    // 履歴の最後（1つ前の状態）を取得
+    const prevStep = traceHistory[traceHistory.length - 1];
+
+    // 状態を復元
+    setVariables(prevStep.variables);
+    setCurrentTraceLine(prevStep.line);
+
+    // 履歴から削除
+    setTraceHistory(prev => prev.slice(0, -1));
+  };
+
+  // リセット時の処理（修正）
   const handleResetTrace = () => {
     setVariables({ 
       ...problem.initialVariables,
-      problemId: problem.id // ★念のため明示
+      problemId: problem.id
     });
     setCurrentTraceLine(0);
+    setTraceHistory([]); // 履歴もクリア
     setIsPresetSelected(false);
     setSelectedLogicVariant(null);
     setChatMessages(prev => [...prev, { sender: 'kohaku', text: "トレースをリセットしました。" }]);
@@ -341,6 +375,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const handleSetData = (dataToSet: Record<string, any>) => {
     setVariables({ ...problem.initialVariables, ...dataToSet, initialized: false, problemId: problem.id }); // initializedをfalseにリセット
     setCurrentTraceLine(0);
+    setTraceHistory([]);
     setIsPresetSelected(true);
     setSelectedLogicVariant(null);
   };
@@ -348,6 +383,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
  const handleSetNum = (num: number) => {
     setVariables({ ...problem.initialVariables, num: num, initialized: false, problemId: problem.id }); // initializedをfalseにリセット
     setCurrentTraceLine(0); // トレース行をリセット
+    setTraceHistory([]);
     setIsPresetSelected(true); // プリセットが選択されたことを示すフラグを立てる
     setSelectedLogicVariant(null);
  };
@@ -437,7 +473,9 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
                       problem={problem} 
                       variables={variables} 
                       onNextTrace={handleNextTrace} 
+                      onPrevTrace={handlePrevTrace}
                       isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)} 
+                      canGoBack={traceHistory.length > 0}
                       onResetTrace={handleResetTrace} 
                       currentTraceLine={currentTraceLine} 
                       language={language} 
