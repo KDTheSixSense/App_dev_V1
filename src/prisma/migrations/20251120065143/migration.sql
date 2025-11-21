@@ -392,6 +392,7 @@ CREATE TABLE "Submissions" (
     "status" TEXT NOT NULL,
     "codingid" INTEGER NOT NULL,
     "submitted_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "file_path" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

@@ -100,7 +100,7 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
         formData.append('file', selectedFile);
 
         try {
-            const res = await fetch(`/api/groups/${hashedId}/assignments/${kadai.id}/submit`, {
+            const res = await fetch(`/api/submit-assignment?assignmentId=${kadai.id}`, {
                 method: 'POST',
                 body: formData,
             });
