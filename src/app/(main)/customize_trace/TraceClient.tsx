@@ -1,8 +1,8 @@
+// src/app/(main)/customize_trace/TraceClient.tsx
 'use client';
 
-import React, { useState, useCallback, useEffect, useRef } from 'react'; //  useEffect を追加
-// AIコード生成をサーバー側で安全に行うための関数をインポートします
-import { generateTraceCodeFromAI} from '@/lib/actions/traceActions';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { generateTraceCodeFromAI } from '@/lib/actions/traceActions';
 import { recordStudyTimeAction } from '@/lib/actions';
 
 // --- サンプルコード ---
@@ -26,276 +26,317 @@ const sampleInitialVars = `{
 interface ForLoopInfo {
   type: 'for';
   loopVar: string;
-  startVal: number; //  開始値も保持
+  startVal: number;
   endVal: number;
   step: number;
-  startLine: number; // for文自体の行インデックス
-  endLine: number;   // endforの行インデックス
+  startLine: number;
+  endLine: number;
 }
 
 interface WhileLoopInfo {
     type: 'while';
-    condition: string; //  条件式を保持
-    startLine: number; // while文自体の行インデックス
-    endLine: number;   // endwhileの行インデックス
+    condition: string;
+    startLine: number;
+    endLine: number;
 }
 
-//  Ifブロックの情報もスタックで管理（else/endifへのジャンプのため）
 interface IfBlockInfo {
     type: 'if';
-    startLine: number; // if文自体の行インデックス
-    elseLine: number;  // 対応するelseの行インデックス (-1なら存在しない)
-    endLine: number;   // 対応するendifの行インデックス
+    startLine: number;
+    elseLine: number;
+    endLine: number;
 }
 
 type ControlFlowInfo = ForLoopInfo | WhileLoopInfo | IfBlockInfo;
 
+// 括弧のネストを考慮して演算子の位置を探す関数 (後ろから検索＝左結合)
+const findOperatorIndex = (expr: string, op: string): number => {
+    let depth = 0;
+    for (let i = expr.length - 1; i >= 0; i--) {
+        const char = expr[i];
+        if (char === ')') depth++;
+        else if (char === '(') depth--;
+        else if (depth === 0) {
+            // 演算子が見つかったかチェック
+            if (expr.substring(i - op.length + 1, i + 1) === op) {
+                const index = i - op.length + 1;
+                
+                // 機能改善: シフト演算子(<<, >>)と比較演算子(<, >)の誤検知を防ぐ
+                // '<' を探している時に '<<' の一部なら無視、'>' を探している時に '>>' の一部なら無視
+                if (op === '<') {
+                    if (expr[index - 1] === '<' || expr[index + 1] === '<') continue;
+                }
+                if (op === '>') {
+                    if (expr[index - 1] === '>' || expr[index + 1] === '>') continue;
+                }
 
-/**
- * トレース機能のUIとロジック全体を管理するクライアントコンポーネント
- */
+                return index;
+            }
+        }
+    }
+    return -1;
+};
+
+// 値を整数として取得するヘルパー (2進数文字列対応)
+const toInt = (val: any): number => {
+    if (typeof val === 'number') return Math.floor(val);
+    if (typeof val === 'string') {
+        if (/^[01]+$/.test(val) && val.length > 0) {
+            return parseInt(val, 2);
+        }
+        return isNaN(Number(val)) ? 0 : Math.floor(Number(val));
+    }
+    return 0;
+};
+
 const TraceClient = () => {
   // --- 状態管理 ---
   const [code, setCode] = useState(sampleCode);
   const [initialVarsString, setInitialVarsString] = useState(sampleInitialVars);
   const [variables, setVariables] = useState<Record<string, any>>({});
+  // 機能改善: 変数の型情報を保持するStateを追加
+  const [variableTypes, setVariableTypes] = useState<Record<string, string>>({}); 
+  
   const [programLines, setProgramLines] = useState<string[]>([]);
-  const [currentLine, setCurrentLine] = useState(-1); // -1: 未開始, N: N行目を次に実行
+  const [currentLine, setCurrentLine] = useState(-1);
   const [output, setOutput] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isTraceStarted, setIsTraceStarted] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('カウンターが0になるまでデクリメントする');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [controlFlowStack, setControlFlowStack] = useState<ControlFlowInfo[]>([]); //  制御フロー用のスタック
-  // トレース開始時刻 (null: 未開始)
+  const [controlFlowStack, setControlFlowStack] = useState<ControlFlowInfo[]>([]);
   const [traceStartedAt, setTraceStartedAt] = useState<number | null>(null);
-  // このトレースセッションの時間を記録したか
   const hasRecordedTime = useRef(false);
 
 
   // --- ヘルパー関数 ---
 
-  // evaluateExpression を修正
   const evaluateExpression = (expression: string, currentVars: Record<string, any>): any => {
-    expression = expression.trim();
+    if (!expression) return null;
+    let expr = expression.trim();
 
-    expression = expression.replace(/[０-９]/g, (char) => {
+    // 全角数字を半角に変換
+    expr = expr.replace(/[０-９]/g, (char) => {
         return String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
     });
 
-    // 1. 数値リテラル
-    if (!isNaN(Number(expression))) return Number(expression);
-
-    // 2. 文字列リテラル
-    if ((expression.startsWith('"') && expression.endsWith('"')) || (expression.startsWith("'") && expression.endsWith("'"))) {
-        return expression.slice(1, -1);
+    // 外側の括弧を外す処理
+    while (expr.startsWith('(') && expr.endsWith(')')) {
+        let depth = 0;
+        let isWrapped = true;
+        for (let i = 0; i < expr.length - 1; i++) {
+            if (expr[i] === '(') depth++;
+            else if (expr[i] === ')') depth--;
+            if (depth === 0) {
+                isWrapped = false;
+                break;
+            }
+        }
+        if (isWrapped) {
+            expr = expr.slice(1, -1).trim();
+        } else {
+            break;
+        }
     }
 
-    // 3. 配列要素アクセス (例: arr1[j], arr1[j+1])
-    const arrayAccessMatch = expression.match(/^([a-zA-Z_]\w*)\s*\[\s*(.+)\s*\]$/);
+    // 配列リテラル
+    if ((expr.startsWith('[') && expr.endsWith(']')) || (expr.startsWith('{') && expr.endsWith('}'))) {
+        const inner = expr.slice(1, -1).trim();
+        if (inner === '') return [];
+        const parts = inner.split(',').map(p => p.trim());
+        return parts.map(p => evaluateExpression(p, currentVars));
+    }
+
+    // 数値リテラル
+    if (!isNaN(Number(expr)) && !expr.startsWith('"') && !expr.startsWith("'")) {
+         return Number(expr);
+    }
+
+    // 文字列リテラル
+    if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
+        return expr.slice(1, -1);
+    }
+    
+    // プロパティアクセス
+    const lengthMatch = expr.match(/^(.+?)(?:\.|の)要素数$/);
+    if (lengthMatch) {
+        const targetVar = lengthMatch[1].trim();
+        let targetVal = currentVars[targetVar];
+        if (targetVal === undefined) try { targetVal = evaluateExpression(targetVar, currentVars); } catch(e) {}
+        if (Array.isArray(targetVal) || typeof targetVal === 'string') return targetVal.length;
+        if (currentVars.hasOwnProperty(targetVar) && Array.isArray(currentVars[targetVar])) return currentVars[targetVar].length;
+    }
+    const strLenMatch = expr.match(/^(.+?)(?:\.|の)文字数$/);
+    if (strLenMatch) {
+        const targetVal = evaluateExpression(strLenMatch[1], currentVars);
+        if (typeof targetVal === 'string') return targetVal.length;
+    }
+    const arrayAccessMatch = expr.match(/^([a-zA-Z_]\w*)\s*\[\s*(.+)\s*\]$/);
     if (arrayAccessMatch) {
         const arrayName = arrayAccessMatch[1];
         const indexExpr = arrayAccessMatch[2];
         if (currentVars.hasOwnProperty(arrayName)) {
             const arr = currentVars[arrayName];
-            if (!Array.isArray(arr)) {
-                throw new Error(`変数 "${arrayName}" は配列ではありません。`);
+            // nullチェック追加
+            if (arr === null || arr === undefined) {
+                throw new Error(`変数 "${arrayName}" は初期化されていません (null/undefined)。`);
             }
-            // インデックス部分も式として評価する
+            if (!Array.isArray(arr) && typeof arr !== 'string') {
+                throw new Error(`変数 "${arrayName}" (値: ${JSON.stringify(arr)}) は配列または文字列ではありません。`);
+            }
+
             const index = evaluateExpression(indexExpr, currentVars);
-            if (typeof index !== 'number' || !Number.isInteger(index)) {
-                 throw new Error(`配列 "${arrayName}" のインデックス "${indexExpr}" が整数に評価されません。`);
+            if (typeof index === 'number') {
+                 if (index >= 0 && index < arr.length) return arr[index];
+                 if (index - 1 >= 0 && index - 1 < arr.length) return arr[index - 1];
             }
-            if (index < 0 || index >= arr.length) {
-                throw new Error(`配列 "${arrayName}" のインデックス ${index} が範囲外です (0 から ${arr.length - 1} まで)。`);
-            }
-            return arr[index];
-        } else {
-            throw new Error(`配列変数 "${arrayName}" が見つかりません。`);
+            return undefined;
         }
     }
 
-    // 4. 単純な変数
-    if (currentVars.hasOwnProperty(expression)) return currentVars[expression];
+    // 変数
+    if (currentVars.hasOwnProperty(expr)) return currentVars[expr];
 
-    // 5. 簡単な算術演算 (括弧や優先順位は未対応)
-    const operators = ['+', '-', '*', '/'];
-    for (let i = operators.length - 1; i >= 0; i--) {
-        const op = operators[i];
-        const lastOpIndex = expression.lastIndexOf(op);
-        if (lastOpIndex > 0 && lastOpIndex < expression.length - 1) { // 演算子が先頭や末尾でないことを確認
-            const lhsStr = expression.substring(0, lastOpIndex);
-            const rhsStr = expression.substring(lastOpIndex + 1);
-            try {
+    // 演算子の評価
+    const operatorGroups = [
+        [' or ', ' or', '||'],
+        [' and ', ' and', '&&'],
+        [' ∨ ', '|'],
+        [' ⊕ ', ' xor ', '^'],
+        [' ∧ ', '&'],
+        ['==', '!=', '=', '≠'],
+        ['<=', '>=', '<', '>', '≦', '≧'], // 比較
+        ['<<', '>>'],            // シフト (比較より優先度が高いが、splitロジック上ここで分割される)
+        ['+', '-'],
+        ['*', '/', '%', '÷']
+    ];
+
+    for (const ops of operatorGroups) {
+        for (const op of ops) {
+            const idx = findOperatorIndex(expr, op);
+            if (idx > 0) {
+                const lhsStr = expr.substring(0, idx);
+                const rhsStr = expr.substring(idx + op.length);
+                
                 const lhs = evaluateExpression(lhsStr, currentVars);
                 const rhs = evaluateExpression(rhsStr, currentVars);
-                if (typeof lhs === 'number' && typeof rhs === 'number') {
-                    switch(op) {
-                        case '+': return lhs + rhs;
-                        case '-': return lhs - rhs;
-                        case '*': return lhs * rhs;
-                        case '/':
-                            if (rhs === 0) throw new Error("ゼロ除算です。");
-                            return Math.floor(lhs / rhs); // 整数除算
+
+                if (lhs !== undefined && rhs !== undefined) {
+                    const cleanOp = op.trim();
+                    
+                    if (cleanOp === 'or' || cleanOp === '||') return lhs || rhs;
+                    if (cleanOp === 'and' || cleanOp === '&&') return lhs && rhs;
+
+                    if (['==', '=', '!=' , '≠', '<', '>', '<=', '>=', '≦', '≧'].includes(cleanOp)) {
+                        switch(cleanOp) {
+                            case '==': case '=': return lhs == rhs;
+                            case '!=': case '≠': return lhs != rhs;
+                            case '>=': case '≧': return lhs >= rhs;
+                            case '<=': case '≦': return lhs <= rhs;
+                            case '>': return lhs > rhs;
+                            case '<': return lhs < rhs;
+                        }
                     }
-                } else if (op === '+') {
-                    return String(lhs) + String(rhs);
-                } else {
-                    throw new Error(`数値以外の値 (${typeof lhs}, ${typeof rhs}) に演算子'${op}'は使えません。`);
+
+                    if (cleanOp === '+' && (typeof lhs === 'string' || typeof rhs === 'string')) {
+                         return String(lhs) + String(rhs);
+                    }
+
+                    const lNum = toInt(lhs);
+                    const rNum = toInt(rhs);
+
+                    switch (cleanOp) {
+                        case '+': return lNum + rNum;
+                        case '-': return lNum - rNum;
+                        case '*': return lNum * rNum;
+                        case '/': case '÷': return Math.floor(lNum / rNum);
+                        case '%': return lNum % rNum;
+                        case '<<': return lNum << rNum;
+                        case '>>': return lNum >> rNum;
+                        case '&': case '∧': return lNum & rNum;
+                        case '|': case '∨': return lNum | rNum;
+                        case '^': case '⊕': case 'xor': return lNum ^ rNum;
+                    }
                 }
-            } catch (e: any) {
-                throw new Error(`式 "${expression}" の評価中にエラー: ${e.message}`);
             }
         }
     }
-
-    throw new Error(`式 "${expression}" (変数、リテラル、または簡単な演算) を評価できません。`);
+    return expr;
   };
 
-  // 条件式を評価する関数 (既存のものを流用、エラーハンドリングを少し追加)
   const evaluateCondition = (condition: string, currentVars: Record<string, any>): boolean => {
       condition = condition.trim();
 
-      // パターン1: "num が 3と5 で割り切れる"
-      const divisibleByAndMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*と\s*(.+?)\s+で割り切れる$/);
-      if (divisibleByAndMatch) {
-          try {
-              const varValue = evaluateExpression(divisibleByAndMatch[1], currentVars);
-              const divisor1 = evaluateExpression(divisibleByAndMatch[2], currentVars);
-              const divisor2 = evaluateExpression(divisibleByAndMatch[3], currentVars);
-              if (typeof varValue !== 'number' || typeof divisor1 !== 'number' || typeof divisor2 !== 'number') {
-                  throw new Error('数値以外の値が含まれています。');
-              }
-              // (varValue % divisor1 === 0) は (varValue - Math.floor(varValue / divisor1) * divisor1) === 0 と等価
-              const mod1 = varValue - Math.floor(varValue / divisor1) * divisor1;
-              const mod2 = varValue - Math.floor(varValue / divisor2) * divisor2;
-              return (mod1 === 0) && (mod2 === 0);
-          } catch (e: any) {
-              throw new Error(`条件式 "${condition}" の評価中にエラー: ${e.message}`);
-          }
-      }
-
-      // パターン2: "num が 3 で割り切れる"
-      const divisibleByMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s+で割り切れる$/);
-      if (divisibleByMatch) {
-          try {
-              const varValue = evaluateExpression(divisibleByMatch[1], currentVars);
-              const divisor = evaluateExpression(divisibleByMatch[2], currentVars);
-              if (typeof varValue !== 'number' || typeof divisor !== 'number') {
-                  throw new Error('数値以外の値が含まれています。');
-              }
-              const mod = varValue - Math.floor(varValue / divisor) * divisor;
-              return (mod === 0);
-          } catch (e: any) {
-              throw new Error(`条件式 "${condition}" の評価中にエラー: ${e.message}`);
-          }
-      }
-
-      const operators = ['>=', '<=', '>', '<', '==', '!=']; // ==, != を追加
-      for (const op of operators) {
-          const parts = condition.split(op);
-          if (parts.length === 2) {
-              try {
-                  const lhs = evaluateExpression(parts[0], currentVars);
-                  const rhs = evaluateExpression(parts[1], currentVars);
-                  switch(op) {
-                      case '>': return lhs > rhs;
-                      case '<': return lhs < rhs;
-                      case '>=': return lhs >= rhs;
-                      case '<=': return lhs <= rhs;
-                      case '==': return lhs == rhs; // 値の比較
-                      case '!=': return lhs != rhs; // 値の比較
-                  }
-              } catch (e: any) {
-                    throw new Error(`条件式 "${condition}" の評価中にエラー: ${e.message}`);
-              }
-          }
+      const divisibleByAndMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*と\s*(.+?)\s+で割り切れる$/);
+      if (divisibleByAndMatch) {
+          try {
+              const varValue = evaluateExpression(divisibleByAndMatch[1], currentVars);
+              const divisor1 = evaluateExpression(divisibleByAndMatch[2], currentVars);
+              const divisor2 = evaluateExpression(divisibleByAndMatch[3], currentVars);
+              
+              if (typeof varValue !== 'number' || typeof divisor1 !== 'number' || typeof divisor2 !== 'number') return false;
+              return (varValue % divisor1 === 0) && (varValue % divisor2 === 0);
+          } catch (e) { return false; }
       }
-      // 単一の変数やリテラルも評価できるようにする (例: while (trueFlag) )
+
+      const divisibleByMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s+で割り切れる$/);
+      if (divisibleByMatch) {
+          try {
+              const varValue = evaluateExpression(divisibleByMatch[1], currentVars);
+              const divisor = evaluateExpression(divisibleByMatch[2], currentVars);
+              if (typeof varValue !== 'number' || typeof divisor !== 'number') return false;
+              return (varValue % divisor === 0);
+          } catch (e) { return false; }
+      }
+
       try {
             const result = evaluateExpression(condition, currentVars);
-            // JavaScriptの truthy/falsy に従う
             return Boolean(result);
       } catch (e) {
-            // ignore, try next
+            throw new Error(`条件式 "${condition}" を評価できません。`);
       }
-
-      throw new Error(`条件式 "${condition}" を評価できません。比較演算子(>, <, >=, <=, ==, !=)が必要です。`);
   };
 
-  // findBlockEnd を useCallback の外に出して定義
-  const findBlockEnd = useCallback((startLine: number, blockStartKeyword: string, blockEndKeyword: string, alternateEndKeywords?: string | string[]): number => {
-    let depth = 1;
-    // string[] を受け取れるようにする
-    const alternates = alternateEndKeywords ? (Array.isArray(alternateEndKeywords) ? alternateEndKeywords : [alternateEndKeywords]) : [];
-    
-    for (let i = startLine + 1; i < programLines.length; i++) {
-        const line = programLines[i].trim();
+  const findBlockEnd = useCallback((startLine: number, blockStartKeyword: string, blockEndKeyword: string, alternateEndKeywords?: string | string[]): number => {
+    let depth = 1;
+    const alternates = alternateEndKeywords ? (Array.isArray(alternateEndKeywords) ? alternateEndKeywords : [alternateEndKeywords]) : [];
+    
+    for (let i = startLine + 1; i < programLines.length; i++) {
+        const line = programLines[i].trim();
+        if (depth === 1 && alternates.length > 0) {
+            if (alternates.some(alt => line.startsWith(alt))) return i;
+        }
+        const isStart = line.split(/[\s\(]/)[0] === blockStartKeyword;
+        if (isStart) depth++;
+        else if (line.startsWith(blockEndKeyword)) {
+            depth--;
+            if (depth === 0) return i;
+        }
+    }
+    return -1;
+  }, [programLines]);
 
-        // 1. Check for alternate keywords (if we are at the top level)
-        // ループして 'some' を使う
-        if (depth === 1 && alternates.length > 0) {
-            if (alternates.some(alt => line.startsWith(alt))) {
-                return i; // Found the *first* alternate keyword
-            }
-        }
-
-        // 2. Check for nested start
-        // elseif をネストとしてカウントしないようにする
-        if (line.startsWith(blockStartKeyword) && !line.startsWith('elseif') && line.includes('(')) {
-            depth++;
-        }
-        // 3. Check for end
-        else if (line.startsWith(blockEndKeyword)) {
-            depth--;
-            if (depth === 0) {
-                return i; // Found the matching end keyword
-            }
-        }
-    }
-    return -1; // Not found
-  }, [programLines]); //  依存配列に programLines を追加
-
-  // --- 4. 時間を記録する共通関数を追加 ---
-    /**
-     * 現在のトレースセッションの学習時間を計算し、サーバーに送信する
-     */
     const recordStudyTime = useCallback(() => {
-        // トレースが開始されていて、まだ記録していない場合のみ
         if (traceStartedAt !== null && !hasRecordedTime.current) {
             const endTime = Date.now();
             const timeSpentMs = endTime - traceStartedAt;
-
-            // 3秒以上の滞在のみを記録 (ノイズ除去)
             if (timeSpentMs > 3000) {
-                console.log(`Recording ${timeSpentMs}ms for trace session.`);
-                recordStudyTimeAction(timeSpentMs); // サーバーアクションを呼び出し
-                hasRecordedTime.current = true; // 記録済みフラグを立てる
+                recordStudyTimeAction(timeSpentMs);
+                hasRecordedTime.current = true;
             }
         }
-    }, [traceStartedAt]); // traceStartedAt が変わったら関数を再生成
-    // --- 4. ここまで ---
+    }, [traceStartedAt]);
 
-
-    // --- 5. ページを離れる時に時間を記録する Effect を追加 ---
     useEffect(() => {
-        // コンポーネントがアンマウントされる時に recordStudyTime を呼び出す
-        return () => {
-            recordStudyTime();
-        };
-    }, [recordStudyTime]); // recordStudyTime 関数自体が変わったら再登録
+        return () => { recordStudyTime(); };
+    }, [recordStudyTime]);
   
-  /**
-   * 制御フロースタックを遡り、現在属している 'if' ブロックの情報を取得します
-   * @param stack - 現在の controlFlowStack
-   * @returns 見つかった IfBlockInfo、または null
-   */
-  const getParentIfBlock = (stack: ControlFlowInfo[]): IfBlockInfo | null => {
-    for (let i = stack.length - 1; i >= 0; i--) {
-      if (stack[i].type === 'if') return stack[i] as IfBlockInfo;
-    }
-    return null;
-  };
+  const getParentIfBlock = (stack: ControlFlowInfo[]): IfBlockInfo | null => {
+    for (let i = stack.length - 1; i >= 0; i--) {
+      if (stack[i].type === 'if') return stack[i] as IfBlockInfo;
+    }
+    return null;
+  };
 
   // --- トレース実行エンジン ---
   const handleNextStep = useCallback(() => {
@@ -303,460 +344,456 @@ const TraceClient = () => {
         if (currentLine >= programLines.length) {
              setError('トレースが終了しました。');
              setIsTraceStarted(false);
-             recordStudyTime(); // トレース終了時に時間を記録
+             recordStudyTime();
         }
         return;
     }
 
-    const lineIndex = currentLine; // 現在実行する行のインデックス
+    const lineIndex = currentLine;
     const line = programLines[lineIndex].trim();
-    let nextLine = lineIndex + 1; // デフォルトは次の行
+    let nextLine = lineIndex + 1;
     let tempVariables = { ...variables };
+    // 機能改善: 型情報のコピー
+    let tempVariableTypes = { ...variableTypes };
     let tempOutput = [...output];
     let tempControlFlowStack = [...controlFlowStack];
-    let jumped = false; // 分岐やループでジャンプしたか
-    // 現在の行が属するifブロックを取得
-    const parentIfBlock = getParentIfBlock(tempControlFlowStack);
+    let jumped = false;
+    const parentIfBlock = getParentIfBlock(tempControlFlowStack);
 
     try {
       setError(null);
 
-      // --- 現在行(lineIndex)の実行 ---
-      const declarationMatch = line.match(/^(整数型|文字列型|配列型):\s*(.+)/);
+      // 正規表現に「8ビット型」を追加
+      const declarationMatch = line.match(/^(整数型|文字列型|配列型|論理型|実数型|8ビット型|整数型の配列|文字列型の配列|実数型の配列)(?:\s*配列)?:\s*(.+)/);
       const assignmentMatch = line.match(/^(.+?)\s*←\s*(.+)/);
+      
+      const appendMatch = line.match(/^(.+?)(?:の末尾に)\s*(.+?)\s*(?:の(?:値|結果))?\s*(?:を)?追加する$/);
       const outputMatch = line.match(/^出力する\s+(.+)/);
-      const specificOutputMatch = line.match(/^(\w+)(?:の値)?\s*と\s*(\w+)(?:の値)?\s*をこの順にコンマ区切りで出力する$/);
-      const ifMatch = line.match(/^if\s*\((.+)\)/);
-      const elseifMatch = line.match(/^elseif\s*\((.+)\)/); // 追加: elseif の検出
+      const specificOutputMatch = line.match(/^(.+?)(?:の値)?\s*と\s*(.+?)(?:の値)?\s*をこの順にコンマ区切りで出力する$/);
+      const specificOutputMatch2 = line.match(/^(.+?)の全要素の値を要素番号の順に空白区切りで出力する/);
+
+      const ifMatch = line.match(/^if\s*(?:(?:\((.+)\))|(.+))/);
+      const elseifMatch = line.match(/^(?:else\s*if|elseif)\s*(?:(?:\((.+)\))|(.+))/);
       const elseMatch = line.match(/^else$/);
       const endifMatch = line.match(/^endif$/);
-      const whileMatch = line.match(/^while\s*\((.+)\)/);
+      const whileMatch = line.match(/^while\s*(?:(?:\((.+)\))|(.+))/);
       const endwhileMatch = line.match(/^endwhile$/);
-       //  forループの正規表現を修正 (開始値、終了値、ステップを捉える)
-      const forMatch = line.match(/^for\s*\((.+)\s*を\s*(.+)\s*から\s*(.+)\s*まで\s*(?:(\d+)\s*ずつ増やす)?\)/); // ステップはオプショナル
+      const forMatch = line.match(/^for\s*\((.+)\s*を\s*(.+)\s*から\s*(.+)\s*まで\s*(?:(\d+)\s*ずつ(?:増やす|減らす))?\)/);
       const endforMatch = line.match(/^endfor$/);
-      const commentMatch = line.match(/^\s*\/\//); // コメント行
-      const funcDefMatch = line.match(/^(\○|\●).*/); // (関数定義行を検知)
-      const returnMatch = line.match(/^return\s+(.+)/); // returnMatch を追加
+      const commentMatch = line.match(/^\s*\/\//) || line.match(/^\s*\/\*/);
+      const funcDefMatch = line.match(/^(\○|\●).*/);
+      const returnMatch = line.match(/^return\s+(.+)/);
+      const breakMatch = line.match(/繰返し処理を終了する|break/);
 
       if (commentMatch || line === '' || funcDefMatch) {
-        // コメント行や空行は何もしない
-        jumped = false; // 次の行へ
+        jumped = false;
       } else if (declarationMatch) {
-          const varType = declarationMatch[1]; // 例: "整数型"
-          const declarationPart = declarationMatch[2]; // 例: "arr[5], i, target, index"
-          const declaredItems = declarationPart.split(',').map(item => item.trim()); // ["arr[5]", "i", ...]
+          // 変数宣言
+          const type = declarationMatch[1]; // 型を取得
+          const declarationPart = declarationMatch[2];
+          const declaredItems = declarationPart.split(',').map(item => item.trim());
 
-          declaredItems.forEach(item => {
-              const assignmentParts = item.split('←');
-              let varNameWithIndex = assignmentParts[0].trim(); // "arr[5]" または "i"
-              let varName = varNameWithIndex; // デフォルトは "arr[5]" や "i"
-              let initialValue = null; // デフォルト初期値
-              let isArray = varType.startsWith('配列型'); // "整数型" の場合は false
+          declaredItems.forEach(item => {
+              const parts = item.split('←');
+              let varName = parts[0].trim();
+              let initialValExpr = parts[1] ? parts[1].trim() : null;
+              let initialValue = null;
 
-              // --- START MODIFICATION ---
-            
-              // 1. 型宣言に関わらず、"変数名[サイズ]" の構文を正規表現でチェックします
-              const arraySyntaxMatch = varNameWithIndex.match(/^([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\]$/);
+              const arraySizeMatch = varName.match(/^([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\]$/);
+              if (arraySizeMatch) {
+                   varName = arraySizeMatch[1];
+                   const size = parseInt(arraySizeMatch[2], 10);
+                   initialValue = new Array(size).fill(null);
+              }
 
-              if (arraySyntaxMatch) {
-                  // "arr[5]" のような構文が見つかった場合
-                  varName = arraySyntaxMatch[1]; // 変数名を "arr" に修正
-                  const arraySize = parseInt(arraySyntaxMatch[2], 10);
-                  
-                  isArray = true; // これは配列として扱います
-                  
-                  // 既に変数が存在しないか、または配列でない場合のみ、新しい配列で初期化
-                  if (!tempVariables[varName] || !Array.isArray(tempVariables[varName])) {
-                      // ご希望の [0, 0, 0] で初期化する場合は .fill(0) に変更してください
-                      initialValue = new Array(arraySize).fill(null);
-                  } else {
-                      // 既に配列として存在する場合（例: JSONから読み込み済）は、その値を維持
-                      initialValue = tempVariables[varName];
-                  }
+              if (initialValExpr) {
+                  if (initialValExpr.startsWith('{') && initialValExpr.endsWith('}')) {
+                      if (initialValExpr.includes('未定義の値')) {
+                           initialValue = [];
+                      } else {
+                           const arrayContent = initialValExpr.substring(1, initialValExpr.length - 1);
+                           if (arrayContent.trim()) {
+                               const elements = arrayContent.split(',').map(e => evaluateExpression(e.trim(), tempVariables));
+                               initialValue = elements;
+                           } else {
+                               initialValue = [];
+                           }
+                      }
+                  } else {
+                      initialValue = evaluateExpression(initialValExpr, tempVariables);
+                  }
+              } else if (!initialValue && (declarationMatch[1].includes('配列') || arraySizeMatch)) {
+                   initialValue = [];
+              }
 
-              } else if (isArray && (!tempVariables[varName] || !Array.isArray(tempVariables[varName]))) {
-                  // "配列型: arr" のようにサイズ指定なしで宣言され、まだ初期化されていない場合
-                  initialValue = []; // 空配列で初期化
-              }
-              // --- END MODIFICATION ---
+              if (!(varName in tempVariables) || initialValExpr) {
+                  tempVariables[varName] = initialValue;
+                  // 機能改善: 型情報を保存
+                  tempVariableTypes[varName] = type;
+              }
+          });
+          jumped = false;
 
+      } else if (appendMatch) {
+          const arrayName = appendMatch[1].trim();
+          let valueExpr = appendMatch[2].trim();
 
-              // 宣言行で代入が行われている場合 (例: "整数型: x ← 1")
-              if (assignmentParts.length > 1) {
-                  const valueExpr = assignmentParts[1].trim();
-                  initialValue = evaluateExpression(valueExpr, tempVariables);
-              }
+          if (valueExpr.startsWith('(') && valueExpr.endsWith(')')) {
+              valueExpr = valueExpr.slice(1, -1).trim();
+          }
+          
+          if (Array.isArray(tempVariables[arrayName])) {
+              const val = evaluateExpression(valueExpr, tempVariables);
+              const newArr = [...tempVariables[arrayName]];
+              newArr.push(val);
+              tempVariables[arrayName] = newArr;
+          } else {
+              throw new Error(`変数 "${arrayName}" は配列ではありません。`);
+          }
+          jumped = false;
 
-              // 変数テーブル (tempVariables) を更新
-              // (varName が "arr" に修正されたため、arr[5] ではなく arr が更新されます)
-              const shouldUpdate = 
-                  !(varName in tempVariables) || // 変数が新規
-                  assignmentParts.length > 1 || // 明示的な代入がある
-                  (arraySyntaxMatch && (!tempVariables[varName] || !Array.isArray(tempVariables[varName]))); // 配列として新規初期化
-
-              if (shouldUpdate) {
-                  // 既存の配列を null で上書きしないようにする最後のチェック
-                  if(!(isArray && assignmentParts.length == 1 && Array.isArray(tempVariables[varName]))) {
-                    tempVariables[varName] = initialValue;
-                  }
-              }
-          });
-          // 宣言行自体の実行はこれで完了。次の行へ。
-          jumped = false;
       } else if (assignmentMatch) {
           const target = assignmentMatch[1].trim();
           const expression = assignmentMatch[2].trim();
-          const value = evaluateExpression(expression, tempVariables);
+          
+          let value;
+          if (expression.startsWith('{') && expression.endsWith('}')) {
+               const inner = expression.substring(1, expression.length - 1);
+               value = inner ? inner.split(',').map(e => evaluateExpression(e.trim(), tempVariables)) : [];
+          } else {
+               value = evaluateExpression(expression, tempVariables);
+          }
 
-          // 代入ターゲットが配列要素か確認
           const arrayTargetMatch = target.match(/^([a-zA-Z_]\w*)\s*\[\s*(.+)\s*\]$/);
           if (arrayTargetMatch) {
               const arrayName = arrayTargetMatch[1];
               const indexExpr = arrayTargetMatch[2];
-              if (!tempVariables.hasOwnProperty(arrayName) || !Array.isArray(tempVariables[arrayName])) {
+              
+              if (!Array.isArray(tempVariables[arrayName])) {
                   throw new Error(`代入先 "${arrayName}" は配列ではありません。`);
               }
-              const index = evaluateExpression(indexExpr, tempVariables);
-              if (typeof index !== 'number' || !Number.isInteger(index)) {
-                  throw new Error(`配列 "${arrayName}" のインデックス "${indexExpr}" が整数に評価されません。`);
+              
+              let index = evaluateExpression(indexExpr, tempVariables);
+              if (typeof index === 'number') {
+                   if (index > 0) index = index - 1; 
               }
-              // 配列の範囲チェック（必要に応じて拡張も検討）
-              if (index < 0 ) { // index >= tempVariables[arrayName].length のチェックは緩める（代入による拡張を許す場合）
-                 throw new Error(`配列 "${arrayName}" のインデックス ${index} が範囲外です。`);
-              }
-               // 配列をコピーして変更 (Immutability)
+
               const newArray = [...tempVariables[arrayName]];
               newArray[index] = value;
               tempVariables[arrayName] = newArray;
-
           } else {
-              // 単純な変数への代入
               tempVariables[target] = value;
           }
-          // if/elseif/else ブロックの本体を実行した場合
-          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
-            // この行の次が 'elseif' または 'else' または 'endif' かどうかをチェック
-            const nextLineStr = (lineIndex + 1 < programLines.length) ? programLines[lineIndex + 1].trim() : '';
-            if (nextLineStr.startsWith('elseif') || nextLineStr.startsWith('else') || nextLineStr.startsWith('endif')) {
-              // ブロックの最後の行だったので、endifにジャンプする
-              nextLine = parentIfBlock.endLine;
-              jumped = true;
-            } else {
-              // ブロックの途中なので、次の行へ
-              jumped = false; 
-            }
-          } else {
-            // ifブロックの外なので、次の行へ
-            jumped = false;
-          }
-      } else if (specificOutputMatch) {
-          const varName1 = specificOutputMatch[1]; // 例: "y"
-          const varName2 = specificOutputMatch[2]; // 例: "z"
-          // 変数が存在するかチェック
-          if (!(varName1 in tempVariables)) throw new Error(`変数 "${varName1}" が見つかりません。`);
-          if (!(varName2 in tempVariables)) throw new Error(`変数 "${varName2}" が見つかりません。`);
-          // カンマ区切りで出力
-          const outputValue = `${tempVariables[varName1]},${tempVariables[varName2]}`;
-          tempOutput.push(outputValue);
-          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
-            const nextLineStr = (lineIndex + 1 < programLines.length) ? programLines[lineIndex + 1].trim() : '';
-            if (nextLineStr.startsWith('elseif') || nextLineStr.startsWith('else') || nextLineStr.startsWith('endif')) {
-              nextLine = parentIfBlock.endLine;
-              jumped = true;
-            } else {
-              jumped = false; 
-            }
-          } else {
-            jumped = false;
-          }
-      } else if (outputMatch) {
-          const expression = outputMatch[1].trim();
-          const value = evaluateExpression(expression, tempVariables);
-          tempOutput.push(String(value));
-          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
-            const nextLineStr = (lineIndex + 1 < programLines.length) ? programLines[lineIndex + 1].trim() : '';
-            if (nextLineStr.startsWith('elseif') || nextLineStr.startsWith('else') || nextLineStr.startsWith('endif')) {
-              nextLine = parentIfBlock.endLine;
-              jumped = true;
-            } else {
-              jumped = false; 
-            }
-          } else {
-            jumped = false;
-          }
-      } else if (ifMatch) {
-          const condition = ifMatch[1];
-          // findBlockEndの呼び出し方とスタックに積む情報
-          const endLine = findBlockEnd(lineIndex, 'if', 'endif');
-          if (endLine === -1) throw new Error(`行 ${lineIndex + 1}: ifに対応するendifが見つかりません。`);
+          jumped = false;
 
-          // 'else' と 'elseif' の位置を特定 (findBlockEnd を使い分ける)
-          const elseLine = findBlockEnd(lineIndex, 'if', 'endif', 'else'); // 'else' のみ
-          const firstElseIfLine = findBlockEnd(lineIndex, 'if', 'endif', 'elseif'); // 最初の 'elseif' のみ
-
-          // 'else' が 'elseif' よりも先にあることは構文エラーだが、ここでは'else'の位置を-1にする
-          const actualElseLine = (elseLine !== -1 && (firstElseIfLine === -1 || elseLine > firstElseIfLine)) ? elseLine : -1;
-          
-          // スタックに'if'ブロックの情報を保存
-          tempControlFlowStack.push({ type: 'if', startLine: lineIndex, elseLine: actualElseLine, endLine: endLine });
-          if (evaluateCondition(condition, tempVariables)) {
-              // 条件が真 -> 次の行へ
-              nextLine = lineIndex + 1;
-              jumped = true; 
-          } else {
-              // 'elseif' と 'else' の両方を探す
-              const nextControlLine = findBlockEnd(lineIndex, 'if', 'endif', ['elseif', 'else']);
-            
-              // parentIfBlock が null の可能性があるため、現在の if ブロックの endLine を使う
-              if (nextControlLine !== -1 && nextControlLine < endLine) {
-                  nextLine = nextControlLine; // 'elseif' か 'else' の行にジャンプ
-              } else {
-                  nextLine = endLine; // 'endif' の行にジャンプ
-              }
-              jumped = true;
-          }
-      // elseifMatch のロジックを追加
-      } else if (elseifMatch) {
-          // 'parentIfBlock' は関数の先頭で取得済み
-          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
-              // 前の 'if' または 'elseif' が実行されたか (＝スタックトップがまだアクティブか) を確認
-              // このロジックは 'if' や 'elseif' が実行されたらジャンプすることを前提とする
-              // (前のブロックが実行されていたら、ここに来る前に 'endif' にジャンプしているはず)
-
-              const condition = elseifMatch[1];
-              if (evaluateCondition(condition, tempVariables)) {
-                  // 条件が真 -> 次の行 (elseif ブロックの本体) へ
-                  nextLine = lineIndex + 1;
-                  jumped = true;
-              } else {
-                  // 条件が偽 -> 次の 'elseif' または 'else' または 'endif' を探す
-                  const nextControlLine = findBlockEnd(lineIndex, 'if', 'endif', ['elseif', 'else']);
-                  
-                  // 見つかったものが、現在の 'if' ブロック内であるか確認
-                  if (nextControlLine !== -1 && nextControlLine < parentIfBlock.endLine) {
-                      nextLine = nextControlLine; // 次の 'elseif' か 'else' の行へ
-                  } else {
-                      nextLine = parentIfBlock.endLine; // 'endif' の行へ
-                  }
-                  jumped = true;
-              }
-          } else {
-              throw new Error(`行 ${lineIndex + 1}: 対応するifがないelseifです。`);
-          }
-      } else if (elseMatch) {
-          // 'parentIfBlock' は関数の先頭で取得済み
-          //  if文のロジックを parentIfBlock を使うように修正
-          if (parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
-              // if/elseifブロックが実行済みの場合、'else' に来たら 'endif' の次へジャンプ
-              // (このツールでは、ブロック実行後は 'endif' に飛ぶため、このパスは通常通らないはず)
-              // 実際には、'if'/'elseif' が false だった場合にここに来る
-              nextLine = lineIndex + 1; // 'else' ブロックの本体へ
-              jumped = true;
-          } else {
-               // 'else' に来たが、スタック上の 'if' が 'else' を持たない場合など
-               throw new Error(`行 ${lineIndex + 1}: 対応するifがないelseです。`);
-          }
-      } else if (endifMatch) {
-        // if文のロジックを parentIfBlock を使うように修正
-          if (parentIfBlock && parentIfBlock.endLine === lineIndex) {
-              // if または else ブロックの終端
-              tempControlFlowStack.pop(); // ifブロック情報をスタックから除去
-              nextLine = lineIndex + 1; // endifの次の行へ
-              jumped = true;
-          } else {
-              // 'if'ブロックの外にある 'endif' またはネストが不正
-              jumped = false;
-          }
-      } else if (whileMatch) {
-          const condition = whileMatch[1];
-          const endLine = findBlockEnd(lineIndex, 'while', 'endwhile');
-          if (endLine === -1) throw new Error(`行 ${lineIndex + 1}: whileに対応するendwhileが見つかりません。`);
-
-          // スタックに追加（まだなければ）
-          const currentWhile = tempControlFlowStack.length > 0 ? tempControlFlowStack[tempControlFlowStack.length - 1] : null;
-          if (!currentWhile || currentWhile.type !== 'while' || currentWhile.startLine !== lineIndex) {
-            tempControlFlowStack.push({ type: 'while', condition: condition, startLine: lineIndex, endLine: endLine });
+      } else if (specificOutputMatch2) {
+          const varName = specificOutputMatch2[1].trim();
+          if (Array.isArray(tempVariables[varName])) {
+              tempOutput.push(tempVariables[varName].join(' '));
           }
+          jumped = false;
 
+      } else if (specificOutputMatch) {
+          const val1 = evaluateExpression(specificOutputMatch[1], tempVariables);
+          const val2 = evaluateExpression(specificOutputMatch[2], tempVariables);
+          tempOutput.push(`${val1}, ${val2}`);
+          jumped = false;
+
+      } else if (outputMatch) {
+          const expr = outputMatch[1].trim();
+          const val = evaluateExpression(expr, tempVariables);
+          tempOutput.push(String(val));
+          jumped = false;
+
+      } else if (ifMatch) {
+          const condition = ifMatch[1] || ifMatch[2];
+          const endLine = findBlockEnd(lineIndex, 'if', 'endif');
+          if (endLine === -1) throw new Error('endifが見つかりません');
+          const elseLine = findBlockEnd(lineIndex, 'if', 'endif', 'else');
+
+          tempControlFlowStack.push({ type: 'if', startLine: lineIndex, elseLine: elseLine, endLine: endLine });
+          
           if (evaluateCondition(condition, tempVariables)) {
-              // 条件が真 -> ループ本体の最初の行へ
               nextLine = lineIndex + 1;
           } else {
-              // 条件が偽 -> endwhile の次の行へジャンプ
-              tempControlFlowStack.pop(); // ループ情報をスタックから除去
-              nextLine = endLine + 1;
+              const nextBranch = findBlockEnd(lineIndex, 'if', 'endif', ['elseif', 'else if', 'else']);
+              if (nextBranch !== -1 && nextBranch < endLine) {
+                  nextLine = nextBranch; 
+              } else {
+                  nextLine = endLine + 1;
+              }
           }
           jumped = true;
+
+      } else if (elseifMatch) {
+           const condition = elseifMatch[1] || elseifMatch[2];
+           if (evaluateCondition(condition, tempVariables)) {
+               nextLine = lineIndex + 1;
+           } else {
+               const nextBranch = findBlockEnd(lineIndex, 'if', 'endif', ['elseif', 'else if', 'else']);
+               const parentIf = getParentIfBlock(tempControlFlowStack);
+               const endLine = parentIf ? parentIf.endLine : findBlockEnd(lineIndex, 'if', 'endif');
+
+               if (nextBranch !== -1 && nextBranch < endLine) {
+                   nextLine = nextBranch;
+               } else {
+                   nextLine = endLine + 1;
+               }
+           }
+           jumped = true;
+
+      } else if (elseMatch) {
+           nextLine = lineIndex + 1;
+           jumped = true;
+
+      } else if (endifMatch) {
+           tempControlFlowStack.pop();
+           nextLine = lineIndex + 1;
+           jumped = true;
+
+      } else if (whileMatch) {
+           const condition = whileMatch[1] || whileMatch[2];
+           const endLine = findBlockEnd(lineIndex, 'while', 'endwhile');
+           if (endLine === -1) throw new Error('endwhileが見つかりません');
+
+           const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
+           if (!currentTop || currentTop.type !== 'while' || currentTop.startLine !== lineIndex) {
+               tempControlFlowStack.push({ type: 'while', condition, startLine: lineIndex, endLine });
+           }
+
+           if (evaluateCondition(condition, tempVariables)) {
+               nextLine = lineIndex + 1;
+           } else {
+               tempControlFlowStack.pop();
+               nextLine = endLine + 1;
+           }
+           jumped = true;
+
       } else if (endwhileMatch) {
-          const currentWhile = tempControlFlowStack.length > 0 ? tempControlFlowStack[tempControlFlowStack.length - 1] : null;
-          if (currentWhile?.type === 'while' && currentWhile.endLine === lineIndex) {
-              // ループの終端 -> while文の先頭に戻って条件を再評価
-              nextLine = currentWhile.startLine;
-              jumped = true;
-          } else {
-              throw new Error(`行 ${lineIndex + 1}: 対応するwhileがないendwhile、またはネストが不正です。`);
-          }
+           const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
+           if (currentTop?.type === 'while') {
+               nextLine = currentTop.startLine;
+           } else {
+               throw new Error('対応するwhileが見つかりません');
+           }
+           jumped = true;
+
       } else if (forMatch) {
-            const loopVar = forMatch[1].trim();
-            const startExpr = forMatch[2].trim();
-            const endExpr = forMatch[3].trim();
-            const step = forMatch[4] ? parseInt(forMatch[4], 10) : 1; // ステップ (デフォルト1)
-            const endLine = findBlockEnd(lineIndex, 'for', 'endfor');
-            if (endLine === -1) throw new Error(`行 ${lineIndex + 1}: forに対応するendforが見つかりません。`);
+           const loopVar = forMatch[1].trim();
+           const startExpr = forMatch[2].trim();
+           const endExpr = forMatch[3].trim();
+           let step = forMatch[4] ? parseInt(forMatch[4], 10) : 1;
+           if (line.includes('減らす')) step = -step;
 
-            const currentFor = tempControlFlowStack.length > 0 ? tempControlFlowStack[tempControlFlowStack.length - 1] : null;
+           const endLine = findBlockEnd(lineIndex, 'for', 'endfor');
+           if (endLine === -1) throw new Error('endforが見つかりません');
 
-            if (currentFor?.type === 'for' && currentFor.startLine === lineIndex) {
-                // ループ継続判定 (endforから戻ってきた場合)
-                if (tempVariables[loopVar] <= currentFor.endVal) {
-                    nextLine = lineIndex + 1; // ループ本体へ
-                } else {
-                    tempControlFlowStack.pop(); // ループ終了
-                    nextLine = endLine + 1;     // endforの次へ
-                }
-            } else {
-                // 新規ループ開始
-                const startVal = evaluateExpression(startExpr, tempVariables);
-                const endVal = evaluateExpression(endExpr, tempVariables);
-                tempVariables[loopVar] = startVal; // ループ変数初期化
-                if (startVal <= endVal) {
-                    tempControlFlowStack.push({ type: 'for', loopVar, startVal, endVal, step, startLine: lineIndex, endLine });
-                    nextLine = lineIndex + 1; // ループ本体へ
-                } else {
-                    nextLine = endLine + 1; // ループ実行せず終了
-                }
-            }
-            jumped = true;
+           const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
+           
+           if (currentTop?.type === 'for' && currentTop.startLine === lineIndex) {
+               const cond = step > 0 
+                  ? tempVariables[loopVar] <= currentTop.endVal 
+                  : tempVariables[loopVar] >= currentTop.endVal;
+
+               if (cond) {
+                   nextLine = lineIndex + 1;
+               } else {
+                   tempControlFlowStack.pop();
+                   nextLine = endLine + 1;
+               }
+           } else {
+               const startVal = evaluateExpression(startExpr, tempVariables);
+               const endVal = evaluateExpression(endExpr, tempVariables);
+               tempVariables[loopVar] = startVal;
+
+               const cond = step > 0 ? startVal <= endVal : startVal >= endVal;
+               if (cond) {
+                   tempControlFlowStack.push({ 
+                       type: 'for', loopVar, startVal, endVal, step, startLine: lineIndex, endLine 
+                   });
+                   nextLine = lineIndex + 1;
+               } else {
+                   nextLine = endLine + 1;
+               }
+           }
+           jumped = true;
+
       } else if (endforMatch) {
-            const currentFor = tempControlFlowStack.length > 0 ? tempControlFlowStack[tempControlFlowStack.length - 1] : null;
-            if (currentFor?.type === 'for' && currentFor.endLine === lineIndex) {
-                // ループ変数をインクリメント
-                tempVariables[currentFor.loopVar] += currentFor.step;
-                nextLine = currentFor.startLine; // for文の先頭に戻って条件を再評価
-                jumped = true;
-            } else {
-                throw new Error(`行 ${lineIndex + 1}: 対応するforがないendfor、またはネストが不正です。`);
-            }
-      } else if (returnMatch) {
-          const expression = returnMatch[1].trim();
-          const value = evaluateExpression(expression, tempVariables);
-          // 戻り値を 'result' という特別な変数に格納する (FizzBuzzの例に対応)
-          // (実際の関数呼び出しスタックは実装していないため、これで代用)
-          tempVariables['result'] = value;
-          nextLine = programLines.length; // プログラム(トレース)を終了
-          jumped = true;
-      } else {
-          // 不明な命令
-          throw new Error(`行 ${lineIndex + 1}: 不明な命令です: "${line}"`);
-      }
+           const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
+           if (currentTop?.type === 'for') {
+               tempVariables[currentTop.loopVar] += currentTop.step;
+               nextLine = currentTop.startLine;
+           } else {
+               throw new Error('対応するforが見つかりません');
+           }
+           jumped = true;
+           
+      } else if (breakMatch) {
+           let loopIndex = -1;
+           for (let i = tempControlFlowStack.length - 1; i >= 0; i--) {
+               if (tempControlFlowStack[i].type === 'while' || tempControlFlowStack[i].type === 'for') {
+                   loopIndex = i;
+                   break;
+               }
+           }
+           if (loopIndex !== -1) {
+               const loopInfo = tempControlFlowStack[loopIndex];
+               tempControlFlowStack = tempControlFlowStack.slice(0, loopIndex);
+               nextLine = loopInfo.endLine + 1;
+               jumped = true;
+           } else {
+               throw new Error('breakするループがありません');
+           }
 
-      // 状態を更新
+      } else if (returnMatch) {
+           const expr = returnMatch[1].trim();
+           const val = evaluateExpression(expr, tempVariables);
+           tempVariables['result'] = val;
+           tempOutput.push(`Return: ${val}`);
+           nextLine = programLines.length;
+           jumped = true;
+      } else {
+           throw new Error(`不明な構文です: ${line}`);
+      }
+
+      if (!jumped && parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
+          if (lineIndex + 1 < programLines.length) {
+              const nextL = programLines[lineIndex + 1].trim();
+              if (nextL.startsWith('else') || nextL.startsWith('elseif')) {
+                  nextLine = parentIfBlock.endLine;
+              }
+          }
+      }
+
       setVariables(tempVariables);
+      // 機能改善: 型情報の更新
+      setVariableTypes(tempVariableTypes);
       setOutput(tempOutput);
       setControlFlowStack(tempControlFlowStack);
 
-      //  nextLineがプログラムの範囲外になったらトレース終了
       if (nextLine >= programLines.length) {
-          setError('トレースが正常に終了しました。');
-          setIsTraceStarted(false);
-          recordStudyTime(); // トレース終了時に時間を記録
-          setCurrentLine(nextLine); //  最後の行のハイライトのため >= length でもセット
+           setError('トレースが正常に終了しました。');
+           setIsTraceStarted(false);
+           recordStudyTime();
+           setCurrentLine(nextLine);
       } else {
-          setCurrentLine(nextLine); // 次に実行する行を設定
+           setCurrentLine(nextLine);
       }
 
     } catch (e: any) {
-        setError(`エラー (行 ${lineIndex + 1}): ${e.message}`);
-        setIsTraceStarted(false);
+       setError(`エラー (行 ${lineIndex + 1}): ${e.message}`);
+       setIsTraceStarted(false);
     }
-  }, [isTraceStarted, currentLine, programLines, variables, controlFlowStack, findBlockEnd]); //  findBlockEnd を依存配列に追加
+  }, [isTraceStarted, currentLine, programLines, variables, controlFlowStack, findBlockEnd]);
 
   // --- UIイベントハンドラ ---
   const handleStartTrace = () => {
     try {
       setError(null);
-      const parsedVars = initialVarsString.trim() ? JSON.parse(initialVarsString) : {};
+      
+      // 機能改善: JSON入力の自動補正 (0から始まる数値を文字列としてクォートする)
+      const fixedInitialVars = initialVarsString.replace(/:\s*(0\d+)/g, ': "$1"');
+      const parsedVars = fixedInitialVars.trim() ? JSON.parse(fixedInitialVars) : {};
+      
+      // 通常の変数宣言や代入文（行頭にあるもの）は影響を受けない
+      let formattedCode = code.replace(/(\)|[0-9]+)\s+([a-zA-Z_]\w*\s*←)/g, '$1\n$2');
 
-      // AIが生成したコード内の配列変数名を抽出 (例: arr1[5] -> arr1)
-      const arrayVarNames = (code.match(/^(?:整数型|文字列型|配列型(?:\s*\[\s*\d+\s*\])?):\s*(.+)/gm) || [])
-          .flatMap(line => line.split(':')[1].split(','))
-          .map(v => v.trim().replace(/\[\d+\]$/, '')) // サイズ指定を除去
-          .filter((v, i, self) => self.indexOf(v) === i); // 重複除去
+      // if (formattedCode !== code) {
+      //     setCode(formattedCode);
+      // }
 
-      // JSONに存在しない配列変数を空配列で初期化（またはエラーにする）
+      // 機能改善: 変数の型情報を収集
+      const detectedTypes: Record<string, string> = {};
+
+      // AIが生成したコード内の配列変数名を抽出
+      // 1. 通常の変数宣言行からの抽出
+      const standardDeclarations = (formattedCode.match(/^(?:整数型|文字列型|配列型|8ビット型|整数型の配列|文字列型の配列|実数型の配列)(?:\s*\[\s*\d+\s*\])?:\s*(.+)/gm) || [])
+          .flatMap(line => {
+              const match = line.match(/^(.+?)(?:\s*\[\s*\d+\s*\])?:\s*(.+)/);
+              if (!match) return [];
+              const type = match[1];
+              const declaration = match[2];
+
+              declaration.split(',').forEach(d => {
+                  let name = d.split('←')[0].trim();
+                  name = name.replace(/\[\d+\]$/, '');
+                  detectedTypes[name] = type; // 型を保存
+              });
+
+              return declaration.split(',');
+          });
+
+      // 2. 関数定義の引数からの抽出
+      const functionArgs = (formattedCode.match(/^[\○\●].+\((.+)\)/gm) || [])
+          .flatMap(line => {
+              const argsPart = line.match(/\((.+)\)/)?.[1];
+              if (!argsPart) return [];
+              return argsPart.split(',').map(arg => {
+                  const parts = arg.split(':');
+                  if (parts.length === 2) {
+                      const type = parts[0].trim();
+                      const name = parts[1].trim();
+                      detectedTypes[name] = type; // 引数の型も保存
+                      return name;
+                  }
+                  return '';
+              }).filter(Boolean);
+          });
+
+      const arrayVarNames = [...standardDeclarations, ...functionArgs]
+          .map(v => {
+              let name = v.trim().split('←')[0].trim();
+              name = name.replace(/\[\d+\]$/, '');
+              return name;
+          })
+          .filter((v, i, self) => v && self.indexOf(v) === i);
+
       arrayVarNames.forEach(name => {
-         if (code.includes(`配列型`) && code.includes(name) && (!parsedVars.hasOwnProperty(name) || !Array.isArray(parsedVars[name]))) {
-            console.warn(`初期変数JSONに配列 "${name}" が見つからないため、空配列 [] で初期化します。`);
-            parsedVars[name] = []; // またはエラーを出す: throw new Error(`初期変数JSONに配列 "${name}" が定義されていません。`)
+         if (!parsedVars.hasOwnProperty(name)) {
+             if (!parsedVars[name]) parsedVars[name] = []; 
          }
       });
+      
       setVariables(parsedVars);
+      setVariableTypes(detectedTypes); // Stateに保存
+
       const lines = code.split('\n');
       setProgramLines(lines);
-      const funcDefLine = lines.find(line => line.match(/^(\○|\●).*?\((.*?)\)/));
-      if (funcDefLine) {
-          const argMatch = funcDefLine.match(/\((.*?)\)/); // 括弧の中身を取得
-          if (argMatch && argMatch[1]) {
-              const argDef = argMatch[1]; // 例: "整数型: num"
-              const argNameMatch = argDef.match(/:\s*(\w+)/); // コロンの後の変数名を取得
-              if (argNameMatch && argNameMatch[1]) {
-                  const expectedArgName = argNameMatch[1]; // "num"
-                  const jsonKeys = Object.keys(parsedVars);
 
-                  // JSONに変数が1つだけ定義されていて、それが期待される引数名と異なる場合
-                  if (jsonKeys.length === 1 && jsonKeys[0] !== expectedArgName) {
-                      const oldKey = jsonKeys[0]; // "counter"
-                      console.warn(`引数名 "${expectedArgName}" がJSONキー "${oldKey}" と一致しません。値を自動的にマッピングします。`);
-                      // "num": 15 を追加
-                      parsedVars[expectedArgName] = parsedVars[oldKey];
-                      // (古い "counter" キーは残しても動作に影響はありません)
-                  } else if (jsonKeys.length > 0 && !parsedVars.hasOwnProperty(expectedArgName)) {
-                      // JSONに複数のキーがあるが、期待される引数名が存在しない場合
-                      throw new Error(`コードは引数 "${expectedArgName}" を期待していますが、初期変数JSONに定義されていません。`);
-                  }
-              }
-          }
-      }
-      //  最初の空でない行 or コメントでない行を探す
       let firstExecutableLine = 0;
-      while (firstExecutableLine < lines.length && (lines[firstExecutableLine].trim() === '' || lines[firstExecutableLine].trim().startsWith('//'))) {
+      const allLines = formattedCode.split('\n');
+      while (firstExecutableLine < allLines.length && (allLines[firstExecutableLine].trim() === '' || allLines[firstExecutableLine].trim().startsWith('//') || allLines[firstExecutableLine].trim().startsWith('/*'))) {
         firstExecutableLine++;
       }
 
-      setCurrentLine(firstExecutableLine); // 最初の実行可能行を設定
+      setCurrentLine(firstExecutableLine);
       setOutput([]);
-      setControlFlowStack([]); //  スタックをリセット
+      setControlFlowStack([]);
       setIsTraceStarted(true);
-      // --- 7. トレース開始時にタイマー開始 & フラグリセット ---
       setTraceStartedAt(Date.now());
       hasRecordedTime.current = false;
+
       } catch (e) {
-      // エラーハンドリングを修正
       if (e instanceof SyntaxError) {
-         setError(`初期変数のJSON形式が正しくありません: ${e.message}。コメントが含まれていないか、括弧やカンマが正しいか確認してください。`);
+          setError(`初期変数のJSON形式が正しくありません: ${e.message}`);
       } else {
-         // 配列初期化のエラーなどもここでキャッチ
-         setError(`初期変数の処理中にエラーが発生しました: ${e instanceof Error ? e.message : String(e)}`);
-         console.error("Error parsing initial variables:", e); // 詳細をコンソールに出力
+          setError(`初期変数の処理中にエラーが発生しました: ${e instanceof Error ? e.message : String(e)}`);
       }
       setIsTraceStarted(false);
     }
   };
 
   const handleReset = () => {
-    recordStudyTime(); // 現在のセッションの時間を記録
-    setTraceStartedAt(null); // タイマーをリセット
+    recordStudyTime();
+    setTraceStartedAt(null);
     setIsTraceStarted(false);
     setCurrentLine(-1);
     setProgramLines([]);
     setVariables({});
+    setVariableTypes({}); // Reset types
     setOutput([]);
     setError(null);
-    setControlFlowStack([]); // スタックをリセット
-    // オプション: コードと初期変数もリセットする場合
-    // setCode(sampleCode);
-    // setInitialVarsString(sampleInitialVars);
+    setControlFlowStack([]);
   };
 
   const handleGenerateCode = async () => {
@@ -769,8 +806,6 @@ const TraceClient = () => {
      try {
        const generatedText = await generateTraceCodeFromAI(aiPrompt);
        setCode(generatedText);
-       // AI生成時にサンプル初期変数もリセット（必要に応じて）
-       // setInitialVarsString('{\n\n}');
      } catch (error: any) {
        setError(`AIコード生成エラー: ${error.message}`);
      } finally {
@@ -778,7 +813,6 @@ const TraceClient = () => {
      }
   };
 
-  // currentLine が範囲外になった場合に備えて状態をチェック
   const isTraceFinished = currentLine >= programLines.length;
   const nextStepButtonText = isTraceFinished ? 'トレース完了' : '次のステップ';
 
@@ -823,7 +857,7 @@ const TraceClient = () => {
             className="w-full h-80 p-3 font-mono text-sm border rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500"
             placeholder="ここにトレースしたいコードを入力します..."
             disabled={isTraceStarted}
-            spellCheck="false" // スペルチェック無効化
+            spellCheck="false"
           />
         </div>
         {/* 初期変数入力 */}
@@ -836,9 +870,9 @@ const TraceClient = () => {
             value={initialVarsString}
             onChange={(e) => setInitialVarsString(e.target.value)}
             className="w-full h-24 p-3 font-mono text-sm border rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500"
-            placeholder='例: { "a": 10, "b": "hello" }'
+            placeholder='例: { "a": 10, "b": "hello", "arr": [1, 2, 3] }'
             disabled={isTraceStarted}
-            spellCheck="false" // スペルチェック無効化
+            spellCheck="false"
           />
         </div>
         {/* ボタン */}
@@ -864,10 +898,10 @@ const TraceClient = () => {
         {/* 次のステップボタン */}
         <button
           onClick={handleNextStep}
-          disabled={!isTraceStarted || isTraceFinished} //  終了判定を修正
+          disabled={!isTraceStarted || isTraceFinished}
           className="w-full mb-6 py-3 px-4 bg-green-600 text-white font-bold rounded-md hover:bg-green-700 disabled:bg-gray-400 transition"
         >
-          {nextStepButtonText} {/*  ボタンテキストを動的に */}
+          {nextStepButtonText}
         </button>
 
         {/* エラー表示 */}
@@ -878,14 +912,11 @@ const TraceClient = () => {
           <h3 className="text-lg font-semibold mb-2 text-gray-700">トレース画面</h3>
           <div className="bg-gray-800 text-white font-mono text-sm p-4 rounded-md h-72 overflow-y-auto">
             {programLines.map((line, index) => (
-              <div key={index} className={`whitespace-pre ${index === currentLine ? 'bg-blue-500 text-white' : ''}`}> {/*  ハイライト時の文字色 */}
-                {/*  行番号を右寄せ + padding */}
+              <div key={index} className={`whitespace-pre ${index === currentLine ? 'bg-blue-500 text-white' : ''}`}>
                 <span className="text-gray-500 select-none inline-block text-right w-8 pr-2">{index + 1}</span>
-                {/*  空行でもスペースを確保 */}
                 <span>{line || ' '}</span>
               </div>
             ))}
-            {/*  最終行の後に空行を追加してスクロールしやすくする */}
             {programLines.length > 0 && <div className="h-4"></div>}
           </div>
         </div>
@@ -895,19 +926,22 @@ const TraceClient = () => {
           <h3 className="text-lg font-semibold mb-2 text-gray-700">変数</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 p-4 bg-gray-50 border rounded-md min-h-[96px]">
             {Object.keys(variables).length > 0 ? (
-                // Object.entries を使用 
-                Object.entries(variables).map(([name, value]) => ( // nameとvalueを正しく取得
+                Object.entries(variables).map(([name, value]) => (
                 <div key={name} className="flex items-center text-sm">
-                    {/* name (変数名) を表示 */}
                     <span className="font-semibold mr-2">{name}:</span>
-                    {/* value (変数値) を表示 */}
                     <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 break-all">
-                        {Array.isArray(value) ? `[${value.map(v => JSON.stringify(v)).join(', ')}]` : JSON.stringify(value)}
+                        {/* 機能改善: 8ビット型の場合は2進数8桁で表示 */}
+                        {(() => {
+                            if (variableTypes[name] === '8ビット型' && typeof value === 'number') {
+                                return value.toString(2).padStart(8, '0');
+                            }
+                            return Array.isArray(value) ? `[${value.map(v => JSON.stringify(v)).join(', ')}]` : JSON.stringify(value);
+                        })()}
                     </span>
                 </div>
                 ))
             ) : (
-                <p className="text-gray-500 text-sm col-span-1 md:col-span-2">トレースが開始されていません。</p> // col-span 調整
+                <p className="text-gray-500 text-sm col-span-1 md:col-span-2">トレースが開始されていません。</p>
             )}
           </div>
         </div>
