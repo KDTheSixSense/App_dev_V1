@@ -9,19 +9,15 @@ const prisma = new PrismaClient();
 interface ProblemListRowProps {
   problemId: string;
   title: string;
-  authorName: string | null;
 }
 
 // ProblemListRowコンポーネントを修正して作成者名を表示
-const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, authorName }) => {
+const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => {
   return (
     <Link href={`/issue_list/programming_problem/${problemId}`} className="block w-full">
       <li className="flex justify-between items-center p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200 cursor-pointer">
         <span className="font-medium text-blue-600 hover:text-blue-800">
           問{problemId}: {title}
-        </span>
-        <span className="text-sm text-gray-500">
-          作成者: {authorName}
         </span>
       </li>
     </Link>
@@ -58,9 +54,7 @@ const ProgrammingProblemsListPage = async () => {
               <ProblemListRow
                 key={problem.id}
                 problemId={String(problem.id)}
-                title={problem.title}
-                authorName={problem.creator?.username ?? '不明'}
-              />
+                title={problem.title}              />
             ))}
           </ul>
         </div>

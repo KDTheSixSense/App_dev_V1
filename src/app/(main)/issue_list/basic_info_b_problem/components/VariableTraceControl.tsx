@@ -25,6 +25,8 @@ interface VariableTraceControlProps {
   onNextTrace: () => void;
   isTraceFinished: boolean;
   onResetTrace: () => void;   
+  onPrevTrace: () => void;
+  canGoBack: boolean;
   currentTraceLine: number;
   language: 'ja' | 'en';
   textResources: any;
@@ -42,7 +44,9 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
   problem,
   variables,
   onNextTrace,
+  onPrevTrace,
   isTraceFinished,
+  canGoBack,
   onResetTrace,
   currentTraceLine,
   language,
@@ -67,19 +71,20 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
                       variables.c1 !== null || 
                       variables.edgeList !== null
                     );
-  // disabledのロジックを汎用化
-  const isNextButtonDisabled = isTraceFinished || 
-    // (A) 数値プリセット *だけ* があり、かつ未選択の場合
-    (showPresets && !showArrayPresets && !showLogicVariants && !isNumSet) ||
-    // (B) 配列プリセット *だけ* があり、かつ未選択の場合
-    (showArrayPresets && !showPresets && !showLogicVariants && !isPresetSelected) ||
-    // (C) ロジック選択 *だけ* があり、かつ未選択の場合
-    (showLogicVariants && !showPresets && !showArrayPresets && !selectedLogicVariant) ||
-    
-    // (D) ロジック選択 *かつ* 配列プリセットがあり、どちらかが未選択の場合
-    (showLogicVariants && showArrayPresets && (!selectedLogicVariant || !isPresetSelected)) ||
-    // (E) ロジック選択 *かつ* 数値プリセットがあり、どちらかが未選択の場合
-    (showLogicVariants && showPresets && (!selectedLogicVariant || !isNumSet));
+
+  // トレース開始前（プリセット未選択など）はボタンを無効化するためのチェック
+  const isReadyToTrace = 
+    !((showPresets && !showArrayPresets && !showLogicVariants && !isNumSet) ||
+      (showArrayPresets && !showPresets && !showLogicVariants && !isPresetSelected) ||
+      (showLogicVariants && !showPresets && !showArrayPresets && !selectedLogicVariant) ||
+      (showLogicVariants && showArrayPresets && (!selectedLogicVariant || !isPresetSelected)) ||
+      (showLogicVariants && showPresets && (!selectedLogicVariant || !isNumSet)));
+  
+  // 「次へ」ボタンを無効化する条件
+  const isNextButtonDisabled = isTraceFinished || !isReadyToTrace;
+
+  // 「前へ」ボタンを無効化する条件
+  const isPrevButtonDisabled = !canGoBack || !isReadyToTrace;
   // ステップ番号を動的に計算
   let stepCounter = 1;
   const logicStepNum = showLogicVariants ? stepCounter++ : null;
@@ -230,23 +235,40 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
         </div>
       </div>
 
-      {/* --- トレース操作ボタン --- */}
+      {/* --- トレース操作ボタン（配置変更） --- */}
       <div className="w-full">
         <p className="text-center font-semibold mb-3 text-gray-700">{traceStepNum}. トレース実行</p>
-        <div className="flex w-full gap-4">
+        
+        {/* 3つのボタンを横並び配置 */}
+        <div className="grid grid-cols-3 gap-2">
+          
+          {/* 1. リセットボタン */}
           <button
             onClick={onResetTrace}
-            className="flex-1 py-3 px-6 text-xl font-semibold rounded-lg shadow-sm bg-gray-200 text-gray-700 hover:bg-gray-300"
+            className="py-3 text-sm sm:text-base font-semibold rounded-lg shadow-sm bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
           >
             {t.resetTraceButton}
           </button>
+
+          {/* 2. 前へボタン (New!) */}
+          <button
+            onClick={onPrevTrace}
+            disabled={isPrevButtonDisabled}
+            className={`py-3 text-sm sm:text-base font-semibold text-white rounded-lg shadow-sm transition-colors
+              ${isPrevButtonDisabled
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-amber-500 hover:bg-amber-600' // 戻るボタンは少し違う色にするとわかりやすい
+              }`}
+          >
+            {t.prevTraceButton}
+          </button>
+
+          {/* 3. 次へボタン */}
           <button
             onClick={onNextTrace}
-            // disabledの条件を、配列プリセットの場合も考慮するように変更
             disabled={isNextButtonDisabled}
-            className={`flex-1 py-3 px-6 text-xl font-semibold text-white rounded-lg shadow-sm transition-colors
-              ${ // クラスもdisabledロジックと同期
-                isNextButtonDisabled
+            className={`py-3 text-sm sm:text-base font-semibold text-white rounded-lg shadow-sm transition-colors
+              ${isNextButtonDisabled
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-500 hover:bg-blue-600'
               }`}

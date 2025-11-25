@@ -2327,7 +2327,7 @@ export const problems: Problem[] = [
     {
       id: '39',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問1", en: "Basic Subject B Foundation Q1" },
+      title: { ja: "基本情報科目B基礎 if文による評価", en: "Basic Subject B Foundation Q1" },
       description: { 
         ja: "次の記述中の a と b に入れる正しい答えの組合せを、回答群の中から選びなさい。関数 gradeEvaluation は、引数で与えられた inData を用いて成績評価を行い、その結果を返します。inData は 0 以上 100 以下の整数値です。関数 gradeEvaluation を gradeEvaluation(92) として呼び出すと、戻り値は \"a\"、gradeEvaluation(65) として呼び出すと、戻り値は \"b\" となる。", 
         en: "" 
@@ -2378,7 +2378,7 @@ export const problems: Problem[] = [
     {
       id: '40',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問2", en: "Basic Subject B Foundation Q2" },
+      title: { ja: "基本情報科目B基礎 引数で与えられた値までの総和", en: "Basic Subject B Foundation Q2" },
       description: { 
         ja: "次の記述中の(a)に入れる正しい答えを、回答群の中から選べ。関数sum10は、10から引数で与えられた値までの総和を求める関数であるが、一部誤りがある。正しく動作させるためには(a)する必要がある。", 
         en: "" 
@@ -2422,7 +2422,7 @@ export const problems: Problem[] = [
     {
       id: '41',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問3", en: "Basic Subject B Foundation Q3" },
+      title: { ja: "基本情報科目B基礎 配列の最大値探索", en: "Basic Subject B Foundation Q3" },
       description: { 
         ja: "次の記述中の (a) に入れる正しい答えを、回答群の中から選べ。ここで、配列の要素番号は 1 から始まる。関数 func({12, 4, 10, 3, 25, 19, 6, 7, 5, 2}) として呼び出すと、戻り値は (a) となる。", 
         en: "" 
@@ -2471,7 +2471,7 @@ export const problems: Problem[] = [
     {
       id: '42',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問4", en: "Basic Subject B Foundation Q4" },
+      title: { ja: "基本情報科目B基礎 配列連携", en: "Basic Subject B Foundation Q4" },
       description: { 
         ja: "次のプログラム中の (a) と (b) に入れる正しい答えの組み合わせを、回答群の中から選べ。配列 x のデータの後ろに、配列 y のデータを連結した配列 z を返す関数である。", 
         en: "" 
@@ -2537,7 +2537,7 @@ export const problems: Problem[] = [
     {
       id: '43',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問5", en: "Basic Subject B Foundation Q5" },
+      title: { ja: "基本情報科目B基礎 配列の両端から要素を交換", en: "Basic Subject B Foundation Q5" },
       description: { 
         ja: "次のプログラム中の □ に入れる正しい答えを、回答群の中から選びなさい。二つの □ には、同じ答えが入ります。このプログラムは、整数型の配列 array の要素の並びを 逆順 にします。", 
         en: "" 
@@ -2582,7 +2582,7 @@ export const problems: Problem[] = [
     {
       id: '44',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問6", en: "Basic Subject B Foundation Q6" },
+      title: { ja: "基本情報科目B基礎 配列の値を参照し合計を求める", en: "Basic Subject B Foundation Q6" },
       description: { 
         ja: "次の記述中の □ に入れる正しい答えを、回答群の中から選びなさい。関数sumArrayをsumArray({4,7,10,2,12,8,6,3,9,5},{2,4,7,10})として呼び出したときの戻り値は □ です。", 
         en: "" 
@@ -2641,7 +2641,7 @@ export const problems: Problem[] = [
     {
       id: '45',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問7", en: "Basic Subject B Foundation Q7" },
+      title: { ja: "基本情報科目B基礎 挿入ソート", en: "Basic Subject B Foundation Q7" },
       description: { 
         ja: "次のプログラム中の □ に入れる正しい答えを、回答群の中から選びなさい。手続insertSortStepは、挿入ソートの途中処理を行う。", 
         en: "" 
@@ -2701,7 +2701,7 @@ export const problems: Problem[] = [
     {
       id: '46',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問8", en: "Basic Subject B Foundation Q8" },
+      title: { ja: "基本情報科目B基礎 ユークリッドの互除法(減算版)", en: "Basic Subject B Foundation Q8" },
       description: { 
         ja: "関数gcdをgcd(84,36)として呼び出したとき、αで示された繰り返しの判定は□回実行されて処理が終了する。", 
         en: "" 
@@ -2746,7 +2746,7 @@ export const problems: Problem[] = [
     {
       id: '47',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問9", en: "Basic Subject B Foundation Q9" },
+      title: { ja: "基本情報科目B基礎 数字文字列を数値返還", en: "Basic Subject B Foundation Q9" },
       description: { 
         ja: "次のプログラム中の(a)と(b)に入れる正しい答えの組合せを、解答群の中から選べ。関数strToIntは、数字文字列を数値に変換する。", 
         en: "" 
@@ -2808,7 +2808,7 @@ export const problems: Problem[] = [
     {
       id: '48',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問10", en: "Basic Subject B Foundation Q10" },
+      title: { ja: "基本情報科目B基礎 10進数から6桁式2進数変換", en: "Basic Subject B Foundation Q10" },
       description: { 
         ja: "関数decToBinは、引数として与えられた10進整数nを6桁の2進数に変換する。", 
         en: "" 
@@ -2864,7 +2864,7 @@ export const problems: Problem[] = [
     {
       id: '49',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問11", en: "Basic Subject B Foundation Q11" },
+      title: { ja: "基本情報科目B基礎 8ビットで論理和演算", en: "Basic Subject B Foundation Q11" },
       description: { 
         ja: "手続きbitORは8ビット型の引数aとbを受け取り、aとbの論理和演算の結果を出力する。", 
         en: "" 
@@ -2927,7 +2927,7 @@ export const problems: Problem[] = [
     {
       id: '50',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問12", en: "Basic Subject B Foundation Q12" },
+      title: { ja: "基本情報科目B基礎 再帰関数", en: "Basic Subject B Foundation Q12" },
       description: { 
         ja: "関数Gに G(4) を渡した場合、戻り値は □ である。", 
         en: "" 
@@ -2979,7 +2979,7 @@ export const problems: Problem[] = [
     {
       id: '51',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問13", en: "Basic Subject B Foundation Q13" },
+      title: { ja: "基本情報科目B基礎 再帰関数の内部処理数値可視化", en: "Basic Subject B Foundation Q13" },
       description: { 
         ja: "再帰的に定義された手続 display(3) を実行したとき、画面に表示される数字は？", 
         en: "" 
@@ -3030,7 +3030,7 @@ export const problems: Problem[] = [
     {
       id: '52',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問14", en: "Basic Subject B Foundation Q14" },
+      title: { ja: "基本情報科目B基礎 8ビットの論理積演算", en: "Basic Subject B Foundation Q14" },
       description: { 
         ja: "手続きbitANDは8ビット型の引数pとqを受け取り、pとqの論理積演算の結果を出力する。", 
         en: "" 
@@ -3094,7 +3094,7 @@ export const problems: Problem[] = [
     {
       id: '53',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B基礎 問15", en: "Basic Subject B Foundation Q15" },
+      title: { ja: "基本情報科目B基礎 挿入ソート", en: "Basic Subject B Foundation Q15" },
       description: { 
         ja: "手続insertStepは、昇順に並んでいるdata[1]～data[index-1]の中に、data[index]を正しい位置に挿入する処理を行う。", 
         en: "" 
@@ -3168,7 +3168,7 @@ export const problems: Problem[] = [
     {
       id: '54',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問1", en: "Basic Subject B Applied Q1" },
+      title: { ja: "基本情報科目B応用 ボーナス計算結果", en: "Basic Subject B Applied Q1" },
       description: { 
         ja: "次の記述中の□に入れる正しい答えを、回答群の中から選べ。関数calcScoreは、ゲームの成績が格納された文字型の配列markを受け取り、それをもとに計算した合計得点を返す関数である。", 
         en: "" 
@@ -3223,7 +3223,7 @@ export const problems: Problem[] = [
     {
       id: '55',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問2", en: "Basic Subject B Applied Q2" },
+      title: { ja: "基本情報科目B応用 文字探索", en: "Basic Subject B Applied Q2" },
       description: { 
         ja: "文字列の置換を行う関数 replace に関する問題。指定されたターゲット文字列が見つかった場合、置換文字列に置き換える。", 
         en: "" 
@@ -3263,7 +3263,7 @@ export const problems: Problem[] = [
         res: "",
         i: null
       },
-      // ▼▼▼ プリセットを追加 ▼▼▼
+      // プリセットを追加
       traceOptions: {
         presets_array: [
           {
@@ -3289,7 +3289,7 @@ export const problems: Problem[] = [
     {
       id: '56',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問3", en: "Basic Subject B Applied Q3" },
+      title: { ja: "基本情報科目B応用 関数と2つの引数による最大公約数", en: "Basic Subject B Applied Q3" },
       description: { ja: "次のプログラムは、2つの整数a, bの最大公約数を求めるものである。a=32, b=24のとき、戻り値はいくつか。", en: "" },
       programLines: {
         ja: [
@@ -3327,7 +3327,7 @@ export const problems: Problem[] = [
     {
       id: '57',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問4", en: "Basic Subject B Applied Q4" },
+      title: { ja: "基本情報科目B応用 線形探索", en: "Basic Subject B Applied Q4" },
       description: { ja: "次のプログラムは、配列arrayの中にある値targetが存在するか線形探索する。存在すればその添字を、存在しなければ-1を返す。(a)に入れるべき式はどれか。", en: "" },
       programLines: {
         ja: [
@@ -3366,7 +3366,7 @@ export const problems: Problem[] = [
     {
       id: '58',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問5", en: "Basic Subject B Applied Q5" },
+      title: { ja: "基本情報科目B応用 合計計算", en: "Basic Subject B Applied Q5" },
       description: { ja: "次のプログラムは、1からnまでの整数の和を返す。calcSum(5)の戻り値はいくつか。", en: "" },
       programLines: {
         ja: [
@@ -3404,7 +3404,7 @@ export const problems: Problem[] = [
     {
       id: '59',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問6", en: "Basic Subject B Applied Q6" },
+      title: { ja: "基本情報科目B応用 配列の値交換", en: "Basic Subject B Applied Q6" },
       description: { ja: "次のプログラムは、配列dataの要素を逆順に入れ替えるものである。(a)に入れるべき文はどれか。", en: "" },
       programLines: {
         ja: [
@@ -3446,7 +3446,7 @@ export const problems: Problem[] = [
     {
       id: '60',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問7", en: "Basic Subject B Applied Q7" },
+      title: { ja: "基本情報科目B応用 aの文字探索結果", en: "Basic Subject B Applied Q7" },
       description: { ja: "次のプログラムは、文字列strに含まれる文字'a'の個数を数える。countChar(\"banana\")の戻り値はいくつか。", en: "" },
       programLines: {
         ja: [
@@ -3486,7 +3486,7 @@ export const problems: Problem[] = [
     {
       id: '61',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問8", en: "Basic Subject B Applied Q8" },
+      title: { ja: "基本情報科目B応用 素数検知", en: "Basic Subject B Applied Q8" },
       description: { ja: "次のプログラムは、整数nが素数かどうかを判定する。(a)に入れるべき条件式はどれか。", en: "" },
       programLines: {
         ja: [
@@ -3526,7 +3526,7 @@ export const problems: Problem[] = [
     {
       id: '62',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問9", en: "Basic Subject B Applied Q9" },
+      title: { ja: "基本情報科目B応用 フィボナッチ数列の第n項", en: "Basic Subject B Applied Q9" },
       description: { ja: "次のプログラムは、フィボナッチ数列の第n項を求める。fib(5)の戻り値はいくつか。ただしfib(0)=0, fib(1)=1とする。", en: "" },
       programLines: {
         ja: [
@@ -3563,7 +3563,7 @@ export const problems: Problem[] = [
     {
       id: '63',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問10", en: "Basic Subject B Applied Q10" },
+      title: { ja: "基本情報科目B応用 選択ソート", en: "Basic Subject B Applied Q10" },
       description: { ja: "次のプログラムは、配列の要素を昇順にソートする（選択ソート）。(a)に入れるべき式はどれか。", en: "" },
       programLines: {
         ja: [
@@ -3607,7 +3607,7 @@ export const problems: Problem[] = [
     {
       id: '64',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問11", en: "Basic Subject B Applied Q11" },
+      title: { ja: "基本情報科目B応用 平均値", en: "Basic Subject B Applied Q11" },
       description: { ja: "次のプログラムは、2つの整数x, yの平均値を計算する。average(10, 20)の戻り値はいくつか。", en: "" },
       programLines: {
         ja: [
@@ -3640,7 +3640,7 @@ export const problems: Problem[] = [
     {
       id: '65',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問12", en: "Basic Subject B Applied Q12" },
+      title: { ja: "基本情報科目B応用 関数の引数による取引", en: "Basic Subject B Applied Q12" },
       description: { ja: "次のプログラムは、スタックに対する操作を行う。push(1), push(2), pop(), push(3)を実行した後、pop()で取り出される値は何か。", en: "" },
       programLines: {
         ja: [
@@ -3677,7 +3677,7 @@ export const problems: Problem[] = [
     {
       id: '66',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問13", en: "Basic Subject B Applied Q13" },
+      title: { ja: "基本情報科目B応用 キュー操作", en: "Basic Subject B Applied Q13" },
       description: { ja: "次のプログラムは、キューに対する操作を行う。enqueue(1), enqueue(2), dequeue(), enqueue(3)を実行した後、dequeue()で取り出される値は何か。", en: "" },
       programLines: {
         ja: [
@@ -3714,7 +3714,7 @@ export const problems: Problem[] = [
     {
       id: '67',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問14", en: "Basic Subject B Applied Q14" },
+      title: { ja: "基本情報科目B応用 整数nの絶対値", en: "Basic Subject B Applied Q14" },
       description: { ja: "次のプログラムは、整数nの絶対値を返す。abs(-10)の戻り値はいくつか。", en: "" },
       programLines: {
         ja: [
@@ -3750,7 +3750,7 @@ export const problems: Problem[] = [
     {
       id: '68',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 問15", en: "Basic Subject B Applied Q15" },
+      title: { ja: "基本情報科目B応用 文字列の連長圧縮(ラングレス圧縮)", en: "Basic Subject B Applied Q15" },
       description: { ja: "次のプログラムは、文字列を連長圧縮（ランレングス圧縮）する。連続する文字を「文字＋個数」の形式に変換する。encode(\"AAABBC\")の戻り値はいくつか。", en: "" },
       programLines: {
         ja: [
