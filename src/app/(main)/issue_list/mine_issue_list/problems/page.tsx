@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { 
   deleteProblemAction, 
@@ -119,6 +120,14 @@ const MineProblemsListPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="container mx-auto px-4">
+        {/* 一覧へ戻るボタン */}
+        <div className="mb-4">
+          <Link href="/issue_list" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            問題種別一覧へ戻る
+          </Link>
+        </div>
+
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           作成した問題一覧
         </h1>

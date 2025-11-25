@@ -7,6 +7,8 @@ import { prisma } from '@/lib/prisma';
 import { getAppliedInfoAmProblem } from '@/lib/data'; 
 import ProblemClient from './ProblemClient';
 import type { SerializableProblem } from '@/lib/data';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 // 型定義を 'basic_info_a_problem' と同様に修正
 type AppliedInfoProblemDetailPageProps = {
@@ -57,10 +59,20 @@ const AppliedInfoProblemDetailPage = async ({ params, searchParams }: any) => {
 
   // problem は 'SerializableProblem' 型になっているため、変換は不要
   return (
-    <ProblemClient
-      initialProblem={problem} 
-      initialCredits={userCredits}
-    />
+    <div className="min-h-screen bg-gray-100 p-4">
+      <div className="container mx-auto">
+        <div className="mb-4">
+          <Link href="/issue_list/applied_info_morning_problem/problems" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            一覧へ戻る
+          </Link>
+        </div>
+        <ProblemClient
+          initialProblem={problem} 
+          initialCredits={userCredits}
+        />
+      </div>
+    </div>
   );
 };
 

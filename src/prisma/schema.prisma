@@ -87,12 +87,14 @@ model UserAnswer {
   basic_A_Info_Question_id Int?
   questions_id             Int?
   selectProblem_id         Int?
+  applied_am_question_id   Int? // 応用情報問題のIDを保存するカラムを追加
 
   // --- リレーション定義 ---
   programmingProblem    ProgrammingProblem?    @relation(fields: [programingProblem_id], references: [id])
   basic_A_Info_Question Basic_Info_A_Question? @relation(fields: [basic_A_Info_Question_id], references: [id])
   questions             Questions?             @relation(fields: [questions_id], references: [id])
   selectProblem         SelectProblem?         @relation(fields: [selectProblem_id], references: [id])
+  applied_am_question   Applied_am_Question?   @relation(fields: [applied_am_question_id], references: [id]) // 応用情報問題とのリレーションを追加
 
   // --- パフォーマンス向上のためのインデックス (推奨) ---
   @@index([userId])
@@ -100,7 +102,7 @@ model UserAnswer {
   @@index([basic_A_Info_Question_id])
   @@index([questions_id])
   @@index([selectProblem_id])
-  appliedAmQuestions Applied_am_Question[]
+  @@index([applied_am_question_id]) // インデックスを追加
 }
 
 //科目テーブル

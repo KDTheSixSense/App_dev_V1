@@ -2,6 +2,8 @@ import React from 'react';
 import { prisma } from '@/lib/prisma';
 import ProblemDetailClient from './ProblemDetailClient'; // これから作成するファイル
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 // ページに渡されるパラメータの型
 interface PageProps {
@@ -30,5 +32,17 @@ export default async function ProblemDetailPage({ params }: PageProps) {
   const plainProblem = JSON.parse(JSON.stringify(problem));
 
   // 取得したデータをクライアントコンポーネントに渡して表示
-  return <ProblemDetailClient problem={plainProblem} />;
+  return (
+    <div className="min-h-screen bg-gray-100 p-4">
+      <div className="container mx-auto">
+        <div className="mb-4">
+          <Link href="/issue_list/selects_problems" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            一覧へ戻る
+          </Link>
+        </div>
+        <ProblemDetailClient problem={plainProblem} />
+      </div>
+    </div>
+  );
 }

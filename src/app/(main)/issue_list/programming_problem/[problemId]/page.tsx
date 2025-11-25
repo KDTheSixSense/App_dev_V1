@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
+import Link from 'next/link';
+import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical, ArrowLeft } from 'lucide-react';
 // パネルのリサイズ機能を提供するライブラリのコンポーネントをインポートします
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import dynamic from 'next/dynamic';
@@ -247,7 +248,7 @@ const ExecutionPanel: React.FC<{
                             </button>
                         )}
                         <button onClick={props.onExecute} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Play className="h-4 w-4" /> 実行</button>
-                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '提出中...' : '提出'}</button>
+                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '確認中...' : '完了'}</button>
                     </div>
                 </div>
             </div>
@@ -520,9 +521,9 @@ const ProblemSolverPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (!userCode.trim()) { alert('コードを入力してから提出してください。'); return; }
+        if (!userCode.trim()) { alert('コードを入力してから完了を選択してください。'); return; }
         setIsSubmitting(true);
-        setExecutionResult('提出中...');
+        setExecutionResult('確認中...');
         recordStudyTime();
         try {
             const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: problem?.sampleCases?.[0]?.input || '' }), });
@@ -536,7 +537,7 @@ const ProblemSolverPage = () => {
                 window.dispatchEvent(new CustomEvent('petStatusUpdated')); //ヘッダーのペットステータス更新を促すイベントを発火
             }
             else { setSubmitResult({ success: false, message: '不正解です。出力が異なります。', yourOutput: output, expected: expectedOutput }); }
-        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '提出処理中にエラーが発生しました。' }); }
+        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '確認処理中にエラーが発生しました。' }); }
         finally { setIsSubmitting(false); }
     };
     
@@ -600,6 +601,14 @@ const ProblemSolverPage = () => {
     return (
         <div className="h-screen bg-gray-100 p-4 overflow-hidden">
             {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
+
+            {/* 一覧へ戻るボタン */}
+            <div className="mb-2">
+                <Link href="/issue_list/programming_problem/problems" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                    <ArrowLeft className="h-4 w-4" />
+                    一覧へ戻る
+                </Link>
+            </div>
             
             {/* 既存の水平パネルグループ */}
             <PanelGroup direction="horizontal">

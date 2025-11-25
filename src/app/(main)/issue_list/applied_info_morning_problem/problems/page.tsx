@@ -1,15 +1,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { getAppSession } from '@/lib/auth';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { ArrowLeft } from 'lucide-react';
 
 // 問題リスト行のProps型定義
 interface ProblemListRowProps {
   problemId: number;
   title: string;
+  solvedStatus: 'today' | 'past' | 'none';
 }
 
 // 基本情報A問題と完全に同じ構造・クラス名にしたコンポーネント
-const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => {
+const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, solvedStatus }) => {
   return (
     <li className="border-b border-gray-200 flex-shrink-0">
       <Link
@@ -17,11 +21,19 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => 
         className="block p-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer w-full"
       >
         <div className="flex justify-between items-center">
-          <span className="font-medium text-blue-600 hover:text-blue-800">
-            {/* 基本Aに合わせて "問X:" のプレフィックスは削除し、タイトルのみ表示します。
-                もし "問X:" が必要な場合は `{`問${problemId}: ${title}`} としてください。 */}
-            {title}
-          </span>
+          <div className="flex items-center">
+            <span className="font-medium text-blue-600 hover:text-blue-800">
+              {title}
+            </span>
+          </div>
+          {solvedStatus === 'today' && (
+            <span className="text-sm font-semibold text-white bg-blue-500 rounded-full px-3 py-1">
+              解答済み
+            </span>
+          )}
+          {solvedStatus === 'past' && (
+            <CheckCircleIcon className="h-5 w-5 text-green-500" />
+          )}
         </div>
       </Link>
     </li>
@@ -29,6 +41,42 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title }) => 
 };
 
 const AppliedInfoMorningProblemsListPage = async () => {
+  const session = await getAppSession();
+  const userId = session.user?.id;
+
+  const solvedStatusMap = new Map<number, 'today' | 'past'>();
+
+  if (userId) {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    // 応用情報午前問題の正解履歴を取得
+    // スキーマに基づき、applied_am_question_id を使用
+    const correctAnswers = await prisma.userAnswer.findMany({
+      where: {
+        userId: userId,
+        isCorrect: true,
+        applied_am_question_id: { not: null },
+      },
+      select: {
+        applied_am_question_id: true,
+        answeredAt: true,
+      },
+      orderBy: { answeredAt: 'desc' },
+    });
+
+    for (const answer of correctAnswers) {
+      const problemId = answer.applied_am_question_id;
+      if (problemId === null || solvedStatusMap.has(problemId)) {
+        continue;
+      }
+      const answeredDate = answer.answeredAt;
+      const status = answeredDate >= todayStart && answeredDate < todayEnd ? 'today' : 'past';
+      solvedStatusMap.set(problemId, status);
+    }
+  }
+
   const problems = await prisma.applied_am_Question.findMany({
     select: {
       id: true,
@@ -42,6 +90,12 @@ const AppliedInfoMorningProblemsListPage = async () => {
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="container mx-auto px-4">
+        <div className="mb-4 max-w-2xl mx-auto">
+          <Link href="/issue_list" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            問題種別一覧へ戻る
+          </Link>
+        </div>
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           応用情報 午前問題一覧
         </h1>
@@ -53,6 +107,7 @@ const AppliedInfoMorningProblemsListPage = async () => {
                   key={problem.id}
                   problemId={problem.id}
                   title={problem.title}
+                  solvedStatus={solvedStatusMap.get(problem.id) || 'none'}
                 />
               ))}
             </ul>
