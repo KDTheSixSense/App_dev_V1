@@ -87,12 +87,15 @@ model UserAnswer {
   basic_A_Info_Question_id Int?
   questions_id             Int?
   selectProblem_id         Int?
+  appliedAmQuestions_id    Int?
+  
 
   // --- リレーション定義 ---
   programmingProblem    ProgrammingProblem?    @relation(fields: [programingProblem_id], references: [id])
   basic_A_Info_Question Basic_Info_A_Question? @relation(fields: [basic_A_Info_Question_id], references: [id])
   questions             Questions?             @relation(fields: [questions_id], references: [id])
   selectProblem         SelectProblem?         @relation(fields: [selectProblem_id], references: [id])
+  appliedAmQuestion      Applied_am_Question?   @relation(fields: [appliedAmQuestions_id], references: [id])
 
   // --- パフォーマンス向上のためのインデックス (推奨) ---
   @@index([userId])
@@ -100,7 +103,7 @@ model UserAnswer {
   @@index([basic_A_Info_Question_id])
   @@index([questions_id])
   @@index([selectProblem_id])
-  appliedAmQuestions Applied_am_Question[]
+  @@index([appliedAmQuestions_id])
 }
 
 //科目テーブル
