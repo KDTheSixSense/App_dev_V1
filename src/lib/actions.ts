@@ -1888,17 +1888,6 @@ export async function deleteEventAction(eventId: number) {
 }
 
 /**
- * JST（日本標準時）の「日付」オブジェクトを取得するヘルパー関数
- * @param daysAgo 0 = JSTの今日, 1 = JSTの昨日
- */
-function getJstDate(daysAgo: number = 0): Date {
-  const jstOffset = 9 * 60 * 60 * 1000;
-  const targetJST = new Date(Date.now() + jstOffset);
-  targetJST.setDate(targetJST.getDate() - daysAgo);
-  return new Date(targetJST.toISOString().split('T')[0]);
-}
-
-/**
  * ペットの名前を更新するサーバーアクション
  * @param newName 新しいペットの名前
  */
