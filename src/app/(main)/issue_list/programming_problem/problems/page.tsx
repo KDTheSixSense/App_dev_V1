@@ -91,7 +91,7 @@ const ProgrammingProblemsListPage = async () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
+    <div className="min-h-screen py-10">
       <div className="container mx-auto px-4">
         <div className="mb-4 max-w-4xl mx-auto">
           <Link href="/issue_list" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">

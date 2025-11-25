@@ -14,6 +14,7 @@ import { sessionOptions } from '../lib/session';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import { TitleType } from '@prisma/client';
 import { getMissionDate } from './utils';
+import { getNowJST,getAppToday,isSameAppDay,getDaysDiff  } from './dateUtils';
 
 interface SessionData {
   user?: {
@@ -218,6 +219,8 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     throw new Error(`SubjectIDが提供されていません。どの科目の問題か判別できません。`);
   }
 
+  const nowJST = getNowJST(); 
+
   let difficultyId: number | undefined;
   let alreadyCorrectToday = false; // 変数名を「今日正解済みか」に変更
 
@@ -230,8 +233,8 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       applied_am_question_id?: number;
   } = {};
 
-  const todayAppDateString = getAppDate(new Date()).toDateString();
-  
+  const todayAppDateString = nowJST.toDateString();   
+
   if (subjectid === 1) { // 1: ProgrammingProblem
     const problem = await prisma.programmingProblem.findUnique({ 
       where: { id: problemId }, 
@@ -244,7 +247,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, programingProblem_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
 
@@ -260,7 +263,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, basic_A_Info_Question_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
 
@@ -276,7 +279,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, questions_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
 
@@ -292,7 +295,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, selectProblem_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
   } else if (subjectid === 5) { // 5: Applied_am_Question
@@ -311,7 +314,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, applied_am_question_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
   } else { // 5: Questions_Algorithm (仮)
@@ -326,7 +329,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, questions_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && getAppDate(lastCorrectAnswer.answeredAt).toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
   }
@@ -386,9 +389,11 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
 
   updateDailyMissionProgress(1, 1); // デイリーミッションの「問題を解く」進捗を1増やす
 
+  //subjectidがundefinedの場合は0に設定
   if(!subjectid){
     subjectid = 0;
   }
+
   // 5. 経験値を付与
   const { unlockedTitle } = await addXp(userId, subjectid, difficultyId);
   // 6. コハクの満腹度を回復
@@ -417,7 +422,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       userId: userId,
       isCorrect: true,
       answer: 'CORRECT',
-      
+      answeredAt: nowJST,
       // Step 3で決定した、正しい外部キーにIDをセットする
       ...userAnswerForeignKeyData
     },
@@ -430,7 +435,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     await prisma.status_Kohaku.updateMany({
       where: { user_id: userId },
       data: {
-        hungerLastUpdatedAt: new Date(), // 最終更新日時を「今」に設定
+        hungerLastUpdatedAt: nowJST, // 最終更新日時を「今」に設定
       },
     });
     console.log(`ユーザーID:${userId} のペットの満腹度タイマーを開始しました。`);
@@ -444,6 +449,8 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
 // * @param subject_id - 科目のID
 // * @param difficulty_id - 難易度のID
 export async function addXp(user_id: number, subject_id: number, difficulty_id: number) {
+  const nowJST = getNowJST();
+
   const difficulty = await prisma.difficulty.findUnique({
     where: { id: difficulty_id },
   });
@@ -489,7 +496,7 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
         });
         if (!existingUnlock) {
           await tx.userUnlockedTitle.create({
-            data: { userId: user_id, titleId: title.id },
+            data: { userId: user_id, titleId: title.id,unlockedAt: nowJST },
           });
           unlockedTitle = { name: title.name };
           console.log(`[称号獲得!] ${title.name} を獲得しました！`);
@@ -523,7 +530,7 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
           });
           if (!existingUnlock) {
             await tx.userUnlockedTitle.create({
-              data: { userId: user_id, titleId: title.id },
+              data: { userId: user_id, titleId: title.id, unlockedAt: nowJST },
             });
             unlockedTitle = { name: title.name };
             console.log(`[称号獲得!] ${title.name} を獲得しました！`);
@@ -836,13 +843,6 @@ export async function ensureDailyMissionProgress(userId: number) {
   }
 }
 
-//世界標準時が日本の-9時間なので+3して日本時間で朝6時にリセットされるようにする
-const RESET_HOUR = 3;
-function getAppDate(date: Date): Date {
-  const newDate = new Date(date);
-  newDate.setHours(newDate.getHours() + RESET_HOUR);
-  return newDate;
-}
 export async function updateUserLoginStats(userId: number) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -850,38 +850,39 @@ export async function updateUserLoginStats(userId: number) {
 
   if (!user) { throw new Error('User not found'); }
 
-  const now = new Date();
-  const lastLoginDate = user.lastlogin;
-  const todayAppDateString = getAppDate(now).toDateString();
-  const lastLoginAppDateString = lastLoginDate ? getAppDate(lastLoginDate).toDateString() : null;
-  const yesterdayAppDate = getAppDate(now);
-  yesterdayAppDate.setDate(yesterdayAppDate.getDate() - 1);
-  const yesterdayAppDateString = yesterdayAppDate.toDateString();
+  const now = getNowJST();
 
-  let newConsecutiveDays = user.continuouslogin ?? 0;
-  let newTotalDays = user.totallogin ?? 0;
+  // 1. アプリ基準の「今日」を取得
+  const appToday = getAppToday(); 
 
-  if(lastLoginAppDateString === todayAppDateString) {
-    console.log(`ユーザーID:${userId} は今日すでにログインしています。連続ログインは更新されません。今日は${now}。 最終ログインは${lastLoginDate}です。`);
-    return;
+  let newConsecutiveDays = 1;
+
+  // 2. 最終ログイン日と比較
+  if (user.lastlogin) {
+    const daysSinceLastLogin = getDaysDiff(user.lastlogin, appToday);
+
+    if (daysSinceLastLogin === 0) {
+      console.log(`ユーザーID:${userId} は本日すでにログイン済みです。`);
+      return;
+    }
+
+    if (daysSinceLastLogin === 1) {
+      // 昨日ログインしていた -> 継続
+      newConsecutiveDays = (user.continuouslogin ?? 0) + 1;
+    }
   }
+// 総ログイン日数は無条件で +1
+  const newTotalDays = (user.totallogin ?? 0) + 1;
 
-  if (lastLoginAppDateString && lastLoginAppDateString === yesterdayAppDateString) {
-    // ケースA: 最後のログインが「アプリ内での昨日」 -> 連続ログイン
-    newConsecutiveDays += 1;
-  } else {
-    // ケースB: 連続ログインが途切れた -> リセット
-    newConsecutiveDays = 1;
-  }
-  newTotalDays += 1;
   console.log(`ユーザーID:${userId} のログイン統計を更新: 連続ログイン ${newConsecutiveDays}日, 総ログイン日数 ${newTotalDays}日`);
 
+  // 3. データベース更新
   await prisma.user.update({
     where: { id: userId },
     data: {
-      totallogin: newTotalDays,
-      continuouslogin: newConsecutiveDays,
-      lastlogin: now,
+      totallogin: newTotalDays,       // 正しい総日数をセット
+      continuouslogin: newConsecutiveDays, // 正しい連続日数をセット
+      lastlogin: now,          // 最終ログイン日時を「今」に更新
     },
   });
 

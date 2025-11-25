@@ -44,9 +44,9 @@ export default function RankingListItem({ user, isCurrentUser = false }: Props) 
       </div>
 
       <div className="ml-4 font-semibold text-slate-800">
-        <Link href={`/users/${user.id}`} className="truncate max-w-[150px] block">
+        <p className="truncate max-w-[150px] block">
           {user.name}
-        </Link>
+        </p>
       </div>
       
       <div className="ml-auto text-right">

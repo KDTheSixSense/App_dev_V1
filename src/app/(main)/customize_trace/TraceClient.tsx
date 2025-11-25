@@ -1,4 +1,3 @@
-// src/app/(main)/customize_trace/TraceClient.tsx
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -49,7 +48,47 @@ interface IfBlockInfo {
 
 type ControlFlowInfo = ForLoopInfo | WhileLoopInfo | IfBlockInfo;
 
-// 括弧のネストを考慮して演算子の位置を探す関数 (後ろから検索＝左結合)
+interface FunctionInfo {
+    name: string;
+    args: string[];
+    startLine: number;
+}
+
+interface StackFrame {
+    returnLine: number;
+    variables: Record<string, any>;
+    variableTypes: Record<string, string>;
+    pendingExpression: string | null;
+}
+
+// --- PrioQueue ヘルパー ---
+const prioQueueOps = {
+    create: () => ({ type: 'PrioQueue', data: [] as {val: any, prio: number}[] }),
+    enqueue: (q: any, val: any, prio: number) => {
+        const currentData = (q && q.data) ? q.data : [];
+        const newData = [...currentData, { val, prio }];
+        return { type: 'PrioQueue', data: newData };
+    },
+    dequeue: (q: any) => {
+        if (!q || !q.data || q.data.length === 0) return { newQ: q, ret: null };
+        // 優先度(数値)が最も小さいものを探す。同じなら先頭(indexが小さいほう)
+        let minPrio = q.data[0].prio;
+        let targetIdx = 0;
+        for (let i = 1; i < q.data.length; i++) {
+            if (q.data[i].prio < minPrio) {
+                minPrio = q.data[i].prio;
+                targetIdx = i;
+            }
+        }
+        const ret = q.data[targetIdx].val;
+        const newData = [...q.data];
+        newData.splice(targetIdx, 1);
+        return { newQ: { ...q, data: newData }, ret };
+    },
+    size: (q: any) => (q && q.data) ? q.data.length : 0
+};
+
+// 括弧のネストを考慮して演算子の位置を探す関数
 const findOperatorIndex = (expr: string, op: string): number => {
     let depth = 0;
     for (let i = expr.length - 1; i >= 0; i--) {
@@ -57,19 +96,14 @@ const findOperatorIndex = (expr: string, op: string): number => {
         if (char === ')') depth++;
         else if (char === '(') depth--;
         else if (depth === 0) {
-            // 演算子が見つかったかチェック
             if (expr.substring(i - op.length + 1, i + 1) === op) {
                 const index = i - op.length + 1;
-                
-                // 機能改善: シフト演算子(<<, >>)と比較演算子(<, >)の誤検知を防ぐ
-                // '<' を探している時に '<<' の一部なら無視、'>' を探している時に '>>' の一部なら無視
                 if (op === '<') {
                     if (expr[index - 1] === '<' || expr[index + 1] === '<') continue;
                 }
                 if (op === '>') {
                     if (expr[index - 1] === '>' || expr[index + 1] === '>') continue;
                 }
-
                 return index;
             }
         }
@@ -77,7 +111,6 @@ const findOperatorIndex = (expr: string, op: string): number => {
     return -1;
 };
 
-// 値を整数として取得するヘルパー (2進数文字列対応)
 const toInt = (val: any): number => {
     if (typeof val === 'number') return Math.floor(val);
     if (typeof val === 'string') {
@@ -89,12 +122,45 @@ const toInt = (val: any): number => {
     return 0;
 };
 
+// コードを正規化する（改行を含む配列初期化などを1行にまとめる）
+const normalizeCode = (code: string): string[] => {
+    const lines: string[] = [];
+    let buffer = "";
+    let braceDepth = 0; // {}
+    let parenDepth = 0; // ()
+
+    code.split('\n').forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        // コメント除去
+        const cleanLine = trimmed.replace(/\/\/.*$/, '').replace(/\/\*[\s\S]*?\*\//g, '');
+        if (!cleanLine) return;
+
+        for (const char of cleanLine) {
+            if (char === '{') braceDepth++;
+            else if (char === '}') braceDepth--;
+            else if (char === '(') parenDepth++;
+            else if (char === ')') parenDepth--;
+        }
+
+        buffer += (buffer ? " " : "") + cleanLine;
+
+        // 括弧が閉じていて、かつ行末が継続を示唆する文字(,)でないなら行として確定
+        if (braceDepth === 0 && parenDepth === 0 && !buffer.trim().endsWith(',')) {
+            lines.push(buffer);
+            buffer = "";
+        }
+    });
+
+    if (buffer) lines.push(buffer);
+    return lines;
+};
+
 const TraceClient = () => {
-  // --- 状態管理 ---
   const [code, setCode] = useState(sampleCode);
   const [initialVarsString, setInitialVarsString] = useState(sampleInitialVars);
   const [variables, setVariables] = useState<Record<string, any>>({});
-  // 機能改善: 変数の型情報を保持するStateを追加
   const [variableTypes, setVariableTypes] = useState<Record<string, string>>({}); 
   
   const [programLines, setProgramLines] = useState<string[]>([]);
@@ -105,6 +171,10 @@ const TraceClient = () => {
   const [aiPrompt, setAiPrompt] = useState('カウンターが0になるまでデクリメントする');
   const [isGenerating, setIsGenerating] = useState(false);
   const [controlFlowStack, setControlFlowStack] = useState<ControlFlowInfo[]>([]);
+  
+  const [definedFunctions, setDefinedFunctions] = useState<Record<string, FunctionInfo>>({});
+  const [callStack, setCallStack] = useState<StackFrame[]>([]);
+
   const [traceStartedAt, setTraceStartedAt] = useState<number | null>(null);
   const hasRecordedTime = useRef(false);
 
@@ -115,12 +185,10 @@ const TraceClient = () => {
     if (!expression) return null;
     let expr = expression.trim();
 
-    // 全角数字を半角に変換
     expr = expr.replace(/[０-９]/g, (char) => {
         return String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
     });
 
-    // 外側の括弧を外す処理
     while (expr.startsWith('(') && expr.endsWith(')')) {
         let depth = 0;
         let isWrapped = true;
@@ -139,65 +207,130 @@ const TraceClient = () => {
         }
     }
 
-    // 配列リテラル
+    // 配列リテラル (ネスト対応)
     if ((expr.startsWith('[') && expr.endsWith(']')) || (expr.startsWith('{') && expr.endsWith('}'))) {
         const inner = expr.slice(1, -1).trim();
         if (inner === '') return [];
-        const parts = inner.split(',').map(p => p.trim());
+        
+        // ネストされた配列の分割
+        let parts = [];
+        let depth = 0;
+        let current = '';
+        for (let i = 0; i < inner.length; i++) {
+            const c = inner[i];
+            if (c === '{' || c === '[') depth++;
+            if (c === '}' || c === ']') depth--;
+            if (c === ',' && depth === 0) {
+                parts.push(current.trim());
+                current = '';
+            } else {
+                current += c;
+            }
+        }
+        if (current) parts.push(current.trim());
+        
         return parts.map(p => evaluateExpression(p, currentVars));
     }
 
-    // 数値リテラル
     if (!isNaN(Number(expr)) && !expr.startsWith('"') && !expr.startsWith("'")) {
          return Number(expr);
     }
 
-    // 文字列リテラル
     if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
         return expr.slice(1, -1);
+    }
+
+    // メソッド呼び出し (obj.method(...))
+    const methodCallMatch = expr.match(/^([a-zA-Z_]\w*)\s*\.\s*([a-zA-Z_]\w*)\s*\((.*)\)\s*$/);
+    if (methodCallMatch) {
+        const varName = methodCallMatch[1];
+        const methodName = methodCallMatch[2];
+        const argsStr = methodCallMatch[3];
+        
+        if (currentVars.hasOwnProperty(varName)) {
+            const obj = currentVars[varName];
+            if (obj && obj.type === 'PrioQueue') {
+                const args = argsStr ? argsStr.split(',').map(a => evaluateExpression(a.trim(), currentVars)) : [];
+                if (methodName === 'enqueue') {
+                    const [val, prio] = args;
+                    const newQ = prioQueueOps.enqueue(obj, val, prio);
+                    currentVars[varName] = newQ; 
+                    return null;
+                } else if (methodName === 'dequeue') {
+                    const { newQ, ret } = prioQueueOps.dequeue(obj);
+                    currentVars[varName] = newQ; 
+                    return ret;
+                } else if (methodName === 'size') {
+                    return prioQueueOps.size(obj);
+                }
+            }
+        }
     }
     
     // プロパティアクセス
     const lengthMatch = expr.match(/^(.+?)(?:\.|の)要素数$/);
     if (lengthMatch) {
-        const targetVar = lengthMatch[1].trim();
-        let targetVal = currentVars[targetVar];
-        if (targetVal === undefined) try { targetVal = evaluateExpression(targetVar, currentVars); } catch(e) {}
-        if (Array.isArray(targetVal) || typeof targetVal === 'string') return targetVal.length;
-        if (currentVars.hasOwnProperty(targetVar) && Array.isArray(currentVars[targetVar])) return currentVars[targetVar].length;
+        const targetExpr = lengthMatch[1].trim();
+        try {
+            // 再帰的にターゲット式を評価する
+            const targetVal = evaluateExpression(targetExpr, currentVars);
+            if (Array.isArray(targetVal) || typeof targetVal === 'string') return targetVal.length;
+            if (targetVal && targetVal.type === 'PrioQueue') return prioQueueOps.size(targetVal);
+            return 0; // 要素数0の配列または未定義として扱う
+        } catch (e) {
+            // 評価エラー時は無視
+        }
     }
+    
     const strLenMatch = expr.match(/^(.+?)(?:\.|の)文字数$/);
     if (strLenMatch) {
-        const targetVal = evaluateExpression(strLenMatch[1], currentVars);
-        if (typeof targetVal === 'string') return targetVal.length;
+        try {
+            const targetVal = evaluateExpression(strLenMatch[1].trim(), currentVars);
+            if (typeof targetVal === 'string') return targetVal.length;
+        } catch (e) { /* 無視 */ }
     }
-    const arrayAccessMatch = expr.match(/^([a-zA-Z_]\w*)\s*\[\s*(.+)\s*\]$/);
-    if (arrayAccessMatch) {
-        const arrayName = arrayAccessMatch[1];
-        const indexExpr = arrayAccessMatch[2];
-        if (currentVars.hasOwnProperty(arrayName)) {
-            const arr = currentVars[arrayName];
-            // nullチェック追加
-            if (arr === null || arr === undefined) {
-                throw new Error(`変数 "${arrayName}" は初期化されていません (null/undefined)。`);
-            }
-            if (!Array.isArray(arr) && typeof arr !== 'string') {
-                throw new Error(`変数 "${arrayName}" (値: ${JSON.stringify(arr)}) は配列または文字列ではありません。`);
-            }
 
-            const index = evaluateExpression(indexExpr, currentVars);
-            if (typeof index === 'number') {
-                 if (index >= 0 && index < arr.length) return arr[index];
-                 if (index - 1 >= 0 && index - 1 < arr.length) return arr[index - 1];
+    // 配列要素アクセス (多次元対応)
+    if (expr.endsWith(']')) {
+        let depth = 0;
+        let openBracketIndex = -1;
+        for (let i = expr.length - 1; i >= 0; i--) {
+            if (expr[i] === ']') depth++;
+            else if (expr[i] === '[') depth--;
+            if (depth === 0) {
+                openBracketIndex = i;
+                break;
             }
-            return undefined;
+        }
+
+        if (openBracketIndex > 0) {
+            const arrayExpr = expr.substring(0, openBracketIndex).trim();
+            const indexExpr = expr.substring(openBracketIndex + 1, expr.length - 1).trim();
+
+            try {
+                // 左側（配列部分）を再帰的に評価（これにより多次元配列に対応）
+                const arr = evaluateExpression(arrayExpr, currentVars);
+                
+                if (Array.isArray(arr)) {
+                    const index = evaluateExpression(indexExpr, currentVars);
+                    if (typeof index === 'number') {
+                        // 1-based index 優先 (疑似言語仕様)
+                        if (index - 1 >= 0 && index - 1 < arr.length) {
+                            return arr[index - 1];
+                        }
+                        // 0-based index フォールバック
+                        if (index >= 0 && index < arr.length) {
+                            return arr[index];
+                        }
+                        return undefined;
+                    }
+                }
+            } catch (e) {}
         }
     }
 
-    // 変数
     if (currentVars.hasOwnProperty(expr)) return currentVars[expr];
 
-    // 演算子の評価
     const operatorGroups = [
         [' or ', ' or', '||'],
         [' and ', ' and', '&&'],
@@ -205,8 +338,8 @@ const TraceClient = () => {
         [' ⊕ ', ' xor ', '^'],
         [' ∧ ', '&'],
         ['==', '!=', '=', '≠'],
-        ['<=', '>=', '<', '>', '≦', '≧'], // 比較
-        ['<<', '>>'],            // シフト (比較より優先度が高いが、splitロジック上ここで分割される)
+        ['<=', '>=', '<', '>', '≦', '≧'], 
+        ['<<', '>>'],           
         ['+', '-'],
         ['*', '/', '%', '÷']
     ];
@@ -266,19 +399,17 @@ const TraceClient = () => {
 
   const evaluateCondition = (condition: string, currentVars: Record<string, any>): boolean => {
       condition = condition.trim();
-
+      // 割り算の条件式
       const divisibleByAndMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*と\s*(.+?)\s+で割り切れる$/);
       if (divisibleByAndMatch) {
           try {
               const varValue = evaluateExpression(divisibleByAndMatch[1], currentVars);
               const divisor1 = evaluateExpression(divisibleByAndMatch[2], currentVars);
               const divisor2 = evaluateExpression(divisibleByAndMatch[3], currentVars);
-              
               if (typeof varValue !== 'number' || typeof divisor1 !== 'number' || typeof divisor2 !== 'number') return false;
               return (varValue % divisor1 === 0) && (varValue % divisor2 === 0);
           } catch (e) { return false; }
       }
-
       const divisibleByMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s+で割り切れる$/);
       if (divisibleByMatch) {
           try {
@@ -289,6 +420,56 @@ const TraceClient = () => {
           } catch (e) { return false; }
       }
 
+      // 日本語条件式のサポート
+      const notEqualMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*(?:と|で)\s*等しくない$/);
+      if (notEqualMatch) {
+          try {
+              const lhs = evaluateExpression(notEqualMatch[1], currentVars);
+              const rhs = evaluateExpression(notEqualMatch[2], currentVars);
+              return lhs !== rhs;
+          } catch(e) { return false; }
+      }
+      const equalMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*(?:と|で)\s*等しい$/);
+      if (equalMatch) {
+          try {
+              const lhs = evaluateExpression(equalMatch[1], currentVars);
+              const rhs = evaluateExpression(equalMatch[2], currentVars);
+              return lhs === rhs;
+          } catch(e) { return false; }
+      }
+      const greaterMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*より大きい$/);
+      if (greaterMatch) {
+          try {
+              const lhs = evaluateExpression(greaterMatch[1], currentVars);
+              const rhs = evaluateExpression(greaterMatch[2], currentVars);
+              return lhs > rhs;
+          } catch(e) { return false; }
+      }
+      const lessMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*より小さい$/);
+      if (lessMatch) {
+           try {
+               const lhs = evaluateExpression(lessMatch[1], currentVars);
+               const rhs = evaluateExpression(lessMatch[2], currentVars);
+               return lhs < rhs;
+           } catch(e) { return false; }
+      }
+      const greaterEqualMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*以上$/);
+      if (greaterEqualMatch) {
+           try {
+               const lhs = evaluateExpression(greaterEqualMatch[1], currentVars);
+               const rhs = evaluateExpression(greaterEqualMatch[2], currentVars);
+               return lhs >= rhs;
+           } catch(e) { return false; }
+      }
+      const lessEqualMatch = condition.match(/^(.+?)\s+が\s+(.+?)\s*以下$/);
+      if (lessEqualMatch) {
+           try {
+               const lhs = evaluateExpression(lessEqualMatch[1], currentVars);
+               const rhs = evaluateExpression(lessEqualMatch[2], currentVars);
+               return lhs <= rhs;
+           } catch(e) { return false; }
+      }
+      
       try {
             const result = evaluateExpression(condition, currentVars);
             return Boolean(result);
@@ -300,7 +481,6 @@ const TraceClient = () => {
   const findBlockEnd = useCallback((startLine: number, blockStartKeyword: string, blockEndKeyword: string, alternateEndKeywords?: string | string[]): number => {
     let depth = 1;
     const alternates = alternateEndKeywords ? (Array.isArray(alternateEndKeywords) ? alternateEndKeywords : [alternateEndKeywords]) : [];
-    
     for (let i = startLine + 1; i < programLines.length; i++) {
         const line = programLines[i].trim();
         if (depth === 1 && alternates.length > 0) {
@@ -316,27 +496,28 @@ const TraceClient = () => {
     return -1;
   }, [programLines]);
 
-    const recordStudyTime = useCallback(() => {
-        if (traceStartedAt !== null && !hasRecordedTime.current) {
-            const endTime = Date.now();
-            const timeSpentMs = endTime - traceStartedAt;
-            if (timeSpentMs > 3000) {
-                recordStudyTimeAction(timeSpentMs);
-                hasRecordedTime.current = true;
-            }
+  const recordStudyTime = useCallback(() => {
+    if (traceStartedAt !== null && !hasRecordedTime.current) {
+        const endTime = Date.now();
+        const timeSpentMs = endTime - traceStartedAt;
+        if (timeSpentMs > 3000) {
+            recordStudyTimeAction(timeSpentMs);
+            hasRecordedTime.current = true;
         }
-    }, [traceStartedAt]);
+    }
+  }, [traceStartedAt]);
 
-    useEffect(() => {
-        return () => { recordStudyTime(); };
-    }, [recordStudyTime]);
-  
+  useEffect(() => {
+    return () => { recordStudyTime(); };
+  }, [recordStudyTime]);
+
   const getParentIfBlock = (stack: ControlFlowInfo[]): IfBlockInfo | null => {
     for (let i = stack.length - 1; i >= 0; i--) {
       if (stack[i].type === 'if') return stack[i] as IfBlockInfo;
     }
     return null;
   };
+
 
   // --- トレース実行エンジン ---
   const handleNextStep = useCallback(() => {
@@ -350,28 +531,30 @@ const TraceClient = () => {
     }
 
     const lineIndex = currentLine;
-    const line = programLines[lineIndex].trim();
+    const rawLine = programLines[lineIndex];
+    const line = rawLine.replace(/\/\/.*$/, '').replace(/\/\*[\s\S]*?\*\//g, '').trim();
     let nextLine = lineIndex + 1;
     let tempVariables = { ...variables };
-    // 機能改善: 型情報のコピー
     let tempVariableTypes = { ...variableTypes };
     let tempOutput = [...output];
     let tempControlFlowStack = [...controlFlowStack];
+    let tempCallStack = [...callStack];
     let jumped = false;
     const parentIfBlock = getParentIfBlock(tempControlFlowStack);
 
     try {
       setError(null);
 
-      // 正規表現に「8ビット型」を追加
-      const declarationMatch = line.match(/^(整数型|文字列型|配列型|論理型|実数型|8ビット型|整数型の配列|文字列型の配列|実数型の配列)(?:\s*配列)?:\s*(.+)/);
+      // ★修正: 正規表現に「大域」を追加
+      const declarationMatch = line.match(/^(?:大域\s*[:：]\s*)?(整数型|文字列型|配列型|論理型|実数型|8ビット型|整数型配列の配列|整数型の配列|文字列型の配列|実数型の配列)(?:\s*配列)?:\s*(.+)/);
+      const typedDeclarationMatch = line.match(/^([a-zA-Z_]\w*)\s*:\s*([a-zA-Z_]\w*)\s*←\s*(.+)/);
       const assignmentMatch = line.match(/^(.+?)\s*←\s*(.+)/);
-      
       const appendMatch = line.match(/^(.+?)(?:の末尾に)\s*(.+?)\s*(?:の(?:値|結果))?\s*(?:を)?追加する$/);
       const outputMatch = line.match(/^出力する\s+(.+)/);
+      const suffixOutputMatch = line.match(/^(.+?)(?:\s*の(?:戻り値|値))?を(?:空白区切りで)?出力(?:する)?$/);
       const specificOutputMatch = line.match(/^(.+?)(?:の値)?\s*と\s*(.+?)(?:の値)?\s*をこの順にコンマ区切りで出力する$/);
       const specificOutputMatch2 = line.match(/^(.+?)の全要素の値を要素番号の順に空白区切りで出力する/);
-
+      const methodCallMatch = line.match(/^([a-zA-Z_]\w*)\s*\.\s*([a-zA-Z_]\w*)\s*\((.*)\)\s*$/);
       const ifMatch = line.match(/^if\s*(?:(?:\((.+)\))|(.+))/);
       const elseifMatch = line.match(/^(?:else\s*if|elseif)\s*(?:(?:\((.+)\))|(.+))/);
       const elseMatch = line.match(/^else$/);
@@ -380,68 +563,129 @@ const TraceClient = () => {
       const endwhileMatch = line.match(/^endwhile$/);
       const forMatch = line.match(/^for\s*\((.+)\s*を\s*(.+)\s*から\s*(.+)\s*まで\s*(?:(\d+)\s*ずつ(?:増やす|減らす))?\)/);
       const endforMatch = line.match(/^endfor$/);
-      const commentMatch = line.match(/^\s*\/\//) || line.match(/^\s*\/\*/);
-      const funcDefMatch = line.match(/^(\○|\●).*/);
+      const funcDefMatch = line.match(/^[\○\●]\s*(.+?)\((.+?)\)/);
       const returnMatch = line.match(/^return\s+(.+)/);
       const breakMatch = line.match(/繰返し処理を終了する|break/);
+      const standaloneCallMatch = line.match(/^([a-zA-Z_]\w*)\s*\((.*)\)$/);
 
-      if (commentMatch || line === '' || funcDefMatch) {
+      if (line === '') {
         jumped = false;
-      } else if (declarationMatch) {
-          // 変数宣言
-          const type = declarationMatch[1]; // 型を取得
-          const declarationPart = declarationMatch[2];
-          const declaredItems = declarationPart.split(',').map(item => item.trim());
+      } 
+      else if (funcDefMatch) {
+          jumped = false;
+      }
+      else if (typedDeclarationMatch) {
+          const varName = typedDeclarationMatch[1].trim();
+          const typeName = typedDeclarationMatch[2].trim();
+          const initialExpr = typedDeclarationMatch[3].trim();
+          let initialValue = null;
+          if (initialExpr.includes('PrioQueue()')) {
+              initialValue = prioQueueOps.create();
+          } else {
+              initialValue = evaluateExpression(initialExpr, tempVariables);
+          }
+          tempVariables[varName] = initialValue;
+          tempVariableTypes[varName] = typeName;
+          jumped = false;
 
+      } else if (declarationMatch) {
+          const type = declarationMatch[1];
+          const declarationPart = declarationMatch[2];
+          const declaredItems = [];
+          let depth = 0;
+          let current = '';
+          for (let i = 0; i < declarationPart.length; i++) {
+              const c = declarationPart[i];
+              if (c === '{') depth++;
+              if (c === '}') depth--;
+              if (c === ',' && depth === 0) {
+                  declaredItems.push(current.trim());
+                  current = '';
+              } else {
+                  current += c;
+              }
+          }
+          if (current) declaredItems.push(current.trim());
           declaredItems.forEach(item => {
               const parts = item.split('←');
               let varName = parts[0].trim();
               let initialValExpr = parts[1] ? parts[1].trim() : null;
               let initialValue = null;
-
               const arraySizeMatch = varName.match(/^([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\]$/);
               if (arraySizeMatch) {
                    varName = arraySizeMatch[1];
                    const size = parseInt(arraySizeMatch[2], 10);
                    initialValue = new Array(size).fill(null);
               }
-
-              if (initialValExpr) {
-                  if (initialValExpr.startsWith('{') && initialValExpr.endsWith('}')) {
-                      if (initialValExpr.includes('未定義の値')) {
-                           initialValue = [];
-                      } else {
-                           const arrayContent = initialValExpr.substring(1, initialValExpr.length - 1);
-                           if (arrayContent.trim()) {
-                               const elements = arrayContent.split(',').map(e => evaluateExpression(e.trim(), tempVariables));
-                               initialValue = elements;
-                           } else {
-                               initialValue = [];
-                           }
-                      }
-                  } else {
-                      initialValue = evaluateExpression(initialValExpr, tempVariables);
-                  }
+              if (initialValExpr && !initialValue) {
+                   let expr = initialValExpr;
+                   if (expr.startsWith('{') && expr.endsWith('}')) {
+                       expr = expr.replace(/{/g, '[').replace(/}/g, ']');
+                       try {
+                           initialValue = JSON.parse(expr); 
+                       } catch(e) {
+                           try { initialValue = evaluateExpression(expr, tempVariables); } catch(e2) { initialValue = []; }
+                       }
+                   } else {
+                       initialValue = evaluateExpression(initialValExpr, tempVariables);
+                   }
               } else if (!initialValue && (declarationMatch[1].includes('配列') || arraySizeMatch)) {
                    initialValue = [];
               }
-
               if (!(varName in tempVariables) || initialValExpr) {
                   tempVariables[varName] = initialValue;
-                  // 機能改善: 型情報を保存
                   tempVariableTypes[varName] = type;
               }
           });
           jumped = false;
 
+      } else if (methodCallMatch) {
+          evaluateExpression(line.trim(), tempVariables);
+          jumped = false;
+
+      } 
+      else if (standaloneCallMatch && !['if', 'while', 'for', 'elseif', 'return'].includes(standaloneCallMatch[1])) {
+          const funcName = standaloneCallMatch[1];
+          const argsExpr = standaloneCallMatch[2].split(',').map(s => s.trim());
+          
+          if (definedFunctions[funcName]) {
+              const argValues = argsExpr.map(arg => evaluateExpression(arg, tempVariables));
+              const funcInfo = definedFunctions[funcName];
+              
+              tempCallStack.push({
+                  returnLine: lineIndex + 1,
+                  variables: { ...tempVariables },
+                  variableTypes: { ...tempVariableTypes },
+                  pendingExpression: null 
+              });
+
+              // ★修正: グローバル変数を含む現在の変数をコピーして引き継ぐ
+              const newVariables: Record<string, any> = { ...tempVariables };
+              const newVariableTypes: Record<string, string> = { ...tempVariableTypes };
+              
+              funcInfo.args.forEach((argName, idx) => {
+                  const parts = argName.split(':');
+                  const name = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                  const type = parts.length > 1 ? parts[0].trim() : '';
+                  if (idx < argValues.length) {
+                      newVariables[name] = argValues[idx];
+                      newVariableTypes[name] = type;
+                  }
+              });
+              
+              tempVariables = newVariables;
+              tempVariableTypes = newVariableTypes;
+              nextLine = funcInfo.startLine + 1; 
+              jumped = true;
+          } else {
+          }
+
       } else if (appendMatch) {
           const arrayName = appendMatch[1].trim();
           let valueExpr = appendMatch[2].trim();
-
           if (valueExpr.startsWith('(') && valueExpr.endsWith(')')) {
               valueExpr = valueExpr.slice(1, -1).trim();
           }
-          
           if (Array.isArray(tempVariables[arrayName])) {
               const val = evaluateExpression(valueExpr, tempVariables);
               const newArr = [...tempVariables[arrayName]];
@@ -455,54 +699,55 @@ const TraceClient = () => {
       } else if (assignmentMatch) {
           const target = assignmentMatch[1].trim();
           const expression = assignmentMatch[2].trim();
-          
           let value;
-          if (expression.startsWith('{') && expression.endsWith('}')) {
-               const inner = expression.substring(1, expression.length - 1);
-               value = inner ? inner.split(',').map(e => evaluateExpression(e.trim(), tempVariables)) : [];
-          } else {
-               value = evaluateExpression(expression, tempVariables);
+          let expr = expression;
+          if (expr.startsWith('{') && expr.endsWith('}')) {
+              expr = expr.replace(/{/g, '[').replace(/}/g, ']');
           }
+          value = evaluateExpression(expr, tempVariables);
 
-          const arrayTargetMatch = target.match(/^([a-zA-Z_]\w*)\s*\[\s*(.+)\s*\]$/);
-          if (arrayTargetMatch) {
-              const arrayName = arrayTargetMatch[1];
-              const indexExpr = arrayTargetMatch[2];
-              
-              if (!Array.isArray(tempVariables[arrayName])) {
-                  throw new Error(`代入先 "${arrayName}" は配列ではありません。`);
+          if (target.includes('[')) {
+              const arrayTargetMatch = target.match(/^([a-zA-Z_]\w*)\s*\[\s*(.+)\s*\]$/);
+              if (arrayTargetMatch) {
+                  const arrayName = arrayTargetMatch[1];
+                  const indexExpr = arrayTargetMatch[2];
+                  if (!Array.isArray(tempVariables[arrayName])) {
+                      throw new Error(`代入先 "${arrayName}" は配列ではありません。`);
+                  }
+                  let index = evaluateExpression(indexExpr, tempVariables);
+                  if (typeof index === 'number') {
+                       if (index > 0 && index - 1 < tempVariables[arrayName].length) {
+                           index = index - 1; 
+                       }
+                  }
+                  const newArray = [...tempVariables[arrayName]];
+                  newArray[index] = value;
+                  tempVariables[arrayName] = newArray;
+              } else {
+                  throw new Error(`複雑な配列代入はサポートされていません: ${target}`);
               }
-              
-              let index = evaluateExpression(indexExpr, tempVariables);
-              if (typeof index === 'number') {
-                   if (index > 0) index = index - 1; 
-              }
-
-              const newArray = [...tempVariables[arrayName]];
-              newArray[index] = value;
-              tempVariables[arrayName] = newArray;
           } else {
               tempVariables[target] = value;
           }
           jumped = false;
 
-      } else if (specificOutputMatch2) {
-          const varName = specificOutputMatch2[1].trim();
-          if (Array.isArray(tempVariables[varName])) {
-              tempOutput.push(tempVariables[varName].join(' '));
+      } else if (specificOutputMatch2 || specificOutputMatch || outputMatch || suffixOutputMatch) {
+          let expr = "";
+          if (specificOutputMatch2) expr = specificOutputMatch2[1].trim();
+          else if (specificOutputMatch) { /* 特殊処理 */ }
+          else if (outputMatch) expr = outputMatch[1].trim();
+          else if (suffixOutputMatch) expr = suffixOutputMatch[1].trim();
+
+          if (specificOutputMatch2) {
+              if (Array.isArray(tempVariables[expr])) tempOutput.push(tempVariables[expr].join(' '));
+          } else if (specificOutputMatch) {
+              const val1 = evaluateExpression(specificOutputMatch[1], tempVariables);
+              const val2 = evaluateExpression(specificOutputMatch[2], tempVariables);
+              tempOutput.push(`${val1}, ${val2}`);
+          } else {
+              const val = evaluateExpression(expr, tempVariables);
+              tempOutput.push(String(val));
           }
-          jumped = false;
-
-      } else if (specificOutputMatch) {
-          const val1 = evaluateExpression(specificOutputMatch[1], tempVariables);
-          const val2 = evaluateExpression(specificOutputMatch[2], tempVariables);
-          tempOutput.push(`${val1}, ${val2}`);
-          jumped = false;
-
-      } else if (outputMatch) {
-          const expr = outputMatch[1].trim();
-          const val = evaluateExpression(expr, tempVariables);
-          tempOutput.push(String(val));
           jumped = false;
 
       } else if (ifMatch) {
@@ -510,9 +755,7 @@ const TraceClient = () => {
           const endLine = findBlockEnd(lineIndex, 'if', 'endif');
           if (endLine === -1) throw new Error('endifが見つかりません');
           const elseLine = findBlockEnd(lineIndex, 'if', 'endif', 'else');
-
           tempControlFlowStack.push({ type: 'if', startLine: lineIndex, elseLine: elseLine, endLine: endLine });
-          
           if (evaluateCondition(condition, tempVariables)) {
               nextLine = lineIndex + 1;
           } else {
@@ -533,7 +776,6 @@ const TraceClient = () => {
                const nextBranch = findBlockEnd(lineIndex, 'if', 'endif', ['elseif', 'else if', 'else']);
                const parentIf = getParentIfBlock(tempControlFlowStack);
                const endLine = parentIf ? parentIf.endLine : findBlockEnd(lineIndex, 'if', 'endif');
-
                if (nextBranch !== -1 && nextBranch < endLine) {
                    nextLine = nextBranch;
                } else {
@@ -542,118 +784,161 @@ const TraceClient = () => {
            }
            jumped = true;
 
-      } else if (elseMatch) {
+      } else if (elseMatch || endifMatch) {
+           if (endifMatch) tempControlFlowStack.pop();
            nextLine = lineIndex + 1;
            jumped = true;
 
-      } else if (endifMatch) {
-           tempControlFlowStack.pop();
-           nextLine = lineIndex + 1;
-           jumped = true;
-
-      } else if (whileMatch) {
-           const condition = whileMatch[1] || whileMatch[2];
-           const endLine = findBlockEnd(lineIndex, 'while', 'endwhile');
-           if (endLine === -1) throw new Error('endwhileが見つかりません');
-
-           const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
-           if (!currentTop || currentTop.type !== 'while' || currentTop.startLine !== lineIndex) {
-               tempControlFlowStack.push({ type: 'while', condition, startLine: lineIndex, endLine });
-           }
-
-           if (evaluateCondition(condition, tempVariables)) {
-               nextLine = lineIndex + 1;
-           } else {
-               tempControlFlowStack.pop();
-               nextLine = endLine + 1;
-           }
-           jumped = true;
-
-      } else if (endwhileMatch) {
-           const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
-           if (currentTop?.type === 'while') {
-               nextLine = currentTop.startLine;
-           } else {
-               throw new Error('対応するwhileが見つかりません');
-           }
-           jumped = true;
-
-      } else if (forMatch) {
-           const loopVar = forMatch[1].trim();
-           const startExpr = forMatch[2].trim();
-           const endExpr = forMatch[3].trim();
-           let step = forMatch[4] ? parseInt(forMatch[4], 10) : 1;
-           if (line.includes('減らす')) step = -step;
-
-           const endLine = findBlockEnd(lineIndex, 'for', 'endfor');
-           if (endLine === -1) throw new Error('endforが見つかりません');
-
-           const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
-           
-           if (currentTop?.type === 'for' && currentTop.startLine === lineIndex) {
-               const cond = step > 0 
-                  ? tempVariables[loopVar] <= currentTop.endVal 
-                  : tempVariables[loopVar] >= currentTop.endVal;
-
-               if (cond) {
-                   nextLine = lineIndex + 1;
+      } else if (whileMatch || endwhileMatch || forMatch || endforMatch || breakMatch) {
+          if (whileMatch) {
+              const condition = whileMatch[1] || whileMatch[2];
+              const endLine = findBlockEnd(lineIndex, 'while', 'endwhile');
+              if (endLine === -1) throw new Error('endwhileが見つかりません');
+              const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
+              if (!currentTop || currentTop.type !== 'while' || currentTop.startLine !== lineIndex) {
+                  tempControlFlowStack.push({ type: 'while', condition, startLine: lineIndex, endLine });
+              }
+              if (evaluateCondition(condition, tempVariables)) nextLine = lineIndex + 1;
+              else { tempControlFlowStack.pop(); nextLine = endLine + 1; }
+              jumped = true;
+          } else if (endwhileMatch) {
+              const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
+              if (currentTop?.type === 'while') nextLine = currentTop.startLine;
+              else throw new Error('対応するwhileが見つかりません');
+              jumped = true;
+          } else if (forMatch) {
+               const loopVar = forMatch[1].trim();
+               const startExpr = forMatch[2].trim();
+               const endExpr = forMatch[3].trim();
+               let step = forMatch[4] ? parseInt(forMatch[4], 10) : 1;
+               if (line.includes('減らす')) step = -step;
+               const endLine = findBlockEnd(lineIndex, 'for', 'endfor');
+               if (endLine === -1) throw new Error('endforが見つかりません');
+               const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
+               if (currentTop?.type === 'for' && currentTop.startLine === lineIndex) {
+                   const cond = step > 0 ? tempVariables[loopVar] <= currentTop.endVal : tempVariables[loopVar] >= currentTop.endVal;
+                   if (cond) nextLine = lineIndex + 1;
+                   else { tempControlFlowStack.pop(); nextLine = endLine + 1; }
                } else {
-                   tempControlFlowStack.pop();
-                   nextLine = endLine + 1;
+                   const startVal = evaluateExpression(startExpr, tempVariables);
+                   const endVal = evaluateExpression(endExpr, tempVariables);
+                   tempVariables[loopVar] = startVal;
+                   const cond = step > 0 ? startVal <= endVal : startVal >= endVal;
+                   if (cond) {
+                       tempControlFlowStack.push({ type: 'for', loopVar, startVal, endVal, step, startLine: lineIndex, endLine });
+                       nextLine = lineIndex + 1;
+                   } else { nextLine = endLine + 1; }
                }
-           } else {
-               const startVal = evaluateExpression(startExpr, tempVariables);
-               const endVal = evaluateExpression(endExpr, tempVariables);
-               tempVariables[loopVar] = startVal;
-
-               const cond = step > 0 ? startVal <= endVal : startVal >= endVal;
-               if (cond) {
-                   tempControlFlowStack.push({ 
-                       type: 'for', loopVar, startVal, endVal, step, startLine: lineIndex, endLine 
-                   });
-                   nextLine = lineIndex + 1;
-               } else {
-                   nextLine = endLine + 1;
-               }
-           }
-           jumped = true;
-
-      } else if (endforMatch) {
-           const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
-           if (currentTop?.type === 'for') {
-               tempVariables[currentTop.loopVar] += currentTop.step;
-               nextLine = currentTop.startLine;
-           } else {
-               throw new Error('対応するforが見つかりません');
-           }
-           jumped = true;
-           
-      } else if (breakMatch) {
-           let loopIndex = -1;
-           for (let i = tempControlFlowStack.length - 1; i >= 0; i--) {
-               if (tempControlFlowStack[i].type === 'while' || tempControlFlowStack[i].type === 'for') {
-                   loopIndex = i;
-                   break;
-               }
-           }
-           if (loopIndex !== -1) {
-               const loopInfo = tempControlFlowStack[loopIndex];
-               tempControlFlowStack = tempControlFlowStack.slice(0, loopIndex);
-               nextLine = loopInfo.endLine + 1;
                jumped = true;
-           } else {
-               throw new Error('breakするループがありません');
-           }
+          } else if (endforMatch) {
+               const currentTop = tempControlFlowStack[tempControlFlowStack.length - 1];
+               if (currentTop?.type === 'for') {
+                   tempVariables[currentTop.loopVar] += currentTop.step;
+                   nextLine = currentTop.startLine;
+               } else throw new Error('対応するforが見つかりません');
+               jumped = true;
+          } else if (breakMatch) {
+               let loopIndex = -1;
+               for (let i = tempControlFlowStack.length - 1; i >= 0; i--) {
+                   if (tempControlFlowStack[i].type === 'while' || tempControlFlowStack[i].type === 'for') { loopIndex = i; break; }
+               }
+               if (loopIndex !== -1) {
+                   const loopInfo = tempControlFlowStack[loopIndex];
+                   tempControlFlowStack = tempControlFlowStack.slice(0, loopIndex);
+                   nextLine = loopInfo.endLine + 1;
+                   jumped = true;
+               } else throw new Error('breakするループがありません');
+          }
 
       } else if (returnMatch) {
            const expr = returnMatch[1].trim();
-           const val = evaluateExpression(expr, tempVariables);
-           tempVariables['result'] = val;
-           tempOutput.push(`Return: ${val}`);
-           nextLine = programLines.length;
-           jumped = true;
+           const funcCallMatch = expr.match(/([a-zA-Z_]\w*)\s*\((.+)\)/);
+           
+           if (funcCallMatch) {
+                const funcName = funcCallMatch[1];
+                const argsExpr = funcCallMatch[2].split(',').map(s => s.trim());
+                
+                if (definedFunctions[funcName]) {
+                     const argValues = argsExpr.map(arg => evaluateExpression(arg, tempVariables));
+                     const funcInfo = definedFunctions[funcName];
+                     const placeholder = `<RESULT_${tempCallStack.length}>`; 
+                     const pendingExpr = expr.replace(funcCallMatch[0], placeholder);
+
+                     tempCallStack.push({
+                         returnLine: lineIndex, 
+                         variables: { ...tempVariables }, 
+                         variableTypes: { ...tempVariableTypes },
+                         pendingExpression: pendingExpr
+                     });
+
+                     const newVariables: Record<string, any> = { ...tempVariables };
+                     const newVariableTypes: Record<string, string> = { ...tempVariableTypes };
+                     
+                     funcInfo.args.forEach((argName, idx) => {
+                         const parts = argName.split(':');
+                         const name = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                         const type = parts.length > 1 ? parts[0].trim() : '';
+                         if (idx < argValues.length) {
+                             newVariables[name] = argValues[idx];
+                             newVariableTypes[name] = type;
+                         }
+                     });
+                     tempVariables = newVariables;
+                     tempVariableTypes = newVariableTypes;
+                     nextLine = funcInfo.startLine + 1;
+                     jumped = true;
+                } else {
+                     const val = evaluateExpression(expr, tempVariables);
+                     tempVariables['result'] = val;
+                     tempOutput.push(`Return: ${val}`);
+                     nextLine = programLines.length;
+                     jumped = true;
+                }
+           } else {
+                const retVal = evaluateExpression(expr, tempVariables);
+                if (tempCallStack.length > 0) {
+                    const frame = tempCallStack.pop();
+                    if (frame) {
+                        tempVariables = frame.variables;
+                        tempVariableTypes = frame.variableTypes;
+                        nextLine = frame.returnLine; 
+                        if (frame.pendingExpression) {
+                             const placeholder = `<RESULT_${tempCallStack.length}>`;
+                             const nextExpr = frame.pendingExpression.replace(placeholder, String(retVal));
+                             let currentExpr = nextExpr;
+                             while (true) {
+                                const calculatedVal = evaluateExpression(currentExpr, tempVariables);
+                                if (tempCallStack.length === 0) {
+                                    tempVariables['result'] = calculatedVal;
+                                    tempOutput.push(`Return: ${calculatedVal}`);
+                                    nextLine = programLines.length;
+                                    jumped = true;
+                                    break;
+                                } else {
+                                    const nextFrame = tempCallStack.pop();
+                                    if (!nextFrame) break;
+                                    tempVariables = nextFrame.variables;
+                                    tempVariableTypes = nextFrame.variableTypes;
+                                    nextLine = nextFrame.returnLine;
+                                    const nextPlaceholder = `<RESULT_${tempCallStack.length}>`;
+                                    if (nextFrame.pendingExpression) {
+                                        currentExpr = nextFrame.pendingExpression.replace(nextPlaceholder, String(calculatedVal));
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    tempVariables['result'] = retVal;
+                    tempOutput.push(`Return: ${retVal}`);
+                    nextLine = programLines.length;
+                    jumped = true;
+                }
+           }
       } else {
-           throw new Error(`不明な構文です: ${line}`);
+           // throw new Error(`不明な構文です: ${line}`); 
       }
 
       if (!jumped && parentIfBlock && lineIndex > parentIfBlock.startLine && lineIndex < parentIfBlock.endLine) {
@@ -666,10 +951,37 @@ const TraceClient = () => {
       }
 
       setVariables(tempVariables);
-      // 機能改善: 型情報の更新
       setVariableTypes(tempVariableTypes);
       setOutput(tempOutput);
       setControlFlowStack(tempControlFlowStack);
+      setCallStack(tempCallStack);
+
+      // ★機能改善: 暗黙的なリターン（関数の終わり）の処理
+      const nextLineContent = programLines[nextLine]?.trim() || '';
+      const isNextLineFuncDef = nextLineContent.match(/^[\○\●]/);
+      
+      if ((nextLine >= programLines.length || isNextLineFuncDef) && tempCallStack.length > 0) {
+          const frame = tempCallStack.pop();
+          if (frame) {
+              tempVariables = frame.variables;
+              tempVariableTypes = frame.variableTypes;
+              nextLine = frame.returnLine;
+              
+              const nextL = programLines[nextLine]?.trim() || '';
+              if (nextL.startsWith('else') || nextL.startsWith('elseif')) {
+                 const parentIf = getParentIfBlock(tempControlFlowStack);
+                 if (parentIf && nextLine > parentIf.startLine && nextLine < parentIf.endLine) {
+                      nextLine = parentIf.endLine;
+                 }
+              }
+
+              setVariables(tempVariables); 
+              setVariableTypes(tempVariableTypes);
+              setCallStack(tempCallStack);
+              setCurrentLine(nextLine);
+              return; 
+          }
+      }
 
       if (nextLine >= programLines.length) {
            setError('トレースが正常に終了しました。');
@@ -684,91 +996,98 @@ const TraceClient = () => {
        setError(`エラー (行 ${lineIndex + 1}): ${e.message}`);
        setIsTraceStarted(false);
     }
-  }, [isTraceStarted, currentLine, programLines, variables, controlFlowStack, findBlockEnd]);
+  }, [isTraceStarted, currentLine, programLines, variables, controlFlowStack, findBlockEnd, callStack, definedFunctions, variableTypes, output]);
 
   // --- UIイベントハンドラ ---
   const handleStartTrace = () => {
     try {
       setError(null);
       
-      // 機能改善: JSON入力の自動補正 (0から始まる数値を文字列としてクォートする)
       const fixedInitialVars = initialVarsString.replace(/:\s*(0\d+)/g, ': "$1"');
       const parsedVars = fixedInitialVars.trim() ? JSON.parse(fixedInitialVars) : {};
       
-      // 通常の変数宣言や代入文（行頭にあるもの）は影響を受けない
-      let formattedCode = code.replace(/(\)|[0-9]+)\s+([a-zA-Z_]\w*\s*←)/g, '$1\n$2');
-
-      // if (formattedCode !== code) {
-      //     setCode(formattedCode);
-      // }
-
-      // 機能改善: 変数の型情報を収集
       const detectedTypes: Record<string, string> = {};
-
-      // AIが生成したコード内の配列変数名を抽出
-      // 1. 通常の変数宣言行からの抽出
-      const standardDeclarations = (formattedCode.match(/^(?:整数型|文字列型|配列型|8ビット型|整数型の配列|文字列型の配列|実数型の配列)(?:\s*\[\s*\d+\s*\])?:\s*(.+)/gm) || [])
-          .flatMap(line => {
-              const match = line.match(/^(.+?)(?:\s*\[\s*\d+\s*\])?:\s*(.+)/);
-              if (!match) return [];
-              const type = match[1];
-              const declaration = match[2];
-
-              declaration.split(',').forEach(d => {
-                  let name = d.split('←')[0].trim();
+      const functions: Record<string, FunctionInfo> = {};
+      
+      // ★機能改善: 正規化処理 (改行を含む配列定義などを1行に結合)
+      const normalizedLines = normalizeCode(code);
+      
+      normalizedLines.forEach(line => {
+          const typedMatch = line.match(/^([a-zA-Z_]\w*)\s*:\s*([a-zA-Z_]\w*)\s*←/);
+          if (typedMatch) detectedTypes[typedMatch[1]] = typedMatch[2];
+      });
+      normalizedLines.forEach((line, index) => {
+         const funcMatch = line.match(/^[\○\●](?:.+?:\s*)?([a-zA-Z_]\w*)\((.+)\)/);
+         if (funcMatch) {
+             const funcName = funcMatch[1];
+             const argsPart = funcMatch[2];
+             const args = argsPart.split(',').map(s => s.trim());
+             functions[funcName] = { name: funcName, args, startLine: index };
+             // ...
+         }
+         // ★修正: 大域変数の正規表現を修正 (大域: ... を許容)
+         const declMatch = line.match(/^(?:大域\s*[:：]\s*)?(整数型|文字列型|配列型|8ビット型|整数型配列の配列|整数型の配列|文字列型の配列|実数型の配列)(?:\s*\[\s*\d+\s*\])?:\s*(.+)/);
+         if (declMatch && !funcMatch) {
+             const type = declMatch[1];
+             const declaration = declMatch[2];
+             const declaredItems = [];
+             let depth = 0;
+             let current = '';
+             for (let i = 0; i < declaration.length; i++) {
+                 const c = declaration[i];
+                 if (c === '{') depth++;
+                 if (c === '}') depth--;
+                 if (c === ',' && depth === 0) {
+                     declaredItems.push(current.trim());
+                     current = '';
+                 } else {
+                     current += c;
+                 }
+             }
+             if (current) declaredItems.push(current.trim());
+             declaredItems.forEach(d => {
+                  const parts = d.split('←');
+                  let name = parts[0].trim();
+                  let initialValExpr = parts[1] ? parts[1].trim() : null;
                   name = name.replace(/\[\d+\]$/, '');
-                  detectedTypes[name] = type; // 型を保存
-              });
-
-              return declaration.split(',');
-          });
-
-      // 2. 関数定義の引数からの抽出
-      const functionArgs = (formattedCode.match(/^[\○\●].+\((.+)\)/gm) || [])
-          .flatMap(line => {
-              const argsPart = line.match(/\((.+)\)/)?.[1];
-              if (!argsPart) return [];
-              return argsPart.split(',').map(arg => {
-                  const parts = arg.split(':');
-                  if (parts.length === 2) {
-                      const type = parts[0].trim();
-                      const name = parts[1].trim();
-                      detectedTypes[name] = type; // 引数の型も保存
-                      return name;
+                  detectedTypes[name] = type;
+                  
+                  if (initialValExpr && !parsedVars.hasOwnProperty(name)) {
+                      let initialValue = null;
+                      if (initialValExpr.startsWith('{') && initialValExpr.endsWith('}')) {
+                           let expr = initialValExpr.replace(/{/g, '[').replace(/}/g, ']');
+                           try { initialValue = JSON.parse(expr); } catch(e) { initialValue = []; }
+                      } else {
+                           if (!isNaN(Number(initialValExpr))) initialValue = Number(initialValExpr);
+                      }
+                      if (initialValue !== null) parsedVars[name] = initialValue;
                   }
-                  return '';
-              }).filter(Boolean);
-          });
-
-      const arrayVarNames = [...standardDeclarations, ...functionArgs]
-          .map(v => {
-              let name = v.trim().split('←')[0].trim();
-              name = name.replace(/\[\d+\]$/, '');
-              return name;
-          })
-          .filter((v, i, self) => v && self.indexOf(v) === i);
-
-      arrayVarNames.forEach(name => {
-         if (!parsedVars.hasOwnProperty(name)) {
-             if (!parsedVars[name]) parsedVars[name] = []; 
+             });
          }
       });
       
       setVariables(parsedVars);
-      setVariableTypes(detectedTypes); // Stateに保存
+      setVariableTypes(detectedTypes);
+      setDefinedFunctions(functions); 
 
-      const lines = code.split('\n');
-      setProgramLines(lines);
+      setProgramLines(normalizedLines);
 
       let firstExecutableLine = 0;
-      const allLines = formattedCode.split('\n');
-      while (firstExecutableLine < allLines.length && (allLines[firstExecutableLine].trim() === '' || allLines[firstExecutableLine].trim().startsWith('//') || allLines[firstExecutableLine].trim().startsWith('/*'))) {
-        firstExecutableLine++;
+      while (firstExecutableLine < normalizedLines.length) {
+          const l = normalizedLines[firstExecutableLine].trim();
+          // 関数定義もスキップ対象から外す？いや、メイン処理は関数の外にあるはず
+          if (l === '' || l.match(/^[\○\●]/)) {
+              firstExecutableLine++;
+          } else {
+              break;
+          }
       }
+      if (firstExecutableLine >= normalizedLines.length) firstExecutableLine = 0;
 
       setCurrentLine(firstExecutableLine);
       setOutput([]);
       setControlFlowStack([]);
+      setCallStack([]); 
       setIsTraceStarted(true);
       setTraceStartedAt(Date.now());
       hasRecordedTime.current = false;
@@ -783,6 +1102,7 @@ const TraceClient = () => {
     }
   };
 
+
   const handleReset = () => {
     recordStudyTime();
     setTraceStartedAt(null);
@@ -790,10 +1110,11 @@ const TraceClient = () => {
     setCurrentLine(-1);
     setProgramLines([]);
     setVariables({});
-    setVariableTypes({}); // Reset types
+    setVariableTypes({}); 
     setOutput([]);
     setError(null);
     setControlFlowStack([]);
+    setCallStack([]);
   };
 
   const handleGenerateCode = async () => {
@@ -930,10 +1251,13 @@ const TraceClient = () => {
                 <div key={name} className="flex items-center text-sm">
                     <span className="font-semibold mr-2">{name}:</span>
                     <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 break-all">
-                        {/* 機能改善: 8ビット型の場合は2進数8桁で表示 */}
                         {(() => {
                             if (variableTypes[name] === '8ビット型' && typeof value === 'number') {
                                 return value.toString(2).padStart(8, '0');
+                            }
+                            if (variableTypes[name] === 'PrioQueue' || (value && value.type === 'PrioQueue')) {
+                                const qData = (value && value.data) ? value.data : [];
+                                return `[${qData.map((item: any) => `${JSON.stringify(item.val)}(${item.prio})`).join(', ')}]`;
                             }
                             return Array.isArray(value) ? `[${value.map(v => JSON.stringify(v)).join(', ')}]` : JSON.stringify(value);
                         })()}
