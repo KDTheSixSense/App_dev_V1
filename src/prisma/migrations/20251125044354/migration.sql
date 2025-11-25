@@ -60,6 +60,7 @@ CREATE TABLE "UserAnswer" (
     "basic_A_Info_Question_id" INTEGER,
     "questions_id" INTEGER,
     "selectProblem_id" INTEGER,
+    "appliedAmQuestions_id" INTEGER,
 
     CONSTRAINT "UserAnswer_pkey" PRIMARY KEY ("id")
 );
@@ -555,14 +556,6 @@ CREATE TABLE "AssignmentComment" (
     CONSTRAINT "AssignmentComment_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "_Applied_am_QuestionToUserAnswer" (
-    "A" INTEGER NOT NULL,
-    "B" INTEGER NOT NULL,
-
-    CONSTRAINT "_Applied_am_QuestionToUserAnswer_AB_pkey" PRIMARY KEY ("A","B")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -583,6 +576,9 @@ CREATE INDEX "UserAnswer_questions_id_idx" ON "UserAnswer"("questions_id");
 
 -- CreateIndex
 CREATE INDEX "UserAnswer_selectProblem_id_idx" ON "UserAnswer"("selectProblem_id");
+
+-- CreateIndex
+CREATE INDEX "UserAnswer_appliedAmQuestions_id_idx" ON "UserAnswer"("appliedAmQuestions_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Subject_name_key" ON "Subject"("name");
@@ -656,9 +652,6 @@ CREATE UNIQUE INDEX "EventDifficulty_difficultyName_key" ON "EventDifficulty"("d
 -- CreateIndex
 CREATE INDEX "AssignmentComment_assignmentId_idx" ON "AssignmentComment"("assignmentId");
 
--- CreateIndex
-CREATE INDEX "_Applied_am_QuestionToUserAnswer_B_index" ON "_Applied_am_QuestionToUserAnswer"("B");
-
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_selectedTitleId_fkey" FOREIGN KEY ("selectedTitleId") REFERENCES "Title"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -685,6 +678,9 @@ ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_questions_id_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_selectProblem_id_fkey" FOREIGN KEY ("selectProblem_id") REFERENCES "SelectProblem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserAnswer" ADD CONSTRAINT "UserAnswer_appliedAmQuestions_id_fkey" FOREIGN KEY ("appliedAmQuestions_id") REFERENCES "Applied_am_Question"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Answer_Algorithm" ADD CONSTRAINT "Answer_Algorithm_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -838,9 +834,3 @@ ALTER TABLE "AssignmentComment" ADD CONSTRAINT "AssignmentComment_assignmentId_f
 
 -- AddForeignKey
 ALTER TABLE "AssignmentComment" ADD CONSTRAINT "AssignmentComment_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_Applied_am_QuestionToUserAnswer" ADD CONSTRAINT "_Applied_am_QuestionToUserAnswer_A_fkey" FOREIGN KEY ("A") REFERENCES "Applied_am_Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_Applied_am_QuestionToUserAnswer" ADD CONSTRAINT "_Applied_am_QuestionToUserAnswer_B_fkey" FOREIGN KEY ("B") REFERENCES "UserAnswer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
