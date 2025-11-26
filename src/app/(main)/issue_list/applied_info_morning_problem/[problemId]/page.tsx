@@ -1,6 +1,6 @@
 // /workspaces/my-next-app/src/app/(main)/issue_list/applied_info_morning_problem/[problemId]/page.tsx
 
-import React from 'react';
+import React from 'react'; // Reactのインポートを追加
 import { notFound } from 'next/navigation';
 import { getAppSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -8,8 +8,8 @@ import { getAppliedInfoAmProblem } from '@/lib/data';
 import ProblemClient from './ProblemClient';
 import type { SerializableProblem } from '@/lib/data';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-
+import { ArrowLeft } from 'lucide-react'; // lucide-reactのインポートを追加
+ 
 // 型定義を 'basic_info_a_problem' と同様に修正
 type AppliedInfoProblemDetailPageProps = {
   params: { problemId: string }; // 'Promise' を削除

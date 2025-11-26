@@ -43,7 +43,7 @@ const ProgrammingProblemListRow: React.FC<{ problem: ProgrammingProblemWithCreat
         </Link>
       </div>
       <span className="text-sm text-gray-500 flex-shrink-0">
-        作成者: {problem.creator?.username ?? '不明'}
+        作成者: {problem.creator?.username ?? '不明'} / {problem.difficulty}
       </span>
     </li>
   );
@@ -71,7 +71,7 @@ const SelectProblemListRow: React.FC<{ problem: SelectProblemWithCreator }> = ({
         </Link>
       </div>
       <span className="text-sm text-gray-500 flex-shrink-0">
-        作成者: {problem.creator?.username ?? '不明'}
+        作成者: {problem.creator?.username ?? '不明'} / {problem.difficultyId}
       </span>
     </li>
   );

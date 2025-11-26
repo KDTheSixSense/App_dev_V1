@@ -158,7 +158,7 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                         <h3 style={{ fontSize: '18px', fontWeight: '500', color: '#3c4043', margin: '0 0 16px 0' }}>コメント</h3>
                         
                         {/* コメントリスト */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px', maxHeight: '300px', overflowY: 'scroll', paddingRight: '10px' }}>
                             {comments.length > 0 ? (
                                 comments.map(comment => (
                                     <div key={comment.id} style={{ display: 'flex', gap: '12px' }}>

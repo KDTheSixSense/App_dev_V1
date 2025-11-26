@@ -302,7 +302,7 @@ const AiChatPanel: React.FC<{
         // 枠線と背景を削除し、親の ExecutionPanel にレイアウトを合わせる
         <div className="flex flex-col h-full bg-white">
         <div className="p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg text-gray-800 flex items-center gap-2"><Sparkles className="h-5 w-5 text-cyan-500" />コハクに質問</h3></div>
-            <div className="flex-grow p-4 overflow-y-auto space-y-4">
+            <div className="flex-grow p-4 overflow-y-scroll space-y-4">
                 {messages.map((msg, index) => (
                     <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.sender === 'kohaku' && (

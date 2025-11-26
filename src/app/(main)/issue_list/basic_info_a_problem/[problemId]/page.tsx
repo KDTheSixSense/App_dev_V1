@@ -1,6 +1,6 @@
 // src/app/(main)/issue_list/basic_info_a_problem/[problemid]/page.tsx
 
-import React from 'react';
+import React from 'react'; // Reactのインポートを追加
 import { notFound } from 'next/navigation';
 import { getAppSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -8,8 +8,8 @@ import { getBasicInfoAProblem } from '@/lib/data';
 import ProblemClient from './ProblemClient';
 import type { SerializableProblem } from '@/lib/data';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-
+import { ArrowLeft } from 'lucide-react'; // lucide-reactのインポートを追加
+ 
 // --- 修正点 1: 型定義を修正 ---
 // params は Promise ではなく、プロパティ名はファイル名に合わせて 'problemid' (小文字) にします。
 type BasicInfoAProblemDetailPageProps = {
