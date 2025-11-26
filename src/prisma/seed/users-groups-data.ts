@@ -62,7 +62,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   for (const userData of usersToSeed) {
     const subjectProgressData = [];
     let totalAccountXp = 0;
-    const numberOfSubjects = 4; // subject_idが4まであると仮定
+    const numberOfSubjects = 5; // subject_idが5まであると仮定
 
     // 科目ごとの進捗を生成
     for (let subjectId = 1; subjectId <= numberOfSubjects; subjectId++) {
