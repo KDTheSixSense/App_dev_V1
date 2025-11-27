@@ -5,7 +5,7 @@ import MobileFooter from '@/components/MobileFooter';
 import type { UserWithPetStatus } from '@/lib/types';
 import React, { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
-import CustomCursor from '@/components/CustomCursor';
+
 
 export default function MainLayout({
   children,
@@ -18,7 +18,7 @@ export default function MainLayout({
 
   return (
     <>
-      <CustomCursor />
+      
       <Header userWithPet={userWithPet} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
       <main className={`flex-grow w-full transition-all duration-300 ease-out pb-20 md:pt-20`}>
 
