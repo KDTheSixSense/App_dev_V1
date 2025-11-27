@@ -40,6 +40,7 @@ export interface Problem {
   initialVariables: VariablesState; // トレース開始時の変数の初期状態
   traceLogic: TraceStep[]; // プログラムの各行に対応するトレース処理の配列
   logicType: string;
+  imagePath?: string; // 問題の画像パス (オプション)
 
   // --- 以下は特定の種類の問題でのみ使用するオプションのプロパティです ---
 

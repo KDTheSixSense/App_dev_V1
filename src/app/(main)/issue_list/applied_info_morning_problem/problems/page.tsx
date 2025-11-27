@@ -57,7 +57,7 @@ const AppliedInfoMorningProblemsListPage = async () => {
       where: {
         userId: userId,
         isCorrect: true,
-        applied_am_question_id: { not: null },
+        applied_am_question: { isNot: null },
       },
       select: {
         applied_am_question_id: true,
