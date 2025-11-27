@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import Notification from "@/components/Notification";
-
 import ResponsiveHelpButton from "@/components/responsive-help/ResponsiveHelpButton";
 
 const geistSans = Geist({
@@ -42,7 +41,6 @@ export default function RootLayout({
         // <body>はbg-transparent（透明）にし、<html>の背景が見えるようにする
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-transparent`}
       ><NotificationProvider>
-        
         {children}
         <Notification />
         <ResponsiveHelpButton />
