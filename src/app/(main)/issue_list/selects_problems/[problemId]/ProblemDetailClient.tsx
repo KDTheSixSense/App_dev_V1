@@ -260,7 +260,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
           </h1>
           
           <ProblemStatement
-            description={problem.description[currentLang]}
+            description={problem.imagePath ? "" : problem.description[currentLang]}
             // ★画像を渡す (ProblemStatement側でimgタグで表示される想定)
             imagePath={problem.imagePath} 
             // ★プログラムテキストは渡さない（またはundefined）

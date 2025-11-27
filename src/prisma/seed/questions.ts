@@ -37,7 +37,8 @@ export async function seedProblems(prisma: PrismaClient) {
   // 4. 選択問題のシーディング (サンプル + Excel)
   console.log('🌱 Seeding selection problems...');
   // サンプルは一旦コメントアウトするか、IDが被らないように注意（今回はExcelを優先するためコメントアウト推奨だが、残す場合はID管理が必要）
-  // await seedSampleSelectionProblems(prisma); 
+  await seedSampleSelectionProblems(prisma); 
+
   await seedSelectProblemsFromExcel(prisma);
 
   // 5.基本A問題のシーディング
@@ -748,7 +749,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'Pythonでは変数の型を明示的に宣言する必要がありません。値を代入するだけで変数が作成されます。',
       answerOptions: ['int x = 5', 'var x = 5', 'x = 5', 'declare x = 5'],
       correctAnswer: 'x = 5',
-      difficultyId: 1,
+      difficultyId: 11,
       subjectId: 4, // プログラミング選択問題
     },
     {
@@ -757,7 +758,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'JavaScriptでは function キーワードを使って関数を定義します。',
       answerOptions: ['def myFunction():', 'function myFunction() {}', 'void myFunction() {}', 'func myFunction() {}'],
       correctAnswer: 'function myFunction() {}',
-      difficultyId: 2,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -766,7 +767,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'HTMLドキュメントには<!DOCTYPE html>、<html>、<head>、<body>要素が必要です。',
       answerOptions: ['<div>', '<span>', '<html>', '<section>'],
       correctAnswer: '<html>',
-      difficultyId: 1,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -775,7 +776,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'CSSでクラスを指定する際は、クラス名の前にドット(.)を付けます。',
       answerOptions: ['#className', '.className', '@className', '*className'],
       correctAnswer: '.className',
-      difficultyId: 2,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -784,7 +785,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: '第1正規形では、各属性が原子値（分割できない値）を持つ必要があります。',
       answerOptions: ['重複する行がない', '部分関数従属がない', '推移関数従属がない', '各属性が原子値を持つ'],
       correctAnswer: '各属性が原子値を持つ',
-      difficultyId: 3,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -793,7 +794,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'バブルソートは最悪の場合、すべての要素を比較・交換するため O(n²) の時間計算量になります。',
       answerOptions: ['O(n)', 'O(n log n)', 'O(n²)', 'O(2^n)'],
       correctAnswer: 'O(n²)',
-      difficultyId: 4,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -802,7 +803,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'カプセル化は、データと処理を一つにまとめ、外部からの直接アクセスを制限することで、データの整合性を保つことが主な目的です。',
       answerOptions: ['処理速度の向上', 'メモリ使用量の削減', 'データの隠蔽と保護', 'コードの短縮'],
       correctAnswer: 'データの隠蔽と保護',
-      difficultyId: 3,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -811,7 +812,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'HTTPSはHTTPにTLS/SSL暗号化を追加したプロトコルです。',
       answerOptions: ['FTP', 'SSH', 'TLS/SSL', 'SMTP'],
       correctAnswer: 'TLS/SSL',
-      difficultyId: 4,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -820,7 +821,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'スタックはLIFO（Last In, First Out）方式で、最後に入れたデータを最初に取り出します。',
       answerOptions: ['FIFO', 'LIFO', 'Random Access', 'Sequential Access'],
       correctAnswer: 'LIFO',
-      difficultyId: 3,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -829,7 +830,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'SELECT文はデータベースからデータを検索・取得するために使用されます。',
       answerOptions: ['INSERT', 'UPDATE', 'DELETE', 'SELECT'],
       correctAnswer: 'SELECT',
-      difficultyId: 2,
+      difficultyId: 11,
       subjectId: 4,
     }
   ];
