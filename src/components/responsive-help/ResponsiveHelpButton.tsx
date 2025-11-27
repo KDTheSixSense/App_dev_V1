@@ -10,6 +10,7 @@ const ResponsiveHelpButton: React.FC = () => {
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [is404, setIs404] = useState(false);
   let page = pathname.split('/').slice(1, 4).join('/') || 'home'; // 例: /issue_list/basic_info_b_problem/1 -> issue_list/basic_info_b_problem/1, /group -> group, / -> home
 
   // Special handling for event pages
@@ -75,6 +76,43 @@ const ResponsiveHelpButton: React.FC = () => {
     setIsClient(true);
   }, []);
 
+  // 404判定ロジックの強化
+  useEffect(() => {
+    const check404 = () => {
+      const title = document.title;
+      // Next.jsのデフォルト404画面に含まれる特定のテキストを取得
+      const bodyText = document.body.innerText;
+
+      // 判定条件:
+      // 1. タイトルに "404" や "Page Not Found" が含まれる
+      // 2. 画面内に "This page could not be found" (Next.jsデフォルト404の文言) が含まれる
+      const isTitle404 = title.includes("404") || title.includes("Page Not Found");
+      const isBody404 = bodyText.includes("This page could not be found") && bodyText.includes("404");
+
+      if (isTitle404 || isBody404) {
+        setIs404(true);
+      } else {
+        setIs404(false);
+      }
+    };
+    
+    // 即時チェック
+    check404();
+
+    // 描画遅延に対応するため、少しの間監視する (MutationObserverを使う手もありますが、インターバルで十分対応可能です)
+    const intervalId = setInterval(check404, 500);
+
+    // 3秒後には監視を止める（パフォーマンス考慮）
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId);
+    }, 3000);
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, [pathname]); // pathnameが変わるたびに再チェック
+
   // Check if modal is open
   useEffect(() => {
     const checkModal = () => {
@@ -116,8 +154,18 @@ const ResponsiveHelpButton: React.FC = () => {
     }
   }, [page, pathname]);
 
-  // Hide help button on login page, register page, google confirm page, home page or when modal is open, except for group assignments create programming page
-  if (!isClient || pathname === '/auth/login' || pathname === '/auth/register' || pathname === '/auth/google/confirm' || pathname === '/' || (isModalOpen && page !== 'group_assignments_create_programming')) {
+  // 1: 表示除外条件に '/terms' と '/privacypolicy' を追加
+  if (
+    !isClient || 
+    pathname === '/auth/login' || 
+    pathname === '/auth/register' || 
+    pathname === '/auth/google/confirm' || 
+    pathname === '/' || 
+    pathname === '/terms' || 
+    pathname === '/privacypolicy' ||
+    is404 ||
+    (isModalOpen && page !== 'group_assignments_create_programming')
+  ) {
     return null;
   }
 
@@ -141,7 +189,7 @@ const ResponsiveHelpButton: React.FC = () => {
     <>
       {/* 画面右上に固定表示されるヘルプボタン（ヘッダーの下） - Responsive size */}
       {!isTourOpen && (
-        <div className="help-button-container fixed top-24 right-4 z-[10000]">
+        <div className="help-button-container fixed top-24 right-4 z-[40]">
           <button
             onClick={handleStartTour}
             disabled={isLoading}

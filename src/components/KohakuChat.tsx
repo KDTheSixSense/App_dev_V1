@@ -74,12 +74,14 @@ const KohakuChat: React.FC<KohakuChatProps> = ({
       </div>
 
       {/* チャットメッセージ表示エリア */}
-      <div className="flex-1 bg-gray-50 p-4 rounded-lg overflow-y-auto mb-4 flex flex-col custom-scrollbar">
+      <div className="flex-1 bg-gray-50 p-4 rounded-lg overflow-y-auto mb-4 flex flex-col custom-scrollbar"
+        style={{ height: '350px', maxHeight: '350px', flex: 'none' }}
+      >
         {messages.map((msg, index) => (
           // 各メッセージのコンテナ
           <div
             key={index}
-            // ★★★ whitespace-pre-wrap を追加して改行を反映 ★★★
+            // whitespace-pre-wrap を追加して改行を反映
             className={`mb-2 p-3 rounded-lg max-w-[85%] text-sm whitespace-pre-wrap ${
               msg.sender === 'user'
                 ? 'ml-auto bg-cyan-500 text-white border border-cyan-700'

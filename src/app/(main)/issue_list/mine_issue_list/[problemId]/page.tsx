@@ -90,7 +90,7 @@ const CodeEditorPanel: React.FC<{
                     {/* 実行・提出ボタンを右側に配置 */}
                     <div className="flex gap-2">
                         <button onClick={props.onExecute} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Play className="h-4 w-4" /> 実行</button>
-                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '提出中...' : '提出'}</button>
+                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '確認中...' : '完了'}</button>
                     </div>
                 </div>
                 {/* 境界線はそのままに、上の要素の `mb-3` でスペースを調整 */}
@@ -184,9 +184,9 @@ const ProblemSolverPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (!userCode.trim()) { alert('コードを入力してから提出してください。'); return; }
+        if (!userCode.trim()) { alert('コードを入力してから完了を選択してください。'); return; }
         setIsSubmitting(true);
-        setExecutionResult('提出中...');
+        setExecutionResult('確認中...');
         try {
             const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: problem?.sampleCases?.[0]?.input || '' }), });
             const data = await response.json();
@@ -195,7 +195,7 @@ const ProblemSolverPage = () => {
             if (expectedOutput === 'UNSET' || expectedOutput === '') { setSubmitResult({ success: false, message: '問題に正解が設定されていません。' }); setIsSubmitting(false); return; }
             if (output === expectedOutput) { setSubmitResult({ success: true, message: '正解です！おめでとうございます！' }); }
             else { setSubmitResult({ success: false, message: '不正解です。出力が異なります。', yourOutput: output, expected: expectedOutput }); }
-        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '提出処理中にエラーが発生しました。' }); }
+        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '完了処理中にエラーが発生しました。' }); }
         finally { setIsSubmitting(false); }
     };
     

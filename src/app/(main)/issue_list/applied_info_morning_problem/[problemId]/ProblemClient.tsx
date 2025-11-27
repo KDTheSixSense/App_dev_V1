@@ -231,7 +231,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const currentLang = language;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
+    <div className="min-h-screen flex flex-col items-center py-10">
       {answerEffectType && (
         <AnswerEffect type={answerEffectType} onAnimationEnd={handleAnimationEnd} />
       )}

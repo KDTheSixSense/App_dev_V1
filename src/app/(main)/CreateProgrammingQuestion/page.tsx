@@ -405,7 +405,6 @@ export default function CreateProgrammingQuestionPage() {
     { id: 'description', label: '問題文' },
     { id: 'sample-cases', label: 'サンプルケース' },
     { id: 'test-cases', label: 'テストケース' },
-    { id: 'settings', label: '設定' },
   ];
   // 選択問題用のタブ（設定タブは非表示に）
   const selectProblemTabs = [
@@ -1011,44 +1010,6 @@ export default function CreateProgrammingQuestionPage() {
                           </div>
                         </div>
                       ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 設定タブ */}
-              {activeTab === 'settings' && (
-                <div className="card">
-                  <div className="card-header">
-                    公開設定
-                  </div>
-                  <div className="card-body">
-                    <div className="checkbox-group">
-                      <label className="checkbox">
-                        <input
-                          type="checkbox"
-                          checked={formData.isPublic}
-                          onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
-                        />
-                        <span className="checkbox-custom"></span>
-                      </label>
-                      <label className="checkbox-label">
-                        問題を公開する
-                      </label>
-                    </div>
-
-                    <div className="checkbox-group">
-                      <label className="checkbox">
-                        <input
-                          type="checkbox"
-                          checked={formData.allowTestCaseView}
-                          onChange={(e) => setFormData(prev => ({ ...prev, allowTestCaseView: e.target.checked }))}
-                        />
-                        <span className="checkbox-custom"></span>
-                      </label>
-                      <label className="checkbox-label">
-                        テストケースの閲覧を許可する
-                      </label>
                     </div>
                   </div>
                 </div>

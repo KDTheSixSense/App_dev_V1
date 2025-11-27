@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 // Link, Image, useRouter はNext.js固有のため削除
 import type { User, Status_Kohaku } from '@prisma/client';
@@ -54,6 +54,22 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
   // 2. 連続ログイン日数のstate
   const [continuousLogin, setContinuousLogin] = useState(() => userWithPet?.continuouslogin ?? 0);
 
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  // メニューの外側をクリックしたら閉じる処理
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
     const initialStatus = userWithPet?.status_Kohaku;
@@ -71,7 +87,34 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         return { hungerlevel: MAX_HUNGER, ...displayState };
     }
     console.log("[Header Debug] Initial petStatus (no userWithPet): null");
-    return null;  });
+    return null;  
+  });
+
+  // 4. ファビコンをペットのアイコンに動的に変更する処理（強化版）
+  useEffect(() => {
+    if (!petStatus?.icon) return;
+
+    const updateFavicon = (url: string) => {
+      // 1. 既存のアイコンタグ（rel="icon" または rel="shortcut icon"）をすべて探す
+      const links = document.querySelectorAll("link[rel*='icon']");
+      
+      // 2. 既存のタグがあれば、そのhrefを更新する
+      links.forEach((link) => {
+        (link as HTMLLinkElement).href = url;
+      });
+
+      // 3. もしタグが一つも見つからなかった場合（念のため）、新しく作る
+      if (links.length === 0) {
+        const newLink = document.createElement('link');
+        newLink.rel = 'icon';
+        newLink.href = url;
+        document.head.appendChild(newLink);
+      }
+    };
+
+    updateFavicon(petStatus.icon);
+
+  }, [petStatus]); // petStatus (icon) が変わるたびに実行される
 
     // 4. ペットのステータスをAPIから再取得して、Stateを更新する関数
   // (useCallbackでラップ)
@@ -179,15 +222,15 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
     <header className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
       
       {/* 左側：ロゴ */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 ml-3">
         {/* Linkをaタグに変更 */}
         <a href="/home" className="transition-opacity hover:opacity-80">
           {/* Imageをimgタグに変更 */}
           <Image
-            src="/images/infopia_logo.png"
+            src="/images/Infopia_logo.png"
             alt='Infopia'
-            width={200}
-            height={50}
+            width={150}
+            height={75}
           />
         </a>
       </div>
@@ -260,17 +303,47 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
           </div>
         </div>
         
-        {/* プロフィールアイコン */}
-        <div className="w-14 h-14">
-          <a href="/profile">
+        {/* プロフィールアイコン (プルダウンメニュー付き) */}
+        <div className="w-14 h-14 relative" ref={profileMenuRef}>
+          {/* 元のaタグをbuttonタグに変更して開閉を制御 */}
+          <button 
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="w-full h-full focus:outline-none"
+          >
             <Image
               src={user?.icon || "/images/test_icon.webp"}
               alt="ユーザーアイコン"
               width={56}
               height={56}
-              className="rounded-full object-cover transition"
+              className="rounded-full object-cover transition hover:opacity-80"
             />
-          </a>
+          </button>
+
+          {/* プルダウンメニュー */}
+          {isProfileMenuOpen && (
+            <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+              <div className="py-1">
+                <a 
+                  href="/profile" 
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors border-b border-gray-50 font-medium"
+                >
+                  プロフィール
+                </a>
+                <a 
+                  href="/terms" 
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  利用規約
+                </a>
+                <a 
+                  href="/privacypolicy" 
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  プライバシーポリシー
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

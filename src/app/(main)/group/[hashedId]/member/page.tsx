@@ -15,6 +15,7 @@ interface Post {
     content: string;
     authorName: string; 
     authorAvatar: string;
+    authorIcon: string | null;
     createdAt: string;
 }
 
@@ -27,6 +28,10 @@ interface Kadai {
     completed?: boolean;
     programmingProblemId?: number;
     selectProblemId?: number;
+    author?: {
+        username: string | null;
+        icon: string | null;
+    } | null;
 }
 
 
@@ -178,6 +183,7 @@ const MemberGroupPage: React.FC = () => {
                             ),
                             programmingProblemId: kadai.programmingProblemId,
                             selectProblemId: kadai.selectProblemId,
+                            author: kadai.author,
                         }));
 
                         setKadaiList(formattedKadai);
@@ -285,6 +291,7 @@ const MemberGroupPage: React.FC = () => {
                 ),
                 programmingProblemId: kadai.programmingProblemId,
                 selectProblemId: kadai.selectProblemId,
+                author: kadai.author,
             }));
 
             setKadaiList(prev => [...prev, ...formattedKadai]);

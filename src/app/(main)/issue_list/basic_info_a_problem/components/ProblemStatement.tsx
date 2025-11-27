@@ -53,11 +53,6 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
       {/* タイトルと問題文の間の区切り線 */}
       <hr className="mb-6 border-gray-300" />
 
-      {/* 問題文のエリア */}
-      <div className="mb-6 text-base text-gray-800 leading-relaxed">
-        {description}
-      </div>
-
       {/* --- 画像表示エリア (デバッグ要素削除) --- */}
       {imagePath ? (
         // Removed red border and debug text

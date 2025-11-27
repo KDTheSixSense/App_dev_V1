@@ -37,7 +37,7 @@ const TraceScreen: React.FC<TraceScreenProps> = ({ programLines, currentLine, la
             className={`relative py-1 ${
               // `currentLine - 1` は、1-indexedのプログラム行番号と0-indexedの配列インデックスのずれを調整。
               // 例えば、`currentLine`が1（プログラムの1行目実行中）の場合、`index`が0の行がハイライトされる。
-              index === currentLine - 1 ? 'bg-yellow-100' : ''
+              index === currentLine  ? 'bg-yellow-100' : ''
             }`}
           >
             {/* 赤い矢印の表示ロジック */}

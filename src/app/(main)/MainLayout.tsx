@@ -20,7 +20,7 @@ export default function MainLayout({
     <>
       <CustomCursor />
       <Header userWithPet={userWithPet} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-      <main className={`flex-grow container mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-300 ease-out pb-20 md:pt-20`}>
+      <main className={`flex-grow w-full transition-all duration-300 ease-out pb-20 md:pt-20`}>
 
 
         <Toaster position="bottom-right" />

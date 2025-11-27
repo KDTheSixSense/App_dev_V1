@@ -36,9 +36,12 @@ export async function seedProblems(prisma: PrismaClient) {
   console.log('🌱 Seeding programming problems from spreadsheet data...');
   await seedSampleProgrammingProblems(prisma);
 
-  // 4. 選択問題のシーディング
+  // 4. 選択問題のシーディング (サンプル + Excel)
   console.log('🌱 Seeding selection problems...');
-  await seedSampleSelectionProblems(prisma);
+  // サンプルは一旦コメントアウトするか、IDが被らないように注意（今回はExcelを優先するためコメントアウト推奨だが、残す場合はID管理が必要）
+  await seedSampleSelectionProblems(prisma); 
+
+  await seedSelectProblemsFromExcel(prisma);
 
   // 5.基本A問題のシーディング
   await seedBasicInfoAProblems(prisma);
@@ -748,7 +751,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'Pythonでは変数の型を明示的に宣言する必要がありません。値を代入するだけで変数が作成されます。',
       answerOptions: ['int x = 5', 'var x = 5', 'x = 5', 'declare x = 5'],
       correctAnswer: 'x = 5',
-      difficultyId: 1,
+      difficultyId: 11,
       subjectId: 4, // プログラミング選択問題
     },
     {
@@ -757,7 +760,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'JavaScriptでは function キーワードを使って関数を定義します。',
       answerOptions: ['def myFunction():', 'function myFunction() {}', 'void myFunction() {}', 'func myFunction() {}'],
       correctAnswer: 'function myFunction() {}',
-      difficultyId: 2,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -766,7 +769,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'HTMLドキュメントには<!DOCTYPE html>、<html>、<head>、<body>要素が必要です。',
       answerOptions: ['<div>', '<span>', '<html>', '<section>'],
       correctAnswer: '<html>',
-      difficultyId: 1,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -775,7 +778,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'CSSでクラスを指定する際は、クラス名の前にドット(.)を付けます。',
       answerOptions: ['#className', '.className', '@className', '*className'],
       correctAnswer: '.className',
-      difficultyId: 2,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -784,7 +787,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: '第1正規形では、各属性が原子値（分割できない値）を持つ必要があります。',
       answerOptions: ['重複する行がない', '部分関数従属がない', '推移関数従属がない', '各属性が原子値を持つ'],
       correctAnswer: '各属性が原子値を持つ',
-      difficultyId: 3,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -793,7 +796,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'バブルソートは最悪の場合、すべての要素を比較・交換するため O(n²) の時間計算量になります。',
       answerOptions: ['O(n)', 'O(n log n)', 'O(n²)', 'O(2^n)'],
       correctAnswer: 'O(n²)',
-      difficultyId: 4,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -802,7 +805,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'カプセル化は、データと処理を一つにまとめ、外部からの直接アクセスを制限することで、データの整合性を保つことが主な目的です。',
       answerOptions: ['処理速度の向上', 'メモリ使用量の削減', 'データの隠蔽と保護', 'コードの短縮'],
       correctAnswer: 'データの隠蔽と保護',
-      difficultyId: 3,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -811,7 +814,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'HTTPSはHTTPにTLS/SSL暗号化を追加したプロトコルです。',
       answerOptions: ['FTP', 'SSH', 'TLS/SSL', 'SMTP'],
       correctAnswer: 'TLS/SSL',
-      difficultyId: 4,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -820,7 +823,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'スタックはLIFO（Last In, First Out）方式で、最後に入れたデータを最初に取り出します。',
       answerOptions: ['FIFO', 'LIFO', 'Random Access', 'Sequential Access'],
       correctAnswer: 'LIFO',
-      difficultyId: 3,
+      difficultyId: 11,
       subjectId: 4,
     },
     {
@@ -829,7 +832,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
       explanation: 'SELECT文はデータベースからデータを検索・取得するために使用されます。',
       answerOptions: ['INSERT', 'UPDATE', 'DELETE', 'SELECT'],
       correctAnswer: 'SELECT',
-      difficultyId: 2,
+      difficultyId: 11,
       subjectId: 4,
     }
   ];
@@ -838,6 +841,158 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
     await prisma.selectProblem.create({ data: problem });
   }
   console.log(`✅ Created ${selectionProblems.length} selection problems.`);
+}
+
+
+
+/**
+ * ▼▼▼ 新規追加: 選択問題をExcelからシードする関数 ▼▼▼
+ */
+async function seedSelectProblemsFromExcel(prisma: PrismaClient) {
+  console.log('🌱 Seeding Selection Problems from Excel file...');
+
+  // ファイル名とシート名
+  const excelFileName = 'PBL3_4択問題ベースシート .xlsx';
+  const sheetName = '4択問題統合用シート';
+
+  // ファイルパス: /app/(main)/issue_list/selects_problems/data/ にあると想定
+  // もしなければ適切なパスに変更してください
+  const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'selects_problems', 'data', excelFileName);
+
+  // 難易度ID 11 (選択問題) と 科目ID 4 (選択問題)
+  const TARGET_DIFFICULTY_ID = 11;
+  const TARGET_SUBJECT_ID = 4;
+
+  try {
+    if (!fs.existsSync(filePath)) {
+        console.warn(` ⚠️ File not found: ${filePath}. Skipping SelectProblem seeding.`);
+        return;
+    }
+
+    const workbook = XLSX.readFile(filePath);
+    const sheet = workbook.Sheets[sheetName];
+
+    if (!sheet) {
+      console.warn(` ⚠️ Sheet "${sheetName}" not found in ${excelFileName}. Skipping.`);
+      return;
+    }
+
+    // ヘッダー定義 (CSVの列順に合わせる)
+    const headers = [
+      'id',             // A列
+      'title',          // B列
+      'description',    // C列
+      'explanation',    // D列
+      'answerOptions',  // E列
+      'correctAnswer',  // F列
+      'difficultyId',   // G列 (Excel上は11になっているはず)
+      'difficulty',     // H列
+      'subjectId',      // I列 (Excel上は4)
+      'subject',        // J列
+      'assignment',     // K列
+      'category',       // L列
+      'sourceNumber',   // M列
+      'sourceYear',     // N列
+      'imageFileName',  // O列
+    ];
+
+    const records = XLSX.utils.sheet_to_json(sheet, {
+        header: headers,
+        range: 2 // 3行目からデータ開始 (0-indexedで2)
+    }) as any[];
+
+    console.log(` 🔍 Found ${records.length} records in sheet "${sheetName}".`);
+
+    // 正解文字(A,B,C,D)をインデックス(0,1,2,3)に変換するマップ
+    // 基本A問題と同様のロジックでテキストを抽出するため
+    const answerIndexMap: { [key: string]: number } = { 
+        'A': 0, 'B': 1, 'C': 2, 'D': 3,
+        'ア': 0, 'イ': 1, 'ウ': 2, 'エ': 3 
+    };
+
+    let createdCount = 0;
+    let processedRowCount = 0;
+
+    for (const record of records) {
+      processedRowCount++;
+
+      // IDのパース
+      const problemId = parseInt(String(record.id).trim(), 10);
+      if (isNaN(problemId)) {
+          // IDがない行はスキップ
+          continue;
+      }
+
+      if (!record.title || String(record.title).trim() === '') {
+          continue;
+      }
+
+      // 選択肢のパース
+      const parsedOptions = parseAnswerOptionsText(record.answerOptions);
+      if (!parsedOptions) {
+        console.warn(` ⚠️ Failed to parse options for ID ${problemId}: "${record.title}". Skipping.`);
+        continue;
+      }
+
+      // 正解の処理: "D" -> インデックス3 -> parsedOptions[3] (テキスト) を取得
+      const correctChar = String(record.correctAnswer).trim().toUpperCase(); // "D"
+      const correctIndex = answerIndexMap[correctChar];
+      
+      if (correctIndex === undefined || !parsedOptions[correctIndex]) {
+          console.warn(` ⚠️ Invalid correct answer "${correctChar}" for ID ${problemId}. Skipping.`);
+          continue;
+      }
+      // SelectProblemモデルは正解の「テキスト」を保存する仕様 (schema参照: correctAnswer String)
+      const correctAnswerText = parsedOptions[correctIndex];
+
+      // SelectProblemには `categoryId` がないため、カテゴリ列は無視する
+      // `imagePath` の生成 (select_problemsディレクトリを想定)
+      // ソースパス: /workspaces/my-next-app/src/public/images/select_problems/select-problem-XX.png
+      // DB保存パス: /images/select_problems/select-problem-XX.png
+      const rawImageName = record.imageFileName ? String(record.imageFileName).trim() : null;
+      // 画像パスはSelectProblemモデルには標準ではないが、アプリの仕様上必要なら使う
+      // ただし schema.prisma の SelectProblem には imagePath がないため、
+      // descriptionにMarkdownで埋め込むか、モデルを拡張する必要がある。
+      // ここでは、descriptionの末尾に画像表示用のMarkdownを追加するアプローチをとるか、
+      // もしUserAnswer等で参照するなら、そのままでは保存できない。
+      // ★要件:「関係のない部分はソースを破壊しない」ため、スキーマ変更は避ける。
+      // SelectProblemには imagePath フィールドがないため、今回は無視するか、descriptionに追記する。
+      // (基本A問題は Basic_Info_A_Question モデルで imagePath があるが、SelectProblemにはない)
+      
+      // 暫定対応: description に画像を含める
+      let descriptionToSave = String(record.description || "");
+      if (rawImageName) {
+          // フロントエンドがMarkdown画像を解釈できる前提
+          descriptionToSave += `\n\n![問題画像](/images/select_problems/${rawImageName})`;
+      }
+
+      const dataToSave = {
+          // id: problemId, // auto-increment推奨だが、固定したい場合は指定も可
+          title: String(record.title),
+          description: descriptionToSave,
+          explanation: String(record.explanation || ""),
+          answerOptions: parsedOptions, // JSON配列
+          correctAnswer: correctAnswerText, // テキストで保存
+          difficultyId: TARGET_DIFFICULTY_ID, // 11: 選択問題
+          subjectId: TARGET_SUBJECT_ID,       // 4: 選択問題
+          // createdBy: null // システム作成
+      };
+
+      try {
+        await prisma.selectProblem.create({
+            data: dataToSave
+        });
+        createdCount++;
+      } catch (error: any) {
+          console.error(`❌ Error saving SelectProblem ID ${problemId}: ${error.message}`);
+      }
+    }
+
+    console.log(` ✅ Processed ${records.length} rows. Created ${createdCount} Select Problems.`);
+
+  } catch (error) {
+    console.error(`❌ Failed to read or process ${excelFileName}:`, error);
+  }
 }
 
 /**
@@ -928,8 +1083,8 @@ const imageDir = path.join(
 }
 
 /**
- * answerOptions のテキスト ("アX イY ウZ エW" など、多様な形式に対応) を
- * ["X", "Y", "Z", "W"] の配列に変換するヘルパー関数 [さらに改善版]
+ * answerOptions のテキストを配列に変換するヘルパー関数
+ * "A：... B：..." や "ア：... イ：..." に対応
  */
 function parseAnswerOptionsText(text: string): string[] | null {
   if (!text || typeof text !== 'string') {
@@ -942,46 +1097,56 @@ function parseAnswerOptionsText(text: string): string[] | null {
     .replace(/[\s　]+/g, ' ')
     .trim();
 
-  const markers = ['ア：', 'イ：', 'ウ：', 'エ：'];
+  // パターン1: ア： イ： ウ： エ：
+  const markersJP = ['ア：', 'イ：', 'ウ：', 'エ：'];
+  // パターン2: A： B： C： D： (全角コロン)
+  const markersEnFull = ['A：', 'B：', 'C：', 'D：'];
+  // パターン3: A: B: C: D: (半角コロン)
+  const markersEnHalf = ['A:', 'B:', 'C:', 'D:'];
+
+  let markers = markersJP;
+  
+  // どのマーカーセットを使うか判定
+  if (cleanedText.includes(markersEnFull[0])) {
+    markers = markersEnFull;
+  } else if (cleanedText.includes(markersEnHalf[0])) {
+    markers = markersEnHalf;
+  }
+
   const markerPositions: { [key: string]: number } = {};
   let searchStartIndex = 0;
 
-  //  ▼▼▼ 改善点: 全マーカーの位置を先に特定 ▼▼▼ 
   for (const marker of markers) {
     const index = cleanedText.indexOf(marker, searchStartIndex);
     if (index === -1) {
-      console.warn(` ⚠️ Marker "${marker}" not found in cleaned text (starting search from index ${searchStartIndex}): "${cleanedText}"`);
-      return null; // マーカーが1つでも見つからなければ失敗
+      // マーカーが見つからない場合、他のパターンも試すか、失敗としてnullを返す
+      // ここでは厳密に4つ揃うことを期待する
+      // console.warn(` ⚠️ Marker "${marker}" not found.`);
+      return null; 
     }
     markerPositions[marker] = index;
-    // 次のマーカー検索開始位置を、見つかったマーカーの直後に設定
-    // これにより、選択肢テキスト内に同じマーカー文字があっても影響されにくくなる
     searchStartIndex = index + 1;
   }
-  //   マーカー位置特定ここまで  
 
   const options: string[] = [];
   try {
-    // テキスト本体のみを正しく抽出するように substring の開始位置を調整します。
-    const offsetA = markerPositions['ア：'] + 'ア：'.length;
-    const offsetI = markerPositions['イ：'] + 'イ：'.length;
-    const offsetU = markerPositions['ウ：'] + 'ウ：'.length;
-    const offsetE = markerPositions['エ：'] + 'エ：'.length;
+    const offset0 = markerPositions[markers[0]] + markers[0].length;
+    const offset1 = markerPositions[markers[1]] + markers[1].length;
+    const offset2 = markerPositions[markers[2]] + markers[2].length;
+    const offset3 = markerPositions[markers[3]] + markers[3].length;
 
-    options.push(cleanedText.substring(offsetA, markerPositions['イ：']).trim());
-    options.push(cleanedText.substring(offsetI, markerPositions['ウ：']).trim());
-    options.push(cleanedText.substring(offsetU, markerPositions['エ：']).trim());
-    options.push(cleanedText.substring(offsetE).trim());
+    options.push(cleanedText.substring(offset0, markerPositions[markers[1]]).trim());
+    options.push(cleanedText.substring(offset1, markerPositions[markers[2]]).trim());
+    options.push(cleanedText.substring(offset2, markerPositions[markers[3]]).trim());
+    options.push(cleanedText.substring(offset3).trim());
 
-    // すべての選択肢が空文字列でないことを確認
     if (options.length === 4 && options.every(opt => opt && opt.length > 0)) {
       return options;
     } else {
-      console.warn(` ⚠️ Failed to extract 4 non-empty options from cleaned text: "${cleanedText}"`, options);
       return null;
     }
   } catch (e) {
-    console.error(` ❌ Error during option extraction from text: "${text}"`, e);
+    console.error(` ❌ Error parsing options: "${text}"`, e);
     return null;
   }
 }

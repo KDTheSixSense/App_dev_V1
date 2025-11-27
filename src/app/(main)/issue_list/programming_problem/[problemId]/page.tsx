@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
+import Link from 'next/link';
+import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical, ArrowLeft } from 'lucide-react';
 // パネルのリサイズ機能を提供するライブラリのコンポーネントをインポートします
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import dynamic from 'next/dynamic';
@@ -247,7 +248,7 @@ const ExecutionPanel: React.FC<{
                             </button>
                         )}
                         <button onClick={props.onExecute} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Play className="h-4 w-4" /> 実行</button>
-                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '提出中...' : '提出'}</button>
+                        <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '確認中...' : '完了'}</button>
                     </div>
                 </div>
             </div>
@@ -301,7 +302,7 @@ const AiChatPanel: React.FC<{
         // 枠線と背景を削除し、親の ExecutionPanel にレイアウトを合わせる
         <div className="flex flex-col h-full bg-white">
         <div className="p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg text-gray-800 flex items-center gap-2"><Sparkles className="h-5 w-5 text-cyan-500" />コハクに質問</h3></div>
-            <div className="flex-grow p-4 overflow-y-auto space-y-4">
+            <div className="flex-grow p-4 overflow-y-scroll space-y-4">
                 {messages.map((msg, index) => (
                     <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.sender === 'kohaku' && (
@@ -520,23 +521,29 @@ const ProblemSolverPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (!userCode.trim()) { alert('コードを入力してから提出してください。'); return; }
+        if (!userCode.trim()) { alert('コードを入力してから完了を選択してください。'); return; }
         setIsSubmitting(true);
-        setExecutionResult('提出中...');
+        setExecutionResult('確認中...');
         recordStudyTime();
         try {
-            const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: problem?.sampleCases?.[0]?.input || '' }), });
+            const response = await fetch('/api/submit_code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    language: selectedLanguage,
+                    source_code: userCode,
+                    problemId: problemId,
+                }),
+            });
             const data = await response.json();
-            const output = (data.program_output?.stdout || '').trim();
-            const expectedOutput = (problem?.correctAnswer || 'UNSET').trim();
-            if (expectedOutput === 'UNSET' || expectedOutput === '') { setSubmitResult({ success: false, message: '問題に正解が設定されていません。' }); setIsSubmitting(false); return; }
-            if (output === expectedOutput) { 
+            setSubmitResult(data);
+
+            if (data.success) {
                 setSubmitResult({ success: true, message: '正解です！おめでとうございます！' }); 
                 await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1); //正解判定後にXPを付与.プログラミング問題はsubjectidが1なので1を渡す
                 window.dispatchEvent(new CustomEvent('petStatusUpdated')); //ヘッダーのペットステータス更新を促すイベントを発火
             }
-            else { setSubmitResult({ success: false, message: '不正解です。出力が異なります。', yourOutput: output, expected: expectedOutput }); }
-        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '提出処理中にエラーが発生しました。' }); }
+        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '確認処理中にエラーが発生しました。' }); }
         finally { setIsSubmitting(false); }
     };
     
@@ -598,8 +605,16 @@ const ProblemSolverPage = () => {
     if (!problem) return <div className="flex justify-center items-center h-screen bg-gray-100">問題が見つかりませんでした。</div>;
 
     return (
-        <div className="h-screen bg-gray-100 p-4 overflow-hidden">
+        <div className="h-screen p-4 overflow-hidden">
             {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
+
+            {/* 一覧へ戻るボタン */}
+            <div className="mb-2">
+                <Link href="/issue_list/programming_problem/problems" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                    <ArrowLeft className="h-4 w-4" />
+                    一覧へ戻る
+                </Link>
+            </div>
             
             {/* 既存の水平パネルグループ */}
             <PanelGroup direction="horizontal">

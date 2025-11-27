@@ -54,15 +54,17 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
         {description}
       </div>
 
-      {/* プログラム（疑似言語）の表示セクション */}
-      <div className="mb-6">
-        <p className="font-semibold text-gray-700 mb-2">{t.programTitle}</p>
-        {/* `pre`タグで整形済みテキストとしてプログラムコードを表示
-            `whitespace-pre-wrap`で改行を保持し、`overflow-x-auto`で横スクロールを可能にする */}
-        <pre className="bg-gray-50 p-4 rounded-lg text-sm text-gray-800 whitespace-pre-wrap overflow-x-auto">
-          {programText}
-        </pre>
-      </div>
+      {/* programText が空でない場合のみ表示する条件を追加 */}
+      {programText && programText.trim().length > 0 && (
+        <div className="mb-6">
+          <p className="font-semibold text-gray-700 mb-2">{t.programTitle}</p>
+          {/* `pre`タグで整形済みテキストとしてプログラムコードを表示
+              `whitespace-pre-wrap`で改行を保持し、`overflow-x-auto`で横スクロールを可能にする */}
+          <pre className="bg-gray-50 p-4 rounded-lg text-sm text-gray-800 whitespace-pre-wrap overflow-x-auto">
+            {programText}
+          </pre>
+        </div>
+      )}
 
       {/* 解答群の表示セクション */}
       <div className="mb-6">

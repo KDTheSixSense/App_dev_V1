@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React from 'react';
+
+// Original CustomCursor component commented out to disable custom cursor functionality.
+// To re-enable, uncomment the original code and remove this placeholder.
+/*
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface ClickEffect {
   id: number;
@@ -93,6 +98,11 @@ const CustomCursor: React.FC = () => {
       ))}
     </div>
   );
+};
+*/
+
+const CustomCursor: React.FC = () => {
+  return null;
 };
 
 export default CustomCursor;
