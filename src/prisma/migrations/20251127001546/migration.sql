@@ -23,6 +23,8 @@ CREATE TABLE "User" (
     "continuouslogin" INTEGER,
     "totallogin" INTEGER DEFAULT 0,
     "lastlogin" TIMESTAMP(3),
+    "isAgreedToTerms" BOOLEAN NOT NULL DEFAULT false,
+    "isAgreedToPrivacyPolicy" BOOLEAN NOT NULL DEFAULT false,
     "aiAdviceCredits" INTEGER NOT NULL DEFAULT 5,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")

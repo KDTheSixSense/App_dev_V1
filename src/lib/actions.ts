@@ -34,11 +34,16 @@ const MAX_HUNGER = 200; //満腹度の最大値を一括管理
  * 新しいユーザーアカウントと、そのペットを作成するAction (改良版)
  * @param data - ユーザー名、メールアドレス、パスワード、生年月日
  */
-export async function registerUserAction(data: { username: string, email: string, password: string, birth?: string }) {
-  const { username, email, password, birth } = data;
+export async function registerUserAction(data: { username: string, email: string, password: string, birth?: string, isAgreedToTerms: boolean,
+  isAgreedToPrivacyPolicy: boolean }) {
+  const { username, email, password, birth, isAgreedToTerms, isAgreedToPrivacyPolicy } = data;
 
   if (!username || !email || !password) {
     return { error: '必須項目が不足しています。' };
+  }
+
+  if (!isAgreedToTerms || !isAgreedToPrivacyPolicy) {
+    return { error: '利用規約とプライバシーポリシーへの同意が必要です。' };
   }
 
   try {
@@ -51,6 +56,8 @@ export async function registerUserAction(data: { username: string, email: string
         password: hashedPassword,
         // --- 生年月日を保存するロジック ---
         birth: birth ? new Date(birth) : null,
+        isAgreedToTerms: isAgreedToTerms,
+        isAgreedToPrivacyPolicy: isAgreedToPrivacyPolicy,
         // 関連するペットステータスも同時に作成
         status_Kohaku: {
           create: {
