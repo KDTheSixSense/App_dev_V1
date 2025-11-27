@@ -6,12 +6,13 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { getAppSession } from '@/lib/auth'; // セッション取得用
 
-// ページに渡されるパラメータの型
-interface PageProps {
-  params: { problemId: string };
-}
-
-export default async function ProblemDetailPage({ params }: PageProps) {
+export default async function ProblemDetailPage({
+  params,
+  searchParams,
+}: {
+  params: any;
+  searchParams: any;
+}) {
   const id = parseInt(params.problemId, 10);
 
   if (isNaN(id)) {
