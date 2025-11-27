@@ -30,6 +30,8 @@ model User {
   lastlogin                DateTime?
   status_Kohaku            Status_Kohaku? //Userに対してStatus_Kohakuは1対1の関係です。
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
+  isAgreedToTerms         Boolean   @default(false) // 利用規約への同意
+  isAgreedToPrivacyPolicy Boolean   @default(false) // プライバシーポリシーへの同意
   answers                  UserAnswer[]
   answer_Algorithm         Answer_Algorithm[]
   answerd_Genre_Table      Answerd_Genre_Table[]
