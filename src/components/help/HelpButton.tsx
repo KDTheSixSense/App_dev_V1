@@ -10,6 +10,7 @@ const HelpButton: React.FC = () => {
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [is404, setIs404] = useState(false);
   let page = pathname.split('/').slice(1, 4).join('/') || 'home'; // 例: /issue_list/basic_info_b_problem/1 -> issue_list/basic_info_b_problem/1, /group -> group, / -> home
 
   // Special handling for event pages
@@ -86,6 +87,26 @@ const HelpButton: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // 2: 404判定ロジック 
+  useEffect(() => {
+    const check404 = () => {
+      // Next.jsのデフォルト404ページはタイトルに"404"が含まれます
+      if (document.title.includes("404") || document.title.includes("Page Not Found")) {
+        setIs404(true);
+      } else {
+        setIs404(false);
+      }
+    };
+
+    // 即時チェック
+    check404();
+
+    // ページ遷移直後はタイトル更新が遅れる場合があるため、少し待ってから再チェック
+    const timer = setTimeout(check404, 200);
+    
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
   // ヘルプコンテンツをAPIから取得する関数
   const fetchHelpSteps = useCallback(async (): Promise<HelpStep[] | null> => {
     setIsLoading(true);
@@ -114,8 +135,15 @@ const HelpButton: React.FC = () => {
     }
   }, [page, pathname]);
 
-  // Hide help button on login page or when modal is open, except for group assignments create programming page
-  if (!isClient || pathname === '/auth/login' || (isModalOpen && page !== 'group_assignments_create_programming')) {
+  // Hide help button on login page, terms, privacy policy or when modal is open...
+  if (
+    !isClient || 
+    pathname === '/auth/login' || 
+    pathname === '/terms' || 
+    pathname === '/privacypolicy' || 
+    is404 ||
+    (isModalOpen && page !== 'group_assignments_create_programming')
+  ) {
     return null;
   }
 
@@ -139,7 +167,7 @@ const HelpButton: React.FC = () => {
     <>
       {/* 画面右上に固定表示されるヘルプボタン（ヘッダーの下） */}
       {!isTourOpen && (
-        <div className="help-button-container fixed top-24 right-4 z-[10000]">
+        <div className="help-button-container fixed top-24 right-4 z-[40]">
           <button
             onClick={handleStartTour}
             disabled={isLoading}

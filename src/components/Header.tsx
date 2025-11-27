@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 // Link, Image, useRouter はNext.js固有のため削除
 import type { User, Status_Kohaku } from '@prisma/client';
@@ -56,6 +56,22 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
   
   // 2. 連続ログイン日数のstate
   const [continuousLogin, setContinuousLogin] = useState(() => userWithPet?.continuouslogin ?? 0);
+
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  // メニューの外側をクリックしたら閉じる処理
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
@@ -263,17 +279,47 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
           </div>
         </div>
         
-        {/* プロフィールアイコン */}
-        <div className="w-14 h-14">
-          <a href="/profile">
+        {/* プロフィールアイコン (プルダウンメニュー付き) */}
+        <div className="w-14 h-14 relative" ref={profileMenuRef}>
+          {/* 元のaタグをbuttonタグに変更して開閉を制御 */}
+          <button 
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="w-full h-full focus:outline-none"
+          >
             <Image
               src={user?.icon || "/images/test_icon.webp"}
               alt="ユーザーアイコン"
               width={56}
               height={56}
-              className="rounded-full object-cover transition"
+              className="rounded-full object-cover transition hover:opacity-80"
             />
-          </a>
+          </button>
+
+          {/* プルダウンメニュー */}
+          {isProfileMenuOpen && (
+            <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+              <div className="py-1">
+                <a 
+                  href="/profile" 
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors border-b border-gray-50 font-medium"
+                >
+                  プロフィール
+                </a>
+                <a 
+                  href="/terms" 
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  利用規約
+                </a>
+                <a 
+                  href="/privacypolicy" 
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  プライバシーポリシー
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
