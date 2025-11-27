@@ -44,8 +44,8 @@ const BasicInfoBProblemDetailPage = async ({ params }: PageProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="container mx-auto">
+    <div className="min-h-screen bg-gray-100">
+      <div className="w-full px-4 pt-4">
         <div className="mb-4">
           <Link href="/issue_list/basic_info_b_problem/problems" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
             <ArrowLeft className="h-4 w-4" />
