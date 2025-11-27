@@ -29,4 +29,5 @@ export interface Problem {
   traceLogic?: any[];
   // sampleCasesプロパティを追加し、オプショナル（?）に設定
   sampleCases?: SampleCase[];
+  imagePath?: string; // 画像パスをオプショナルで追加
 }
