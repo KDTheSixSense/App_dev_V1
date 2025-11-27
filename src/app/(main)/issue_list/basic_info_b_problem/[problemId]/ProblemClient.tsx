@@ -436,14 +436,52 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const showTraceUI = problem.logicType !== 'STATIC_QA';
   const currentLang = language;
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-6 sm:py-10">
-      <div className="container mx-auto px-4 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+  // コハクのチャットUIを共通パーツとして定義（配置場所が変わるため）
+  const renderKohakuChat = () => (
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <button
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 transition-colors flex justify-between items-center cursor-pointer"
+      >
+        <span className="font-semibold text-gray-700 text-sm">{t.kohakuChatTitle}</span>
+        <div className="text-xs text-gray-600 flex items-center gap-1">
+          {t.creditsLabel}
+          <span className="font-bold text-base text-blue-600">{credits}</span>
+          {t.creditsUnit}
+          {credits <= 0 && (
+            <Link href="/profile" className="text-xs text-blue-500 hover:underline ml-1">
+              {t.increaseCreditsLink}
+            </Link>
+          )}
+        </div>
+        <span className={`transform transition-transform duration-200 ${isChatOpen ? 'rotate-180' : 'rotate-0'}`}>▼</span>
+      </button>
 
-          {/* 問題文エリア (変更なし) */}
-          <div className={`bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 min-h-[calc(100vh-120px)] flex flex-col ${showTraceUI ? 'lg:col-span-7' : 'lg:col-span-10 lg:col-start-2'}`}>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 text-center">
+      {isChatOpen && (
+        <div className="p-0">
+          <KohakuChat
+            messages={chatMessages}
+            onSendMessage={handleUserMessage}
+            language={language}
+            textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
+            isLoading={isAiLoading}
+            isDisabled={isAiLoading || credits <= 0}
+            kohakuIcon={kohakuIcon}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen flex flex-col items-center py-4 sm:py-6">
+      <div className="w-full px-2">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+
+          {/* 1. 左カラム: 問題文 */}
+          {/* 変更点: トレース無し(Basic A)の場合、col-span-8(中央寄せ)からcol-span-9(左詰め)に変更し、右側にチャットエリアを確保 */}
+          <div className={`bg-white p-4 sm:p-5 rounded-xl shadow-lg border border-gray-200 min-h-[calc(100vh-100px)] flex flex-col ${showTraceUI ? 'lg:col-span-5' : 'lg:col-span-9'}`}>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 text-center">
               問{problem.id}: {problem.title[currentLang]}
             </h1>
             <ProblemStatement
@@ -460,78 +498,60 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             />
           </div>
 
-          <div className="lg:col-span-5 flex flex-col gap-8 sticky top-10">
-            
-            {/* 2a. トレース関連 (showTraceUIがtrueの場合のみ表示) */}
-            {showTraceUI && (
-              <>
-                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                  <TraceScreen programLines={problem.programLines?.[currentLang] || []} currentLine={currentTraceLine} language={language} textResources={t} />
-                </div>
-                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                  <VariableTraceControl 
-                      problem={problem} 
-                      variables={variables} 
-                      onNextTrace={handleNextTrace} 
-                      onPrevTrace={handlePrevTrace}
-                      isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)} 
-                      canGoBack={traceHistory.length > 0}
-                      onResetTrace={handleResetTrace} 
-                      currentTraceLine={currentTraceLine} 
-                      language={language} 
-                      textResources={t} 
-                      onSetData={handleSetData} 
-                      isPresetSelected={isPresetSelected} 
-                      onSetNum={handleSetNum}
-                      selectedLogicVariant={selectedLogicVariant}
-                      onSetLogicVariant={setSelectedLogicVariant}
-                    />
-                </div>
-              </>
-            )}
+          {/* 2. 中央カラム: トレース画面 & コハクの質問(B問題用) */}
+          {/* トレースがある場合のみ表示 */}
+          {showTraceUI && (
+            <div className="lg:col-span-4 flex flex-col gap-4 sticky top-24">
+              <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+                <h2 className="text-lg font-bold text-gray-700 mb-3">{t.traceScreenTitle}</h2>
+                <TraceScreen 
+                  programLines={problem.programLines?.[currentLang] || []} 
+                  currentLine={currentTraceLine} 
+                  language={language} 
+                  textResources={t} 
+                />
+              </div>
+              {/* 変更点: コハクの質問をここ(中央カラム下)に移動 */}
+              {renderKohakuChat()}
+            </div>
+          )}
 
-            {/* 2b. AIチャット (常に表示) */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <button
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                className="w-full p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors flex justify-between items-center cursor-pointer"
-              >
-                <span className="font-semibold text-gray-700">{t.kohakuChatTitle}</span>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
-                  {t.creditsLabel}
-                  <span className="font-bold text-lg text-blue-600">{credits}</span>
-                  {t.creditsUnit}
-                  {credits <= 0 && (
-                    <Link href="/profile" className="text-xs text-blue-500 hover:underline ml-1">
-                      {t.increaseCreditsLink}
-                    </Link>
-                  )}
-                </div>
-                <span className={`transform transition-transform duration-200 ${isChatOpen ? 'rotate-180' : 'rotate-0'}`}>▼</span>
-              </button>
+          {/* 3. 右カラム: トレース結果(変数) または コハクの質問(A問題用) */}
+          <div className="lg:col-span-3 flex flex-col gap-4 sticky top-24">
+            
+            {/* トレース結果 (トレースがある場合のみ) */}
+            {showTraceUI && (
+              <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+                <VariableTraceControl 
+                  problem={problem} 
+                  variables={variables} 
+                  onNextTrace={handleNextTrace} 
+                  onPrevTrace={handlePrevTrace}
+                  isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)} 
+                  canGoBack={traceHistory.length > 0}
+                  onResetTrace={handleResetTrace} 
+                  currentTraceLine={currentTraceLine} 
+                  language={language} 
+                  textResources={t} 
+                  onSetData={handleSetData} 
+                  isPresetSelected={isPresetSelected} 
+                  onSetNum={handleSetNum}
+                  selectedLogicVariant={selectedLogicVariant}
+                  onSetLogicVariant={setSelectedLogicVariant}
+                />
+              </div>
+            )}
 
-              {isChatOpen && (
-                <div className="p-0">
-                  <KohakuChat
-                    messages={chatMessages}
-                    onSendMessage={handleUserMessage}
-                    language={language}
-                    textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
-                    isLoading={isAiLoading}
-                      // ✅ [バグ修正] isAiLoading と credits の両方で無効化
-                    isDisabled={isAiLoading || credits <= 0}
-                    kohakuIcon={kohakuIcon}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+            {/* 変更点: トレースが無い場合(A問題)は、ここにコハクの質問を表示して2カラム構成にする */}
+            {!showTraceUI && renderKohakuChat()}
+          </div>
 
-        {/* 次の問題へボタン (変更なし) */}
+        </div>
+
+        {/* 次の問題へボタン */}
         {isAnswered && (
-          <div className="w-full max-w-2xl mx-auto mt-8 flex justify-center">
-            <button onClick={handleNextProblem} className="w-full py-4 px-8 text-lg font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:scale-105">
+          <div className="w-full max-w-2xl mx-auto mt-6 flex justify-center">
+            <button onClick={handleNextProblem} className="w-full py-3 px-8 text-lg font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:scale-105">
               {t.nextProblemButton}
             </button>
           </div>

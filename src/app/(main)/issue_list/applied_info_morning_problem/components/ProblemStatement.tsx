@@ -51,7 +51,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
           <img
             src={imagePath}
             alt="問題画像"
-            className="max-w-full h-auto rounded border border-gray-200"
+            className="max-w-full h-auto rounded"
             style={{ maxHeight: '500px' }} // 画像が大きすぎないように制限
           />
         </div>

@@ -13,6 +13,8 @@ type Inputs = {
   newpassword: string;
   anspassword?: string;
   birth?: string;
+  agreedToTerms: boolean;
+  agreedToPrivacy: boolean;
 };
 
 const Register = () => {
@@ -41,6 +43,8 @@ const Register = () => {
         email: data.email,
         password: data.newpassword,
         birth: data.birth,
+        isAgreedToTerms: true,  // 利用規約への同意 (実際にはチェックボックスの値を使う)
+        isAgreedToPrivacyPolicy: true,  // プライバシーポリシーへの同意 (実際にはチェックボックスの値を使う)
       });
 
       if (result.success) {
@@ -84,7 +88,7 @@ const Register = () => {
         <header className="relative flex h-40 items-center justify-center py-6">
           <Link href="/" className="relative h-full w-full max-w-lg">
              <Image 
-               src="/images/Infopia_logo_poster.png"
+               src="/images/Infopia_logo.png"
                alt="Infopia Logo"
                fill
                priority 
@@ -170,6 +174,37 @@ const Register = () => {
                 type="date"
                 className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01] [color-scheme:dark]"
               />
+            </div>
+
+            {/* 利用規約・プライバシーポリシーチェックボックス */}
+            <div className="mb-6 flex flex-col gap-3">
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  {...register("agreedToTerms", { required: "利用規約への同意が必要です" })}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                />
+                <label htmlFor="terms" className="text-sm text-slate-300">
+                  <Link href="/terms" target="_blank" className="text-cyan-400 hover:underline">利用規約</Link>
+                  に同意します
+                </label>
+              </div>
+              {errors.agreedToTerms && <span className="text-sm text-red-500">{errors.agreedToTerms.message}</span>}
+
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  id="privacy"
+                  {...register("agreedToPrivacy", { required: "プライバシーポリシーへの同意が必要です" })}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                />
+                <label htmlFor="privacy" className="text-sm text-slate-300">
+                  <Link href="/privacypolicy" target="_blank" className="text-cyan-400 hover:underline">プライバシーポリシー</Link>
+                  に同意します
+                </label>
+              </div>
+              {errors.agreedToPrivacy && <span className="text-sm text-red-500">{errors.agreedToPrivacy.message}</span>}
             </div>
 
             {/* --- ボタンエリア --- */}

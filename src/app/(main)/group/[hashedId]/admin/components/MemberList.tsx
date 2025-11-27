@@ -1,8 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Member, MemberStats } from '../types/AdminTypes';
+import type { Member as BaseMember, MemberStats } from '../types/AdminTypes';
 import { toggleCssClass } from 'ace-builds-internal/lib/dom';
+
+type Member = BaseMember & {
+    icon?: string | null;
+};
 
 interface MemberListProps {
     members: Member[];
@@ -186,14 +190,23 @@ export const MemberList: React.FC<MemberListProps> = ({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                marginRight: '12px',
-                                backgroundColor: member.isAdmin ? '#4caf50' : '#00bcd4',
-                                color: '#fff',
-                                fontSize: '16px',
-                                fontWeight: 'bold',
-                                position: 'relative'
+                                marginRight: '12px'
                             }}>
-                                {member.avatar || member.name.charAt(0)}
+                                {member.icon ? (
+                                    <img 
+                                        src={member.icon} 
+                                        alt={member.name || ''} 
+                                        style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                                    />
+                                ) : (
+                                    <div style={{
+                                        width: '100%', height: '100%', borderRadius: '50%', backgroundColor: '#38b2ac',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: '#fff', fontWeight: 'bold', fontSize: '16px',
+                                    }}>
+                                        {member.name?.charAt(0) || '？'}
+                                    </div>
+                                )}
 
                                 {/* 管理者バッジ */}
                                 {member.isAdmin && (
