@@ -7,7 +7,7 @@ import Link from 'next/link';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import ProblemStatement from '../components/ProblemStatement'; // パスは環境に合わせて調整してください
 import KohakuChat from '@/components/KohakuChat';
-import { recordStudyTimeAction } from '@/lib/actions';
+import { recordStudyTimeAction, awardXpForCorrectAnswer } from '@/lib/actions';
 import AnswerEffect from '@/components/AnswerEffect';
 import { useNotification } from '@/app/contexts/NotificationContext'; // 通知用
 import { getHintFromAI } from '@/lib/actions/hintactions'; // AIヒント用
@@ -89,6 +89,13 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
     // seedで画像パスがdescriptionに含まれている場合の対応（念のため）
     // もしDBのimagePathカラムがあるなら p.imagePath を優先
     let displayImagePath = p.imagePath; 
+
+    // 問題IDを取得し、11以上なら 'A, B, C, D'、それ以外（1-10）なら 'ア, イ, ウ, エ' を使用
+    const problemIdNum = parseInt(String(p.id), 10);
+    const useABCD = !isNaN(problemIdNum) && problemIdNum >= 11;
+
+    const labelsJa = useABCD ? ['A', 'B', 'C', 'D'] : ['ア', 'イ', 'ウ', 'エ'];
+    const labelsEn = ['A', 'B', 'C', 'D'];
     
     return {
       id: String(p.id),
@@ -97,8 +104,9 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
       description: { ja: p.description, en: p.description },
       programLines: { ja: [], en: [] }, // 空配列にしておく
       answerOptions: {
-        ja: answerOptionsArray.map((opt, i) => ({ label: ['ア','イ','ウ','エ'][i] || '', value: opt })),
-        en: answerOptionsArray.map((opt, i) => ({ label: ['A','B','C','D'][i] || '', value: opt })),
+        // 定義したラベル配列を使用
+        ja: answerOptionsArray.map((opt, i) => ({ label: labelsJa[i] || '', value: opt })),
+        en: answerOptionsArray.map((opt, i) => ({ label: labelsEn[i] || '', value: opt })),
       },
       correctAnswer: p.correctAnswer,
       explanationText: { ja: p.explanation || '', en: p.explanation || '' },
@@ -184,12 +192,52 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   const t = textResources[language].problemStatement;
   const currentLang = language;
 
-  const handleSelectAnswer = (selectedValue: string) => {
+  const handleSelectAnswer = async (selectedValue: string) => {
     if (isAnswered) return;
     setSelectedAnswer(selectedValue);
     setIsAnswered(true);
     const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
     setAnswerEffectType(correct ? 'correct' : 'incorrect');
+
+    // 2: 学習時間の記録 (正解・不正解にかかわらず記録)
+    if (startTimeRef.current) {
+        const endTime = Date.now();
+        const durationMs = endTime - startTimeRef.current;
+        // 3秒以上滞在していれば記録
+        if (durationMs > 3000) {
+            recordStudyTimeAction(durationMs).catch(e => console.error(e));
+        }
+        // 重複記録を防ぐため、記録後にnullにするか、ページ遷移時に再設定するロジックが必要ですが
+        // ここでは「回答時点での時間」を記録し、ページ離脱時にも記録する設計の場合、
+        // 二重計上になる可能性があるため注意が必要です。
+        // 一般的には「回答時」か「離脱時」のどちらか一方で記録します。
+        // 今回は「回答時」に記録し、startTimeRefを更新して、その後の滞在時間は別途（離脱時に）記録するようにします。
+        startTimeRef.current = Date.now(); 
+    }
+
+    if (correct) {
+      const numericId = parseInt(problem.id, 10);
+      if (!isNaN(numericId)) {
+        try {
+          const result = await awardXpForCorrectAnswer(
+            numericId, 
+            undefined, 
+            4, 
+            startTimeRef.current || Date.now()
+          );
+
+          if (result.message === '経験値を獲得しました！') {
+              window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+          }
+          if (result.unlockedTitle) {
+            showNotification({ message: `称号【${result.unlockedTitle.name}】を獲得しました！`, type: 'success' });
+          }
+        } catch (error) {
+          console.error("XP award error:", error);
+          showNotification({ message: '経験値の付与に失敗しました。', type: 'error' });
+        }
+      }
+    }
     
     // 簡単なヒントを表示（APIコールせず即時フィードバック）
     const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
@@ -261,9 +309,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
           
           <ProblemStatement
             description={problem.imagePath ? "" : problem.description[currentLang]}
-            // ★画像を渡す (ProblemStatement側でimgタグで表示される想定)
             imagePath={problem.imagePath} 
-            // ★プログラムテキストは渡さない（またはundefined）
             programText=""
             answerOptions={problem.answerOptions?.[currentLang] || []}
             onSelectAnswer={handleSelectAnswer}
