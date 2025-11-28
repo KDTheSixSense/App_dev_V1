@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
+import { Icon } from 'lucide-react';
 
 export async function GET(request: NextRequest, context: { params: Promise<{ hashedId: string }> }) {
   const params = await context.params;
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ has
       id: gu.user.id,
       name: gu.user.username || '名無し',
       email: gu.user.email,
+      icon: gu.user.icon || null,
       avatar: gu.user.icon || gu.user.username?.charAt(0) || '?', // アバターがない場合のフォールバック
       isAdmin: gu.admin_flg,
       onlineStatus: 'offline', // オンライン状態は別途実装が必要です

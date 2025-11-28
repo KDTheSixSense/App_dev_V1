@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import type { Member as BaseMember, MemberStats } from '../types/AdminTypes';
-import { toggleCssClass } from 'ace-builds-internal/lib/dom';
 
+// AdminTypesのMember定義にiconが含まれている前提ですが、
+// ここで明示的に拡張しておいても問題ありません。
 type Member = BaseMember & {
     icon?: string | null;
 };
@@ -190,45 +191,43 @@ export const MemberList: React.FC<MemberListProps> = ({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                marginRight: '12px'
+                                marginRight: '12px',
+                                overflow: 'hidden', // 画像がはみ出ないように追加
+                                backgroundColor: '#38b2ac', // 画像がない場合の背景色
+                                color: '#fff', fontWeight: 'bold', fontSize: '16px'
                             }}>
+                                {/* ★修正: iconがあれば画像を表示、なければイニシャル */}
                                 {member.icon ? (
                                     <img 
                                         src={member.icon} 
                                         alt={member.name || ''} 
-                                        style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                                     />
                                 ) : (
-                                    <div style={{
-                                        width: '100%', height: '100%', borderRadius: '50%', backgroundColor: '#38b2ac',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        color: '#fff', fontWeight: 'bold', fontSize: '16px',
-                                    }}>
-                                        {member.name?.charAt(0) || '？'}
-                                    </div>
-                                )}
-
-                                {/* 管理者バッジ */}
-                                {member.isAdmin && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '-2px',
-                                        right: '-2px',
-                                        width: '16px',
-                                        height: '16px',
-                                        backgroundColor: '#ff9800',
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        border: '2px solid #fff'
-                                    }}>
-                                        <svg width="8" height="8" viewBox="0 0 24 24" fill="#fff">
-                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                        </svg>
-                                    </div>
+                                    member.name?.charAt(0) || '？'
                                 )}
                             </div>
+
+                            {/* 管理者バッジ */}
+                            {member.isAdmin && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '-2px',
+                                    right: '-2px',
+                                    width: '16px',
+                                    height: '16px',
+                                    backgroundColor: '#ff9800',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '2px solid #fff'
+                                }}>
+                                    <svg width="8" height="8" viewBox="0 0 24 24" fill="#fff">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    </svg>
+                                </div>
+                            )}
 
                             {/* メンバー情報 */}
                             <div style={{ flex: 1 }}>
@@ -257,8 +256,6 @@ export const MemberList: React.FC<MemberListProps> = ({
                                     }}>
                                         {member.isAdmin ? '管理者' : 'メンバー'}
                                     </span>
-
-                                    
                                 </div>
 
                                 {/* メンバー統計 */}
@@ -273,7 +270,6 @@ export const MemberList: React.FC<MemberListProps> = ({
                             </div>
 
                             {/* メンバー管理メニュー */}
-                            {/* メンバー管理メニュー (ここを修正) */}
                             <div style={{ position: 'relative' }}>
                                 <button
                                     onClick={(e) => handleToggleMenu(e, member.id)}
@@ -328,7 +324,6 @@ export const MemberList: React.FC<MemberListProps> = ({
                                         >
                                             {member.isAdmin ? '管理者を解除' : '管理者にする'}
                                         </button>
-                                        {/* 必要に応じて他のメニュー項目を追加 */}
                                     </div>
                                 )}
                             </div>

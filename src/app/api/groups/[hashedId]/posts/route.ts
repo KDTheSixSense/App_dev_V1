@@ -1,4 +1,3 @@
-// /app/api/groups/[hashedId]/posts/route.ts (新規作成)
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
@@ -18,6 +17,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const urlParts = req.url.split('/');
+    // URLの構造によってはインデックスが異なる場合がありますが、
+    // 通常は .../groups/[hashedId]/posts なので後ろから2番目です
     const hashedId = urlParts[urlParts.length - 2];
 
     const { searchParams } = req.nextUrl;
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
           author: {
             select: {
               username: true,
+              icon: true, // ★ ここが重要です！アイコンを取得するために追加
             },
           },
         },
@@ -69,7 +71,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ✨【ここから追加】お知らせを投稿 (POST)
+// お知らせを投稿 (POST)
 export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const urlParts = req.url.split('/');
-    const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
+    const hashedId = urlParts[urlParts.length - 2]; 
     const body = await req.json();
     const { content } = body;
 
@@ -98,7 +100,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
 
-    // (オプション) 管理者のみ投稿可能にする場合は、ここで権限チェックを追加
     const newPost = await prisma.post.create({
       data: {
         content,
@@ -107,7 +108,10 @@ export async function POST(req: NextRequest) {
       },
       include: {
         author: {
-          select: { username: true }
+          select: { 
+            username: true,
+            icon: true // ★ ここも追加しておくと、投稿直後にアイコンが表示されます
+          }
         }
       }
     });

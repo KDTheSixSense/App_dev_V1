@@ -9,6 +9,7 @@ type Submission = {
   user: {
     id: number;
     username?: string;
+    icon?: string | null;
   };
   file_path?: string;
 };
@@ -232,8 +233,12 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
                         onClick={(e) => e.stopPropagation()}
                         style={{cursor: 'pointer'}}
                       />
-                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#c6f6d5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#276749' }}>
-                        {sub.user.username?.charAt(0)}
+                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#c6f6d5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#276749', overflow: 'hidden' }}>
+                        {sub.user.icon ? (
+                            <img src={sub.user.icon} alt={sub.user.username || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                            sub.user.username?.charAt(0)
+                        )}
                       </div>
                       <span style={{ fontSize: '14px' }}>
                         {sub.user.username}
@@ -256,8 +261,12 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {notSubmitted.map(sub => (
                   <div key={sub.user.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#fed7d7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#9b2c2c' }}>
-                      {sub.user.username?.charAt(0)}
+                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#fed7d7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#9b2c2c', overflow: 'hidden' }}>
+                        {sub.user.icon ? (
+                            <img src={sub.user.icon} alt={sub.user.username || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                            sub.user.username?.charAt(0)
+                        )}
                     </div>
                     <span style={{ fontSize: '14px' }}>{sub.user.username}</span>
                   </div>
@@ -273,8 +282,12 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {returned.map(sub => (
                 <div key={sub.user.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#feebc8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#9c4221' }}>
-                    {sub.user.username?.charAt(0)}
+                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#feebc8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#9c4221', overflow: 'hidden' }}>
+                    {sub.user.icon ? (
+                        <img src={sub.user.icon} alt={sub.user.username || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                        sub.user.username?.charAt(0)
+                    )}
                   </div>
                   <span style={{ fontSize: '14px' }}>{sub.user.username}</span>
                 </div>

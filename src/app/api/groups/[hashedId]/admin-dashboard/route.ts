@@ -45,7 +45,7 @@ export async function GET(
       // 最新の投稿取得 (20件)
       prisma.post.findMany({
         where: { groupId: group.id },
-        include: { author: { select: { username: true } } },
+        include: { author: { select: { username: true, icon: true } } },
         orderBy: { createdAt: 'desc' },
         take: 20
       }),
@@ -70,7 +70,7 @@ export async function GET(
       id: gu.user.id,
       name: gu.user.username || '名無し',
       email: gu.user.email,
-      avatar: gu.user.icon || gu.user.username?.charAt(0) || '?',
+      icon: gu.user.icon,
       isAdmin: gu.admin_flg,
       onlineStatus: 'offline',
       level: gu.user.level,
@@ -89,7 +89,10 @@ export async function GET(
     const formattedPosts = posts.map(post => ({
       id: post.id,
       content: post.content,
-      author: post.author.username || '不明なユーザー',
+      author: {
+        username: post.author.username || '不明なユーザー',
+        icon: post.author.icon
+      },
       date: post.createdAt, // 文字列変換はフロントで行う方が高速
       createdAt: post.createdAt
     }));
