@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { getAppSession } from '@/lib/auth'; // セッション取得用
 
+// ページに渡されるパラメータの型
 interface ProblemDetailPageProps {
   params: Promise<{ problemId: string }>;
 }
