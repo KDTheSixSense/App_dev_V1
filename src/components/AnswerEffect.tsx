@@ -15,6 +15,7 @@ const AnswerEffect: React.FC<AnswerEffectProps> = ({ type, onAnimationEnd }) => 
       setIsVisible(false);
       onAnimationEnd();
     }, 1000); // エフェクト表示時間
+    
 
     return () => clearTimeout(timer);
   }, [onAnimationEnd]);

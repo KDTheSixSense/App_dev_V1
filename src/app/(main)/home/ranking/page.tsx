@@ -9,22 +9,15 @@ export const revalidate = 300; // 5分間キャッシュ
 
 export default async function RankingPage() {
   // 総合ランキングのデータを準備 (上位100件のみ取得)
-  const allUsersOverall = await prisma.user.findMany({
+  const getUsers = prisma.user.findMany({
     orderBy: { level: 'desc' },
     take: 100,
   });
-  const overallRankingFull = assignRanks(allUsersOverall.map(user => ({
-    id: user.id,
-    name: user.username || '名無しさん',
-    iconUrl: user.icon || '/images/test_icon.webp',
-    score: user.level,
-    level: user.level, // levelプロパティを追加
-  })));
 
   // 科目別ランキングのデータを準備 (Raw Queryを使用)
-  const subjects = await prisma.subject.findMany(); // 科目リストは引き続き必要
+  const getSubjects = prisma.subject.findMany(); // 科目リストは引き続き必要
 
-  const rawRankings: Array<{
+  const getRawRankings = prisma.$queryRaw<Array<{
     id: number;
     name: string;
     iconUrl: string | null;
@@ -32,7 +25,7 @@ export default async function RankingPage() {
     subjectId: number;
     rank: bigint; // rankをbigint型に変更
     level: number;
-  }> = await prisma.$queryRaw(Prisma.sql`
+  }>>(Prisma.sql`
     WITH RankedProgress AS (
       SELECT
         usp.user_id,
@@ -62,6 +55,16 @@ export default async function RankingPage() {
     ORDER BY
       rp.subject_id, rp.rank;
   `);
+
+  const [allUsersOverall, subjects, rawRankings] = await Promise.all([getUsers, getSubjects, getRawRankings]);
+  
+  const overallRankingFull = assignRanks(allUsersOverall.map(user => ({
+    id: user.id,
+    name: user.username || '名無しさん',
+    iconUrl: user.icon || '/images/test_icon.webp',
+    score: user.level,
+    level: user.level, // levelプロパティを追加
+  })));
 
   // Raw Queryの結果をsubjectRankingsFullの形式に整形
   const subjectRankingsFull: { [key: string]: any[] } = {};

@@ -26,14 +26,20 @@ export default async function HomePage({
 
   // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
-  const assignmentCount = await getUnsubmittedAssignmentCount();
+  
+  const getUserData = async () => {
+    const userId = session.user?.id ? Number(session.user.id) : null;
+    if (!userId) return null;
+    return prisma.user.findUnique({
+      where: { id: userId },
+      include: { selectedTitle: true }, // selectedTitleも含めて取得
+    });
+  };
 
-  // ログインユーザーの全情報を取得
-  const user = userId ? await prisma.user.findUnique({
-    where: { id: userId },
-    include: { selectedTitle: true }, // selectedTitleも含めて取得  
-  }) : null;
+  const [user, assignmentCount] = await Promise.all([
+    getUserData(),
+    getUnsubmittedAssignmentCount(),
+  ]);
 
   return (
     <div className='bg-white select-none'>

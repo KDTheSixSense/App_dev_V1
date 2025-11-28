@@ -16,6 +16,9 @@ export const sessionOptions: SessionOptions = {
   cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24, // 24時間
+    httpOnly: true, // JavaScriptからのアクセスを禁止
+    sameSite: 'lax', // CSRF対策
   },
 };
 

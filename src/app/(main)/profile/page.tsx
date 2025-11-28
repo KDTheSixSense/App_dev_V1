@@ -89,7 +89,7 @@ export default async function ProfilePage() {
   const userId = Number(session.user.id);
 
   // --- 1. ユーザー、称号、ペット情報を一括取得 ---
-  const userWithDetails = await prisma.user.findUnique({
+  const getUserWithDetails = prisma.user.findUnique({
     where: { id: userId },
     include: {
       unlockedTitles: { include: { title: true } },
@@ -98,19 +98,14 @@ export default async function ProfilePage() {
     },
   });
 
-  if (!userWithDetails) {
-    redirect("/auth/login");
-  }
-
   // --- 2. チャート用の統計データを取得・計算 ---
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  const recentLogins = await prisma.loginHistory.findMany({
+  const getRecentLogins = prisma.loginHistory.findMany({
     where: { userId: userId, loggedInAt: { gte: sevenDaysAgo } },
   });
-  const uniqueLoginDates = new Set(recentLogins.map(login => login.loggedInAt.toISOString().split('T')[0]));
   
   // (ここはダミーデータのため、実際のロジックに置き換えてください)
   const subjectProgress = {
@@ -131,7 +126,7 @@ export default async function ProfilePage() {
   const endDateQuery = new Date(endDate.toISOString().split('T')[0]);
 
   // 直近7日間の活動を集計
-  const activitySummary = await prisma.dailyActivitySummary.aggregate({
+  const getActivitySummary = prisma.dailyActivitySummary.aggregate({
     where: {
       userId: userId,
       date: {
@@ -144,6 +139,18 @@ export default async function ProfilePage() {
       problemsCompleted: true, // 合計完了問題数 (Int)
     },
   });
+
+  const [userWithDetails, recentLogins, activitySummary] = await Promise.all([
+    getUserWithDetails,
+    getRecentLogins,
+    getActivitySummary,
+  ]);
+
+  if (!userWithDetails) {
+    redirect("/auth/login");
+  }
+
+  const uniqueLoginDates = new Set(recentLogins.map(login => login.loggedInAt.toISOString().split('T')[0]));
 
   // BigIntを数値(分)に変換
   const totalStudyTimeMin = Math.floor(Number(activitySummary._sum.totalTimeSpentMs || 0) / 60000);
