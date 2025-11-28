@@ -126,7 +126,7 @@ const Login = () => {
             <a href="/" className="relative h-full w-full max-w-lg">
                 {/* ★ <img>タグに変更 (Next/Imageのfillとobject-containのスタイルを再現) */}
                 <img 
-                  src="/images/Infopia_logo.png"
+                  src="/images/infopia_logo.png"
                   alt="Infopia Logo"
                   className="absolute inset-0 w-full h-full object-contain" 
                   loading="eager" // priorityの代わりにeagerを使用

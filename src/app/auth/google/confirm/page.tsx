@@ -94,7 +94,7 @@ export default function ConfirmGoogleSignup() {
         <header className="relative flex h-40 items-center justify-center py-6">
           <Link href="/" className="relative h-full w-full max-w-lg">
              <Image 
-               src="/images/Infopia_logo.png"
+               src="/images/infopia_logo.png"
                alt="Infopia Logo"
                fill
                priority 
