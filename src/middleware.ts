@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
-import { prisma } from './lib/prisma'; // Prisma Clientをインポート
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
@@ -12,6 +11,11 @@ export async function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
+  // Prevent API routes from being processed by this middleware
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+  
   // ユーザーが存在し、かつ認証ページにアクセスしようとした場合
   if (user && pathname.startsWith('/auth')) {
     const homeUrl = new URL('/home', req.url);
@@ -24,21 +28,24 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // ユーザーがセッションに存在する場合、DBにも実在するか確認
+  // ユーザーがセッションに存在する場合、DBにも実在するかAPI経由で確認
   if (user?.id) {
-    const userId = Number(user.id);
-    if (!isNaN(userId)) {
-      const userFromDb = await prisma.user.findUnique({
-        where: { id: userId },
-      });
+    const validateUrl = new URL('/api/validate-user', req.url);
+    const response = await fetch(validateUrl, {
+      headers: {
+        cookie: req.headers.get('cookie') || '',
+      },
+    });
 
-      // DBにユーザーが存在しない場合（アカウント削除後など）
-      if (!userFromDb) {
-        session.destroy(); // セッションを破棄
-        const loginUrl = new URL('/auth/login', req.url);
-        loginUrl.searchParams.set('error', 'session_expired'); // エラーメッセージを追加
-        return NextResponse.redirect(loginUrl);
-      }
+    if (!response.ok) {
+      const loginUrl = new URL('/auth/login', req.url);
+      loginUrl.searchParams.set('error', 'session_expired');
+      // Here we don't destroy the session, the API route does it.
+      // We just redirect.
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      // Clear the session cookie by setting an expired cookie
+      redirectResponse.cookies.set(sessionOptions.cookieName, '', { maxAge: -1 });
+      return redirectResponse;
     }
   }
 
