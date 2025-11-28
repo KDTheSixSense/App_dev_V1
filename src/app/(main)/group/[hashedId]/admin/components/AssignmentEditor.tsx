@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
-import { FormatState, ProgrammingProblem } from '../types/AdminTypes';
+import React, { useRef, useState, useEffect } from 'react';
+import { FormatState, ProgrammingProblem, Assignment } from '../types/AdminTypes';
 import { ProblemTypeSelectModal } from './ProblemTypeSelectModal';
 
 interface AssignmentEditorProps {
@@ -9,6 +9,8 @@ interface AssignmentEditorProps {
     onExpand: () => void;
     onCollapse: () => void;
     onCreateAssignment: (assignmentData: any) => Promise<void>;
+    onUpdateAssignment?: (assignmentData: Assignment) => Promise<void>; // 更新用ハンドラ
+    initialAssignment?: Assignment | null; // 編集時の初期データ
     onNavigateToCreateProblem: () => void;
     onNavigateToCreateSelectionProblem: () => void;
     onOpenProblemSelectModal: () => void;
@@ -21,6 +23,8 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     onExpand,
     onCollapse,
     onCreateAssignment,
+    onUpdateAssignment,
+    initialAssignment,
     onNavigateToCreateProblem,
     onNavigateToCreateSelectionProblem,
     onOpenProblemSelectModal,
@@ -41,6 +45,37 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
 
     const editorRef = useRef<HTMLDivElement>(null);
 
+    // 初期データが渡された場合（編集モード）、stateを更新
+    useEffect(() => {
+        if (initialAssignment) {
+            setTitle(initialAssignment.title);
+            setDescription(initialAssignment.description);
+            // datetime-local input expects YYYY-MM-DDThh:mm format
+            if (initialAssignment.due_date) {
+                const date = new Date(initialAssignment.due_date);
+                // 日本時間(JST)に変換してフォーマット
+                // Note: This is a simple conversion, might need library for robust timezone handling
+                // For now, assuming local time input
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                setDueDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+            } else {
+                setDueDate('');
+            }
+
+            if (editorRef.current) {
+                editorRef.current.innerHTML = initialAssignment.description;
+            }
+        } else {
+            // 新規作成モードへの切り替え時はリセット（必要なら）
+            // handleReset() is called on collapse, so maybe not strictly needed here
+            // unless switching directly from edit to create without collapse
+        }
+    }, [initialAssignment]);
+
     // エディター内容変更処理
     const handleEditorChange = () => {
         if (editorRef.current) {
@@ -59,31 +94,44 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         });
     };
 
-    // 課題作成処理
-    const handleCreate = async () => {
+    // 課題作成・更新処理
+    const handleSubmit = async () => {
         if (!title.trim() || !dueDate) {
             alert('必須項目が不足しています');
             return;
         }
 
         try {
-            // APIに渡すデータオブジェクトを構築
-            const assignmentData: any = {
-                title: title,
-                description: description,
-                dueDate: new Date(dueDate).toISOString(), // ローカル時刻をUTCのISO文字列に変換
-            };
+            if (initialAssignment && onUpdateAssignment) {
+                // 更新処理
+                const updatedAssignment: Assignment = {
+                    ...initialAssignment,
+                    title: title,
+                    description: description,
+                    due_date: new Date(dueDate).toISOString(),
+                    // 問題の更新はproblemPreviewの状態に基づく
+                    programmingProblem: problemPreview && problemPreview.type !== 'select' ? problemPreview : undefined,
+                    selectProblem: problemPreview && problemPreview.type === 'select' ? problemPreview : undefined,
+                };
+                await onUpdateAssignment(updatedAssignment);
+            } else {
+                // 新規作成処理
+                const assignmentData: any = {
+                    title: title,
+                    description: description,
+                    dueDate: new Date(dueDate).toISOString(),
+                };
 
-            if (problemPreview) {
-                // 既存の問題を添付する場合
-                assignmentData.problem = problemPreview;
+                if (problemPreview) {
+                    assignmentData.problem = problemPreview;
+                }
+
+                await onCreateAssignment(assignmentData);
             }
-
-            await onCreateAssignment(assignmentData);
             handleReset();
         } catch (error) {
-            console.error('課題作成エラー:', error);
-            alert(`課題の作成に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+            console.error('課題保存エラー:', error);
+            alert(`課題の保存に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
         }
     };
 
@@ -133,7 +181,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                     marginRight: '12px'
                 }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                     </svg>
                 </div>
                 新しい課題を作成
@@ -304,9 +352,9 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                     }}
                 >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                     </svg>
-                    <span>追加または作成</span>
+                    <span>{initialAssignment ? '問題を変更' : '追加または作成'}</span>
                 </button>
 
                 {showCreateOptions && (
@@ -450,7 +498,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                     キャンセル
                 </button>
                 <button
-                    onClick={handleCreate}
+                    onClick={handleSubmit}
                     style={{
                         padding: '8px 16px',
                         border: 'none',
@@ -462,7 +510,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                         fontWeight: '500'
                     }}
                 >
-                    課題を作成
+                    {initialAssignment ? '課題を更新' : '課題を作成'}
                 </button>
             </div>
 

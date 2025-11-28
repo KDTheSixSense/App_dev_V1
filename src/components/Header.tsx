@@ -90,7 +90,34 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         return { hungerlevel: MAX_HUNGER, ...displayState };
     }
     console.log("[Header Debug] Initial petStatus (no userWithPet): null");
-    return null;  });
+    return null;  
+  });
+
+  // 4. ファビコンをペットのアイコンに動的に変更する処理（強化版）
+  useEffect(() => {
+    if (!petStatus?.icon) return;
+
+    const updateFavicon = (url: string) => {
+      // 1. 既存のアイコンタグ（rel="icon" または rel="shortcut icon"）をすべて探す
+      const links = document.querySelectorAll("link[rel*='icon']");
+      
+      // 2. 既存のタグがあれば、そのhrefを更新する
+      links.forEach((link) => {
+        (link as HTMLLinkElement).href = url;
+      });
+
+      // 3. もしタグが一つも見つからなかった場合（念のため）、新しく作る
+      if (links.length === 0) {
+        const newLink = document.createElement('link');
+        newLink.rel = 'icon';
+        newLink.href = url;
+        document.head.appendChild(newLink);
+      }
+    };
+
+    updateFavicon(petStatus.icon);
+
+  }, [petStatus]); // petStatus (icon) が変わるたびに実行される
 
     // 4. ペットのステータスをAPIから再取得して、Stateを更新する関数
   // (useCallbackでラップ)

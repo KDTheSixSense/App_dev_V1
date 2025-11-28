@@ -29,7 +29,8 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "google.gemini-cli-vscode-ide-companion",
-        "google.geminicodeassist"
+        "google.geminicodeassist",
+        "github.vscode-github-actions"
       ]
     }
   },

@@ -16,6 +16,7 @@ interface AnswerOption {
  */
 interface ProblemStatementProps {
   description: string;
+  imagePath?: string;               // 問題に関連する画像のパス（オプショナル）
   programText: string;               // 表示するプログラム（疑似言語）のテキスト
   answerOptions: AnswerOption[];     // 解答群の選択肢の配列
   onSelectAnswer: (selectedValue: string) => void; // 解答が選択されたときに呼び出される関数
@@ -31,6 +32,7 @@ interface ProblemStatementProps {
 // このコンポーネントは、問題文、疑似言語プログラム、解答群、そして解答後の解説を表示します。
 const ProblemStatement: React.FC<ProblemStatementProps> = ({
   description,
+  imagePath,
   programText,       // プログラムテキスト
   answerOptions,     // 解答の選択肢
   onSelectAnswer,    // 解答選択時のハンドラ
@@ -53,6 +55,17 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
       <div className="mb-6 text-base text-gray-800 leading-relaxed">
         {description}
       </div>
+
+      {/* --- 画像表示エリア --- */}
+      {imagePath && (
+        <div className="flex justify-center my-6">
+          <img
+            src={imagePath}
+            alt="問題画像"
+            className="max-w-full h-auto max-h-[400px] border border-gray-200 rounded-lg shadow-sm object-contain"
+          />
+        </div>
+      )}
 
       {/* プログラム（疑似言語）の表示セクション */}
       <div className="mb-6">

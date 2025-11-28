@@ -97,7 +97,7 @@ const SelectProblemsListPage = async () => {
             問題種別一覧へ戻る
           </Link>
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">プログラミング 選択問題一覧</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">選択問題一覧</h1>
         <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-2xl mx-auto">
           <ul>
             {/* 取得した問題のリストを表示します */}
