@@ -16,7 +16,7 @@ export interface Member {
     id: number;
     name: string;
     email: string;
-    avatar?: string;
+    icon: string | null;
     isAdmin: boolean;
     onlineStatus: 'online' | 'away' | 'offline';
     level?: number;
@@ -38,7 +38,10 @@ export interface MemberStats {
 export interface Post {
     id: number;
     content: string;
-    author: string;
+    author: {
+        username: string;
+        icon: string | null;
+    };
     date: string;
     showMenu: boolean;
     comments?: Comment[];

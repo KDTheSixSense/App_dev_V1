@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Post, Comment } from '../types/AdminTypes';
+import { Post } from '../types/AdminTypes';
 
 interface PostListProps {
     posts: Post[];
@@ -23,12 +23,6 @@ export const PostList: React.FC<PostListProps> = ({
     const [editingPosts, setEditingPosts] = useState<{[postId: number]: string}>({});
     const [editingComments, setEditingComments] = useState<{[commentId: number]: string}>({});
     const [commentInputs, setCommentInputs] = useState<{[postId: number]: string}>({});
-
-    // 投稿メニュー操作
-    const togglePostMenu = (postId: number) => {
-        // この機能は親コンポーネントで管理する必要があります
-        // 今回は簡略化のため、直接操作します
-    };
 
     // 投稿編集開始
     const startEditPost = (postId: number, currentContent: string) => {
@@ -59,12 +53,11 @@ export const PostList: React.FC<PostListProps> = ({
         });
     };
 
-    // コメント編集開始
+    // コメント編集開始など（省略せず記述）
     const startEditComment = (commentId: number, currentContent: string) => {
         setEditingComments(prev => ({ ...prev, [commentId]: currentContent }));
     };
 
-    // コメント編集保存
     const saveEditComment = (postId: number, commentId: number) => {
         const editedContent = editingComments[commentId];
         if (!editedContent || !editedContent.trim()) {
@@ -79,7 +72,6 @@ export const PostList: React.FC<PostListProps> = ({
         });
     };
 
-    // コメント編集キャンセル
     const cancelEditComment = (commentId: number) => {
         setEditingComments(prev => {
             const newState = { ...prev };
@@ -88,7 +80,6 @@ export const PostList: React.FC<PostListProps> = ({
         });
     };
 
-    // コメント追加
     const handleAddComment = (postId: number) => {
         const commentText = commentInputs[postId];
         if (!commentText || !commentText.trim()) {
@@ -155,9 +146,19 @@ export const PostList: React.FC<PostListProps> = ({
                                 marginRight: '12px',
                                 color: '#fff',
                                 fontSize: '14px',
-                                fontWeight: 'bold'
+                                fontWeight: 'bold',
+                                overflow: 'hidden' // 画像がはみ出ないように
                             }}>
-                                {post.author.charAt(0)}
+                                {/* ★修正: iconがあれば画像、なければイニシャル */}
+                                {post.author.icon ? (
+                                    <img 
+                                        src={post.author.icon} 
+                                        alt={post.author.username}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                    />
+                                ) : (
+                                    post.author.username.charAt(0)
+                                )}
                             </div>
 
                             {/* 投稿者情報 */}
@@ -168,7 +169,8 @@ export const PostList: React.FC<PostListProps> = ({
                                     color: '#3c4043',
                                     marginBottom: '2px'
                                 }}>
-                                    {post.author}
+                                    {/* ★修正: usernameプロパティにアクセス */}
+                                    {post.author.username}
                                 </div>
                                 <div style={{
                                     fontSize: '14px',
