@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-    GroupDetail, 
-    Member, 
-    MemberStats, 
-    Post, 
-    Assignment, 
+import {
+    GroupDetail,
+    Member,
+    MemberStats,
+    Post,
+    Assignment,
     ProgrammingProblem
 } from '../types/AdminTypes';
 
@@ -15,12 +15,12 @@ export const useAdminData = (hashedId: string) => {
     const [group, setGroup] = useState<GroupDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    
+
     const [members, setMembers] = useState<Member[]>([]);
     const [memberStats, setMemberStats] = useState<MemberStats | null>(null);
     const [membersLoading, setMembersLoading] = useState(false);
     const [membersError, setMembersError] = useState<string | null>(null);
-    
+
     const [posts, setPosts] = useState<Post[]>([]);
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [assignmentsWithSubmissions, setAssignmentsWithSubmissions] = useState<Assignment[]>([]);
@@ -43,7 +43,7 @@ export const useAdminData = (hashedId: string) => {
         try {
             setLoading(true);
             setError(null);
-            
+
             // 2つのAPIを並列で呼び出して高速化
             const [dashboardRes, submissionsRes] = await Promise.all([
                 fetch(`/api/groups/${hashedId}/admin-dashboard`),
@@ -61,7 +61,7 @@ export const useAdminData = (hashedId: string) => {
                 setGroup(group);
                 setMembers(members);
                 setMemberStats(memberStats);
-                
+
                 // 日付の整形はここで行う
                 const formattedPosts = posts.map((post: any) => ({
                     ...post,
@@ -112,7 +112,7 @@ export const useAdminData = (hashedId: string) => {
                 setMemberStats(data.data.stats);
             }
         } catch (e) {
-             console.error(e);
+            console.error(e);
         } finally {
             if (isMounted.current) setMembersLoading(false);
         }
@@ -154,7 +154,7 @@ export const useAdminData = (hashedId: string) => {
     const toggleAdmin = async (userId: number, currentStatus: boolean) => {
         // 楽観的UI更新: APIレスポンスを待たずにUIを即座に更新する
         const previousMembers = [...members];
-        setMembers(members.map(m => 
+        setMembers(members.map(m =>
             m.id === userId ? { ...m, isAdmin: !currentStatus } : m
         ));
 
@@ -187,10 +187,10 @@ export const useAdminData = (hashedId: string) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content }),
         });
-        
+
         const result = await response.json();
         if (!result.success) throw new Error(result.message);
-        
+
         // 全体リロードせず、新しい投稿を先頭に追加
         const newPost: Post = {
             id: result.data.id,
@@ -205,7 +205,7 @@ export const useAdminData = (hashedId: string) => {
         setPosts([newPost, ...posts]);
     };
 
-    // 他のアクション関数（変更なしのものは省略せず記述）
+    // 他のアクション関数
     const updatePost = (postId: number, content: string) => {
         setPosts(posts.map(post => post.id === postId ? { ...post, content, isEditing: false } : post));
     };
@@ -219,7 +219,7 @@ export const useAdminData = (hashedId: string) => {
     const createAssignment = async (title: string, description: string, dueDate: string, problem: ProgrammingProblem | null) => {
         let endpoint = `/api/groups/${hashedId}/assignments`;
         const body: any = { title, description, dueDate };
-        
+
         if (problem) {
             if (problem.type === 'select') body.selectProblemId = problem.id;
             else body.programmingProblemId = problem.id;
@@ -235,24 +235,87 @@ export const useAdminData = (hashedId: string) => {
         const result = await response.json();
         if (!result.success) throw new Error(result.message);
 
-        // 全体リロードせず、新しい課題を追加（再取得APIを呼ばない）
-        // これによりUIが即座に反応する
         const newAssignment: Assignment = {
-             id: result.data.id,
-             title, description, due_date: dueDate, created_at: new Date().toISOString(),
-             programmingProblemId: body.programmingProblemId,
-             selectProblemId: body.selectProblemId,
-             programmingProblem: problem && problem.type !== 'select' ? problem : undefined, // プレビュー用
-             selectProblem: problem && problem.type === 'select' ? problem : undefined,     // プレビュー用
-             author: { username: 'あなた', icon: null }, // 仮
-             comments: [] // 必須プロパティ`comments`を追加
+            id: result.data.id,
+            title, description, due_date: dueDate, created_at: new Date().toISOString(),
+            programmingProblemId: body.programmingProblemId,
+            selectProblemId: body.selectProblemId,
+            programmingProblem: problem && problem.type !== 'select' ? problem : undefined,
+            selectProblem: problem && problem.type === 'select' ? problem : undefined,
+            author: { username: 'あなた', icon: null },
+            comments: []
         };
         setAssignments([newAssignment, ...assignments]);
     };
 
-    const updateAssignment = (assignment: Assignment) => { /* 省略 */ };
-    const deleteAssignment = (assignment: Assignment) => { /* 省略 */ };
-    
+    const updateAssignment = async (assignment: Assignment) => {
+        try {
+            const body: any = {
+                title: assignment.title,
+                description: assignment.description,
+                dueDate: assignment.due_date
+            };
+
+            // 問題のIDを設定
+            if (assignment.programmingProblem) {
+                body.programmingProblemId = assignment.programmingProblem.id;
+                body.selectProblemId = null;
+            } else if (assignment.selectProblem) {
+                body.selectProblemId = assignment.selectProblem.id;
+                body.programmingProblemId = null;
+            } else {
+                body.programmingProblemId = null;
+                body.selectProblemId = null;
+            }
+
+            const response = await fetch(`/api/groups/${hashedId}/assignments/${assignment.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+
+            if (!response.ok) throw new Error('サーバーエラーが発生しました');
+            const result = await response.json();
+            if (!result.success) throw new Error(result.message);
+
+            // ローカルステート更新
+            setAssignments(assignments.map(a => a.id === assignment.id ? {
+                ...a,
+                ...result.data,
+                // プレビュー用のオブジェクトも更新
+                programmingProblem: assignment.programmingProblem,
+                selectProblem: assignment.selectProblem
+            } : a));
+
+            alert('課題を更新しました');
+        } catch (error) {
+            console.error('課題更新エラー:', error);
+            alert('課題の更新に失敗しました');
+            throw error;
+        }
+    };
+
+    const deleteAssignment = async (assignment: Assignment) => {
+        if (!confirm('この課題を削除しますか？提出状況もすべて削除されます。')) return;
+
+        try {
+            const response = await fetch(`/api/groups/${hashedId}/assignments/${assignment.id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) throw new Error('サーバーエラーが発生しました');
+            const result = await response.json();
+            if (!result.success) throw new Error(result.message);
+
+            // ローカルステート更新
+            setAssignments(assignments.filter(a => a.id !== assignment.id));
+            alert('課題を削除しました');
+        } catch (error) {
+            console.error('課題削除エラー:', error);
+            alert('課題の削除に失敗しました');
+        }
+    };
+
     const addMember = async (email: string) => {
         const response = await fetch(`/api/groups/${hashedId}/members`, {
             method: 'POST',
@@ -265,7 +328,7 @@ export const useAdminData = (hashedId: string) => {
     };
 
     const copyInviteCode = () => {
-         if (group?.invite_code) {
+        if (group?.invite_code) {
             navigator.clipboard.writeText(group.invite_code)
                 .then(() => alert(`招待コード「${group.invite_code}」をコピーしました！`));
         }
@@ -284,7 +347,7 @@ export const useAdminData = (hashedId: string) => {
         availableProblems, isLoadingProblems, availableSelectionProblems, isLoadingSelectionProblems,
         createPost, updatePost, deletePost, addComment, updateComment, deleteComment,
         createAssignment, updateAssignment, deleteAssignment, addMember, copyInviteCode,
-        
+
         // 最適化した関数をエクスポート
         fetchAvailableProblems: fetchAllProblems, // 名前を合わせて中身は統合版を使用
         fetchAvailableSelectionProblems: () => {}, // 上記でまとめて取得するので空関数でOK
