@@ -1,13 +1,15 @@
 // src/app/(main)/issue_list/basic_info_a_problem/[problemid]/page.tsx
 
-import React from 'react';
+import React from 'react'; // Reactのインポートを追加
 import { notFound } from 'next/navigation';
 import { getAppSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getBasicInfoAProblem } from '@/lib/data';
 import ProblemClient from './ProblemClient';
 import type { SerializableProblem } from '@/lib/data';
-
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react'; // lucide-reactのインポートを追加
+ 
 // --- 修正点 1: 型定義を修正 ---
 // params は Promise ではなく、プロパティ名はファイル名に合わせて 'problemid' (小文字) にします。
 type BasicInfoAProblemDetailPageProps = {
@@ -58,10 +60,20 @@ const BasicInfoAProblemDetailPage = async ({ params, searchParams }: any) => {
   }
 
   return (
-    <ProblemClient
-      initialProblem={problem} // problem is guaranteed not null here
-      initialCredits={userCredits}
-    />
+    <div className="min-h-screen bg-gray-100 p-4">
+      <div className="container mx-auto">
+        <div className="mb-4">
+          <Link href="/issue_list/basic_info_a_problem/problems" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            一覧へ戻る
+          </Link>
+        </div>
+        <ProblemClient
+          initialProblem={problem} // problem is guaranteed not null here
+          initialCredits={userCredits}
+        />
+      </div>
+    </div>
   );
 };
 

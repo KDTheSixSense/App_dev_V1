@@ -158,11 +158,23 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                         <h3 style={{ fontSize: '18px', fontWeight: '500', color: '#3c4043', margin: '0 0 16px 0' }}>コメント</h3>
                         
                         {/* コメントリスト */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px', maxHeight: '300px', overflowY: 'scroll', paddingRight: '10px' }}>
                             {comments.length > 0 ? (
                                 comments.map(comment => (
                                     <div key={comment.id} style={{ display: 'flex', gap: '12px' }}>
-                                        <img src={comment.author.icon || '/default-icon.png'} alt={comment.author.username || 'user'} style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                                        <div style={{
+                                            width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#38b2ac',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            flexShrink: 0, color: '#fff', fontWeight: 'bold', fontSize: '14px',
+                                        }}>
+                                            {comment.author.icon ? (
+                                                <img 
+                                                    src={comment.author.icon} 
+                                                    alt={comment.author.username || ''} 
+                                                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                                                />
+                                            ) : (comment.author.username?.charAt(0) || '？')}
+                                        </div>
                                         <div>
                                             <span style={{ fontWeight: '500', fontSize: '14px' }}>{comment.author.username || '名無しさん'}</span>
                                             <span style={{ color: '#5f6368', fontSize: '12px', marginLeft: '8px' }}>{new Date(comment.createdAt).toLocaleString('ja-JP')}</span>

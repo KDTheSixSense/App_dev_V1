@@ -2,6 +2,8 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { getAppSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 // --- データ取得とコンポーネント ---
 import { getProblemForClient } from '@/lib/data';
@@ -42,11 +44,17 @@ const BasicInfoBProblemDetailPage = async ({ params }: PageProps) => {
   }
 
   return (
-    <ProblemClient
-      initialProblem={problem}
-      // 取得したユーザー情報をPropsとして渡す
-      initialCredits={userCredits}
-    />
+    <div className="min-h-screen bg-gray-100">
+      <div className="w-full px-4 pt-4">
+        <div className="mb-4">
+          <Link href="/issue_list/basic_info_b_problem/problems" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            一覧へ戻る
+          </Link>
+        </div>
+        <ProblemClient initialProblem={problem} initialCredits={userCredits} />
+      </div>
+    </div>
   );
 };
 

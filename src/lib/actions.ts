@@ -34,11 +34,16 @@ const MAX_HUNGER = 200; //満腹度の最大値を一括管理
  * 新しいユーザーアカウントと、そのペットを作成するAction (改良版)
  * @param data - ユーザー名、メールアドレス、パスワード、生年月日
  */
-export async function registerUserAction(data: { username: string, email: string, password: string, birth?: string }) {
-  const { username, email, password, birth } = data;
+export async function registerUserAction(data: { username: string, email: string, password: string, birth?: string, isAgreedToTerms: boolean,
+  isAgreedToPrivacyPolicy: boolean }) {
+  const { username, email, password, birth, isAgreedToTerms, isAgreedToPrivacyPolicy } = data;
 
   if (!username || !email || !password) {
     return { error: '必須項目が不足しています。' };
+  }
+
+  if (!isAgreedToTerms || !isAgreedToPrivacyPolicy) {
+    return { error: '利用規約とプライバシーポリシーへの同意が必要です。' };
   }
 
   try {
@@ -51,6 +56,8 @@ export async function registerUserAction(data: { username: string, email: string
         password: hashedPassword,
         // --- 生年月日を保存するロジック ---
         birth: birth ? new Date(birth) : null,
+        isAgreedToTerms: isAgreedToTerms,
+        isAgreedToPrivacyPolicy: isAgreedToPrivacyPolicy,
         // 関連するペットステータスも同時に作成
         status_Kohaku: {
           create: {
@@ -230,7 +237,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       basic_A_Info_Question_id?: number;
       questions_id?: number;
       selectProblem_id?: number;
-      appliedAmQuestions_id?: number;
+      applied_am_question_id?: number;
   } = {};
 
   const todayAppDateString = nowJST.toDateString();   
@@ -247,7 +254,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, programingProblem_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && lastCorrectAnswer.answeredAt.toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
 
@@ -263,7 +270,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, basic_A_Info_Question_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && lastCorrectAnswer.answeredAt.toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
 
@@ -279,7 +286,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, questions_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && lastCorrectAnswer.answeredAt.toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
 
@@ -295,28 +302,29 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, selectProblem_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && lastCorrectAnswer.answeredAt.toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
   } else if (subjectid === 5) { // 5: Applied_am_Question
-  const problem = await prisma.applied_am_Question.findUnique({ 
-        where: { id: problemId }, 
-        select: { difficultyId: true } 
-      });
-      difficultyId = problem?.difficultyId;
-      
-      // 新しいカラム 'appliedAmQuestions_id' を使用
-      userAnswerForeignKeyData = { appliedAmQuestions_id: problemId };
-      
-      // 履歴チェックも新しいカラムで行う
-      const lastCorrectAnswer = await prisma.userAnswer.findFirst({
-        where: { userId, isCorrect: true, appliedAmQuestions_id: problemId },
-        orderBy: { answeredAt: 'desc' }
-      });
-    if (lastCorrectAnswer && lastCorrectAnswer.answeredAt.toDateString() === todayAppDateString) {
+    // 1. 正しいテーブル (Applied_am_Question) を参照する
+    const problem = await prisma.applied_am_Question.findUnique({
+      where: { id: problemId },
+      select: { difficultyId: true }
+    });
+    difficultyId = problem?.difficultyId;
+
+    // 2. UserAnswer テーブルの正しい外部キー 'applied_am_question_id' に保存するよう修正
+    userAnswerForeignKeyData = { applied_am_question_id: problemId };
+
+    // 3. 履歴チェックも 'applied_am_question_id' で行うよう修正
+    const lastCorrectAnswer = await prisma.userAnswer.findFirst({
+      where: { userId, isCorrect: true, applied_am_question_id: problemId },
+      orderBy: { answeredAt: 'desc' }
+    });
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
-    } else { // 5: Questions_Algorithm (仮)
+  } else { // 5: Questions_Algorithm (仮)
     const problem = await prisma.questions_Algorithm.findUnique({ 
       where: { id: problemId }, 
       select: { difficultyId: true } 
@@ -328,7 +336,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, questions_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && lastCorrectAnswer.answeredAt.toDateString() === todayAppDateString) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
       alreadyCorrectToday = true;
     }
   }
@@ -423,7 +431,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       answer: 'CORRECT',
       answeredAt: nowJST,
       // Step 3で決定した、正しい外部キーにIDをセットする
-      ...userAnswerForeignKeyData 
+      ...userAnswerForeignKeyData
     },
   });
   

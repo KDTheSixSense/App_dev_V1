@@ -314,7 +314,7 @@ export const problems: Problem[] = [
                 ' 7:     listHead ← listHead.next',
                 ' 8:   else',
                 ' 9:     prev ← listHead',
-                '10:    /* posが2等しいときは繰返し処理を実行しない */',
+                '10:    /* posが2と等しいときは繰返し処理を実行しない */',
                 '11:    for (i を 2 から pos - 1 まで 1 ずつ増やす)',
                 '12:      prev ← prev.next',
                 '13:    endfor',
@@ -378,23 +378,23 @@ export const problems: Problem[] = [
                     label: 'Case 1: pos = 1 (先頭を削除)', 
                     value: { 
                         pos: 1, 
-                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: null }],
+                        listData: [{ val: 'P', next: 1 }, { val: 'L', next: 2 }, { val: 'A', next: 3 },{ val: 'N', next: 4 },{ val: 'E', next: null }],
                         listHead: 0
                     } 
                 },
                 { 
-                    label: 'Case 2: pos = 3 (3番目を削除)', 
+                    label: 'Case 2: pos = 2 (2番目を削除)', 
                     value: { 
-                        pos: 3,
-                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: 3 }, { val: 'D', next: null }],
+                        pos: 2,
+                        listData: [{ val: 'P', next: 1 }, { val: 'L', next: 2 }, { val: 'A', next: 3 },{ val: 'N', next: 4 },{ val: 'E', next: null }],
                         listHead: 0
                     }
                 },
                 { 
-                    label: 'Case 3: pos = 2 (2番目を削除)', 
+                    label: 'Case 3: pos = 5 (5番目を削除)', 
                     value: { 
-                        pos: 2,
-                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: null }],
+                        pos: 5,
+                        listData: [{ val: 'P', next: 1 }, { val: 'L', next: 2 }, { val: 'A', next: 3 },{ val: 'N', next: 4 },{ val: 'E', next: null }],
                         listHead: 0
                     }
                 },
@@ -1100,7 +1100,7 @@ export const problems: Problem[] = [
         logicType: 'LINKED_LIST_APPEND',
         title: { ja: "基本情報技術者試験 科目B 単方向リストへの要素追加", en: "Subject B Sample Problem Q23" },
         description: {
-            ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n手続 append は，引数で与えられた文字を単方向リストに追加する手続である。...",
+            ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n手続 append は，引数で与えられた文字を単方向リストに追加する手続である。単方向リストの各要素は，クラスListElementを用いて表現す津。クラスListElementの説明を図に示す。ListElement型の変数はクラスListElementのインスタンスの参照を格納するものとする。大域変数listHeadは，単方向リストの先頭の要素を参照する。リストが空の時は，listHeadは未定義である。",
             en: "Select the correct combination for a and b from the answer choices. The procedure 'append' adds a character given as an argument to a singly linked list..."
         },
         programLines: {
@@ -1110,14 +1110,14 @@ export const problems: Problem[] = [
                 ' 3: ○append(文字列型: qVal)',
                 ' 4:   ListElement: prev, curr',
                 ' 5:   curr ← ListElement(qVal)',
-                ' 6:   if (listHead が 未定義)',
+                ' 6:   if (listHead が [   a   ] )',
                 ' 7:     listHead ← curr',
                 ' 8:   else',
                 ' 9:     prev ← listHead',
                 '10:     while (prev.next が 未定義でない)',
                 '11:       prev ← prev.next',
                 '12:     endwhile',
-                '13:     prev.next ← curr',
+                '13:     prev.next ← [   b   ]',
                 '14:   endif',
             ],
             en: [ /* ... */ ]
@@ -1146,6 +1146,15 @@ export const problems: Problem[] = [
             curr: null,
         },
         traceOptions: {
+          // [選択肢]
+            logicVariants: [
+                { id: 'ア', label: 'ア a: 未定義, b: curr' },
+                { id: 'イ', label: 'イ a: 未定義, b: curr.next' },
+                { id: 'ウ', label: 'ウ a: 未定義, b: listHead' },
+                { id: 'エ', label: 'エ a: 未定義でない, b: curr' },
+                { id: 'オ', label: 'オ a: 未定義でない, b: curr.next' },
+                { id: 'カ', label: 'カ a: 未定義でない, b: listHead' },
+            ],
             presets_array: [
                 {
                     label: 'Case1: 空のリストに "A" を追加',

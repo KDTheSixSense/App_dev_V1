@@ -30,6 +30,8 @@ model User {
   lastlogin                DateTime?
   status_Kohaku            Status_Kohaku? //Userに対してStatus_Kohakuは1対1の関係です。
   // UserモデルとUserAnswerモデルが1対多の関係であることを示します。
+  isAgreedToTerms         Boolean   @default(false) // 利用規約への同意
+  isAgreedToPrivacyPolicy Boolean   @default(false) // プライバシーポリシーへの同意
   answers                  UserAnswer[]
   answer_Algorithm         Answer_Algorithm[]
   answerd_Genre_Table      Answerd_Genre_Table[]
@@ -87,15 +89,14 @@ model UserAnswer {
   basic_A_Info_Question_id Int?
   questions_id             Int?
   selectProblem_id         Int?
-  appliedAmQuestions_id    Int?
-  
+  applied_am_question_id   Int? // 応用情報問題のIDを保存するカラムを追加
 
   // --- リレーション定義 ---
   programmingProblem    ProgrammingProblem?    @relation(fields: [programingProblem_id], references: [id])
   basic_A_Info_Question Basic_Info_A_Question? @relation(fields: [basic_A_Info_Question_id], references: [id])
   questions             Questions?             @relation(fields: [questions_id], references: [id])
   selectProblem         SelectProblem?         @relation(fields: [selectProblem_id], references: [id])
-  appliedAmQuestion      Applied_am_Question?   @relation(fields: [appliedAmQuestions_id], references: [id])
+  applied_am_question   Applied_am_Question?   @relation(fields: [applied_am_question_id], references: [id]) // 応用情報問題とのリレーションを追加
 
   // --- パフォーマンス向上のためのインデックス (推奨) ---
   @@index([userId])
@@ -103,7 +104,7 @@ model UserAnswer {
   @@index([basic_A_Info_Question_id])
   @@index([questions_id])
   @@index([selectProblem_id])
-  @@index([appliedAmQuestions_id])
+  @@index([applied_am_question_id]) // インデックスを追加
 }
 
 //科目テーブル

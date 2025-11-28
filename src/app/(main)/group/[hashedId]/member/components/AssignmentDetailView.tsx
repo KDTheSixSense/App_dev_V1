@@ -171,7 +171,7 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
                     {/* コメント機能 */}
                     <div style={{ marginTop: '32px', borderTop: '1px solid #e0e0e0', paddingTop: '24px' }}>
                         <h3 style={{ fontSize: '18px', fontWeight: '500', color: '#3c4043', margin: '0 0 16px 0' }}>コメント</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px', maxHeight: '300px', overflowY: 'scroll', paddingRight: '10px' }}>
                             {comments.length > 0 ? (
                                 comments.map(comment => (
                                     <div key={comment.id} style={{ display: 'flex', gap: '12px' }}>
@@ -241,4 +241,3 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
         </div>
     );
 };
-
