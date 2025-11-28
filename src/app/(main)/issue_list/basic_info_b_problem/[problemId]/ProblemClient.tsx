@@ -146,6 +146,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
   const [selectedLogicVariant, setSelectedLogicVariant] = useState<string | null>(null);
 
+  const [isTraceFinished, setIsTraceFinished] = useState(false);
+  const [selectedPresetLabel, setSelectedPresetLabel] = useState<string | null>(null);
   // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
   const refetchPetStatus = useCallback(async () => {
     try {
@@ -372,12 +374,38 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setChatMessages(prev => [...prev, { sender: 'kohaku', text: "トレースをリセットしました。" }]);
   };
 
-  const handleSetData = (dataToSet: Record<string, any>) => {
-    setVariables({ ...problem.initialVariables, ...dataToSet, initialized: false, problemId: problem.id }); // initializedをfalseにリセット
+  const handleSetLogicVariant = (variantId: string) => {
+    // 1. UIの選択状態を更新
+    setSelectedLogicVariant(variantId);
+
+    // 2. ロジック側が参照できるように variables._variant にも注入する
+    setVariables((prev) => ({
+      ...prev,
+      _variant: variantId, 
+    }));
+
+    // (オプション) ロジックを変えたらトレースをリセットする場合
+    setCurrentTraceLine(0);
+    setIsTraceFinished(false);
+  };
+  
+  const handleSetData = (dataToSet: Record<string, any>, label: string = "") => {
+    setVariables((prev) => ({
+      ...problem.initialVariables, // まず初期状態に戻す
+      ...dataToSet,                // 選択されたデータを上書き
+      
+      // ★重要: 現在選択中のロジック(variant)を維持してセットする
+      // これをしないと、データを変えた瞬間にロジック判定が消えてしまいます
+      _variant: selectedLogicVariant, 
+      
+      initialized: false,
+      problemId: problem.id
+    }));
     setCurrentTraceLine(0);
     setTraceHistory([]);
     setIsPresetSelected(true);
-    setSelectedLogicVariant(null);
+    // setSelectedLogicVariant(null); //入力データを選択する度にロジックがリセットされていたのでコメントアウト化
+    setSelectedPresetLabel(label);
   };
 
  const handleSetNum = (num: number) => {
@@ -386,6 +414,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setTraceHistory([]);
     setIsPresetSelected(true); // プリセットが選択されたことを示すフラグを立てる
     setSelectedLogicVariant(null);
+    setSelectedPresetLabel(String(num));
  };
 
   const handleNextProblem = async () => {
@@ -536,6 +565,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
                   onSetData={handleSetData} 
                   isPresetSelected={isPresetSelected} 
                   onSetNum={handleSetNum}
+                  selectedPresetLabel={selectedPresetLabel}
                   selectedLogicVariant={selectedLogicVariant}
                   onSetLogicVariant={setSelectedLogicVariant}
                 />
