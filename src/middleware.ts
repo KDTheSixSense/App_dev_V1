@@ -30,7 +30,10 @@ export async function middleware(req: NextRequest) {
 
   // ユーザーがセッションに存在する場合、DBにも実在するかAPI経由で確認
   if (user?.id) {
-    const validateUrl = new URL('/api/validate-user', req.nextUrl.origin);
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://infopia.nqg1t0.com' 
+      : 'http://localhost:3000';
+    const validateUrl = new URL('/api/validate-user', baseUrl);
     const response = await fetch(validateUrl, {
       headers: {
         cookie: req.headers.get('cookie') || '',
