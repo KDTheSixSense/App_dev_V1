@@ -106,35 +106,40 @@ const GroupDetailPage: React.FC = () => {
         setIsAssignmentEditorExpanded(true);
     };
 
+    // 課題編集 - 既存の課題を編集モードで開く
+    const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+
+    const handleAssignmentEdit = (assignment: Assignment) => {
+        setEditingAssignment(assignment);
+        // 編集対象の課題に問題が添付されている場合、プレビューにも設定
+        if (assignment.programmingProblem) {
+            setProblemPreview(assignment.programmingProblem);
+        } else if (assignment.selectProblem) {
+            setProblemPreview(assignment.selectProblem);
+        } else {
+            setProblemPreview(null);
+        }
+        setIsAssignmentEditorExpanded(true); // 編集のためにエディターを開く
+    };
+
     // 課題エディター縮小 - 課題作成完了後にエディターを閉じてプレビューをクリア
     const handleAssignmentEditorCollapse = () => {
         setIsAssignmentEditorExpanded(false);
         setProblemPreview(null); // 問題プレビューも同時にクリア
+        setEditingAssignment(null); // 編集中の課題もクリア
     };
 
-    // 課題作成 - タイトル、説明、期限、問題IDを指定して課題を作成
-    const handleAssignmentCreate = async (assignmentData: { title: string, description: string, dueDate: string, problem: ProgrammingProblem | null }) => {
-        await createAssignment(assignmentData.title, assignmentData.description, assignmentData.dueDate, assignmentData.problem);
-        handleAssignmentEditorCollapse(); // 作成後にエディターを閉じる
-        alert('課題を作成しました。');
+    // 課題更新処理
+    const handleAssignmentUpdate = async (assignmentData: Assignment) => {
+        await updateAssignment(assignmentData);
+        handleAssignmentEditorCollapse();
     };
 
-    // 課題編集 - 既存の課題を編集モードで開く
-    const handleAssignmentEdit = (assignment: Assignment) => {
-        updateAssignment(assignment);
-        setIsAssignmentEditorExpanded(true); // 編集のためにエディターを開く
-    };
-
-    // 課題詳細表示 - 課題の詳細ビューに切り替え
-    const handleAssignmentDetail = (assignment: Assignment) => {
-        setSelectedAssignment(assignment);
-        setAssignmentViewMode('detail'); // 詳細表示モードに変更
-    };
-
-    // 課題一覧に戻る - 詳細ビューから一覧ビューに戻る
-    const handleAssignmentBackToList = () => {
-        setSelectedAssignment(null);
-        setAssignmentViewMode('list'); // 一覧表示モードに戻す
+    // 課題作成処理
+    const handleAssignmentCreate = async (assignmentData: any) => {
+        const { title, description, dueDate, problem } = assignmentData;
+        await createAssignment(title, description, dueDate, problem);
+        handleAssignmentEditorCollapse();
     };
 
     // プログラミング問題作成ページへ遷移 - 新しい問題を作成するために別ページへ移動
@@ -161,9 +166,21 @@ const GroupDetailPage: React.FC = () => {
         setIsProblemSelectModalOpen(false); // モーダルを閉じる
     };
 
-    // 問題プレビュー削除処理 - 添付された問題を削除
+    // 問題プレビューの削除
     const handleRemoveProblemPreview = () => {
-        setProblemPreview(null); // 問題プレビューをクリア
+        setProblemPreview(null);
+    };
+
+    // 課題詳細表示
+    const handleAssignmentDetail = (assignment: Assignment) => {
+        setSelectedAssignment(assignment);
+        setAssignmentViewMode('detail');
+    };
+
+    // 課題一覧に戻る
+    const handleAssignmentBackToList = () => {
+        setSelectedAssignment(null);
+        setAssignmentViewMode('list');
     };
 
     // === レンダリング処理 ===
@@ -254,33 +271,34 @@ const GroupDetailPage: React.FC = () => {
                         {/* 課題セクション - 課題の作成、一覧、詳細表示 */}
                         {activeTab === '課題' && (
                             <div>
-                                {/* 一覧表示モード */}
+                                {/* 課題エディター - 新しい課題を作成または既存の課題を編集 */}
+                                <AssignmentEditor
+                                    isExpanded={isAssignmentEditorExpanded}
+                                    onExpand={handleAssignmentEditorExpand}
+                                    onCollapse={handleAssignmentEditorCollapse}
+                                    onCreateAssignment={handleAssignmentCreate}
+                                    onUpdateAssignment={handleAssignmentUpdate}
+                                    initialAssignment={editingAssignment}
+                                    onNavigateToCreateProblem={navigateToCreateProgrammingProblem}
+                                    onNavigateToCreateSelectionProblem={navigateToCreateSelectionProblem}
+                                    onOpenProblemSelectModal={handleOpenProblemSelectModal}
+                                    problemPreview={problemPreview}
+                                    onRemoveProblemPreview={handleRemoveProblemPreview}
+                                />
+
+                                {/* 課題一覧 - 既存の課題を表示 */}
                                 {assignmentViewMode === 'list' && (
-                                    <div>
-                                        {/* 課題エディター - 新しい課題を作成 */}
-                                        <AssignmentEditor
-                                            isExpanded={isAssignmentEditorExpanded}
-                                            onExpand={handleAssignmentEditorExpand}
-                                            onCollapse={handleAssignmentEditorCollapse}
-                                            onCreateAssignment={handleAssignmentCreate}
-                                            onNavigateToCreateProblem={navigateToCreateProgrammingProblem}
-                                            onNavigateToCreateSelectionProblem={navigateToCreateSelectionProblem}
-                                            onOpenProblemSelectModal={handleOpenProblemSelectModal}
-                                            problemPreview={problemPreview}
-                                            onRemoveProblemPreview={handleRemoveProblemPreview}
-                                        />
-                                        {/* 課題一覧 - 既存の課題を表示 */}
-                                        <AssignmentList
-                                            assignments={assignments}
-                                            viewMode={assignmentViewMode}
-                                            selectedAssignment={selectedAssignment}
-                                            onEditAssignment={handleAssignmentEdit}
-                                            onDeleteAssignment={deleteAssignment}
-                                            onViewAssignmentDetail={handleAssignmentDetail}
-                                            onBackToList={handleAssignmentBackToList}
-                                            
-                                        />
-                                    </div>
+                                    <AssignmentList
+                                        assignments={assignments}
+                                        viewMode={assignmentViewMode}
+                                        selectedAssignment={selectedAssignment}
+                                        onEditAssignment={handleAssignmentEdit}
+                                        onDeleteAssignment={deleteAssignment}
+                                        onViewAssignmentDetail={handleAssignmentDetail}
+                                        onBackToList={handleAssignmentBackToList}
+
+                                    />
+                                    
                                 )}
 
                                 {/* 詳細表示モード */}
@@ -293,7 +311,7 @@ const GroupDetailPage: React.FC = () => {
                                         onDeleteAssignment={deleteAssignment}
                                         onViewAssignmentDetail={handleAssignmentDetail}
                                         onBackToList={handleAssignmentBackToList}
-                                        
+
                                     />
                                 )}
                             </div>
@@ -314,11 +332,11 @@ const GroupDetailPage: React.FC = () => {
                         )}
 
                         {activeTab === '提出状況一覧' && (
-                          <AssignmentStatusList
-                            assignments={assignmentsWithSubmissions}
-                            loading={submissionsLoading}
-                            groupId={hashedId}
-                          />
+                            <AssignmentStatusList
+                                assignments={assignmentsWithSubmissions}
+                                loading={submissionsLoading}
+                                groupId={hashedId}
+                            />
                         )}
                     </div>
 
