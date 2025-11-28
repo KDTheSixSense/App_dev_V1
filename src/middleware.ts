@@ -18,19 +18,19 @@ export async function middleware(req: NextRequest) {
   
   // ユーザーが存在し、かつ認証ページにアクセスしようとした場合
   if (user && pathname.startsWith('/auth')) {
-    const homeUrl = new URL('/home', req.url);
+    const homeUrl = new URL('/home', req.nextUrl.origin);
     return NextResponse.redirect(homeUrl);
   }
 
   // ユーザーが存在しない、かつ保護されたルートにアクセスしようとした場合
   if (!user && !pathname.startsWith('/auth')) {
-    const loginUrl = new URL('/auth/login', req.url);
+    const loginUrl = new URL('/auth/login', req.nextUrl.origin);
     return NextResponse.redirect(loginUrl);
   }
 
   // ユーザーがセッションに存在する場合、DBにも実在するかAPI経由で確認
   if (user?.id) {
-    const validateUrl = new URL('/api/validate-user', req.url);
+    const validateUrl = new URL('/api/validate-user', req.nextUrl.origin);
     const response = await fetch(validateUrl, {
       headers: {
         cookie: req.headers.get('cookie') || '',
@@ -38,7 +38,7 @@ export async function middleware(req: NextRequest) {
     });
 
     if (!response.ok) {
-      const loginUrl = new URL('/auth/login', req.url);
+      const loginUrl = new URL('/auth/login', req.nextUrl.origin);
       loginUrl.searchParams.set('error', 'session_expired');
       // Here we don't destroy the session, the API route does it.
       // We just redirect.
