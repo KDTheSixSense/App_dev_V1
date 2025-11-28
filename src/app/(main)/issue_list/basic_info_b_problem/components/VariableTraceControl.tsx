@@ -31,10 +31,10 @@ interface VariableTraceControlProps {
   language: 'ja' | 'en';
   textResources: any;
   onSetNum: (num: number) => void;
-  onSetData: (data: Record<string, any>) => void;
-  isPresetSelected: boolean;
+  onSetData: (data: Record<string, any>, label: string) => void;  isPresetSelected: boolean;
   selectedLogicVariant: string | null;
   onSetLogicVariant: (variant: string) => void;
+  selectedPresetLabel: string | null;
 }
 
 /**
@@ -56,6 +56,7 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
   isPresetSelected,
   selectedLogicVariant,
   onSetLogicVariant,
+  selectedPresetLabel,
 }) => {
   
   const showPresets = problem.traceOptions?.presets;
@@ -131,16 +132,17 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
                {(showArrayPresets as {label: string, value: any}[]).map((preset) => {
                 // プリセット(preset.value)内のすべてのキー(例: 'data', 'target')が
                 // 現在の変数(variables)と一致するかを判定する
-                const presetValue = preset.value;
-                const isActive = Object.keys(presetValue).every(key => {
-                  // JSON.stringifyで配列やオブジェクトも正しく比較
-                  return JSON.stringify(variables[key]) === JSON.stringify(presetValue[key]);
-                });
+                // const presetValue = preset.value;
+                // const isActive = Object.keys(presetValue).every(key => {
+                //   // JSON.stringifyで配列やオブジェクトも正しく比較
+                //   return JSON.stringify(variables[key]) === JSON.stringify(presetValue[key]);
+                // });
+                const isActive = selectedPresetLabel === preset.label;
 
                  return (
                    <button 
                     key={preset.label} 
-                    onClick={() => onSetData(preset.value)}
+                    onClick={() => onSetData(preset.value, preset.label)}
                     // classNameの判定を新しい `isActive` 変数に変更
                     className={`px-3 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 ${
                       isActive
@@ -163,11 +165,10 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
                   key={num}
                   onClick={() => onSetNum(num)}
                   className={`flex-1 px-4 py-2 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105
-                    ${variables.num === num 
+                    ${String(selectedPresetLabel) === String(num)
                       ? 'bg-emerald-500 ring-2 ring-emerald-300' 
                       : 'bg-indigo-500 hover:bg-indigo-600'
-                    }`}
-                >
+                    }`}                >
                   {num}
                 </button>
               ))}
@@ -179,14 +180,53 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
       {/* --- 変数表示エリア --- */}
       <div className="w-full mb-6">
         <p className="text-center font-semibold mb-3 text-gray-700">{varStepNum}. 変数の状態</p>
-        <div className="grid grid-cols-1 gap-2 max-w-xs mx-auto">
-          {Object.entries(variables).map(([name, value]) => {
+        <div className="grid grid-cols-1 gap-2 w-full px-5">
+          {Object.entries(variables)
+          .flatMap(([name, value]) => {
+              // まずは現在の変数をリストに入れる
+              const items = [[name, value]];
+
+              // もし変数が 'prev' で、かつ listData が存在し、prev が数値を指している場合
+              if (name === 'prev' && variables.listData && typeof value === 'number') {
+                const prevNode = variables.listData[value];
+                // prevノードが存在すれば、その next の値を持つ 'prev.next' エントリを追加
+                if (prevNode) {
+                  items.push(['prev.next', prevNode.next]);
+                }
+              }
+              return items;
+            })
+          .map(([name, value]) => {
             // initialized フラグはUIに表示しない
             if (['initialized', 'problemId', 'currentLine'].includes(name)) return null;
 
             let displayValue: string;
             
-            if (value === null || typeof value === 'undefined') {
+            if (['prev', 'curr', 'listHead','prev.next'].includes(name) && variables.listData) {
+                // value が null なら "null"
+                if (value === null) {
+                    displayValue = 'null';
+                } else if (typeof value === 'number') {
+                    // value が数値(インデックス)の場合、listDataから実体を探して表示
+                    const node = variables.listData[value];
+                    if (node) {
+                        // ユーザーの要望通り prev.data と prev.next の形式で見せる
+                        // (内部データが val でも、表示上 data にしたい場合はここで書き換え可能)
+                        const nextStr = node.next === null ? 'null' : node.next;
+                        // 例: { data: "A", next: 2 } のように整形
+                        displayValue = `{ data: "${node.val}", next: ${nextStr} }`;
+                        
+                        // ※補足: デバッグ用にインデックスも残したい場合は以下のようにしても良い
+                        // displayValue = `(idx:${value}) { data: "${node.val}", next: ${nextStr} }`;
+                    } else {
+                        displayValue = String(value); // 範囲外などでノードが取れない場合
+                    }
+                } else {
+                    // それ以外の型ならそのまま文字列化
+                    displayValue = String(value);
+                }
+            }
+            else if (value === null || typeof value === 'undefined') {
                 displayValue = '―';
             } else if (Array.isArray(value)) {
                 if (value.length === 0) {
@@ -226,7 +266,7 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
             return (
                 <div key={name} className="flex items-center justify-between bg-white p-2 rounded border">
                     <span className="font-semibold mr-2 capitalize">{name}</span>
-                    <span className="font-mono bg-gray-100 border border-gray-300 px-3 py-1 rounded w-48 text-center overflow-x-auto custom-scrollbar">
+                    <span className="font-mono bg-gray-100 border border-gray-300 px-3 py-1 rounded w-60 text-center overflow-x-auto custom-scrollbar">
                         {displayValue}
                     </span>
                 </div>

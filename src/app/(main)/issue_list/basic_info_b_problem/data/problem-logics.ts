@@ -1165,64 +1165,200 @@ const arrayReverseLogic: {
 // =================================================================================
 // --- 問23: 単方向リストのロジックを全面的に改善 ---
 // =================================================================================
-const linkedListAppendLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
-    // traceLogicは状態を更新するだけのシンプルな関数群に戻す
+// Line 13: prev.next ← [ b ] のロジック
+const linkedListAppendStepLogics: Record<string, TraceStep> = {
+    // b: curr (正しい挙動)
+    'ア': (vars) => { 
+        const newListData = JSON.parse(JSON.stringify(vars.listData));
+        const prevIndex = vars.prev as number;
+        if (prevIndex !== null && newListData[prevIndex]) {
+            newListData[prevIndex].next = vars.curr; // prev.next = curr
+        }
+        return { ...vars, listData: newListData };
+    },
+    // b: curr.next (curr.nextは通常nullなので、切断されるような挙動)
+    'イ': (vars) => { 
+        const newListData = JSON.parse(JSON.stringify(vars.listData));
+        const prevIndex = vars.prev as number;
+        if (prevIndex !== null && newListData[prevIndex]) {
+            // 新規ノード(curr)のnextはnullなので、実質nullが入る
+            newListData[prevIndex].next = null; 
+        }
+        return { ...vars, listData: newListData };
+    },
+    // b: listHead (循環参照になる)
+    'ウ': (vars) => { 
+        const newListData = JSON.parse(JSON.stringify(vars.listData));
+        const prevIndex = vars.prev as number;
+        if (prevIndex !== null && newListData[prevIndex]) {
+            newListData[prevIndex].next = vars.listHead; 
+        }
+        return { ...vars, listData: newListData };
+    },
+    // エ、オ、カ はア、イ、ウと同じ代入ロジック(b)を持つため再利用
+    'エ': (vars) => linkedListAppendStepLogics['ア'](vars),
+    'オ': (vars) => linkedListAppendStepLogics['イ'](vars),
+    'カ': (vars) => linkedListAppendStepLogics['ウ'](vars),
+    
+    'default': (vars) => vars,
+};
+
+const linkedListAppendLogic: { 
+    traceLogic: TraceStep[]; 
+    calculateNextLine: (currentLine: number, vars: VariablesState, variant: string | null) => number 
+} = {
     traceLogic: [
-        /* 0: Line 1 */ (vars: VariablesState) => vars,
-        /* 1: Line 2 */ (vars: VariablesState) => vars,
-        /* 2: Line 3 */ (vars: VariablesState) => vars,
-        /* 3: Line 4 */ (vars: VariablesState) => ({ ...vars, prev: null, curr: null }),
-        /* 4: Line 5 */ (vars: VariablesState) => {
+        /* 0: Line 1 */ (vars) => vars,
+        /* 1: Line 2 */ (vars) => vars,
+        /* 2: Line 3 */ (vars) => vars,
+        /* 3: Line 4 */ (vars) => ({ ...vars, prev: null, curr: null }),
+        /* 4: Line 5 */ (vars) => { // curr ← ListElement(qVal)
             const newNode = { val: vars.qVal as string, next: null };
-            const newListData = Array.isArray(vars.listData) ? [...vars.listData] : [];
-            const newNodeIndex = newListData.length;
+            // 現在のlistDataをコピー、なければ空配列作成
+            const newListData = vars.listData ? JSON.parse(JSON.stringify(vars.listData)) : [];
+            const newNodeIndex = newListData.length; // 末尾に追加されるのでindexはlengthと同じ
             newListData.push(newNode);
             return { ...vars, listData: newListData, curr: newNodeIndex };
         },
-        /* 5: Line 6 */ (vars: VariablesState) => vars,
-        /* 6: Line 7 */ (vars: VariablesState) => ({ ...vars, listHead: vars.curr }),
-        /* 7: Line 8 */ (vars: VariablesState) => vars,
-        /* 8: Line 9 */ (vars: VariablesState) => ({ ...vars, prev: vars.listHead }),
-        /* 9: Line 10 */ (vars: VariablesState) => vars,
-        /* 10: Line 11 */ (vars: VariablesState) => {
+        /* 5: Line 6 */ (vars) => vars, // if (条件分岐のみ)
+        /* 6: Line 7 */ (vars) => ({ ...vars, listHead: vars.curr }), // listHead ← curr
+        /* 7: Line 8 */ (vars) => vars, // else
+        /* 8: Line 9 */ (vars) => ({ ...vars, prev: vars.listHead }), // prev ← listHead
+        /* 9: Line 10 */ (vars) => vars, // while
+        /* 10: Line 11 */ (vars) => { // prev ← prev.next
             const listData = vars.listData as any[];
             const prevIndex = vars.prev as number;
-            return { ...vars, prev: listData[prevIndex].next };
-        },
-        /* 11: Line 12 */ (vars: VariablesState) => vars,
-        /* 12: Line 13 */ (vars: VariablesState) => {
-            const newListData = JSON.parse(JSON.stringify(vars.listData));
-            if (vars.prev !== null) {
-                newListData[vars.prev as number].next = vars.curr;
+            // 安全策: prevが存在し、nextがある場合のみ更新
+            if (prevIndex !== null && listData[prevIndex]) {
+                return { ...vars, prev: listData[prevIndex].next };
             }
+            return vars;
+        },
+        /* 11: Line 12 */ (vars) => vars, // endwhile
+        /* 12: Line 13: prev.next ← [ b ]  */
+        (vars) => {
+            // 1. データがない、またはprevがない場合は何もしない
+            if (!vars.listData || vars.prev === null) return vars;
+
+            // 2. 選択されたバリアントを取得 (ア〜カ)
+            // もし未選択ならデフォルトで'ア'(正解)として振る舞うか、何もしない
+            const variant = (vars._variant as string) || 'ア';
+
+            // 3. データのディープコピーを作成
+            const newListData = JSON.parse(JSON.stringify(vars.listData));
+            const prevIndex = vars.prev as number;
+            const prevNode = newListData[prevIndex];
+
+            if (!prevNode) return vars;
+
+            // 4. バリアントに応じて [ b ] の値を決定して代入
+            // ア, エ => b: curr
+            if (['ア', 'エ'].includes(variant)) {
+                prevNode.next = vars.curr;
+            }
+            // イ, オ => b: curr.next
+            else if (['イ', 'オ'].includes(variant)) {
+                // currは新規ノードなので、curr.next は通常 null
+                const currNode = newListData[vars.curr as number];
+                prevNode.next = currNode ? currNode.next : null; 
+            }
+            // ウ, カ => b: listHead
+            else if (['ウ', 'カ'].includes(variant)) {
+                prevNode.next = vars.listHead;
+            }
+
             return { ...vars, listData: newListData };
         },
-        /* 13: Line 14 */ (vars: VariablesState) => vars,
+        
+        /* 13: Line 14 */ (vars) => vars, // endif
     ],
-    // calculateNextLineは次にどの行へ進むかだけを決定する
-    calculateNextLine(currentLine: number, vars: VariablesState): number {
-        // 最初のクリック(currentLine=0)で3行目(index 2)に飛ぶ
-        if (currentLine === 0) return 2;
+
+    calculateNextLine: (currentLine, vars, variant) => {
+        // データ未選択時は待機
+        if (vars.listData === null || vars.qVal === null) {
+             if (currentLine < 2) return currentLine + 1;
+             return currentLine;
+        }
 
         const executedLine = currentLine;
         switch (executedLine) {
+            case 0: return 1;
+            case 1: return 2;
             case 2: return 3;
             case 3: return 4;
             case 4: return 5;
-            case 5: return vars.listHead === null ? 6 : 8;
-            case 6: return 13;
-            case 8: return 9;
-            case 9:
+            
+            case 5: // Line 6: if (listHead が [ a ])
+                // Variantに応じた条件判定
+                // ア, イ, ウ (a: 未定義): listHead === null
+                // エ, オ, カ (a: 未定義でない): listHead !== null
+                const isCheckNull = ['ア', 'イ', 'ウ', null].includes(variant);
+                
+                if (isCheckNull) {
+                    // 「未定義」かチェック
+                    return (vars.listHead === null) ? 6 : 8; // True: Line 7, False: Line 9 (else)
+                } else {
+                    // 「未定義でない」かチェック
+                    return (vars.listHead !== null) ? 6 : 8; // True: Line 7, False: Line 9 (else)
+                }
+
+            case 6: // listHead ← curr 実行後
+                return 13; // -> Line 14 (endif)
+            
+            case 8: // Line 9: prev ← listHead
+                return 9; // -> Line 10 (while)
+
+            case 9: // Line 10: while (prev.next が 未定義でない)
                 const listData = vars.listData as any[];
                 const prevIndex = vars.prev as number;
-                return (vars.prev !== null && listData[prevIndex]?.next !== null) ? 10 : 11;
-            case 10: return 9;
-            case 11: return 12;
-            case 12: return 13;
-            case 13: return 99;
-            default: return 99;
+                // prevが存在し、そのnextがnullでないならループ継続
+                if (prevIndex !== null && listData[prevIndex] && listData[prevIndex].next !== null) {
+                    return 10; // -> Line 11 (body)
+                }
+                return 12; // -> Line 13 (loop end)
+
+            case 10: // Line 11: prev ← prev.next
+                return 9; // -> Loop check
+
+            case 12: // Line 13: prev.next ← [ b ]
+                if (!variant) return 12; // ロジック選択待ち
+                return 13; // -> Line 14
+
+            case 13: // Line 14: endif
+                return 99; // 終了
+
+            default: return currentLine + 1;
         }
-    },
+    }
+};
+
+// ★重要: traceLogicを動的に切り替えるためのラッパー
+// problem-logics.ts の `idToLogicMap` に登録するオブジェクトを調整します
+
+const linkedListAppendLogicWrapper = {
+    // 静的ステップと動的ステップを組み合わせる
+    traceLogic: [
+        ...linkedListAppendLogic.traceLogic.slice(0, 12), // 0~11行目は静的
+        (vars: VariablesState) => { // 12行目 (Line 13) は動的
+             // ここで variant を参照したいが、引数に来ないため、
+             // アプリケーション側で「VariablesStateにselectedLogicVariantを含める」か、
+             // `pseudoCodeLogic` を修正して variant を渡す必要があります。
+             
+             // 現状の設計（VariablesStateに variant が含まれていない）場合、
+             // ここでは「常に正解（ア）」または「何もしない」しか返せません。
+             
+             // ただし、problem-logics.tsの末尾にある `pseudoCodeLogic` では
+             // `traceLogic` は `vars` しか受け取っていません。
+             // 解決策として、ProblemClient側で `onSetLogicVariant` した際に
+             // `variables` にも `_variant` のような隠しプロパティでセットすることをお勧めします。
+             
+             const variant = vars._variant as string || 'ア'; // _variantがあれば使う
+             const stepFunc = linkedListAppendStepLogics[variant] || linkedListAppendStepLogics['default'];
+             return stepFunc(vars);
+        },
+        ...linkedListAppendLogic.traceLogic.slice(13)
+    ],
+    calculateNextLine: linkedListAppendLogic.calculateNextLine
 };
 
 // =================================================================================
