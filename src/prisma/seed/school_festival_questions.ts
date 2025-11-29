@@ -80,108 +80,108 @@ const schoolFestivalProgrammingProblems = [
   // 穴埋め形式プログラミング問題
   {
     title: 'プログラミングで「こんにちは！」',
-    description: '`print("Hello, " + "World!")`
+    description: `print("Hello, " + "World!")
 
-このPythonコードを実行すると、何が表示されるでしょう？',
+このPythonコードを実行すると、何が表示されるでしょう？`,
     explanation: '`+`記号は、文字と文字をつなげて新しい一つの文字列を作る働きをします。「Hello, 」と「World!」がつながって「Hello, World!」と表示されます。',
     answerOptions: ['Hello, +World!', 'Hello, World!', 'Hello,', 'Error'],
     correctAnswer: 'Hello, World!',
   },
   {
     title: 'かんたん！足し算プログラム',
-    description: '`x = 10`
-`y = 20`
-`z = x + y`
-`print(z)`
+    description: `\`x = 10\`
+\`y = 20\`
+\`z = x + y\`
+\`print(z)\`
 
-このPythonコードを実行したとき、最後に表示される数字は何でしょう？',
+このPythonコードを実行したとき、最後に表示される数字は何でしょう？`,
     explanation: '変数 `x` に `10`、変数 `y` に `20` が入ります。`z = x + y` で `10 + 20` の計算が実行され、`z` には `30` が入ります。最後に `print(z)` で `30` が表示されます。',
     answerOptions: ['10', '20', '30', 'xyz'],
     correctAnswer: '30',
   },
   {
     title: '繰り返しチャレンジ！',
-    description: '`for i in range( ___ ):`
-  `print("ヤッホー！")`
+    description: `\`for i in range( ___ ):\`
+  \`print("ヤッホー！")\`
 
-「ヤッホー！」を3回表示させたい！ `___` に入る数字は何でしょう？',
+「ヤッホー！」を3回表示させたい！ \`___\` に入る数字は何でしょう？`,
     explanation: '`range(3)` は `0, 1, 2` の3つの数字の列を作ります。for文はその数だけ繰り返し処理を行うので、「ヤッホー！」が3回表示されます。',
     answerOptions: ['2', '3', '4', '1'],
     correctAnswer: '3',
   },
   {
     title: 'リストから取り出そう！',
-    description: '`my_list = [10, 20, 30, 40, 50]`
-`print(my_list[ ___ ])`
+    description: `\`my_list = [10, 20, 30, 40, 50]\`
+\`print(my_list[ ___ ])\`
 
-リストから `30` を取り出して表示したい！ `___` に入る数字は何でしょう？',
+リストから \`30\` を取り出して表示したい！ \`___\` に入る数字は何でしょう？`,
     explanation: 'リストの各要素には、左から `0, 1, 2, ...` という番号（インデックス）がついています。`30` は3番目にありますが、番号は `2` になります。',
     answerOptions: ['3', '30', '2', '4'],
     correctAnswer: '2',
   },
   {
     title: '合格？不合格？プログラム',
-    description: '`score = 85`
-`if score > ___:`
-  `print("合格")`
-`else:`
-  `print("不合格")`
+    description: `\`score = 85\`
+\`if score > ___:\`
+  \`print("合格")\`
+\`else:\`
+  \`print("不合格")\`
 
-80点より大きい点数を「合格」としたい！ `___` に入る数字は何でしょう？',
+80点より大きい点数を「合格」としたい！ \`___\` に入る数字は何でしょう？`,
     explanation: '`score > 80` という条件式で、「もし点数が80より大きければ」という意味になります。`85` は `80` より大きいので、「合格」と表示されます。',
     answerOptions: ['100', '85', '80', '79'],
     correctAnswer: '80',
   },
   {
     title: 'あいさつを作ろう！',
-    description: '`def greet(name):`
-  `return "こんにちは、" + name + "さん！"`
+    description: `\`def greet(name):\`
+  \`return "こんにちは、" + name + "さん！"\`
 
-`print(greet("___"))`
+\`print(greet("___"))\`
 
-「こんにちは、たろうさん！」と表示させたい！ `___` に入る文字は何でしょう？',
+「こんにちは、たろうさん！」と表示させたい！ \`___\` に入る文字は何でしょう？`,
     explanation: '`greet` という名前の関数（オリジナルの命令）を定義しています。`greet("たろう")` と呼び出すと、`name` の部分が `"たろう"` に置き換わり、「こんにちは、たろうさん！」という文字列が作られて表示されます。',
     answerOptions: ['name', 'こんにちは', 'たろう', 'greet'],
     correctAnswer: 'たろう',
   },
   {
     title: '九九のプログラム',
-    description: '`dan = 7`
-`kakeru = ___`
-`print(dan * kakeru)`
+    description: `\`dan = 7\`
+\`kakeru = ___\`
+\`print(dan * kakeru)\`
 
-九九の「7×5」の答え `35` を表示させたい！ `___` に入る数字は何でしょう？',
+九九の「7×5」の答え \`35\` を表示させたい！ \`___\` に入る数字は何でしょう？`,
     explanation: '変数 `dan` には `7` が入っています。`dan * kakeru` が `35` になるためには、`kakeru` に `5` が入っている必要があります。`7 * 5` が計算され、`35` が表示されます。',
     answerOptions: ['7', '35', '9', '5'],
     correctAnswer: '5',
   },
   {
     title: '文字の長さを数えよう！',
-    description: '`text = "Tokyo"`
-`length = len(___)`
-`print(length)`
+    description: `\`text = "Tokyo"\`
+\`length = len(___)\`
+\`print(length)\`
 
-`"Tokyo"` の文字数 `5` を表示させたい！ `___` に入るものは何でしょう？',
+\`"Tokyo"\` の文字数 \`5\` を表示させたい！ \`___\` に入るものは何でしょう？`,
     explanation: '`len()` は、文字列の長さを数えるためのPythonの組み込み関数です。`len(text)` とすることで、変数 `text` に入っている `"Tokyo"` の文字数である `5` を数えることができます。',
     answerOptions: ['length', '"Tokyo"', 'len', 'text'],
     correctAnswer: 'text',
   },
   {
     title: 'プログラムの中のメモ書き',
-    description: '`# この行はコンピュータには無視されます`
+    description: `\`# この行はコンピュータには無視されます\`
 
-Pythonで、このように行の先頭に `#` を付けると、その行はどうなるでしょう？',
+Pythonで、このように行の先頭に \`#\` を付けると、その行はどうなるでしょう？`,
     explanation: '`#` から行末までは「コメント」とみなされ、プログラムの実行時には無視されます。人がプログラムを読むときのためのメモとして使われます。',
     answerOptions: ['エラーになる', '太文字で表示される', 'コメントになり、実行されない', '実行速度が速くなる'],
     correctAnswer: 'コメントになり、実行されない',
   },
   {
     title: '自分の点数を5点アップ！',
-    description: '`my_score = 80`
-`my_score = my_score + ___`
-`print(my_score)`
+    description: `\`my_score = 80\`
+\`my_score = my_score + ___\`
+\`print(my_score)\`
 
-`my_score` の値を `85` にしたい！ `___` に入る数字は何でしょう？',
+\`my_score\` の値を \`85\` にしたい！ \`___\` に入る数字は何でしょう？`,
     explanation: '`my_score = my_score + 5` は、「現在の `my_score` の値（80）に `5` を足して、その結果を新しい `my_score` の値としなさい」という意味です。結果として `85` になります。',
     answerOptions: ['85', '80', '10', '5'],
     correctAnswer: '5',
