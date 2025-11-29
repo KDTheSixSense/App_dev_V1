@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import * as XLSX from 'xlsx';
+import { seedSchoolFestivalQuestions } from './school_festival_questions';
 import { problems as localProblems } from '../../app/(main)/issue_list/basic_info_b_problem/data/problems';
 import fs from 'fs';
 
@@ -49,6 +50,10 @@ export async function seedProblems(prisma: PrismaClient) {
   // 6. 応用情報午前問題のシーディング
   console.log('🌱 Seeding Applied Info AM problems...');
   await seedAppliedInfoAmProblems(prisma);
+
+  // 7. 学園祭用の問題のシーディング
+  console.log('🌱 Seeding School Festival problems...');
+  await seedSchoolFestivalQuestions(prisma);
 }
 
 async function seedProblemsFromExcel(prisma: PrismaClient) {
