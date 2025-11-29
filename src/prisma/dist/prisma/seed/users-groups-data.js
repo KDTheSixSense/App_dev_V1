@@ -43,24 +43,24 @@ async function seedUsersAndGroups(prisma) {
     console.log('🗑️ Cleared existing user and group data.');
     // --- 2. シーディングするユーザーの基本情報を定義 ---
     const usersToSeed = [
-        { email: 'alice@example.com', password: 'password123', username: 'Alice Smith' },
-        { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson' },
-        { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown' },
-        { email: 'diana@example.com', password: 'password456', username: 'Diana Prince' },
-        { email: 'eva@example.com', password: 'password789', username: 'Eva Green' },
-        { email: 'frank@example.com', password: 'password101', username: 'Frank Castle' },
-        { email: 'grace@example.com', password: 'password112', username: 'Grace Hopper' },
-        { email: 'tanaka@example.com', password: 'password131', username: '田中 恵子' },
-        { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎' },
-        { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲' },
-        { email: 'kobe_taro@example.com', password: 'kobe', username: '神戸太郎' },
+        { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', icon: '/images/users/alice.png' },
+        { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', icon: '/images/users/bob.png' },
+        { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', icon: '/images/users/charlie.png' },
+        { email: 'diana@example.com', password: 'password456', username: 'Diana Prince', icon: '/images/users/diana.png' },
+        { email: 'eva@example.com', password: 'password789', username: 'Eva Green', icon: '/images/users/eva.png' },
+        { email: 'frank@example.com', password: 'password101', username: 'Frank Castle', icon: '/images/users/frank.png' },
+        { email: 'grace@example.com', password: 'password112', username: 'Grace Hopper', icon: '/images/users/grace.png' },
+        { email: 'tanaka@example.com', password: 'password131', username: '田中 恵子', icon: '/images/users/tanaka.png' },
+        { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎', icon: '/images/users/suzuki.png' },
+        { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲', icon: '/images/users/sato.png' },
+        { email: 'kobe_taro@example.com', password: 'kobe', username: '神戸太郎', icon: '/images/users/kobe.png' },
     ];
     // --- 3. 各ユーザーのデータと関連データを作成 ---
     console.log('🌱 Seeding users, pets, and subject progresses...');
     for (const userData of usersToSeed) {
         const subjectProgressData = [];
         let totalAccountXp = 0;
-        const numberOfSubjects = 4; // subject_idが4まであると仮定
+        const numberOfSubjects = 5; // subject_idが5まであると仮定
         // 科目ごとの進捗を生成
         for (let subjectId = 1; subjectId <= numberOfSubjects; subjectId++) {
             let subjectXp = 0;
@@ -106,6 +106,7 @@ async function seedUsersAndGroups(prisma) {
                 email: userData.email,
                 username: userData.username,
                 password: hashedPassword,
+                icon: userData.icon,
                 level: accountLevel,
                 xp: totalAccountXp,
                 totallogin: getRandomInt(1, 500),

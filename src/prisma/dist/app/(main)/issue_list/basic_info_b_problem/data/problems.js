@@ -243,7 +243,7 @@ exports.problems = [
                 ' 7:     listHead ← listHead.next',
                 ' 8:   else',
                 ' 9:     prev ← listHead',
-                '10:    /* posが2等しいときは繰返し処理を実行しない */',
+                '10:    /* posが2と等しいときは繰返し処理を実行しない */',
                 '11:    for (i を 2 から pos - 1 まで 1 ずつ増やす)',
                 '12:      prev ← prev.next',
                 '13:    endfor',
@@ -307,23 +307,23 @@ exports.problems = [
                     label: 'Case 1: pos = 1 (先頭を削除)',
                     value: {
                         pos: 1,
-                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: null }],
+                        listData: [{ val: 'P', next: 1 }, { val: 'L', next: 2 }, { val: 'A', next: 3 }, { val: 'N', next: 4 }, { val: 'E', next: null }],
                         listHead: 0
                     }
                 },
                 {
-                    label: 'Case 2: pos = 3 (3番目を削除)',
-                    value: {
-                        pos: 3,
-                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: 3 }, { val: 'D', next: null }],
-                        listHead: 0
-                    }
-                },
-                {
-                    label: 'Case 3: pos = 2 (2番目を削除)',
+                    label: 'Case 2: pos = 2 (2番目を削除)',
                     value: {
                         pos: 2,
-                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: null }],
+                        listData: [{ val: 'P', next: 1 }, { val: 'L', next: 2 }, { val: 'A', next: 3 }, { val: 'N', next: 4 }, { val: 'E', next: null }],
+                        listHead: 0
+                    }
+                },
+                {
+                    label: 'Case 3: pos = 5 (5番目を削除)',
+                    value: {
+                        pos: 5,
+                        listData: [{ val: 'P', next: 1 }, { val: 'L', next: 2 }, { val: 'A', next: 3 }, { val: 'N', next: 4 }, { val: 'E', next: null }],
                         listHead: 0
                     }
                 },
@@ -552,7 +552,7 @@ exports.problems = [
             ja: "2分探索法は、探索範囲を半分に絞り込むことを繰り返して目的のデータを探すアルゴリズムです。正しく実装するには、`low ← middle + 1` や `high ← middle - 1` のように、探索済の中央値を除外する必要があります。\n\n本問のプログラムでは、`low ← middle` や `high ← middle` となっているため、探索範囲が狭まらないケースがあり、無限ループが発生します。\n\n「ウ」のケースを考えます。`data = {10, 20}`、`target = 20` とすると、\n1. `low=1`, `high=2` でループ開始。\n2. `middle = (1+2)÷2 = 1`。\n3. `data[1]`(10) < `target`(20) なので、`low ← middle` が実行され `low` は `1` のまま。\n\n以降、`low=1, high=2` の状態が延々と繰り返され、無限ループになります。",
             en: "Binary search is an algorithm that repeatedly divides the search interval in half to find the target data. For correct implementation, it's necessary to exclude the checked middle value, such as `low = middle + 1` or `high = middle - 1`.\n\nIn this program, the assignments are `low = middle` and `high = middle`, which can fail to narrow the search range, causing an infinite loop.\n\nConsider case 'C'. If `data = {10, 20}` and `target = 20`:\n1. The loop starts with `low=1`, `high=2`.\n2. `middle = floor((1+2)/2) = 1`.\n3. Since `data[1]`(10) < `target`(20), `low = middle` is executed, and `low` remains `1`.\n\nThe state `low=1, high=2` repeats indefinitely, resulting in an infinite loop."
         },
-        // ✅【修正点】ユーザーが選択するまで変数をnullに設定
+        // ユーザーが選択するまで変数をnullに設定
         initialVariables: {
             data: null,
             target: null,
@@ -562,7 +562,7 @@ exports.problems = [
             result: null,
             initialized: false, // トレースロジックで使う初期化フラグ
         },
-        // ✅【修正点】ユーザーがトレースするデータを選択できるようにプリセットを追加
+        // ユーザーがトレースするデータを選択できるようにプリセットを追加
         traceOptions: {
             presets_array: [
                 { label: 'ア: data:{10}, target:10', value: { data: [10], target: 10 } },
@@ -1008,6 +1008,15 @@ exports.problems = [
             right: null,
             tmp: null,
         },
+        //logicVariants を追加
+        traceOptions: {
+            logicVariants: [
+                { id: 'ア', label: 'ア: a: arrayの要素数 - left, b: array[left]' },
+                { id: 'イ', label: 'イ: a: arrayの要素数 - left, b: array[right]' },
+                { id: 'ウ', label: 'ウ: a: arrayの要素数 - left + 1, b: array[left]' },
+                { id: 'エ', label: 'エ: a: arrayの要素数 - left + 1, b: array[right]' },
+            ]
+        },
         traceLogic: [],
         calculateNextLine: undefined,
         difficultyId: 7
@@ -1020,7 +1029,7 @@ exports.problems = [
         logicType: 'LINKED_LIST_APPEND',
         title: { ja: "基本情報技術者試験 科目B 単方向リストへの要素追加", en: "Subject B Sample Problem Q23" },
         description: {
-            ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n手続 append は，引数で与えられた文字を単方向リストに追加する手続である。...",
+            ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n手続 append は，引数で与えられた文字を単方向リストに追加する手続である。単方向リストの各要素は，クラスListElementを用いて表現す津。クラスListElementの説明を図に示す。ListElement型の変数はクラスListElementのインスタンスの参照を格納するものとする。大域変数listHeadは，単方向リストの先頭の要素を参照する。リストが空の時は，listHeadは未定義である。",
             en: "Select the correct combination for a and b from the answer choices. The procedure 'append' adds a character given as an argument to a singly linked list..."
         },
         programLines: {
@@ -1030,14 +1039,14 @@ exports.problems = [
                 ' 3: ○append(文字列型: qVal)',
                 ' 4:   ListElement: prev, curr',
                 ' 5:   curr ← ListElement(qVal)',
-                ' 6:   if (listHead が 未定義)',
+                ' 6:   if (listHead が [   a   ] )',
                 ' 7:     listHead ← curr',
                 ' 8:   else',
                 ' 9:     prev ← listHead',
                 '10:     while (prev.next が 未定義でない)',
                 '11:       prev ← prev.next',
                 '12:     endwhile',
-                '13:     prev.next ← curr',
+                '13:     prev.next ← [   b   ]',
                 '14:   endif',
             ],
             en: [ /* ... */]
@@ -1066,6 +1075,15 @@ exports.problems = [
             curr: null,
         },
         traceOptions: {
+            // [選択肢]
+            logicVariants: [
+                { id: 'ア', label: 'ア a: 未定義, b: curr' },
+                { id: 'イ', label: 'イ a: 未定義, b: curr.next' },
+                { id: 'ウ', label: 'ウ a: 未定義, b: listHead' },
+                { id: 'エ', label: 'エ a: 未定義でない, b: curr' },
+                { id: 'オ', label: 'オ a: 未定義でない, b: curr.next' },
+                { id: 'カ', label: 'カ a: 未定義でない, b: listHead' },
+            ],
             presets_array: [
                 {
                     label: 'Case1: 空のリストに "A" を追加',
@@ -1547,12 +1565,21 @@ exports.problems = [
             en: "This program implements the quicksort algorithm. Let's trace the execution when `sort(1, 5)` is first called.\n1. The `data` array is `{2, 1, 3, 5, 4}`.\n2. The `pivot` is set to `data[floor((1+5)/2)]`, which is `data[3]`, so `pivot = 3`.\n3. `i` is initialized to `1`, `j` to `5`.\n4. In the first `while(data[i] < pivot)` loop, `i` is incremented until `data[i]` is not less than `3`. This happens when `i` reaches `3`.\n5. In the next `while(pivot < data[j])` loop, `j` is decremented until `data[j]` is not greater than `3`. This happens when `j` reaches `3`.\n6. At this point, `i=3` and `j=3`, so the condition `if(i >= j)` becomes true.\n7. The `while(true)` loop terminates. Note that the swap operation was never executed.\n8. The line `/*** α ***/` is reached, and the elements of the `data` array are printed. Since the array has not been modified, the output is the initial sequence: `2 1 3 5 4`.\nTherefore, 'D' is the correct answer."
         },
         initialVariables: {
-            data: [2, 1, 3, 5, 4],
+            data: null,
             callStack: [],
             pivot: null,
             i: null,
             j: null,
             output: null,
+        },
+        // presets_array を追加
+        traceOptions: {
+            presets_array: [
+                { label: 'ア: data:{1, 2, 3, 4, 5}', value: { data: [1, 2, 3, 4, 5] } },
+                { label: 'イ: data:{1, 2, 3, 5, 4}', value: { data: [1, 2, 3, 5, 4] } },
+                { label: 'ウ: data:{2, 1, 3, 4, 5}', value: { data: [2, 1, 3, 4, 5] } },
+                { label: 'エ: data:{2, 1, 3, 5, 4}', value: { data: [2, 1, 3, 5, 4] } },
+            ]
         },
         traceLogic: [],
         calculateNextLine: undefined,
@@ -1605,7 +1632,6 @@ exports.problems = [
             en: "Regarding 'a': This if statement checks if the list is empty..."
         },
         initialVariables: {
-            case: null,
             initialized: false,
             listData: null,
             listHead: null,
@@ -1613,10 +1639,32 @@ exports.problems = [
             prev: null,
             curr: null,
         },
+        // 2: traceOptions の 'value' が実際のデータをセットするように変更
         traceOptions: {
             presets_array: [
-                { label: 'Case1: 空のリストに "A" を追加', value: { case: 'EMPTY_LIST' } },
-                { label: 'Case2: 既存リストに "D" を追加', value: { case: 'NON_EMPTY_LIST' } },
+                {
+                    label: 'Case1: 空のリストに "A" を追加',
+                    value: {
+                        listData: [],
+                        listHead: null,
+                        qVal: 'A',
+                        prev: null,
+                        curr: null,
+                        initialized: false
+                    }
+                },
+                {
+                    label: 'Case2: 既存リストに "D" を追加',
+                    value: {
+                        // 既存のリストデータ (A->B->C)
+                        listData: [{ val: 'A', next: 1 }, { val: 'B', next: 2 }, { val: 'C', next: null }],
+                        listHead: 0,
+                        qVal: 'D',
+                        prev: null,
+                        curr: null,
+                        initialized: false
+                    }
+                },
             ]
         },
         traceLogic: [],
@@ -1821,9 +1869,9 @@ exports.problems = [
             en: "The function `maximum` is intended to return the largest of the three arguments `x`, `y`, and `z`. Looking at the program structure, the first `if` statement returns `x`. Therefore, the condition of this `if` statement must be one that determines if 'x is the maximum value'.\n\nFor `x` to be the maximum, it must satisfy two conditions simultaneously: 1) `x` is greater than `y`, AND 2) `x` is greater than `z`. This 'and' relationship is expressed with a logical AND.\n\nTherefore, option 'B', `x > y and x > z`, is the correct answer for the blank."
         },
         initialVariables: {
-            x: 10,
-            y: 5,
-            z: 1,
+            x: null,
+            y: null,
+            z: null,
             result: null,
         },
         traceOptions: {
@@ -1891,7 +1939,7 @@ exports.problems = [
             en: "This program converts a binary string to a decimal number by evaluating it from the leftmost digit. In this method, the calculation of multiplying the current result by 2 and adding the value of the new digit is repeated.\n\nFor example, consider \"10010\":\n1. `result`=0\n2. i=1 (char is \"1\"): `result` ← 0 * 2 + 1 = 1\n3. i=2 (char is \"0\"): `result` ← 1 * 2 + 0 = 2\n4. i=3 (char is \"0\"): `result` ← 2 * 2 + 0 = 4\n5. i=4 (char is \"1\"): `result` ← 4 * 2 + 1 = 9\n6. i=5 (char is \"0\"): `result` ← 9 * 2 + 0 = 18\n\nThus, in each step of the loop, the value of `result` is multiplied by 2, and the integer value of the character at the i-th position is added. Therefore, the correct choice for the blank is 'D', `result * 2 + int(character at i of binary)`."
         },
         initialVariables: {
-            binary: "10010",
+            binary: null,
             i: 0,
             length: 0,
             result: 0,
@@ -2213,6 +2261,1443 @@ exports.problems = [
         calculateNextLine: undefined,
         difficultyId: 7
     },
+    // --- 基本情報科目B基礎 問1 (ID: 39) ---
+    {
+        id: '39',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 if文による評価", en: "Basic Subject B Foundation Q1" },
+        description: {
+            ja: "次の記述中の a と b に入れる正しい答えの組合せを、回答群の中から選びなさい。関数 gradeEvaluation は、引数で与えられた inData を用いて成績評価を行い、その結果を返します。inData は 0 以上 100 以下の整数値です。関数 gradeEvaluation を gradeEvaluation(92) として呼び出すと、戻り値は \"a\"、gradeEvaluation(65) として呼び出すと、戻り値は \"b\" となる。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '文字列型：gradeEvaluation(整数型： inData)',
+                '  文字列型：eResult',
+                '  if (inData ≧ 90)',
+                '    eResult ← "評価S"',
+                '  elseif (inData ≧ 70)',
+                '    eResult ← "評価A"',
+                '  else',
+                '    eResult ← "評価B"',
+                '  endif',
+                '  return eResult'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'a = 評価S, b = 評価A' },
+                { label: 'イ', value: 'a = 評価S, b = 評価B' },
+                { label: 'ウ', value: 'a = 評価A, b = 評価A' },
+                { label: 'エ', value: 'a = 評価A, b = 評価B' }
+            ],
+            en: []
+        },
+        correctAnswer: 'a = 評価S, b = 評価B',
+        explanationText: {
+            ja: "条件分岐のトレース問題です。\n1. gradeEvaluation(92)の場合: `inData`は92です。最初の条件 `if (inData ≧ 90)` が 真(True) となるため、`eResult` には \"評価S\" が代入されます。\n2. gradeEvaluation(65)の場合: `inData`は65です。最初の条件 `90以上` は偽、次の `elseif (inData ≧ 70)` も偽となります。したがって `else` ブロックが実行され、`eResult` には \"評価B\" が代入されます。\n\nよって、a = 評価S, b = 評価B となります。",
+            en: ""
+        },
+        initialVariables: { inData: null, eResult: null },
+        traceOptions: {
+            presets_array: [
+                { label: 'inData = 92', value: { inData: 92 } },
+                { label: 'inData = 65', value: { inData: 65 } },
+                { label: 'inData = 75', value: { inData: 75 } }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問2 (ID: 40) ---
+    {
+        id: '40',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 引数で与えられた値までの総和", en: "Basic Subject B Foundation Q2" },
+        description: {
+            ja: "次の記述中の(a)に入れる正しい答えを、回答群の中から選べ。関数sum10は、10から引数で与えられた値までの総和を求める関数であるが、一部誤りがある。正しく動作させるためには(a)する必要がある。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '01　整数型： sum10(整数値：num)',
+                '02　　整数型： x ← 10',
+                '03　　整数型： i',
+                '04　　for (i を 10 から num まで 1 ずつ増やす)',
+                '05　　　x ← x + i',
+                '06　　endfor',
+                '07　　return x'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '行番号02の宣言文を「x ← 0」に訂正' },
+                { label: 'イ', value: '行番号04の制御記述を「i を 11 から num まで -1 ずつ増やす」に訂正' },
+                { label: 'ウ', value: '行番号05の処理を「i ← i + x」に訂正' },
+                { label: 'エ', value: '行番号07の処理を「return i」に変更' }
+            ],
+            en: []
+        },
+        correctAnswer: '行番号02の宣言文を「x ← 0」に訂正',
+        explanationText: {
+            ja: "変数の初期化に関する問題です。\nプログラムの目的は「10からnumまでの総和」を求めることです。ループは `i` を 10 から `num` まで回して `x` に加算していますが、`x` の初期値が `10` になっています。\nこのままだと、最初のループ（i=10）の時点で `x ← 10 + 10` となり、10が二重に加算されてしまいます。合計値を計算する変数（アキュムレータ）は通常 `0` で初期化する必要があります。\nしたがって、行番号02を `x ← 0` に修正するのが正解です。",
+            en: ""
+        },
+        initialVariables: { num: null, x: null, i: null },
+        traceOptions: {
+            presets: [15, 20]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問3 (ID: 41) ---
+    {
+        id: '41',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 配列の最大値探索", en: "Basic Subject B Foundation Q3" },
+        description: {
+            ja: "次の記述中の (a) に入れる正しい答えを、回答群の中から選べ。ここで、配列の要素番号は 1 から始まる。関数 func({12, 4, 10, 3, 25, 19, 6, 7, 5, 2}) として呼び出すと、戻り値は (a) となる。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '整数型：func(整数型の配列：data)',
+                '  整数型：n ← dataの要素数',
+                '  整数型：a, i',
+                '  a ← data[n]',
+                '  for (i を n - 1 から 1 まで 1 ずつ減らす)',
+                '     if (data[i] > a)',
+                '       a ← data[i]',
+                '     endif',
+                '  endfor',
+                '  return a'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '2' },
+                { label: 'イ', value: '3' },
+                { label: 'ウ', value: '4' },
+                { label: 'エ', value: '5' },
+                { label: 'オ', value: '6' },
+                { label: 'カ', value: '7' },
+                { label: 'キ', value: '10' },
+                { label: 'ク', value: '19' },
+                { label: 'ケ', value: '25' }
+            ],
+            en: []
+        },
+        correctAnswer: '25',
+        explanationText: {
+            ja: "このプログラムは「配列内の最大値」を見つけるアルゴリズムです。\n1. 変数 `a` に配列の最後の要素 `data[n]` (この場合は2) を代入します。\n2. ループで配列を後ろから前へ走査します。\n3. `data[i] > a` ならば、`a` をその値で更新します。\n\n配列 `{12, 4, 10, 3, 25, 19, 6, 7, 5, 2}` の中で最も大きい値は `25` です。\nループ終了後、変数 `a` には最大値である 25 が格納されています。",
+            en: ""
+        },
+        initialVariables: { data: [12, 4, 10, 3, 25, 19, 6, 7, 5, 2], n: 10, a: null, i: null },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問4 (ID: 42) ---
+    {
+        id: '42',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 配列連携", en: "Basic Subject B Foundation Q4" },
+        description: {
+            ja: "次のプログラム中の (a) と (b) に入れる正しい答えの組み合わせを、回答群の中から選べ。配列 x のデータの後ろに、配列 y のデータを連結した配列 z を返す関数である。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '文字型の配列：conCat(文字型の配列：x,文字型の配列：y)',
+                '  整数型: len_x ← xの要素数',
+                '  整数型: len_y ← yの要素数',
+                '  文字型の配列: z ← {(len_x + len_y)個の未定義の値}',
+                '  整数型:k',
+                '  for (k を 1 から len_x まで 1 ずつ増やす)',
+                '    (a)',
+                '  endfor',
+                '  for (k を 1 から len_y まで 1 ずつ増やす)',
+                '    (b)',
+                '  endfor',
+                '  return z'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'z[k] ← x[k]  z[len_x + k] ← y[k]' },
+                { label: 'イ', value: 'z[k] ← x[k]  z[len_y + k] ← y[k]' },
+                { label: 'ウ', value: 'z[k] ← y[k]  z[len_x + k] ← x[k]' },
+                { label: 'エ', value: 'z[k] ← y[k]  z[len_y + k] ← x[k]' }
+            ],
+            en: []
+        },
+        correctAnswer: 'z[k] ← x[k]  z[len_x + k] ← y[k]',
+        explanationText: {
+            ja: "配列連結のロジックです。\n1. 最初のループ `(a)` では、配列 `x` の内容をそのまま配列 `z` の前半にコピーします。したがって `z[k] ← x[k]` です。\n2. 次のループ `(b)` では、配列 `y` の内容を配列 `z` の後半にコピーします。`z` の後半の開始位置は `len_x + 1` から始まるため、インデックスは `len_x + k` となります。したがって `z[len_x + k] ← y[k]` です。\n\nよって、正解は「ア」です。",
+            en: ""
+        },
+        initialVariables: {
+            x: null,
+            y: null,
+            z: null,
+            len_x: null,
+            len_y: null,
+            k: null,
+            loop2_active: false // 2つ目のループに入ったかどうかのフラグ
+        },
+        traceOptions: {
+            presets_array: [
+                {
+                    label: 'x={"A","B"}, y={"C"}',
+                    value: { x: ["A", "B"], y: ["C"] }
+                },
+                {
+                    label: 'x={"1","2"}, y={"3","4"}',
+                    value: { x: ["1", "2"], y: ["3", "4"] }
+                }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問5 (ID: 43) ---
+    {
+        id: '43',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 配列の両端から要素を交換", en: "Basic Subject B Foundation Q5" },
+        description: {
+            ja: "次のプログラム中の □ に入れる正しい答えを、回答群の中から選びなさい。二つの □ には、同じ答えが入ります。このプログラムは、整数型の配列 array の要素の並びを 逆順 にします。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '整数型の配列: array ← {10, 20, 30, 40, 50, 60}',
+                '整数型: left, right, tmp',
+                'left ← 1',
+                'right ← arrayの要素数',
+                'while (left < right)',
+                '  tmp ← array[right]',
+                '  array[right] ← □',
+                '  □ ← tmp',
+                '  left ← left + 1',
+                '  right ← right - 1',
+                'endwhile'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'array[left]' },
+                { label: 'イ', value: 'array[left + 1]' },
+                { label: 'ウ', value: 'array[left - 1]' },
+                { label: 'エ', value: 'array[tmp - left]' }
+            ],
+            en: []
+        },
+        correctAnswer: 'array[left]',
+        explanationText: {
+            ja: "配列の両端から要素を交換（スワップ）するアルゴリズムです。\n1. `tmp ← array[right]` で右側の値を退避。\n2. `array[right] ← array[left]` で左側の値を右側に代入（空欄1）。\n3. `array[left] ← tmp` で退避しておいた右側の値を左側に代入（空欄2）。\n\nこれにより、左右の値が入れ替わります。したがって、空欄には `array[left]` が入ります。",
+            en: ""
+        },
+        initialVariables: { array: [10, 20, 30, 40, 50, 60], left: 1, right: 6, tmp: null },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問6 (ID: 44) ---
+    {
+        id: '44',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 配列の値を参照し合計を求める", en: "Basic Subject B Foundation Q6" },
+        description: {
+            ja: "次の記述中の □ に入れる正しい答えを、回答群の中から選びなさい。関数sumArrayをsumArray({4,7,10,2,12,8,6,3,9,5},{2,4,7,10})として呼び出したときの戻り値は □ です。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '整数型: sumArray(整数型の配列: a, 整数型の配列: b)',
+                '  整数型: n ← b の要素数',
+                '  整数型: x ← 0',
+                '  for(i を 1 から n まで 1 ずつ増やす)',
+                '    x ← x + a[b[i]]',
+                '  endfor',
+                '  return x'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '18' },
+                { label: 'イ', value: '20' },
+                { label: 'ウ', value: '25' },
+                { label: 'エ', value: '30' },
+                { label: 'オ', value: '33' }
+            ],
+            en: []
+        },
+        correctAnswer: '20',
+        explanationText: {
+            ja: "配列 `b` の各要素をインデックスとして使い、配列 `a` の値を参照して合計しています。\n1. i=1: b[1]=2, a[2]=7, x=7\n2. i=2: b[2]=4, a[4]=2, x=7+2=9\n3. i=3: b[3]=7, a[7]=6, x=9+6=15\n4. i=4: b[4]=10, a[10]=5, x=15+5=20\n\nしたがって、戻り値は 20 です。",
+            en: ""
+        },
+        initialVariables: {
+            a: null,
+            b: null,
+            n: null,
+            x: null,
+            i: null
+        },
+        traceOptions: {
+            presets_array: [
+                {
+                    label: '問題文のデータをセット',
+                    value: {
+                        a: [4, 7, 10, 2, 12, 8, 6, 3, 9, 5],
+                        b: [2, 4, 7, 10]
+                    }
+                }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問7 (ID: 45) ---
+    {
+        id: '45',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 挿入ソート", en: "Basic Subject B Foundation Q7" },
+        description: {
+            ja: "次のプログラム中の □ に入れる正しい答えを、回答群の中から選びなさい。手続insertSortStepは、挿入ソートの途中処理を行う。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                'insertSortStep(整数型: pos)',
+                '　整数型: j, temp',
+                '　temp ← nums[pos]',
+                '　j ← pos - 1',
+                '　while (nums[j] □ temp)',
+                '　　nums[j + 1] ← nums[j]',
+                '　　j ← j - 1',
+                '　endwhile',
+                '　nums[j + 1] ← temp'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '＝' },
+                { label: 'イ', value: '≠' },
+                { label: 'ウ', value: '＜' },
+                { label: 'エ', value: '＞' }
+            ],
+            en: []
+        },
+        correctAnswer: '＞',
+        explanationText: {
+            ja: "挿入ソートの内部動作です。`temp`（挿入したい値）よりも前にある要素 `nums[j]` が大きい場合、その要素を一つ後ろ `nums[j+1]` にずらす必要があります。\nしたがって、ループ条件は `nums[j] > temp` となります。\n正しい記号は「＞」です。",
+            en: ""
+        },
+        initialVariables: {
+            nums: null,
+            pos: null,
+            j: null,
+            temp: null
+        },
+        // 例: {10, 30, 40, 20, 50} の4番目の要素(20)を適切な位置に挿入するケース
+        traceOptions: {
+            presets_array: [
+                {
+                    label: 'nums={10, 30, 40, 20, 50}, pos=4',
+                    value: {
+                        nums: [10, 30, 40, 20, 50],
+                        pos: 4
+                    }
+                }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問8 (ID: 46) ---
+    {
+        id: '46',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 ユークリッドの互除法(減算版)", en: "Basic Subject B Foundation Q8" },
+        description: {
+            ja: "関数gcdをgcd(84,36)として呼び出したとき、αで示された繰り返しの判定は□回実行されて処理が終了する。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '整数型: gcd(整数型： a, 整数型：b)',
+                '　整数型: m ← a',
+                '　整数型: n ← b',
+                '　while (m ≠ n)   ← α',
+                '　　if (m > n)',
+                '　　　m ← m - n',
+                '　　else',
+                '　　　n ← n - m',
+                '　　endif',
+                '　endwhile',
+                '　return m'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '4' },
+                { label: 'イ', value: '5' },
+                { label: 'ウ', value: '6' },
+                { label: 'エ', value: '7' }
+            ],
+            en: []
+        },
+        correctAnswer: '5',
+        explanationText: {
+            ja: "ユークリッドの互除法（減算版）のトレースです。\n初期: m=84, n=36\n1回目判定: 84≠36 (真) -> m=84-36=48\n2回目判定: 48≠36 (真) -> m=48-36=12\n3回目判定: 12≠36 (真) -> n=36-12=24\n4回目判定: 12≠24 (真) -> n=24-12=12\n5回目判定: 12≠12 (偽) -> ループ終了\n\n判定は合計5回行われます。",
+            en: ""
+        },
+        initialVariables: { a: 84, b: 36, m: null, n: null },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問9 (ID: 47) ---
+    {
+        id: '47',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 数字文字列を数値返還", en: "Basic Subject B Foundation Q9" },
+        description: {
+            ja: "次のプログラム中の(a)と(b)に入れる正しい答えの組合せを、解答群の中から選べ。関数strToIntは、数字文字列を数値に変換する。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '整数型：strToInt（文字型の配列：str）',
+                '  整数型：val, i, tmp',
+                '  val ← 0',
+                '  i ← 1',
+                '  while（a）',
+                '    tmp ← charToInt(str[i])',
+                '    b',
+                '    i ← i + 1',
+                '  endwhile',
+                '  return val'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'str[i] ＝ “$”　val ← val ＋ tmp' },
+                { label: 'イ', value: 'str[i] ＝ “$”　val ← val × 10 ＋ tmp' },
+                { label: 'ウ', value: 'str[i] ≠ “$”　val ← val × 10 ＋ tmp' },
+                { label: 'エ', value: 'str[i] ≠ “$”　val ← val ＋ tmp × 10' }
+            ],
+            en: []
+        },
+        correctAnswer: 'str[i] ≠ “$”　val ← val × 10 ＋ tmp',
+        explanationText: {
+            ja: "文字列を整数に変換する処理です。\n(a) ループ条件: 終端文字 `$` が出るまで続けるため、`str[i] ≠ “$”` です。\n(b) 変換処理: 新しい桁を読み込むたびに、これまでの値を10倍して新しい値を加えます。 `val ← val × 10 ＋ tmp` です。\n\n例: \"12\" -> 1 -> 1*10+2 = 12",
+            en: ""
+        },
+        initialVariables: {
+            str: null,
+            val: null,
+            i: null,
+            tmp: null
+        },
+        // プリセットを追加（重要: 終端文字 $ を含める）
+        traceOptions: {
+            presets_array: [
+                {
+                    label: 'str = "12$"',
+                    value: { str: ["1", "2", "$"] }
+                },
+                {
+                    label: 'str = "345$"',
+                    value: { str: ["3", "4", "5", "$"] }
+                }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問10 (ID: 48) ---
+    {
+        id: '48',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 10進数から6桁式2進数変換", en: "Basic Subject B Foundation Q10" },
+        description: {
+            ja: "関数decToBinは、引数として与えられた10進整数nを6桁の2進数に変換する。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '整数型の配列：decToBin（整数型：n）',
+                '  整数型の配列：bin（←6個の未定義の値）',
+                '  整数型：j ← n',
+                '  整数型：k',
+                '  for（k を 6 から 1 まで 1ずつ減らす）',
+                '    a',
+                '    b',
+                '  endfor',
+                '  return bin'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'j ← j ÷ 2 の商 / bin[k] ← j ÷ 2 の余り' },
+                { label: 'イ', value: 'j ← j ÷ 2 の余り / bin[k] ← j ÷ 2 の商' },
+                { label: 'ウ', value: 'bin[k] ← j ÷ 2 の商 / j ← j ÷ 2 の余り' },
+                { label: 'エ', value: 'bin[k] ← j ÷ 2 の余り / j ← j ÷ 2 の商' }
+            ],
+            en: []
+        },
+        correctAnswer: 'bin[k] ← j ÷ 2 の余り / j ← j ÷ 2 の商',
+        explanationText: {
+            ja: "10進数を2進数に変換するには、2で割った余りを下の桁から順に格納し、商を次の計算に用います。\nループは `k` を 6 から 1 に減らしているので、下の桁（bin[6]）から格納しています。\n\n1. `bin[k] ← j ÷ 2 の余り` (現在の桁を決定)\n2. `j ← j ÷ 2 の商` (次の桁のために値を更新)\n\nこの順序で行われている「エ」が正解です。",
+            en: ""
+        },
+        initialVariables: {
+            n: null,
+            bin: null,
+            j: null,
+            k: null
+        },
+        // 例: 13 (001101), 45 (101101) など
+        traceOptions: {
+            presets_array: [
+                { label: 'n = 13', value: { n: 13 } },
+                { label: 'n = 45', value: { n: 45 } },
+                { label: 'n = 63', value: { n: 63 } }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問11 (ID: 49) ---
+    {
+        id: '49',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 8ビットで論理和演算", en: "Basic Subject B Foundation Q11" },
+        description: {
+            ja: "手続きbitORは8ビット型の引数aとbを受け取り、aとbの論理和演算の結果を出力する。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                'bitOR(8ビット型: x, 8ビット型: y)',
+                '　8ビット型: result, flag ← 128',
+                '　result ← x ⋁ y',
+                '　for (i を 1 から 8 まで 1 ずつ増やす)',
+                '　　if ((result ⋀ flag) が (a) と等しい)',
+                '　　　0を出力',
+                '　　else',
+                '　　　1を出力',
+                '　　endif',
+                '　　(b)',
+                '　endfor'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '00000000 / mask ← mask << 1' },
+                { label: 'イ', value: '00000000 / mask ← mask >> 1' },
+                { label: 'ウ', value: '00000001 / mask ← mask << 1' },
+                { label: 'エ', value: '00000001 / mask ← mask >> 1' }
+            ],
+            en: []
+        },
+        correctAnswer: '00000000 / mask ← mask >> 1',
+        explanationText: {
+            ja: "最上位ビットから順に判定して出力するロジックです。\n初期値 `flag = 128` (10000000) です。\n(a) `result ⋀ flag` が 0 であれば、そのビットは 0 です。したがって `00000000` と比較します。\n(b) 次のビットを検査するために、フラグを右に1ビットシフトします。 `mask ← mask >> 1` (ここでは変数名がmaskになっていますがflagのことです)。",
+            en: ""
+        },
+        initialVariables: {
+            x: null,
+            y: null,
+            result: null,
+            flag: null,
+            i: null,
+            output: [] // 出力結果を保存する配列
+        },
+        // プリセットを追加
+        traceOptions: {
+            presets_array: [
+                // 170(10101010) OR 85(01010101) = 255(11111111)
+                { label: 'x=170, y=85', value: { x: 170, y: 85 } },
+                // 15(00001111) OR 240(11110000) = 255(11111111)
+                { label: 'x=15, y=240', value: { x: 15, y: 240 } },
+                // 128(10000000) OR 1(00000001) = 129(10000001)
+                { label: 'x=128, y=1', value: { x: 128, y: 1 } }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問12 (ID: 50) ---
+    {
+        id: '50',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 再帰関数", en: "Basic Subject B Foundation Q12" },
+        description: {
+            ja: "関数Gに G(4) を渡した場合、戻り値は □ である。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '整数型: G(整数型: x)',
+                '　if (x ≦ 1)',
+                '　　return 1',
+                '　else',
+                '　　return x + G(x - 1)',
+                '　endif'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '9' },
+                { label: 'イ', value: '10' },
+                { label: 'ウ', value: '11' },
+                { label: 'エ', value: '12' }
+            ],
+            en: []
+        },
+        correctAnswer: '10',
+        explanationText: {
+            ja: "再帰関数のトレースです。\nG(4) = 4 + G(3)\n     = 4 + (3 + G(2))\n     = 4 + 3 + (2 + G(1))\n     = 4 + 3 + 2 + 1  (x<=1なので1を返す)\n     = 10",
+            en: ""
+        },
+        initialVariables: {
+            x: null,
+            retVal: null, // 関数の戻り値
+            callStack: [], // 呼び出し履歴 (xの値を保存)
+            isReturning: false // 「戻り」フェーズかどうかのフラグ
+        },
+        traceOptions: {
+            presets_array: [
+                { label: 'x = 4', value: { x: 4 } },
+                { label: 'x = 3', value: { x: 3 } },
+                { label: 'x = 5', value: { x: 5 } }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問13 (ID: 51) ---
+    {
+        id: '51',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 再帰関数の内部処理数値可視化", en: "Basic Subject B Foundation Q13" },
+        description: {
+            ja: "再帰的に定義された手続 display(3) を実行したとき、画面に表示される数字は？",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                'display(整数型: x)',
+                '　if (x = 0)',
+                '　　return',
+                '　endif',
+                '　x を出力する',
+                '　display(x - 1)',
+                '　x を出力する'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '3210123' },
+                { label: 'イ', value: '321123' },
+                { label: 'ウ', value: '32100123' },
+                { label: 'エ', value: '32112321' }
+            ],
+            en: []
+        },
+        correctAnswer: '321123',
+        explanationText: {
+            ja: "サンドイッチ状に出力される再帰関数です。\n1. display(3)開始 -> 「3」出力\n2. display(2)呼び出し\n   -> 「2」出力\n   -> display(1)呼び出し\n      -> 「1」出力\n      -> display(0)呼び出し -> 何もしない\n      -> 「1」出力\n   -> 「2」出力\n3. 「3」出力\n\n結果: 3 2 1 1 2 3",
+            en: ""
+        },
+        initialVariables: {
+            x: null,
+            output: [],
+            callStack: [],
+            isReturning: false
+        },
+        traceOptions: {
+            presets_array: [
+                { label: 'x = 3', value: { x: 3 } }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問14 (ID: 52) ---
+    {
+        id: '52',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 8ビットの論理積演算", en: "Basic Subject B Foundation Q14" },
+        description: {
+            ja: "手続きbitANDは8ビット型の引数pとqを受け取り、pとqの論理積演算の結果を出力する。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                'bitAND(8ビット型: p, 8ビット型: q)',
+                '  8ビット型: result, mask ← 128',
+                '  result ← p ∧ q',
+                '  for (i を 1 から 8 まで 1 ずつ増やす)',
+                '    if ((result ⋀ mask) が (A) と等しい)',
+                '      0を出力',
+                '    else',
+                '      1を出力',
+                '    endif',
+                '    (B)',
+                '  endfor'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '00000000 / mask ← mask << 1' },
+                { label: 'イ', value: '00000000 / mask ← mask >> 1' },
+                { label: 'ウ', value: '00000001 / mask ← mask << 1' },
+                { label: 'エ', value: '00000001 / mask ← mask >> 1' }
+            ],
+            en: []
+        },
+        correctAnswer: '00000000 / mask ← mask >> 1',
+        explanationText: {
+            ja: "最上位ビットから順に判定して出力するロジックです。\n初期値 `mask = 128` (10000000) です。\n(A) `result ⋀ mask` が 0 であれば、そのビットは 0 です。したがって `00000000` と比較します。\n(B) 次のビットを検査するために、マスクを右に1ビットシフトします。 `mask ← mask >> 1`。",
+            en: ""
+        },
+        // 初期変数を定義
+        initialVariables: {
+            p: null,
+            q: null,
+            result: null,
+            mask: null,
+            i: null,
+            output: []
+        },
+        // プリセットを追加
+        traceOptions: {
+            presets_array: [
+                // 10(00001010) AND 12(00001100) = 8(00001000)
+                { label: 'p=10, q=12', value: { p: 10, q: 12 } },
+                // 255(11111111) AND 15(00001111) = 15(00001111)
+                { label: 'p=255, q=15', value: { p: 255, q: 15 } },
+                // 170(10101010) AND 85(01010101) = 0(00000000)
+                { label: 'p=170, q=85', value: { p: 170, q: 85 } }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // --- 基本情報科目B基礎 問15 (ID: 53) ---
+    {
+        id: '53',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B基礎 挿入ソート", en: "Basic Subject B Foundation Q15" },
+        description: {
+            ja: "手続insertStepは、昇順に並んでいるdata[1]～data[index-1]の中に、data[index]を正しい位置に挿入する処理を行う。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                'insertStep(整数型: index)',
+                '  整数型: k, val',
+                '  val ← data[index]',
+                '  k ← index - 1',
+                '  while (data[k] □ val)',
+                '    data[k + 1] ← data[k]',
+                '    k ← k - 1',
+                '  endwhile',
+                '  data[k + 1] ← val'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '＝' },
+                { label: 'イ', value: '≠' },
+                { label: 'ウ', value: '＜' },
+                { label: 'エ', value: '＞' }
+            ],
+            en: []
+        },
+        correctAnswer: '＞',
+        explanationText: {
+            ja: "挿入ソートのステップです。挿入する値 `val` よりも大きい要素がある限り、その要素を右にずらしてスペースを作ります。したがって条件は `data[k] > val` となります。",
+            en: ""
+        },
+        // 初期変数を定義
+        initialVariables: {
+            data: null,
+            index: null,
+            k: null,
+            val: null
+        },
+        // プリセットを追加
+        traceOptions: {
+            presets_array: [
+                // [10, 30, 40, 20, 50] の 4番目(20) を適切な位置(2番目)に挿入する
+                {
+                    label: 'data={10,30,40,20,50}, index=4',
+                    value: {
+                        data: [10, 30, 40, 20, 50],
+                        index: 4
+                    }
+                },
+                // [5, 1, 3] の 2番目(1) を先頭に挿入するケース
+                {
+                    label: 'data={5,1,3}, index=2',
+                    value: {
+                        data: [5, 1, 3],
+                        index: 2
+                    }
+                }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 7
+    },
+    // =================================================================================
+    // --- 問54以降: 基本情報科目B応用 (ID: 54 ~ 68) ---
+    // =================================================================================
+    // --- 基本情報科目B応用 問1 (ID: 54) ---
+    {
+        id: '54',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 ボーナス計算結果", en: "Basic Subject B Applied Q1" },
+        description: {
+            ja: "次の記述中の□に入れる正しい答えを、回答群の中から選べ。関数calcScoreは、ゲームの成績が格納された文字型の配列markを受け取り、それをもとに計算した合計得点を返す関数である。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '整数型: calcScore(文字型の配列: mark)',
+                '  整数型: score ← 0',
+                '  整数型: i, curr',
+                '  for (i を 1 から markの要素数 まで 1 ずつ増やす)',
+                '    curr ← num(mark[i])',
+                '    score ← score + curr',
+                '    if (mark[i] が "_" と等しい)',
+                '      [   a   ]',
+                '    endif',
+                '  endfor',
+                '  return score'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'score ← score + curr' },
+                { label: 'イ', value: 'score ← score + num(mark[i-1])' },
+                { label: 'ウ', value: 'score ← score + num(mark[i+1])' },
+                { label: 'エ', value: 'score ← score + num(mark[i])' }
+            ],
+            en: []
+        },
+        correctAnswer: 'score ← score + num(mark[i-1])',
+        explanationText: { ja: "ボーナス計算のロジックです。特定のマークの場合、前の値を加算します。", en: "" },
+        initialVariables: {
+            mark: null,
+            score: null,
+            i: null,
+            curr: null
+        },
+        traceOptions: {
+            presets_array: [
+                // 5 + "_" (直前の5を加算) + 2 = 12点
+                { label: 'mark = {"5", "_", "2"}', value: { mark: ["5", "_", "2"] } },
+                // 2 + 8 + "_" (直前の8を加算) + 1 = 19点
+                { label: 'mark = {"2", "8", "_", "1"}', value: { mark: ["2", "8", "_", "1"] } }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 基本情報科目B応用 問2 (ID: 55) ---
+    {
+        id: '55',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 文字探索", en: "Basic Subject B Applied Q2" },
+        description: {
+            ja: "文字列の置換を行う関数 replace に関する問題。指定されたターゲット文字列が見つかった場合、置換文字列に置き換える。",
+            en: ""
+        },
+        programLines: {
+            ja: [
+                '文字列型: replace(文字列型: str, 文字列型: target, 文字列型: replacement)',
+                '  文字列型: res ← "", 整数型: i ← 1',
+                '  while (i <= strの文字数)',
+                '    if ( [  a  ] )',
+                '      res ← res + [  b  ]',
+                '      i ← i + targetの文字数',
+                '    else',
+                '      res ← res + mid(str, i, 1)',
+                '      i ← i + 1',
+                '    endif',
+                '  endwhile',
+                '  return res'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'a: match(str, i, target), b: replacement' },
+                { label: 'イ', value: 'a: match(str, i, target), b: target' },
+                { label: 'ウ', value: 'a: match(str, i, replacement), b: target' },
+                { label: 'エ', value: 'a: str[i] == target, b: replacement' }
+            ],
+            en: []
+        },
+        correctAnswer: 'a: match(str, i, target), b: replacement',
+        explanationText: { ja: "一致した場合に置換文字列を追加します。", en: "" },
+        initialVariables: {
+            str: null,
+            target: null,
+            replacement: null,
+            res: "",
+            i: null
+        },
+        // プリセットを追加
+        traceOptions: {
+            presets_array: [
+                {
+                    label: 'str="hello world", target="world", rep="Japan"',
+                    value: { str: "hello world", target: "world", replacement: "Japan" }
+                },
+                {
+                    label: 'str="banana", target="na", rep="ki"',
+                    value: { str: "banana", target: "na", replacement: "ki" }
+                }
+            ]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // =================================================================================
+    // --- 問56以降: 基本情報科目B応用 (CSV読み取り分) ---
+    // =================================================================================
+    // --- 問56 (ID: 56) ---
+    {
+        id: '56',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 関数と2つの引数による最大公約数", en: "Basic Subject B Applied Q3" },
+        description: { ja: "次のプログラムは、2つの整数a, bの最大公約数を求めるものである。a=32, b=24のとき、戻り値はいくつか。", en: "" },
+        programLines: {
+            ja: [
+                '整数型: gcd(整数型: a, 整数型: b)',
+                '  while (b > 0)',
+                '    整数型: r ← a % b',
+                '    a ← b',
+                '    b ← r',
+                '  endwhile',
+                '  return a'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '4' },
+                { label: 'イ', value: '8' },
+                { label: 'ウ', value: '12' },
+                { label: 'エ', value: '16' }
+            ],
+            en: []
+        },
+        correctAnswer: '8',
+        explanationText: { ja: "ユークリッドの互除法を用いています。\n1. 32 % 24 = 8, a=24, b=8\n2. 24 % 8 = 0, a=8, b=0\n3. b=0なのでループ終了、a(8)を返します。", en: "" },
+        initialVariables: { a: null, b: null, r: null },
+        traceOptions: {
+            presets_array: [{ label: 'a=32, b=24', value: { a: 32, b: 24 } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問57 (ID: 57) ---
+    {
+        id: '57',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 線形探索", en: "Basic Subject B Applied Q4" },
+        description: { ja: "次のプログラムは、配列arrayの中にある値targetが存在するか線形探索する。存在すればその添字を、存在しなければ-1を返す。(a)に入れるべき式はどれか。", en: "" },
+        programLines: {
+            ja: [
+                '整数型: search(整数型の配列: array, 整数型: target)',
+                '  整数型: i',
+                '  for (i を 1 から arrayの要素数 まで 1 ずつ増やす)',
+                '    if ( [ a ] )',
+                '      return i',
+                '    endif',
+                '  endfor',
+                '  return -1'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'array[i] == target' },
+                { label: 'イ', value: 'array[i] != target' },
+                { label: 'ウ', value: 'array[i] > target' },
+                { label: 'エ', value: 'array[i] < target' }
+            ],
+            en: []
+        },
+        correctAnswer: 'array[i] == target',
+        explanationText: { ja: "配列の要素 `array[i]` が探している値 `target` と等しいかどうかを判定します。", en: "" },
+        initialVariables: { array: null, target: null, i: null },
+        traceOptions: {
+            presets_array: [{ label: 'array={1,3,5,7}, target=5', value: { array: [1, 3, 5, 7], target: 5 } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問58 (ID: 58) ---
+    {
+        id: '58',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 合計計算", en: "Basic Subject B Applied Q5" },
+        description: { ja: "次のプログラムは、1からnまでの整数の和を返す。calcSum(5)の戻り値はいくつか。", en: "" },
+        programLines: {
+            ja: [
+                '整数型: calcSum(整数型: n)',
+                '  整数型: sum ← 0',
+                '  整数型: i',
+                '  for (i を 1 から n まで 1 ずつ増やす)',
+                '    sum ← sum + i',
+                '  endfor',
+                '  return sum'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '10' },
+                { label: 'イ', value: '15' },
+                { label: 'ウ', value: '20' },
+                { label: 'エ', value: '25' }
+            ],
+            en: []
+        },
+        correctAnswer: '15',
+        explanationText: { ja: "1+2+3+4+5 = 15 です。", en: "" },
+        initialVariables: { n: null, sum: null, i: null },
+        traceOptions: {
+            presets_array: [{ label: 'n=5', value: { n: 5 } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問59 (ID: 59) ---
+    {
+        id: '59',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 配列の値交換", en: "Basic Subject B Applied Q6" },
+        description: { ja: "次のプログラムは、配列dataの要素を逆順に入れ替えるものである。(a)に入れるべき文はどれか。", en: "" },
+        programLines: {
+            ja: [
+                'reverse(整数型の配列: data)',
+                '  整数型: left ← 1',
+                '  整数型: right ← dataの要素数',
+                '  整数型: temp',
+                '  while (left < right)',
+                '    temp ← data[left]',
+                '    data[left] ← data[right]',
+                '    [ a ]',
+                '    left ← left + 1',
+                '    right ← right - 1',
+                '  endwhile'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'data[right] ← temp' },
+                { label: 'イ', value: 'data[right] ← data[left]' },
+                { label: 'ウ', value: 'data[left] ← temp' },
+                { label: 'エ', value: 'temp ← data[right]' }
+            ],
+            en: []
+        },
+        correctAnswer: 'data[right] ← temp',
+        explanationText: { ja: "値の交換（スワップ）処理です。`temp` に退避させておいた `data[left]` の元の値を、`data[right]` に代入する必要があります。", en: "" },
+        initialVariables: { data: null, left: null, right: null, temp: null },
+        traceOptions: {
+            presets_array: [{ label: 'data={1,2,3,4,5}', value: { data: [1, 2, 3, 4, 5] } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問60 (ID: 60) ---
+    {
+        id: '60',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 aの文字探索結果", en: "Basic Subject B Applied Q7" },
+        description: { ja: "次のプログラムは、文字列strに含まれる文字'a'の個数を数える。countChar(\"banana\")の戻り値はいくつか。", en: "" },
+        programLines: {
+            ja: [
+                '整数型: countChar(文字列型: str)',
+                '  整数型: count ← 0',
+                '  整数型: i',
+                '  for (i を 1 から strの文字数 まで 1 ずつ増やす)',
+                '    if (str[i] == "a")',
+                '      count ← count + 1',
+                '    endif',
+                '  endfor',
+                '  return count'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '1' },
+                { label: 'イ', value: '2' },
+                { label: 'ウ', value: '3' },
+                { label: 'エ', value: '4' }
+            ],
+            en: []
+        },
+        correctAnswer: '3',
+        explanationText: { ja: "\"banana\" には 'a' が3回出現します。", en: "" },
+        initialVariables: { str: null, count: null, i: null },
+        traceOptions: {
+            presets_array: [{ label: 'str="banana"', value: { str: "banana" } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問61 (ID: 61) ---
+    {
+        id: '61',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 素数検知", en: "Basic Subject B Applied Q8" },
+        description: { ja: "次のプログラムは、整数nが素数かどうかを判定する。(a)に入れるべき条件式はどれか。", en: "" },
+        programLines: {
+            ja: [
+                '論理型: isPrime(整数型: n)',
+                '  if (n < 2) return false',
+                '  整数型: i',
+                '  for (i を 2 から n - 1 まで 1 ずつ増やす)',
+                '    if ( [ a ] )',
+                '      return false',
+                '    endif',
+                '  endfor',
+                '  return true'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'n % i == 0' },
+                { label: 'イ', value: 'n % i != 0' },
+                { label: 'ウ', value: 'n / i == 0' },
+                { label: 'エ', value: 'n < i' }
+            ],
+            en: []
+        },
+        correctAnswer: 'n % i == 0',
+        explanationText: { ja: "割り切れる（余りが0になる）場合、その数は素数ではありません。", en: "" },
+        initialVariables: { n: null, i: null },
+        traceOptions: {
+            presets_array: [{ label: 'n=7', value: { n: 7 } }, { label: 'n=10', value: { n: 10 } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問62 (ID: 62) ---
+    {
+        id: '62',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 フィボナッチ数列の第n項", en: "Basic Subject B Applied Q9" },
+        description: { ja: "次のプログラムは、フィボナッチ数列の第n項を求める。fib(5)の戻り値はいくつか。ただしfib(0)=0, fib(1)=1とする。", en: "" },
+        programLines: {
+            ja: [
+                '整数型: fib(整数型: n)',
+                '  if (n <= 1)',
+                '    return n',
+                '  else',
+                '    return fib(n - 1) + fib(n - 2)',
+                '  endif'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '2' },
+                { label: 'イ', value: '3' },
+                { label: 'ウ', value: '5' },
+                { label: 'エ', value: '8' }
+            ],
+            en: []
+        },
+        correctAnswer: '5',
+        explanationText: { ja: "fib(0)=0, fib(1)=1, fib(2)=1, fib(3)=2, fib(4)=3, fib(5)=5 となります。", en: "" },
+        initialVariables: { n: null, ret: null },
+        traceOptions: {
+            presets_array: [{ label: 'n=5', value: { n: 5 } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問63 (ID: 63) ---
+    {
+        id: '63',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 選択ソート", en: "Basic Subject B Applied Q10" },
+        description: { ja: "次のプログラムは、配列の要素を昇順にソートする（選択ソート）。(a)に入れるべき式はどれか。", en: "" },
+        programLines: {
+            ja: [
+                'sort(整数型の配列: data)',
+                '  整数型: i, j, minIndex, temp',
+                '  for (i を 1 から dataの要素数 - 1 まで 1 ずつ増やす)',
+                '    minIndex ← i',
+                '    for (j を i + 1 から dataの要素数 まで 1 ずつ増やす)',
+                '      if ( [ a ] )',
+                '        minIndex ← j',
+                '      endif',
+                '    endfor',
+                '    temp ← data[i]',
+                '    data[i] ← data[minIndex]',
+                '    data[minIndex] ← temp',
+                '  endfor'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: 'data[j] < data[minIndex]' },
+                { label: 'イ', value: 'data[j] > data[minIndex]' },
+                { label: 'ウ', value: 'data[j] == data[minIndex]' },
+                { label: 'エ', value: 'data[j] != data[minIndex]' }
+            ],
+            en: []
+        },
+        correctAnswer: 'data[j] < data[minIndex]',
+        explanationText: { ja: "最小値を探して `minIndex` を更新するため、現在の最小値候補よりも小さい値が見つかった場合に更新します。", en: "" },
+        initialVariables: { data: null, i: null, j: null, minIndex: null, temp: null },
+        traceOptions: {
+            presets_array: [{ label: 'data={3,1,4,2}', value: { data: [3, 1, 4, 2] } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問64 (ID: 64) ---
+    {
+        id: '64',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 平均値", en: "Basic Subject B Applied Q11" },
+        description: { ja: "次のプログラムは、2つの整数x, yの平均値を計算する。average(10, 20)の戻り値はいくつか。", en: "" },
+        programLines: {
+            ja: [
+                '実数型: average(整数型: x, 整数型: y)',
+                '  return (x + y) / 2'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '10' },
+                { label: 'イ', value: '15' },
+                { label: 'ウ', value: '20' },
+                { label: 'エ', value: '25' }
+            ],
+            en: []
+        },
+        correctAnswer: '15',
+        explanationText: { ja: "(10 + 20) / 2 = 15 です。", en: "" },
+        initialVariables: { x: null, y: null },
+        traceOptions: {
+            presets_array: [{ label: 'x=10, y=20', value: { x: 10, y: 20 } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問65 (ID: 65) ---
+    {
+        id: '65',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 関数の引数による取引", en: "Basic Subject B Applied Q12" },
+        description: { ja: "次のプログラムは、スタックに対する操作を行う。push(1), push(2), pop(), push(3)を実行した後、pop()で取り出される値は何か。", en: "" },
+        programLines: {
+            ja: [
+                'スタック操作',
+                'push(1)',
+                'push(2)',
+                'pop() // 取り出された値は破棄',
+                'push(3)',
+                'return pop()'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '1' },
+                { label: 'イ', value: '2' },
+                { label: 'ウ', value: '3' },
+                { label: 'エ', value: 'エラー' }
+            ],
+            en: []
+        },
+        correctAnswer: '3',
+        explanationText: { ja: "Stack: [1] -> [1, 2] -> [1] -> [1, 3] -> 3を取り出す。", en: "" },
+        initialVariables: { stack: [], ret: null },
+        traceOptions: {
+            presets_array: [{ label: '実行', value: { stack: [] } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問66 (ID: 66) ---
+    {
+        id: '66',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 キュー操作", en: "Basic Subject B Applied Q13" },
+        description: { ja: "次のプログラムは、キューに対する操作を行う。enqueue(1), enqueue(2), dequeue(), enqueue(3)を実行した後、dequeue()で取り出される値は何か。", en: "" },
+        programLines: {
+            ja: [
+                'キュー操作',
+                'enqueue(1)',
+                'enqueue(2)',
+                'dequeue() // 取り出された値は破棄',
+                'enqueue(3)',
+                'return dequeue()'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '1' },
+                { label: 'イ', value: '2' },
+                { label: 'ウ', value: '3' },
+                { label: 'エ', value: 'エラー' }
+            ],
+            en: []
+        },
+        correctAnswer: '2',
+        explanationText: { ja: "Queue: [1] -> [1, 2] -> [2] -> [2, 3] -> 2を取り出す。", en: "" },
+        initialVariables: { queue: [], ret: null },
+        traceOptions: {
+            presets_array: [{ label: '実行', value: { queue: [] } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問67 (ID: 67) ---
+    {
+        id: '67',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 整数nの絶対値", en: "Basic Subject B Applied Q14" },
+        description: { ja: "次のプログラムは、整数nの絶対値を返す。abs(-10)の戻り値はいくつか。", en: "" },
+        programLines: {
+            ja: [
+                '整数型: abs(整数型: n)',
+                '  if (n < 0)',
+                '    return -n',
+                '  else',
+                '    return n',
+                '  endif'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '-10' },
+                { label: 'イ', value: '0' },
+                { label: 'ウ', value: '10' },
+                { label: 'エ', value: 'エラー' }
+            ],
+            en: []
+        },
+        correctAnswer: '10',
+        explanationText: { ja: "-10 < 0 なので -(-10) = 10 を返します。", en: "" },
+        initialVariables: { n: null },
+        traceOptions: {
+            presets_array: [{ label: 'n=-10', value: { n: -10 } }, { label: 'n=5', value: { n: 5 } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    },
+    // --- 問68 (ID: 68) ---
+    {
+        id: '68',
+        logicType: 'PSEUDO_CODE',
+        title: { ja: "基本情報科目B応用 文字列の連長圧縮(ラングレス圧縮)", en: "Basic Subject B Applied Q15" },
+        description: { ja: "次のプログラムは、文字列を連長圧縮（ランレングス圧縮）する。連続する文字を「文字＋個数」の形式に変換する。encode(\"AAABBC\")の戻り値はいくつか。", en: "" },
+        programLines: {
+            ja: [
+                '文字列型: encode(文字列型: s)',
+                '  文字列型: res ← ""',
+                '  整数型: i ← 1, count',
+                '  文字型: c',
+                '  while (i <= sの文字数)',
+                '    c ← s[i]',
+                '    count ← 1',
+                '    while (i + count <= sの文字数 and s[i + count] == c)',
+                '      count ← count + 1',
+                '    endwhile',
+                '    res ← res + c + 文字列(count)',
+                '    i ← i + count',
+                '  endwhile',
+                '  return res'
+            ],
+            en: []
+        },
+        answerOptions: {
+            ja: [
+                { label: 'ア', value: '"A3B2C1"' },
+                { label: 'イ', value: '"3A2B1C"' },
+                { label: 'ウ', value: '"AAABBC"' },
+                { label: 'エ', value: '"A3B2C"' }
+            ],
+            en: []
+        },
+        correctAnswer: '"A3B2C1"',
+        explanationText: { ja: "Aが3回、Bが2回、Cが1回続くので \"A3B2C1\" となります。", en: "" },
+        initialVariables: { s: null, res: "", i: null, count: null, c: null },
+        traceOptions: {
+            presets_array: [{ label: 's="AAABBC"', value: { s: "AAABBC" } }]
+        },
+        traceLogic: [],
+        calculateNextLine: undefined,
+        difficultyId: 8
+    }
 ];
 /**
  * IDを指定して問題データを取得するヘルパー関数

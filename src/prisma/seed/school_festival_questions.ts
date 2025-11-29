@@ -198,7 +198,7 @@ export async function seedSchoolFestivalQuestions(prisma: PrismaClient) {
   // Note: 本来はマスタデータとして追加すべきですが、今回は直接IDを指定します
   // 事前にDifficultyテーブルとSubjectテーブルに以下のIDのデータがあるか、
   // もしくは`master-data.ts`で追加されていることを確認してください。
-  const FESTIVAL_DIFFICULTY_ID = 12; // 例: '学園祭レベル'
+  const FESTIVAL_DIFFICULTY_ID = 11; // 例: '学園祭レベル'
   const FESTIVAL_SUBJECT_ID = 5;     // 例: '学園祭問題'
 
   const allProblems = [

@@ -8,7 +8,7 @@ async function seedMasterData(prisma) {
     //難易度の設定等
     console.log('Seeding difficulties...');
     const difficultiesToSeed = [
-        { id: 1, name: 'やさしい', xp: 200, feed: 40 }, { id: 2, name: 'かんたん', xp: 400, feed: 80 }, { id: 3, name: 'ふつう', xp: 800, feed: 160 }, { id: 4, name: 'むずかしい', xp: 1200, feed: 200 }, { id: 5, name: '鬼むず', xp: 2000, feed: 200 }, { id: 6, name: '基本資格A問題', xp: 40, feed: 8 }, { id: 7, name: '基本資格B問題(かんたん)', xp: 120, feed: 24 }, { id: 8, name: '基本資格B問題(むずかしい)', xp: 280, feed: 56 }, { id: 9, name: '応用資格午前問題', xp: 60, feed: 12 }, { id: 10, name: '応用資格午後問題', xp: 1200, feed: 200 },
+        { id: 1, name: 'やさしい', xp: 200, feed: 40 }, { id: 2, name: 'かんたん', xp: 400, feed: 80 }, { id: 3, name: 'ふつう', xp: 800, feed: 160 }, { id: 4, name: 'むずかしい', xp: 1200, feed: 200 }, { id: 5, name: '鬼むず', xp: 2000, feed: 200 }, { id: 6, name: '基本資格A問題', xp: 40, feed: 8 }, { id: 7, name: '基本資格B問題(かんたん)', xp: 120, feed: 24 }, { id: 8, name: '基本資格B問題(むずかしい)', xp: 280, feed: 56 }, { id: 9, name: '応用資格午前問題', xp: 60, feed: 12 }, { id: 10, name: '応用資格午後問題', xp: 1200, feed: 200 }, { id: 11, name: '選択問題', xp: 40, feed: 8 },
     ];
     for (const d of difficultiesToSeed) {
         await prisma.difficulty.upsert({ where: { id: d.id }, update: {}, create: d });
