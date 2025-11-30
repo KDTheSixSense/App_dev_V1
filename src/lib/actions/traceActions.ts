@@ -1,5 +1,8 @@
 'use server';
 
+import fs from 'fs/promises';
+import path from 'path';
+
 /**
  * OpenAIのGPT-4oモデルに疑似言語コードの生成をリクエストするサーバーアクション
  * @param prompt ユーザーからの指示 (例: "1から10までの合計を計算する")
@@ -383,23 +386,6 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
     sort(j + 1, last)
   endif
 
-## 例24: (令和5年 科目B 問4)
-### 指示: 単方向リストの末尾に要素を追加
-### 生成コード:
-大域: ListElement: listHead ← 未定義の値
-○append(文字列型: qVal)
-  ListElement: prev, curr
-  curr ← ListElement(qVal)
-  if (listHead が 未定義)
-    listHead ← curr
-  else
-    prev ← listHead
-    while (prev.next が 未定義でない)
-      prev ← prev.next
-    endwhile
-    prev.next ← curr
-  endif
-
 ## 例25: (令和5年 科目B 問5)
 ### 指示: コサイン類似度の計算
 ### 生成コード:
@@ -558,3 +544,45 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
   }
 }
 
+/**
+ * トレースエラーをログファイルに保存するサーバーアクション
+ */
+export async function saveErrorLogAction(errorMsg: string, code: string, line: number, vars: any) {
+  try {
+    // プロジェクトルートを取得
+    const cwd = process.cwd();
+    
+    // パスの中に 'src' が既に含まれているかチェックして重複を防ぐ
+    const targetPath = cwd.endsWith('src') 
+      ? 'app/(main)/customize_trace' 
+      : 'src/app/(main)/customize_trace';
+
+    const logDir = path.join(cwd, targetPath);
+    const logPath = path.join(logDir, 'error_logs.txt');
+
+    const timestamp = new Date().toISOString();
+    const codeLines = code.split('\n');
+    const errorLineContent = codeLines[line] || 'Unknown Line';
+
+    const content = `
+==================================================
+[Date]: ${timestamp}
+[Error]: ${errorMsg}
+[Line]: ${line + 1}
+[Content]: ${errorLineContent}
+[Variables]: ${JSON.stringify(vars, null, 2)}
+==================================================
+`;
+
+    // ディレクトリが存在しない場合は再帰的に作成する (これがENOENT対策)
+    await fs.mkdir(logDir, { recursive: true });
+
+    // ファイルに追記
+    await fs.appendFile(logPath, content, 'utf8');
+    return { success: true };
+  } catch (e) {
+    console.error("Failed to write error log:", e);
+    // エラー自体を返すと無限ループの危険があるため、コンソール出力にとどめる
+    return { success: false };
+  }
+}
