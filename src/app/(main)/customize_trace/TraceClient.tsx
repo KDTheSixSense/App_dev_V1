@@ -135,10 +135,12 @@ const normalizeCode = (code: string): string[] => {
     let parenDepth = 0; // ()
 
     code.split('\n').forEach(line => {
-        // ロジック判定用にトリムした文字列（空行判定などで使用）
-        const trimmed = line.trim();
+        // コメント除去処理を強化（行末だけでなく行中のコメントも考慮）
+        // ※ インデントは保持したいのでtrimStartはしない
+        let contentWithIndent = line.replace(/\/\/.*$/, '').replace(/\/\*[\s\S]*?\*\//g, '');
         
-        if (!trimmed) {
+        // 空行判定はtrimして行う
+        if (!contentWithIndent.trim()) {
             // 継続行の処理中でなければ、空行として追加
             if (braceDepth === 0 && parenDepth === 0 && buffer === "") {
                 lines.push("");
@@ -146,20 +148,7 @@ const normalizeCode = (code: string): string[] => {
             return;
         }
 
-        // ★修正: コメント除去処理を変更
-        // 以前は trimmed.replace(...) でしたが、インデントを保持するため line.replace(...) にします
-        // 行末のコメントを除去
-        const contentWithIndent = line.replace(/\/\/.*$/, '').replace(/\/\*[\s\S]*?\*\//g, '');
-        
-        // コメント除去後に空になった場合はスキップ（空行扱い）
-        if (!contentWithIndent.trim()) {
-            if (braceDepth === 0 && parenDepth === 0 && buffer === "") {
-                lines.push("");
-            }
-            return;
-        }
-
-        // 括弧の深さ判定（判定にはトリムされた内容を使用しても問題ないが、文字種チェックなのでそのまま使用）
+        // 括弧の深さ判定
         for (const char of contentWithIndent) {
             if (char === '{') braceDepth++;
             else if (char === '}') braceDepth--;
@@ -169,20 +158,16 @@ const normalizeCode = (code: string): string[] => {
 
         // バッファへの追加処理
         if (buffer === "") {
-            // ★修正: 新しい文の開始時は、行頭の空白（インデント）を保持する
-            // trimEnd() だけ行い、行末の空白と改行コードを除去
+            // 新しい文の開始時は、行頭の空白（インデント）を保持する
             buffer = contentWithIndent.trimEnd();
         } else {
             // 継続行（配列の定義の途中など）の場合は、前の行とスペース区切りで結合
-            // ここではインデントは不要なので trim() する
             buffer += " " + contentWithIndent.trim();
         }
 
         // 文の終了判定
         // 括弧が閉じており、かつ行末がカンマでない場合
         if (braceDepth === 0 && parenDepth === 0 && !buffer.trim().endsWith(',')) {
-            // ★修正: lines.push(buffer.trim()) ではなく buffer をそのまま追加
-            // これにより buffer 先頭のインデントが保持される
             lines.push(buffer);
             buffer = "";
         }
@@ -341,7 +326,7 @@ const TraceClient = () => {
         } catch (e) { }
     }
 
-    // 配列要素アクセス (多次元対応)
+    // 配列要素アクセス (多次元対応: tree[n][1])
     if (expr.endsWith(']')) {
         let depth = 0;
         let openBracketIndex = -1;
@@ -359,24 +344,16 @@ const TraceClient = () => {
             const indexExpr = expr.substring(openBracketIndex + 1, expr.length - 1).trim();
 
             try {
+                // ここで再帰的に評価することで、tree[n] のような式も先に評価される
                 const arr = evaluateExpression(arrayExpr, currentVars);
                 
                 if (Array.isArray(arr)) {
                     const index = evaluateExpression(indexExpr, currentVars);
                     if (typeof index === 'number') {
-                        // 1-based index (疑似言語仕様) を優先
+                        // 1-based index (疑似言語仕様)
                         if (index - 1 >= 0 && index - 1 < arr.length) {
                             return arr[index - 1];
                         }
-                        // 0-based index (JavaScript仕様) フォールバック
-                        // (ただし、疑似言語の問題では通常 1-based なので、これが原因でバグる可能性も考慮)
-                        // 今回の問題（問9）では tree[n] の n は 1-based なので、上の条件でヒットするはず。
-                        // しかし、tree[n][1] の [1] は「1番目の要素」つまり index 0 を指す。
-                        // 配列の要素数が 0 の場合などは undefined になる。
-                        
-                        // 修正案: 明示的に 1-based として扱う
-                        // もし arr[index] が存在する場合でも、優先度は index-1 (1-based) にあるべき
-                        
                         // インデックスが範囲外の場合は undefined を返す
                         return undefined; 
                     }
@@ -738,6 +715,8 @@ const TraceClient = () => {
               nextLine = funcInfo.startLine + 1; 
               jumped = true;
           } else {
+               // 関数が見つからない場合もエラーにせず、次の行へ進む（ダミー呼び出し扱い）
+               // console.warn(`Function ${funcName} not found.`);
           }
 
       } else if (appendMatch) {
@@ -1001,27 +980,27 @@ const TraceClient = () => {
                              const nextExpr = frame.pendingExpression.replace(placeholder, String(retVal));
                              let currentExpr = nextExpr;
                              while (true) {
-                                const calculatedVal = evaluateExpression(currentExpr, tempVariables);
-                                if (tempCallStack.length === 0) {
-                                    tempVariables['result'] = calculatedVal;
-                                    tempOutput.push(`Return: ${calculatedVal}`);
-                                    nextLine = programLines.length;
-                                    jumped = true;
-                                    break;
-                                } else {
-                                    const nextFrame = tempCallStack.pop();
-                                    if (!nextFrame) break;
-                                    tempVariables = nextFrame.variables;
-                                    tempVariableTypes = nextFrame.variableTypes;
-                                    nextLine = nextFrame.returnLine;
-                                    const nextPlaceholder = `<RESULT_${tempCallStack.length}>`;
-                                    if (nextFrame.pendingExpression) {
-                                        currentExpr = nextFrame.pendingExpression.replace(nextPlaceholder, String(calculatedVal));
-                                    } else {
-                                        break;
-                                    }
-                                }
-                            }
+                                 const calculatedVal = evaluateExpression(currentExpr, tempVariables);
+                                 if (tempCallStack.length === 0) {
+                                     tempVariables['result'] = calculatedVal;
+                                     tempOutput.push(`Return: ${calculatedVal}`);
+                                     nextLine = programLines.length;
+                                     jumped = true;
+                                     break;
+                                 } else {
+                                     const nextFrame = tempCallStack.pop();
+                                     if (!nextFrame) break;
+                                     tempVariables = nextFrame.variables;
+                                     tempVariableTypes = nextFrame.variableTypes;
+                                     nextLine = nextFrame.returnLine;
+                                     const nextPlaceholder = `<RESULT_${tempCallStack.length}>`;
+                                     if (nextFrame.pendingExpression) {
+                                         currentExpr = nextFrame.pendingExpression.replace(nextPlaceholder, String(calculatedVal));
+                                     } else {
+                                         break;
+                                     }
+                                 }
+                             }
                         }
                     }
                 } else {
@@ -1066,7 +1045,7 @@ const TraceClient = () => {
               if (nextL.startsWith('else') || nextL.startsWith('elseif')) {
                  const parentIf = getParentIfBlock(tempControlFlowStack);
                  if (parentIf && nextLine > parentIf.startLine && nextLine < parentIf.endLine) {
-                      nextLine = parentIf.endLine;
+                     nextLine = parentIf.endLine;
                  }
               }
 
@@ -1114,20 +1093,27 @@ const TraceClient = () => {
       const normalizedLines = normalizeCode(code);
       
       normalizedLines.forEach(line => {
-          const typedMatch = line.match(/^([a-zA-Z_]\w*)\s*:\s*([a-zA-Z_]\w*)\s*←/);
+          // ★ 修正: 行頭の空白を除去してからマッチングを行う
+          const trimmedLine = line.trim();
+
+          const typedMatch = trimmedLine.match(/^([a-zA-Z_]\w*)\s*:\s*([a-zA-Z_]\w*)\s*←/);
           if (typedMatch) detectedTypes[typedMatch[1]] = typedMatch[2];
       });
+
       normalizedLines.forEach((line, index) => {
-         const funcMatch = line.match(/^[\○\●](?:.+?:\s*)?([a-zA-Z_]\w*)\((.+)\)/);
+         // ★ 修正: 行頭の空白を除去してからマッチングを行う
+         const trimmedLine = line.trim();
+
+         // 関数定義の検出
+         const funcMatch = trimmedLine.match(/^[\○\●](?:.+?:\s*)?([a-zA-Z_]\w*)\((.+)\)/);
          if (funcMatch) {
              const funcName = funcMatch[1];
              const argsPart = funcMatch[2];
              const args = argsPart.split(',').map(s => s.trim());
              functions[funcName] = { name: funcName, args, startLine: index };
-             // ...
          }
-         // 大域変数の正規表現を修正 (大域: ... を許容)
-         const declMatch = line.match(/^(?:大域\s*[:：]\s*)?(整数型|文字列型|配列型|8ビット型|整数型配列の配列|整数型の配列|文字列型の配列|実数型の配列)(?:\s*\[\s*\d+\s*\])?:\s*(.+)/);
+         // 変数宣言の検出 (大域変数の正規表現を修正)
+         const declMatch = trimmedLine.match(/^(?:大域\s*[:：]\s*)?(整数型|文字列型|配列型|8ビット型|整数型配列の配列|整数型の配列|文字列型の配列|実数型の配列)(?:\s*\[\s*\d+\s*\])?:\s*(.+)/);
          if (declMatch && !funcMatch) {
              const type = declMatch[1];
              const declaration = declMatch[2];
@@ -1176,8 +1162,10 @@ const TraceClient = () => {
       let firstExecutableLine = 0;
       while (firstExecutableLine < normalizedLines.length) {
           const l = normalizedLines[firstExecutableLine].trim();
-          // 関数定義もスキップ対象から外す？いや、メイン処理は関数の外にあるはず
-          if (l === '' || l.match(/^[\○\●]/)) {
+          // 関数定義行はスキップ対象から外すが、プログラムの構造上、
+          // メインの処理（グローバル領域）があるならそこから開始したい。
+          // ここでは簡易的に空行以外からスタートする。
+          if (l === '') {
               firstExecutableLine++;
           } else {
               break;
@@ -1220,7 +1208,7 @@ const TraceClient = () => {
 
   const handleGenerateCode = async () => {
      if (!aiPrompt) {
-       setError("AIへの指示を入力してください。");
+       setError("コハクへの指示を入力してください。");
        return;
      }
      setIsGenerating(true);
@@ -1229,7 +1217,7 @@ const TraceClient = () => {
        const generatedText = await generateTraceCodeFromAI(aiPrompt);
        setCode(generatedText);
      } catch (error: any) {
-       setError(`AIコード生成エラー: ${error.message}`);
+       setError(`コハクコード生成エラー: ${error.message}`);
      } finally {
        setIsGenerating(false);
      }
@@ -1245,7 +1233,7 @@ const TraceClient = () => {
         {/* AIコード生成 */}
         <div className="mb-6">
             <label htmlFor="ai-prompt" className="block text-lg font-semibold mb-2 text-gray-700">
-                AIでコードを生成
+                コハクがコードを生成
             </label>
             <div className="flex space-x-2">
                 <input
