@@ -109,6 +109,37 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ has
             return NextResponse.json({ success: false, message: '権限を変更する権限がありません' }, { status: 403 });
         }
 
+        // 新しい権限が「メンバー(isAdmin: false)」の場合のみチェックを行う
+        if (isAdmin === false) {
+            // 現在のこのグループの管理者数をカウント
+            const adminCount = await prisma.groups_User.count({
+                where: {
+                    group_id: group.id,
+                    admin_flg: true
+                }
+            });
+
+            // ターゲットのユーザーが現在管理者かどうかを確認
+            const targetMembership = await prisma.groups_User.findUnique({
+                where: {
+                    group_id_user_id: {
+                        group_id: group.id,
+                        user_id: userId
+                    }
+                },
+                select: { admin_flg: true }
+            });
+
+            // 管理者が現在1名以下で、かつ対象ユーザーが管理者である場合、変更を許可しない
+            // (adminCountが1で、その唯一の管理者をメンバーに降格させようとしている場合)
+            if (adminCount <= 1 && targetMembership?.admin_flg) {
+                return NextResponse.json({ 
+                    success: false, 
+                    message: 'グループには最低1人の管理者が必要です。最後の管理者の権限は変更できません。' 
+                }, { status: 400 });
+            }
+        }
+
         // 対象メンバーの権限を更新
         await prisma.groups_User.update({
             where: {
