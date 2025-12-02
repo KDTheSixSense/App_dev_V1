@@ -1,114 +1,199 @@
 import { NextResponse } from 'next/server';
+import { spawn, exec } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import { promisify } from 'util';
 
-// Paiza.IO APIを使用してコードを実行するための設定
-// 開発中は'guest'キーを使用できますが、レート制限があります。
-const PAIZA_IO_API_KEY = process.env.PAIZA_IO_API_KEY || 'guest';
-const PAIZA_IO_API_BASE_URL = 'https://api.paiza.io/runners'; 
+const execPromise = promisify(exec);
 
+/**
+ * ローカル環境でコードを実行する関数
+ * submit_codeのロジックをベースに、コンパイル結果と実行結果を分けて返すように拡張
+ */
+async function executeLocally(language: string, sourceCode: string, input: string) {
+  // 1. 一時ディレクトリ作成
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'execution-'));
+  
+  // 結果格納用
+  const result = {
+    build_stdout: '',
+    build_stderr: '',
+    stdout: '',
+    stderr: '',
+    exit_code: 0,
+  };
 
-export async function POST(request: Request ) {
+  try {
+    let fileName = '';
+    let runCmd = '';
+    let runArgs: string[] = [];
+    let compileCmd = '';
+    let compiledFile = '';
+
+    // 2. 言語ごとの設定 (submit_codeと同様)
+    switch (language) {
+      case 'python':
+      case 'python3':
+        fileName = 'main.py';
+        runCmd = process.platform === 'win32' ? 'python' : 'python3';
+        runArgs = [fileName];
+        break;
+      
+      case 'javascript':
+        fileName = 'main.js';
+        runCmd = 'node';
+        runArgs = [fileName];
+        break;
+
+      case 'typescript':
+        fileName = 'main.ts';
+        compiledFile = 'main.js';
+        // プロジェクト内の tsc を使用
+        const tscExec = process.platform === 'win32' ? 'tsc.cmd' : 'tsc';
+        const tscPath = path.join(process.cwd(), 'node_modules', '.bin', tscExec);
+        compileCmd = `"${tscPath}" "${fileName}" --target es2020 --module commonjs --outDir . --noResolve --noEmitOnError false`;
+        
+        runCmd = 'node';
+        runArgs = [compiledFile];
+        break;
+
+      case 'php':
+        fileName = 'main.php';
+        runCmd = 'php';
+        runArgs = [fileName];
+        break;
+
+      case 'c':
+        fileName = 'main.c';
+        compiledFile = process.platform === 'win32' ? 'app.exe' : 'app';
+        compileCmd = `gcc "${fileName}" -o ${compiledFile}`;
+        runCmd = `./${compiledFile}`;
+        runArgs = [];
+        break;
+
+      case 'cpp':
+        fileName = 'main.cpp';
+        compiledFile = process.platform === 'win32' ? 'app.exe' : 'app';
+        compileCmd = `g++ "${fileName}" -o ${compiledFile}`;
+        runCmd = `./${compiledFile}`;
+        runArgs = [];
+        break;
+
+      case 'java':
+        fileName = 'Main.java';
+        compiledFile = 'Main.class';
+        compileCmd = `javac "${fileName}"`;
+        runCmd = 'java';
+        runArgs = ['Main'];
+        break;
+      
+      case 'csharp':
+        fileName = 'Program.cs';
+        compiledFile = 'app.exe';
+        compileCmd = `mcs "${fileName}" -out:${compiledFile}`;
+        runCmd = 'mono';
+        runArgs = [compiledFile];
+        break;
+
+      default:
+        throw new Error(`対応していない言語です: ${language}`);
+    }
+
+    const filePath = path.join(tempDir, fileName);
+    fs.writeFileSync(filePath, sourceCode);
+
+    // 3. コンパイル実行 (必要な場合)
+    if (compileCmd) {
+      try {
+        const { stdout, stderr } = await execPromise(compileCmd, { cwd: tempDir });
+        result.build_stdout = stdout;
+        result.build_stderr = stderr;
+      } catch (compileError: any) {
+        // コンパイルエラー時はここで終了
+        result.build_stdout = compileError.stdout || '';
+        result.build_stderr = compileError.stderr || compileError.message;
+        
+        // 成果物がなければ実行せずに返す
+        const isArtifactCreated = compiledFile && fs.existsSync(path.join(tempDir, compiledFile));
+        if (!isArtifactCreated) {
+            return result; 
+        }
+      }
+    }
+
+    // 4. プログラムの実行
+    await new Promise<void>((resolve) => {
+      const child = spawn(runCmd, runArgs, { cwd: tempDir });
+
+      // 入力を渡す
+      if (input) {
+        child.stdin.write(input);
+        child.stdin.end();
+      }
+
+      child.stdout.on('data', (data) => { result.stdout += data.toString(); });
+      child.stderr.on('data', (data) => { result.stderr += data.toString(); });
+
+      child.on('close', (code) => {
+        result.exit_code = code || 0;
+        resolve();
+      });
+
+      // タイムアウト設定 (3秒)
+      setTimeout(() => {
+        if (!child.killed) {
+          child.kill();
+          result.stderr += '\nError: Time Limit Exceeded (3s)';
+          resolve();
+        }
+      }, 3000);
+    });
+
+    return result;
+
+  } catch (e: any) {
+    return { ...result, stderr: `System Error: ${e.message}` };
+  } finally {
+    // 5. お掃除
+    try {
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    } catch (e) {
+      console.error('Temp dir clean error', e);
+    }
+  }
+}
+
+export async function POST(request: Request) {
   try {
     const { language, source_code, input } = await request.json();
-    console.log('Received request for language:', language);
 
     if (!language || !source_code) {
       return NextResponse.json({ error: 'Language and source_code are required.' }, { status: 400 });
     }
 
-    let codeToSend = source_code;
+    // 自作のローカル実行関数を呼び出し
+    const result = await executeLocally(language, source_code, input || '');
 
-    // Pythonの場合は、ソースコードの先頭にマジックコメントを追加
-    if (language === 'python') {
-      const magicComment = '# -*- coding: utf-8 -*-\n';
-      codeToSend = magicComment + source_code;
-    }
-
-    // Step 1: Create a new runner (code execution request)
-    console.log('Attempting to connect to Paiza.IO API for create...');
-    const createResponse = await fetch(`${PAIZA_IO_API_BASE_URL}/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        language: language,
-        source_code: codeToSend,
-        input: input,
-        api_key: PAIZA_IO_API_KEY,
-      }),
-    });
-    console.log('Received response from Paiza.IO create. Status:', createResponse.status);
-    const createData = await createResponse.json();
-
-    // ここからが、前回のコードで try ブロックの外に出てしまっていた部分です。
-    // 正しく try ブロック内に配置します。
-    if (!createResponse.ok || createData.error) {
-      console.error('Paiza.IO create error:', createData.error || createData);
-      return NextResponse.json(
-        { error: createData.error || 'Failed to create runner on Paiza.IO' },
-        { status: createResponse.status }
-      );
-    }
-
-    const sessionId = createData.id;
-    let status = createData.status;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 20; // 最大ステータスチェック回数
-    const POLL_INTERVAL_MS = 1000; // 1秒ごとにポーリング
-
-    // Step 2: Poll for status until completed
-    while (status !== 'completed' && attempts < MAX_ATTEMPTS) {
-      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
-      const statusResponse = await fetch(`${PAIZA_IO_API_BASE_URL}/get_status?id=${sessionId}&api_key=${PAIZA_IO_API_KEY}`);
-      const statusData = await statusResponse.json();
-
-      if (!statusResponse.ok || statusData.error) {
-        console.error('Paiza.IO get_status error:', statusData.error || statusData);
-        return NextResponse.json(
-          { error: statusData.error || 'Failed to get status from Paiza.IO' },
-          { status: statusResponse.status }
-        );
-      }
-      status = statusData.status;
-      attempts++;
-    }
-
-    if (status !== 'completed') {
-      return NextResponse.json({ error: 'Code execution timed out on Paiza.IO' }, { status: 500 });
-    }
-
-    // Step 3: Get execution details
-    const detailResponse = await fetch(`${PAIZA_IO_API_BASE_URL}/get_details?id=${sessionId}&api_key=${PAIZA_IO_API_KEY}`);
-    const detailData = await detailResponse.json();
-
-    if (!detailResponse.ok || detailData.error) {
-      console.error('Paiza.IO get_details error:', detailData.error || detailData);
-      return NextResponse.json(
-        { error: detailData.error || 'Failed to get details from Paiza.IO' },
-        { status: detailResponse.status }
-      );
-    }
-
-    // Format the response to match the frontend's expectation
+    // フロントエンドが期待する形式（Paiza.IO互換）に合わせてレスポンスを作成
     const formattedResult = {
       build_result: {
-        stdout: detailData.build_stdout || '',
-        stderr: detailData.build_stderr || '',
+        stdout: result.build_stdout || null,
+        stderr: result.build_stderr || null,
       },
       program_output: {
-        stdout: detailData.stdout || '',
-        stderr: detailData.stderr || '',
+        stdout: result.stdout || '',
+        stderr: result.stderr || '',
       },
-      // 必要に応じて、time, memory, result などの詳細も追加できます
-      // time: detailData.time,
-      // memory: detailData.memory,
-      // result: detailData.result, // 'success' or 'failure'
+      // 実行完了ステータス
+      status: 'completed' 
     };
 
     return NextResponse.json(formattedResult, { status: 200 });
 
   } catch (error) {
-    // ここが、POST 関数全体の try ブロックに対応する catch ブロックです。
     console.error('Backend execution error:', error);
     return NextResponse.json({ error: 'Internal server error during code execution.' }, { status: 500 });
   }

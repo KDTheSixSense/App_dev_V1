@@ -654,6 +654,8 @@ function ProceduralCastleAndStairs() {
              <Portal position={[8, 0, 10]} label="課題" path="/unsubmitted-assignments" />
              <Portal position={[0, 0, 15]} label="イベント" path="/event/event_list" />
              <Portal position={[0, 0, 0]} label="カスタムトレース" path="/customize_trace" />
+             <Portal position={[-32, 0, -5]} label="ノーコード" path="/simulator" />
+             <Portal position={[-32, 0, 5]} label="プロフィール" path="/profile" />
         </group>
       </group>
     );
