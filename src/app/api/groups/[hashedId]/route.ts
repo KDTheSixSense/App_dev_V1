@@ -56,6 +56,23 @@ export async function GET(
       );
     }
 
+    // ★ IDOR対策: ユーザーがこのグループのメンバーかどうかを確認
+    const isMember = await prisma.groups_User.findUnique({
+      where: {
+        group_id_user_id: {
+          group_id: group.id,
+          user_id: Number(session.user!.id),
+        },
+      },
+    });
+
+    if (!isMember) {
+      return NextResponse.json(
+        { message: 'このグループにアクセスする権限がありません' },
+        { status: 403 }
+      );
+    }
+
     const formattedGroup = {
       id: group.id,
       hashedId: group.hashedId,

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Post } from '../types/AdminTypes';
+import DOMPurify from 'dompurify';
 
 interface PostListProps {
     posts: Post[];
@@ -20,9 +21,9 @@ export const PostList: React.FC<PostListProps> = ({
     onEditComment,
     onDeleteComment
 }) => {
-    const [editingPosts, setEditingPosts] = useState<{[postId: number]: string}>({});
-    const [editingComments, setEditingComments] = useState<{[commentId: number]: string}>({});
-    const [commentInputs, setCommentInputs] = useState<{[postId: number]: string}>({});
+    const [editingPosts, setEditingPosts] = useState<{ [postId: number]: string }>({});
+    const [editingComments, setEditingComments] = useState<{ [commentId: number]: string }>({});
+    const [commentInputs, setCommentInputs] = useState<{ [postId: number]: string }>({});
 
     // 投稿編集開始
     const startEditPost = (postId: number, currentContent: string) => {
@@ -147,38 +148,32 @@ export const PostList: React.FC<PostListProps> = ({
                                 color: '#fff',
                                 fontSize: '14px',
                                 fontWeight: 'bold',
-                                overflow: 'hidden' // 画像がはみ出ないように
+                                overflow: 'hidden'
                             }}>
-                                {/* ★修正: iconがあれば画像、なければイニシャル */}
-                                {post.author.icon ? (
-                                    <img 
-                                        src={post.author.icon} 
-                                        alt={post.author.username}
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                {post.author?.icon ? (
+                                    <img
+                                        src={post.author.icon}
+                                        alt={post.author?.username || 'User'}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     />
                                 ) : (
-                                    post.author.username.charAt(0)
+                                    (post.author?.username || 'U').charAt(0)
                                 )}
                             </div>
-
-                            {/* 投稿者情報 */}
                             <div>
-                                <div style={{
-                                    fontSize: '16px',
-                                    fontWeight: '500',
-                                    color: '#3c4043',
-                                    marginBottom: '2px'
-                                }}>
-                                    {/* ★修正: usernameプロパティにアクセス */}
-                                    {post.author.username}
+                                <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#202124' }}>
+                                    {post.author?.username || 'Unknown User'}
                                 </div>
-                                <div style={{
-                                    fontSize: '14px',
-                                    color: '#5f6368'
-                                }}>
-                                    {post.date}
+                                <div style={{ fontSize: '12px', color: '#5f6368' }}>
+                                    {new Date(post.date).toLocaleString('ja-JP')}
                                 </div>
                             </div>
+                        </div>
+                        {/* 編集・削除ボタン */}
+                        <div style={{ position: 'relative' }}>
+                            <button onClick={() => startEditPost(post.id, post.content)} style={{ marginRight: '8px', border: 'none', background: 'none', color: '#1976d2', cursor: 'pointer', fontSize: '12px' }}>編集</button>
+                            <button onClick={() => onDeletePost(post.id)} style={{ border: 'none', background: 'none', color: '#d93025', cursor: 'pointer', fontSize: '12px' }}>削除</button>
+                            <button onClick={() => copyPostLink(post.id)} style={{ marginLeft: '8px', border: 'none', background: 'none', color: '#5f6368', cursor: 'pointer', fontSize: '12px' }}>リンク</button>
                         </div>
                     </div>
 
@@ -244,7 +239,7 @@ export const PostList: React.FC<PostListProps> = ({
                                 marginBottom: '16px',
                                 whiteSpace: 'pre-wrap'
                             }}
-                            dangerouslySetInnerHTML={{ __html: post.content }}
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
                         />
                     )}
                 </div>

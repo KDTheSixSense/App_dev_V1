@@ -4,92 +4,119 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import 'acorn';
+import { LRUCache } from 'lru-cache';
+
+// --- Rate Limiting Setup ---
+const rateLimit = new LRUCache<string, number>({
+    max: 500, // 最大500ユーザー
+    ttl: 60 * 1000, // 1分間
+});
+
+function checkRateLimit(ip: string): boolean {
+    const count = rateLimit.get(ip) || 0;
+    if (count >= 10) { // 1分間に10回まで
+        return false;
+    }
+    rateLimit.set(ip, count + 1);
+    return true;
+}
 
 // Ace Editorが要求するアノテーションの型
 type Annotation = {
-    row: number;    // 0-indexed
-    column: number; // 0-indexed
-    text: string;   // エラーメッセージ
-    type: 'error' | 'warning' | 'info';
+    row: number;    // 0-indexed
+    column: number; // 0-indexed
+    text: string;   // エラーメッセージ
+    type: 'error' | 'warning' | 'info';
 };
+
+// --- ヘルパー関数: パスの隠蔽 ---
+function sanitizeOutput(output: string): string {
+    // 一時ディレクトリのパスなどを隠す
+    const tmpDir = os.tmpdir();
+    // 正規表現でパスのような文字列を置換
+    let sanitized = output.split(tmpDir).join('/sandbox');
+    // 他にも絶対パスっぽいのを隠す (簡易的)
+    sanitized = sanitized.replace(/\/[\w\-\.\/]+\/lint_/g, '/sandbox/lint_');
+    return sanitized;
+}
 
 // --- ヘルパー関数: プロセスの実行 ---
 /**
- * 外部コマンドを実行し、標準出力と標準エラーを取得します。
- * @param command 実行するコマンド (例: 'python3')
- * @param args コマンドの引数配列
- * @param codeContent ファイルに書き込むコード内容
- * @param extension ファイルの拡張子 (例: '.py')
- * @returns { stdout: string, stderr: string, tempFile: string }
- */
+ * 外部コマンドを実行し、標準出力と標準エラーを取得します。
+ * @param command 実行するコマンド (例: 'python3')
+ * @param args コマンドの引数配列
+ * @param codeContent ファイルに書き込むコード内容
+ * @param extension ファイルの拡張子 (例: '.py')
+ * @returns { stdout: string, stderr: string, tempFile: string }
+ */
 async function runLintProcess(
-    command: string,
-    args: string[],
-    codeContent: string,
-    extension: string,
-    // 
-    useNode: boolean = false
+    command: string,
+    args: string[],
+    codeContent: string,
+    extension: string,
+    // 
+    useNode: boolean = false
 ): Promise<{ stdout: string; stderr: string; tempFile: string }> {
-    // 1. 一時ファイルを作成
-    const tempFile = path.join(os.tmpdir(), `lint_${Date.now()}${extension}`);
-    let stderr = '';
-    let stdout = '';
-    
-    let effectiveCommand = command;
-    let effectiveArgs = [...args, tempFile];
+    // 1. 一時ファイルを作成
+    const tempFile = path.join(os.tmpdir(), `lint_${Date.now()}_${Math.random().toString(36).substring(7)}${extension}`);
+    let stderr = '';
+    let stdout = '';
 
-    // 
-    if (useNode) {
-      effectiveCommand = 'node';
-      effectiveArgs = [command, ...args, tempFile]; // 
-    }
+    let effectiveCommand = command;
+    let effectiveArgs = [...args, tempFile];
 
-    try {
-        await fs.writeFile(tempFile, codeContent, 'utf-8');
-        
-        // 2. コマンドを実行
-        const process = spawn(effectiveCommand, effectiveArgs);
+    // 
+    if (useNode) {
+        effectiveCommand = 'node';
+        effectiveArgs = [command, ...args, tempFile]; // 
+    }
 
-        process.stdout.on('data', (data) => (stdout += data.toString()));
-        process.stderr.on('data', (data) => (stderr += data.toString()));
+    try {
+        await fs.writeFile(tempFile, codeContent, 'utf-8');
 
-        // 3. 完了を待つ
-        await new Promise((resolve, reject) => {
-            process.on('close', resolve);
-            process.on('error', (err) => {
-                console.error(`Failed to start ${effectiveCommand}: ${err.message}`);
-                stderr += `Failed to start ${effectiveCommand}: ${err.message}`;
-                resolve(null); 
-            });
-        });
+        // 2. コマンドを実行
+        const process = spawn(effectiveCommand, effectiveArgs);
 
-    } catch (error: any) {
-        console.error(`Error during lint process (${effectiveCommand}):`, error);
-        stderr += `Linting process failed: ${error.message}`;
-    }
+        process.stdout.on('data', (data) => (stdout += data.toString()));
+        process.stderr.on('data', (data) => (stderr += data.toString()));
 
-    return { stdout, stderr, tempFile };
+        // 3. 完了を待つ
+        await new Promise((resolve, reject) => {
+            process.on('close', resolve);
+            process.on('error', (err) => {
+                console.error(`Failed to start ${effectiveCommand}: ${err.message}`);
+                stderr += `Failed to start ${effectiveCommand}: ${err.message}`;
+                resolve(null);
+            });
+        });
+
+    } catch (error: any) {
+        console.error(`Error during lint process (${effectiveCommand}):`, error);
+        stderr += `Linting process failed: ${error.message}`;
+    }
+
+    return { stdout, stderr, tempFile };
 }
 
 // --- ヘルパー関数: 一時ファイルのクリーンアップ ---
 async function cleanupTempFile(filePath: string) {
-    try {
-        await fs.unlink(filePath);
-    } catch (e) {
-        // ファイルが存在しない場合などのエラーは無視
-    }
+    try {
+        await fs.unlink(filePath);
+    } catch (e) {
+        // ファイルが存在しない場合などのエラーは無視
+    }
 }
 
 
 // --- 各言語のリンティングロジック ---
 
 function getJavaClassName(code: string): string {
-    const match = code.match(/public\s+class\s+([A-Za-z0-9_]+)/);
-    return match ? match[1] : 'Main';
+    const match = code.match(/public\s+class\s+([A-Za-z0-9_]+)/);
+    return match ? match[1] : 'Main';
 }
 
 async function lintPython(code: string): Promise<Annotation[]> {
-    
+
     // 1. `pyflakes` を実行し、複数のエラーをリストアップする
     const { stdout, stderr, tempFile } = await runLintProcess(
         'python3',           // コマンド
@@ -99,7 +126,7 @@ async function lintPython(code: string): Promise<Annotation[]> {
     );
     await cleanupTempFile(tempFile);
 
-    const output = stdout + stderr;
+    const output = sanitizeOutput(stdout + stderr);
     const annotations: Annotation[] = [];
 
     if (!output || output.trim() === '') {
@@ -116,7 +143,7 @@ async function lintPython(code: string): Promise<Annotation[]> {
     while ((match = regex.exec(output)) !== null) {
         // match[2] = 行番号 (1-based)
         // match[3] = エラーメッセージ (例: "invalid syntax")
-        
+
         const row = parseInt(match[2], 10) - 1; // 0-basedに変換
         let text = match[3];
 
@@ -176,7 +203,7 @@ async function lintPythonWithAst(code: string, annotations: Annotation[]): Promi
     try {
         const errorInfo = JSON.parse(stdout);
         const row = (errorInfo.row ? errorInfo.row : 1) - 1;
-        
+
         // 既に pyflakes が同じ行に "invalid syntax" を報告しているか確認
         const pyflakesError = annotations.find(a => a.row === row && a.text.includes('invalid syntax'));
 
@@ -204,359 +231,369 @@ async function lintPythonWithAst(code: string, annotations: Annotation[]): Promi
 }
 
 /**
- *  * tsc（TypeScriptコンパイラ）を使用してJSとTSの構文チェックを行います。
- */
+ *  * tsc（TypeScriptコンパイラ）を使用してJSとTSの構文チェックを行います。
+ */
 async function lintTypeScriptOrJavaScript(code: string, language: 'javascript' | 'typescript'): Promise<Annotation[]> {
-    const extension = language === 'typescript' ? '.ts' : '.js';
-    
-    // 
-    const tscPath = path.join(process.cwd(), 'node_modules', 'typescript', 'bin', 'tsc');
+    const extension = language === 'typescript' ? '.ts' : '.js';
 
-    const tsArgs = [
-        '--noEmit',          // 出力を生成しない
-        '--pretty', 'false',   // フォーマットを適用しない
-        '--skipLibCheck', 'true', // ライブラリの型チェックをスキップ
-        '--target', 'esnext',
-        '--module', 'commonjs',
-        // '--jsx', 'preserve',
-        '--lib', 'es2020,dom' 
-    ];
+    // 
+    const tscPath = path.join(process.cwd(), 'node_modules', 'typescript', 'bin', 'tsc');
 
-    if (language === 'javascript') {
-        tsArgs.push('--checkJs', '--allowJs');
-    }
+    const tsArgs = [
+        '--noEmit',          // 出力を生成しない
+        '--pretty', 'false',   // フォーマットを適用しない
+        '--skipLibCheck', 'true', // ライブラリの型チェックをスキップ
+        '--target', 'esnext',
+        '--module', 'commonjs',
+        // '--jsx', 'preserve',
+        '--lib', 'es2020,dom'
+    ];
 
-    // `node /path/to/tsc.js [args] [tempfile]` 
-    const { stdout, stderr, tempFile } = await runLintProcess(
-        tscPath,
-        tsArgs,
-        code,
-        extension,
-        true // 一時ファイルを使用する
-    );
-    await cleanupTempFile(tempFile);
+    if (language === 'javascript') {
+        tsArgs.push('--checkJs', '--allowJs');
+    }
 
-    const output = stdout + stderr;
-    if (!output || output.trim() === '') return [];
+    // `node /path/to/tsc.js [args] [tempfile]` 
+    const { stdout, stderr, tempFile } = await runLintProcess(
+        tscPath,
+        tsArgs,
+        code,
+        extension,
+        true // 一時ファイルを使用する
+    );
+    await cleanupTempFile(tempFile);
 
-    // エラーメッセージのチェック
-    if (output.includes('Failed to start tsc') || output.includes('command \'node\' not found')) {
-         return [{ row: 0, column: 0, text: output.split('\n')[0], type: 'error' }];
-    }
+    const output = sanitizeOutput(stdout + stderr);
+    if (!output || output.trim() === '') return [];
 
-    const annotations: Annotation[] = [];
-    // tsc
-    // エラーメッセージの正規表現
-    const regex = /^(.*?)\((\d+),(\d+)\): (error|warning) (TS\d+): (.*)$/gm;
-    let match;
-    
-    while ((match = regex.exec(output)) !== null) {
-        // 
-        // if (!match[1].endsWith(extension)) continue; 
+    // エラーメッセージのチェック
+    if (output.includes('Failed to start tsc') || output.includes('command \'node\' not found')) {
+        return [{ row: 0, column: 0, text: output.split('\n')[0], type: 'error' }];
+    }
 
-        annotations.push({
-            row: parseInt(match[2], 10) - 1,    // 1-indexed -> 0-indexed
-            column: parseInt(match[3], 10) - 1, // 1-indexed -> 0-indexed
-            text: `(${match[5]}) ${match[6]}`, // エラーメッセージにコードを含める
-            type: match[4] === 'warning' ? 'warning' : 'error',
-        });
-    }
-    
-    // エラーメッセージが存在しない場合
-    if (annotations.length === 0 && output.trim() !== '') {
-        const firstLine = output.split('\n')[0].replace(tempFile, 'Error'); 
-        return [{ row: 0, column: 0, text: firstLine, type: 'error' }];
-    }
-    
-    return annotations;
+    const annotations: Annotation[] = [];
+    // tsc
+    // エラーメッセージの正規表現
+    const regex = /^(.*?)\((\d+),(\d+)\): (error|warning) (TS\d+): (.*)$/gm;
+    let match;
+
+    while ((match = regex.exec(output)) !== null) {
+        // 
+        // if (!match[1].endsWith(extension)) continue; 
+
+        annotations.push({
+            row: parseInt(match[2], 10) - 1,    // 1-indexed -> 0-indexed
+            column: parseInt(match[3], 10) - 1, // 1-indexed -> 0-indexed
+            text: `(${match[5]}) ${match[6]}`, // エラーメッセージにコードを含める
+            type: match[4] === 'warning' ? 'warning' : 'error',
+        });
+    }
+
+    // エラーメッセージが存在しない場合
+    if (annotations.length === 0 && output.trim() !== '') {
+        const firstLine = output.split('\n')[0].replace(tempFile, 'Error');
+        return [{ row: 0, column: 0, text: firstLine, type: 'error' }];
+    }
+
+    return annotations;
 }
 
 async function lintJava(code: string): Promise<Annotation[]> {
-    
-    const className = getJavaClassName(code);
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lint-java-'));
-    const tempFile = path.join(tempDir, `${className}.java`);
-    
-    let stderr = '';
-    let spawnError = false; 
 
-    try {
-        await fs.writeFile(tempFile, code);
-        
-        const process = spawn('javac', [
-            '-Xlint:none',
+    const className = getJavaClassName(code);
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lint-java-'));
+    const tempFile = path.join(tempDir, `${className}.java`);
+
+    let stderr = '';
+    let spawnError = false;
+
+    try {
+        await fs.writeFile(tempFile, code);
+
+        const process = spawn('javac', [
+            '-Xlint:none',
             '-encoding', 'UTF-8',
-            '-d', tempDir,
-            '-proc:none',
-            tempFile
-        ], { cwd: tempDir });
+            '-d', tempDir,
+            '-proc:none',
+            tempFile
+        ], { cwd: tempDir });
 
-        process.stderr.on('data', (data) => (stderr += data.toString()));
+        process.stderr.on('data', (data) => (stderr += data.toString()));
 
-        await new Promise((resolve) => {
-            process.on('error', (err: any) => {
-                if (err.code === 'ENOENT') {
-                    stderr = `Lint command 'javac' not found. Is the JDK installed in the Docker container?`;
-                } else {
-                    stderr = `Failed to start javac: ${err.message}`;
-                }
-                spawnError = true;
-                resolve(null);
-            });
-            process.on('close', (code) => {
-                 if (!spawnError && code !== 0 && stderr.trim() === '') {
-                     stderr = `javac failed with exit code ${code}.`;
-                 }
-                resolve(null);
-            });
-        });
+        await new Promise((resolve) => {
+            process.on('error', (err: any) => {
+                if (err.code === 'ENOENT') {
+                    stderr = `Lint command 'javac' not found. Is the JDK installed in the Docker container?`;
+                } else {
+                    stderr = `Failed to start javac: ${err.message}`;
+                }
+                spawnError = true;
+                resolve(null);
+            });
+            process.on('close', (code) => {
+                if (!spawnError && code !== 0 && stderr.trim() === '') {
+                    stderr = `javac failed with exit code ${code}.`;
+                }
+                resolve(null);
+            });
+        });
 
-    } catch (error: any) {
-        stderr += `Linting process failed: ${error.message}`;
-    } finally {
-        await cleanupTempFile(tempFile);
-        try {
-            await fs.rmdir(tempDir);
-        } catch (e) { /* 無視 */ }
-    }
+    } catch (error: any) {
+        stderr += `Linting process failed: ${error.message}`;
+    } finally {
+        await cleanupTempFile(tempFile);
+        try {
+            await fs.rmdir(tempDir);
+        } catch (e) { /* 無視 */ }
+    }
 
-    if (!stderr) return [];
-    
-    if (stderr.includes('Lint command') || stderr.includes('javac failed')) {
-         return [{ row: 0, column: 0, text: stderr, type: 'error' }];
-    }
-    
-    const annotations: Annotation[] = [];
-    
-    const regex = /^(.*?):(\d+):(\d+): error: (.*)$/gm;
-    const regexSimple = /^(.*?):(\d+): error: (.*)$/gm;
-    
-    let match;
-    while ((match = regex.exec(stderr)) !== null) {
-        const column = parseInt(match[3], 10);
-        annotations.push({
-            row: parseInt(match[2], 10) - 1,
-            column: column > 0 ? column - 1 : 0,
-            text: match[4],
-            type: 'error',
-        });
-    }
-    
-    if (annotations.length === 0) {
-        while ((match = regexSimple.exec(stderr)) !== null) {
-             annotations.push({
-                row: parseInt(match[2], 10) - 1,
-                column: 0,
-                text: match[3],
-                type: 'error',
-            });
-        }
-    }
-    
-    if (annotations.length === 0 && stderr.trim() !== '') {
-        const firstLine = stderr.split('\n')[0].replace(tempFile, 'Error');
-        return [{ row: 0, column: 0, text: firstLine, type: 'error' }];
-    }
-    
-    return annotations;
+    stderr = sanitizeOutput(stderr);
+
+    if (!stderr) return [];
+
+    if (stderr.includes('Lint command') || stderr.includes('javac failed')) {
+        return [{ row: 0, column: 0, text: stderr, type: 'error' }];
+    }
+
+    const annotations: Annotation[] = [];
+
+    const regex = /^(.*?):(\d+):(\d+): error: (.*)$/gm;
+    const regexSimple = /^(.*?):(\d+): error: (.*)$/gm;
+
+    let match;
+    while ((match = regex.exec(stderr)) !== null) {
+        const column = parseInt(match[3], 10);
+        annotations.push({
+            row: parseInt(match[2], 10) - 1,
+            column: column > 0 ? column - 1 : 0,
+            text: match[4],
+            type: 'error',
+        });
+    }
+
+    if (annotations.length === 0) {
+        while ((match = regexSimple.exec(stderr)) !== null) {
+            annotations.push({
+                row: parseInt(match[2], 10) - 1,
+                column: 0,
+                text: match[3],
+                type: 'error',
+            });
+        }
+    }
+
+    if (annotations.length === 0 && stderr.trim() !== '') {
+        const firstLine = stderr.split('\n')[0].replace(tempFile, 'Error');
+        return [{ row: 0, column: 0, text: firstLine, type: 'error' }];
+    }
+
+    return annotations;
 }
 
 async function lintCpp(code: string): Promise<Annotation[]> {
-    const { stderr, tempFile } = await runLintProcess(
-        'g++',
-        ['-finput-charset=UTF-8','-fsyntax-only', '-pedantic-errors', '-std=c++11'],
-        code,
-        '.cpp'
-    );
-    await cleanupTempFile(tempFile);
-    
-    if (!stderr) return [];
+    const { stderr, tempFile } = await runLintProcess(
+        'g++',
+        ['-finput-charset=UTF-8', '-fsyntax-only', '-pedantic-errors', '-std=c++11'],
+        code,
+        '.cpp'
+    );
+    await cleanupTempFile(tempFile);
 
-    const annotations: Annotation[] = [];
-    const regex = /^(.*?):(\d+):(\d+): error: (.*)$/gm;
-    let match;
-    while ((match = regex.exec(stderr)) !== null) {
-        annotations.push({
-            row: parseInt(match[2], 10) - 1,
-            column: parseInt(match[3], 10) - 1,
-            text: match[4],
-            type: 'error',
-        });
-    }
-    return annotations;
+    const output = sanitizeOutput(stderr);
+    if (!output) return [];
+
+    const annotations: Annotation[] = [];
+    const regex = /^(.*?):(\d+):(\d+): error: (.*)$/gm;
+    let match;
+    while ((match = regex.exec(output)) !== null) {
+        annotations.push({
+            row: parseInt(match[2], 10) - 1,
+            column: parseInt(match[3], 10) - 1,
+            text: match[4],
+            type: 'error',
+        });
+    }
+    return annotations;
 }
 
 async function lintC(code: string): Promise<Annotation[]> {
-    const { stderr, tempFile } = await runLintProcess(
-        'gcc',
-        ['-finput-charset=UTF-8','-fsyntax-only', '-pedantic-errors', '-std=c99'],
-        code,
-        '.c'
-    );
-    await cleanupTempFile(tempFile);
-    
-    if (!stderr) return [];
-    const annotations: Annotation[] = [];
-    const regex = /^(.*?):(\d+):(\d+): error: (.*)$/gm;
-    let match;
-    while ((match = regex.exec(stderr)) !== null) {
-        annotations.push({
-            row: parseInt(match[2], 10) - 1,
-            column: parseInt(match[3], 10) - 1,
-            text: match[4],
-            type: 'error',
-        });
-    }
-    return annotations;
+    const { stderr, tempFile } = await runLintProcess(
+        'gcc',
+        ['-finput-charset=UTF-8', '-fsyntax-only', '-pedantic-errors', '-std=c99'],
+        code,
+        '.c'
+    );
+    await cleanupTempFile(tempFile);
+
+    const output = sanitizeOutput(stderr);
+    if (!output) return [];
+    const annotations: Annotation[] = [];
+    const regex = /^(.*?):(\d+):(\d+): error: (.*)$/gm;
+    let match;
+    while ((match = regex.exec(output)) !== null) {
+        annotations.push({
+            row: parseInt(match[2], 10) - 1,
+            column: parseInt(match[3], 10) - 1,
+            text: match[4],
+            type: 'error',
+        });
+    }
+    return annotations;
 }
 
 async function lintCsharp(code: string): Promise<Annotation[]> {
-    
-    const wrappedCode = `
-        using System;
-        using System.Collections.Generic;
-        using System.Linq;
-        using System.Text;
-        
-        public class LintCheck
-        {
-            public static void Main(string[] args)
-            {
-        ${code} 
-            }
-        }
-        `;
-    const lineOffset = 10; 
 
-    const { stdout, stderr, tempFile } = await runLintProcess(
-        'csc',
-        ['-nologo', `-out:${os.devNull}`],
-        wrappedCode,
-        '.cs'
-    );
-    await cleanupTempFile(tempFile);
+    const wrappedCode = `
+        using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        
+        public class LintCheck
+        {
+            public static void Main(string[] args)
+            {
+        ${code} 
+            }
+        }
+        `;
+    const lineOffset = 10;
 
-    const output = stdout + stderr;
+    const { stdout, stderr, tempFile } = await runLintProcess(
+        'csc',
+        ['-nologo', `-out:${os.devNull}`],
+        wrappedCode,
+        '.cs'
+    );
+    await cleanupTempFile(tempFile);
 
-    if (!output) return [];
-    
-    if (output.includes('Lint command') || output.includes('Linter')) {
-         return [{ row: 0, column: 0, text: output, type: 'error' }];
-    }
+    const output = sanitizeOutput(stdout + stderr);
 
-    const annotations: Annotation[] = [];
-    const regex = /^(.*?)\((\d+),(\d+)\): error (\w+): (.*)$/gm;
-    let match;
-    while ((match = regex.exec(output)) !== null) {
-        const originalLine = parseInt(match[2], 10) - 1;
-        
-        if (originalLine < lineOffset) continue;
-        
-        annotations.push({
-            row: originalLine - lineOffset,
-            column: parseInt(match[3], 10) - 1,
-            text: `${match[4]}: ${match[5]}`,
-            type: 'error',
-        });
-    }
-    return annotations;
+    if (!output) return [];
+
+    if (output.includes('Lint command') || output.includes('Linter')) {
+        return [{ row: 0, column: 0, text: output, type: 'error' }];
+    }
+
+    const annotations: Annotation[] = [];
+    const regex = /^(.*?)\((\d+),(\d+)\): error (\w+): (.*)$/gm;
+    let match;
+    while ((match = regex.exec(output)) !== null) {
+        const originalLine = parseInt(match[2], 10) - 1;
+
+        if (originalLine < lineOffset) continue;
+
+        annotations.push({
+            row: originalLine - lineOffset,
+            column: parseInt(match[3], 10) - 1,
+            text: `${match[4]}: ${match[5]}`,
+            type: 'error',
+        });
+    }
+    return annotations;
 }
 
 async function lintPhp(code: string): Promise<Annotation[]> {
-    
-    const wrappedCode = code.trim().startsWith('<?php') 
-        ? code 
-        : `<?php\n${code}\n?>`;
 
-    const { stdout, stderr, tempFile } = await runLintProcess(
-        'php',
-        ['-l'],
-        wrappedCode,
-        '.php'
-    );
-    await cleanupTempFile(tempFile);
+    const wrappedCode = code.trim().startsWith('<?php')
+        ? code
+        : `<?php\n${code}\n?>`;
 
-    const output = stdout + stderr;
+    const { stdout, stderr, tempFile } = await runLintProcess(
+        'php',
+        ['-l'],
+        wrappedCode,
+        '.php'
+    );
+    await cleanupTempFile(tempFile);
 
-    if (!output || output.includes("No syntax errors detected")) return [];
-    
-    if (output.includes('Lint command') || output.includes('Linter')) {
-         return [{ row: 0, column: 0, text: output, type: 'error' }];
-    }
+    const output = sanitizeOutput(stdout + stderr);
 
-    const regex = /^Parse error: (.*?) in .*? on line (\d+)$/m;
-    const match = output.match(regex);
-    if (match) {
-        const errorLine = parseInt(match[2], 10) - 1;
-        
-        const adjustedLine = code.trim().startsWith('<?php')
-            ? errorLine
-            : errorLine - 1;
+    if (!output || output.includes("No syntax errors detected")) return [];
 
-        return [{
-            row: adjustedLine < 0 ? 0 : adjustedLine,
-            column: 0,
-            text: match[1],
-            type: 'error',
-        }];
-    }
-    return [];
+    if (output.includes('Lint command') || output.includes('Linter')) {
+        return [{ row: 0, column: 0, text: output, type: 'error' }];
+    }
+
+    const regex = /^Parse error: (.*?) in .*? on line (\d+)$/m;
+    const match = output.match(regex);
+    if (match) {
+        const errorLine = parseInt(match[2], 10) - 1;
+
+        const adjustedLine = code.trim().startsWith('<?php')
+            ? errorLine
+            : errorLine - 1;
+
+        return [{
+            row: adjustedLine < 0 ? 0 : adjustedLine,
+            column: 0,
+            text: match[1],
+            type: 'error',
+        }];
+    }
+    return [];
 }
 
 
 /**
- * サーバーサイドでコードの構文チェック（リンティング）を実行します
- * @param code ユーザーが入力したコード
- * @param language 'python' | 'javascript' | ...
- * @returns Ace Editor用のアノテーション配列
- */
+ * サーバーサイドでコードの構文チェック（リンティング）を実行します
+ * @param code ユーザーが入力したコード
+ * @param language 'python' | 'javascript' | ...
+ * @returns Ace Editor用のアノテーション配列
+ */
 async function lintCode(code: string, language: string): Promise<Annotation[]> {
-    switch (language) {
-        case 'python':
-            return await lintPython(code);
-        
-        // 
-        case 'javascript':
-        case 'typescript':
-            return await lintTypeScriptOrJavaScript(code, language);
+    switch (language) {
+        case 'python':
+            return await lintPython(code);
 
-        case 'java':
-            return await lintJava(code);
+        // 
+        case 'javascript':
+        case 'typescript':
+            return await lintTypeScriptOrJavaScript(code, language);
 
-        case 'cpp':
-            return await lintCpp(code);
-        
-        case 'c':
-            return await lintC(code);
+        case 'java':
+            return await lintJava(code);
 
-        case 'csharp':
-            return await lintCsharp(code);
-        
-        case 'php':
-            return await lintPhp(code);
+        case 'cpp':
+            return await lintCpp(code);
 
-        default:
-            return []; // 
-    }
+        case 'c':
+            return await lintC(code);
+
+        case 'csharp':
+            return await lintCsharp(code);
+
+        case 'php':
+            return await lintPhp(code);
+
+        default:
+            return []; // 
+    }
 }
 
 
 export async function POST(req: NextRequest) {
-    try {
-        const body = await req.json();
-        const { code, language } = body;
+    try {
+        // Rate Limiting Check
+        const ip = req.headers.get('x-forwarded-for') || 'unknown';
+        if (!checkRateLimit(ip)) {
+            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
+        }
 
-        if (typeof code !== 'string' || typeof language !== 'string') {
-            return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-        }
+        const body = await req.json();
+        const { code, language } = body;
 
-        // 
-        const annotations = await lintCode(code, language);
+        if (typeof code !== 'string' || typeof language !== 'string') {
+            return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+        }
 
-        return NextResponse.json({ annotations });
+        // 
+        const annotations = await lintCode(code, language);
 
-    } catch (error) {
-        console.error('Lint API error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    }
+        return NextResponse.json({ annotations });
+
+    } catch (error) {
+        console.error('Lint API error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
 }

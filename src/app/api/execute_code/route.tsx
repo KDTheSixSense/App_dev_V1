@@ -4,8 +4,55 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { promisify } from 'util';
+import { LRUCache } from 'lru-cache';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import { executeCodeSchema } from '@/lib/validations';
+import { logAudit, AuditAction } from '@/lib/audit';
 
+const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
 const execPromise = promisify(exec);
+
+// --- Rate Limiting Setup ---
+const rateLimit = new LRUCache<string, number>({
+  max: 500, // 最大500ユーザー
+  ttl: 60 * 1000, // 1分間
+});
+
+function checkRateLimit(ip: string): boolean {
+  const count = rateLimit.get(ip) || 0;
+  if (count >= 5) { // 実行は重いので1分間に5回まで
+    return false;
+  }
+  rateLimit.set(ip, count + 1);
+  return true;
+}
+
+// --- Output Sanitization ---
+function sanitizeOutput(output: string): string {
+  const tmpDir = os.tmpdir();
+  let sanitized = output.split(tmpDir).join('/sandbox');
+  // ユーザー名なども隠す
+  const username = os.userInfo().username;
+  if (username) {
+    sanitized = sanitized.split(username).join('user');
+  }
+  return sanitized;
+}
+
+// --- Basic Keyword Blocking (Defense in Depth) ---
+// Note: This is NOT a complete security solution.
+function containsForbiddenKeywords(code: string, language: string): boolean {
+  const dangerousKeywords = [
+    'child_process', 'spawn', 'exec', 'fork', // Node.js
+    'import os', 'import subprocess', 'import sys', 'from os', 'from subprocess', // Python
+    'system(', 'exec(', 'popen(', // C/C++
+    'Runtime.getRuntime', 'ProcessBuilder', // Java
+    'System.Diagnostics.Process' // C#
+  ];
+
+  return dangerousKeywords.some(keyword => code.includes(keyword));
+}
+
 
 /**
  * ローカル環境でコードを実行する関数
@@ -14,7 +61,7 @@ const execPromise = promisify(exec);
 async function executeLocally(language: string, sourceCode: string, input: string) {
   // 1. 一時ディレクトリ作成
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'execution-'));
-  
+
   // 結果格納用
   const result = {
     build_stdout: '',
@@ -39,7 +86,7 @@ async function executeLocally(language: string, sourceCode: string, input: strin
         runCmd = process.platform === 'win32' ? 'python' : 'python3';
         runArgs = [fileName];
         break;
-      
+
       case 'javascript':
         fileName = 'main.js';
         runCmd = 'node';
@@ -53,7 +100,7 @@ async function executeLocally(language: string, sourceCode: string, input: strin
         const tscExec = process.platform === 'win32' ? 'tsc.cmd' : 'tsc';
         const tscPath = path.join(process.cwd(), 'node_modules', '.bin', tscExec);
         compileCmd = `"${tscPath}" "${fileName}" --target es2020 --module commonjs --outDir . --noResolve --noEmitOnError false`;
-        
+
         runCmd = 'node';
         runArgs = [compiledFile];
         break;
@@ -87,7 +134,7 @@ async function executeLocally(language: string, sourceCode: string, input: strin
         runCmd = 'java';
         runArgs = ['Main'];
         break;
-      
+
       case 'csharp':
         fileName = 'Program.cs';
         compiledFile = 'app.exe';
@@ -107,17 +154,17 @@ async function executeLocally(language: string, sourceCode: string, input: strin
     if (compileCmd) {
       try {
         const { stdout, stderr } = await execPromise(compileCmd, { cwd: tempDir });
-        result.build_stdout = stdout;
-        result.build_stderr = stderr;
+        result.build_stdout = sanitizeOutput(stdout);
+        result.build_stderr = sanitizeOutput(stderr);
       } catch (compileError: any) {
         // コンパイルエラー時はここで終了
-        result.build_stdout = compileError.stdout || '';
-        result.build_stderr = compileError.stderr || compileError.message;
-        
+        result.build_stdout = sanitizeOutput(compileError.stdout || '');
+        result.build_stderr = sanitizeOutput(compileError.stderr || compileError.message);
+
         // 成果物がなければ実行せずに返す
         const isArtifactCreated = compiledFile && fs.existsSync(path.join(tempDir, compiledFile));
         if (!isArtifactCreated) {
-            return result; 
+          return result;
         }
       }
     }
@@ -150,6 +197,9 @@ async function executeLocally(language: string, sourceCode: string, input: strin
       }, 3000);
     });
 
+    result.stdout = sanitizeOutput(result.stdout);
+    result.stderr = sanitizeOutput(result.stderr);
+
     return result;
 
   } catch (e: any) {
@@ -168,33 +218,83 @@ async function executeLocally(language: string, sourceCode: string, input: strin
 
 export async function POST(request: Request) {
   try {
-    const { language, source_code, input } = await request.json();
-
-    if (!language || !source_code) {
-      return NextResponse.json({ error: 'Language and source_code are required.' }, { status: 400 });
+    // Rate Limiting Check
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
     }
 
-    // 自作のローカル実行関数を呼び出し
-    const result = await executeLocally(language, source_code, input || '');
+    const body = await request.json();
+    const validationResult = executeCodeSchema.safeParse(body);
 
-    // フロントエンドが期待する形式（Paiza.IO互換）に合わせてレスポンスを作成
+    if (!validationResult.success) {
+      return NextResponse.json({ error: 'Invalid request body', details: validationResult.error }, { status: 400 });
+    }
+
+    const { language, source_code, input } = validationResult.data;
+
+    // Security Check: Forbidden Keywords
+    if (containsForbiddenKeywords(source_code, language)) {
+      await logAudit(
+        null,
+        AuditAction.EXECUTE_CODE,
+        {
+          message: 'Blocked forbidden keyword usage',
+          language,
+          code_snippet: source_code.substring(0, 50)
+        }
+      );
+      return NextResponse.json({
+        build_result: { stdout: '', stderr: 'Security Error: Forbidden keywords detected.' },
+        program_output: { stdout: '', stderr: '' },
+      }, { status: 200 }); // 200 OK with error message in body
+    }
+
+    let result;
+
+    // Determine Execution Environment
+    const isDev = process.env.NODE_ENV === 'development';
+    const hasAwsCreds = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;
+
+    if (isDev || !hasAwsCreds) {
+      // Local Execution (Development or No AWS Creds)
+      console.log('Executing code locally...');
+      result = await executeLocally(language, source_code, input || '');
+    } else {
+      // AWS Lambda Execution (Production)
+      console.log('Executing code via AWS Lambda...');
+      const command = new InvokeCommand({
+        FunctionName: 'code-executor', // Lambda function name
+        Payload: JSON.stringify({ language, source_code, input }),
+      });
+      const lambdaResponse = await lambdaClient.send(command);
+
+      if (lambdaResponse.Payload) {
+        const payloadString = new TextDecoder().decode(lambdaResponse.Payload);
+        result = JSON.parse(payloadString);
+      } else {
+        throw new Error('Lambda returned no payload');
+      }
+    }
+
+    // Format Response
     const formattedResult = {
       build_result: {
-        stdout: result.build_stdout || null,
-        stderr: result.build_stderr || null,
+        stdout: result.build_stdout || '',
+        stderr: result.build_stderr || '',
       },
       program_output: {
         stdout: result.stdout || '',
         stderr: result.stderr || '',
+        exit_code: result.exit_code,
       },
-      // 実行完了ステータス
-      status: 'completed' 
+      status: 'completed'
     };
 
     return NextResponse.json(formattedResult, { status: 200 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Backend execution error:', error);
-    return NextResponse.json({ error: 'Internal server error during code execution.' }, { status: 500 });
+    return NextResponse.json({ error: `Internal server error: ${error.message}` }, { status: 500 });
   }
 }

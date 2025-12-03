@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { FormatState, ProgrammingProblem, Assignment } from '../types/AdminTypes';
 import { ProblemTypeSelectModal } from './ProblemTypeSelectModal';
 
@@ -69,7 +70,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             }
 
             if (editorRef.current) {
-                editorRef.current.innerHTML = initialAssignment.description;
+                editorRef.current.innerHTML = DOMPurify.sanitize(initialAssignment.description);
             }
         } else {
             // 新規作成モードの場合、特定の遷移（問題作成）から戻ってきた場合のみ復元
@@ -84,7 +85,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                         if (savedDescription) {
                             setDescription(savedDescription);
                             if (editorRef.current) {
-                                editorRef.current.innerHTML = savedDescription;
+                                editorRef.current.innerHTML = DOMPurify.sanitize(savedDescription);
                             }
                         }
                         if (savedDueDate) setDueDate(savedDueDate);
