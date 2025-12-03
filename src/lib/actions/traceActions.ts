@@ -1,5 +1,12 @@
 'use server';
 
+import fs from 'fs/promises';
+import path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execPromise = promisify(exec);
+
 /**
  * OpenAIのGPT-4oモデルに疑似言語コードの生成をリクエストするサーバーアクション
  * @param prompt ユーザーからの指示 (例: "1から10までの合計を計算する")
@@ -383,23 +390,6 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
     sort(j + 1, last)
   endif
 
-## 例24: (令和5年 科目B 問4)
-### 指示: 単方向リストの末尾に要素を追加
-### 生成コード:
-大域: ListElement: listHead ← 未定義の値
-○append(文字列型: qVal)
-  ListElement: prev, curr
-  curr ← ListElement(qVal)
-  if (listHead が 未定義)
-    listHead ← curr
-  else
-    prev ← listHead
-    while (prev.next が 未定義でない)
-      prev ← prev.next
-    endwhile
-    prev.next ← curr
-  endif
-
 ## 例25: (令和5年 科目B 問5)
 ### 指示: コサイン類似度の計算
 ### 生成コード:
@@ -558,3 +548,262 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
   }
 }
 
+/**
+ * トレースエラーをログファイルに保存するサーバーアクション
+ */
+export async function saveErrorLogAction(errorMsg: string, code: string, line: number, vars: any) {
+  try {
+    // プロジェクトルートを取得
+    const cwd = process.cwd();
+    
+    // パスの中に 'src' が既に含まれているかチェックして重複を防ぐ
+    const targetPath = cwd.endsWith('src') 
+      ? 'app/(main)/customize_trace' 
+      : 'src/app/(main)/customize_trace';
+
+    const logDir = path.join(cwd, targetPath);
+    const logPath = path.join(logDir, 'error_logs.txt');
+
+    const timestamp = new Date().toISOString();
+    const codeLines = code.split('\n');
+    const errorLineContent = codeLines[line] || 'Unknown Line';
+
+    const content = `
+==================================================
+[Date]: ${timestamp}
+[Error]: ${errorMsg}
+[Line]: ${line + 1}
+[Content]: ${errorLineContent}
+[Variables]: ${JSON.stringify(vars, null, 2)}
+==================================================
+`;
+
+    // ディレクトリが存在しない場合は再帰的に作成する (これがENOENT対策)
+    await fs.mkdir(logDir, { recursive: true });
+
+    // ファイルに追記
+    await fs.appendFile(logPath, content, 'utf8');
+    return { success: true };
+  } catch (e) {
+    console.error("Failed to write error log:", e);
+    // エラー自体を返すと無限ループの危険があるため、コンソール出力にとどめる
+    return { success: false };
+  }
+}
+
+/**
+ * OpenAIのGPT-4oモデルにPythonコードの生成をリクエストするサーバーアクション (新規追加)
+ * @param prompt ユーザーからの指示
+ * @returns 生成されたPythonコードの文字列
+ */
+export async function generatePythonCodeFromAI(prompt: string): Promise<string> {
+  const systemPrompt = `あなたは、プログラミング学習用のPythonコードを生成する専門家です。
+ユーザーの指示に基づき、初心者がトレース学習を行うのに適したPythonコードを生成してください。
+
+# 生成ルール (厳守)
+1. **構文**: 正しいPython 3の構文を使用してください。
+2. **入力なし**: \`input()\` 関数は絶対に使用しないでください。必要な値は変数の初期化としてコード内にハードコーディングしてください。
+3. **出力**: 結果の確認には \`print()\` 関数を使用してください。
+4. **複雑さ**: 学習用のため、過度に複雑なライブラリや高度な機能（ラムダ式、リスト内包表記の多用など）は避け、基本的な制御構文（\`if\`, \`for\`, \`while\`）を中心に構成してください。
+5. **コメント**: トレースの邪魔になるため、コメントは最小限、または無しにしてください。
+6. **形式**: コードブロック(\`\`\`)を含めず、コードの中身のみをプレーンテキストで返してください。
+
+# コード生成の例
+
+## 指示: 1から5までの和を求める
+i = 1
+total = 0
+while i <= 5:
+    total = total + i
+    i = i + 1
+print(total)
+
+## 指示: FizzBuzz
+num = 15
+if num % 15 == 0:
+    print("FizzBuzz")
+elif num % 3 == 0:
+    print("Fizz")
+elif num % 5 == 0:
+    print("Buzz")
+else:
+    print(num)
+
+## 指示: 配列の合計
+numbers = [10, 20, 30, 40, 50]
+sum_val = 0
+for n in numbers:
+    sum_val = sum_val + n
+print(sum_val)
+`;
+
+  try {
+    const apiUrl = 'https://api.openai.com/v1/chat/completions';
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("OpenAI APIキーが設定されていません。");
+    }
+
+    const payload = {
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
+    };
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.json();
+        throw new Error(`APIリクエストに失敗しました: ${response.statusText} (${JSON.stringify(errorBody)})`);
+    }
+
+    const result = await response.json();
+    const generatedText = result.choices?.[0]?.message?.content;
+
+    if (!generatedText) {
+      throw new Error("AIからの応答が空でした。");
+    }
+
+    // コードブロックが含まれている場合の除去処理
+    let cleanCode = generatedText.replace(/^```python\n/, '').replace(/^```\n/, '').replace(/\n```$/, '');
+    
+    return cleanCode.trim();
+
+  } catch (error: any) {
+    console.error("Pythonコード生成エラー:", error);
+    throw new Error(`コードの生成に失敗しました: ${error.message}`);
+  }
+}
+
+/**
+ * ユーザーのPythonコードをサーバー側で実行し、トレース結果を取得する
+ */
+export async function runPythonTraceAction(code: string) {
+  console.log("--- [Debug] runPythonTraceAction Started ---");
+  
+  try {
+    const cwd = process.cwd();
+    console.log("[Debug] Current Working Directory:", cwd);
+    
+    // パス解決のロジック
+    let scriptRelativePath = 'src/lib/python_tracer.py';
+    if (cwd.endsWith('src')) {
+        scriptRelativePath = 'lib/python_tracer.py';
+    }
+
+    const tracerPath = path.join(cwd, scriptRelativePath);
+    console.log("[Debug] Target Tracer Path:", tracerPath);
+
+    // ファイル存在確認
+    try {
+        await fs.access(tracerPath);
+        console.log("[Debug] Tracer file found.");
+    } catch (e) {
+        console.error("[Debug] Tracer file NOT found at:", tracerPath);
+        throw new Error(`Tracer file not found at ${tracerPath}`);
+    }
+    
+    const pythonCommand = 'python3'; 
+    console.log(`[Debug] Spawning ${pythonCommand} with ${tracerPath}`);
+    
+    const child = require('child_process').spawn(pythonCommand, [tracerPath]);
+    
+    let stdoutData = '';
+    let stderrData = '';
+
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            child.kill();
+            console.error("[Debug] Execution Timed Out");
+            reject(new Error('Execution timed out'));
+        }, 5000);
+
+        // ★修正点: エンコーディングを指定して書き込み、エラーハンドリングを追加
+        try {
+            child.stdin.write(code, 'utf-8');
+            child.stdin.end();
+        } catch (writeErr) {
+            console.error("[Debug] stdin write error:", writeErr);
+            reject(new Error("Failed to write code to Python process."));
+            return;
+        }
+
+        child.stdout.on('data', (data: any) => {
+            stdoutData += data.toString();
+        });
+
+        child.stderr.on('data', (data: any) => {
+            stderrData += data.toString();
+        });
+
+        child.on('close', (code: number) => {
+            clearTimeout(timeout);
+            console.log("[Debug] Process closed with code:", code);
+            
+            if (stderrData) {
+                console.log("[Debug] Python stderr:", stderrData);
+            }
+
+            if (code !== 0) {
+                // エラーメッセージをわかりやすく返す
+                if (stderrData.includes("No such file or directory")) {
+                     reject(new Error(`Python file not found. Check path: ${tracerPath}`));
+                } else if (stderrData.includes("command not found")) {
+                     reject(new Error(`Python command not found. Is python3 installed?`));
+                } else {
+                     reject(new Error(`Python runtime error: ${stderrData}`));
+                }
+                return;
+            }
+
+            console.log("[Debug] stdout:", stdoutData);
+
+            try {
+                if (!stdoutData.trim()) {
+                    console.error("[Debug] stdout is empty");
+                    reject(new Error("Python script produced no output."));
+                    return;
+                }
+                
+                const lines = stdoutData.trim().split('\n');
+                const lastLine = lines.pop() || '[]';
+                const result = JSON.parse(lastLine);
+                
+                console.log("[Debug] Parsed JSON successfully. Items:", result.length);
+                resolve(result);
+
+            } catch (e) {
+                console.error("[Debug] JSON Parse Error:", e);
+                console.error("[Debug] Raw output was:", stdoutData);
+                reject(new Error(`Failed to parse trace result.`));
+            }
+        });
+        
+        child.on('error', (err: any) => {
+            clearTimeout(timeout);
+            console.error("[Debug] Spawn Error:", err);
+            reject(new Error(`Failed to start Python process: ${err.message}`));
+        });
+    });
+
+  } catch (error: any) {
+    console.error("[Debug] Trace Action Error:", error);
+    throw new Error(error.message);
+  }
+}

@@ -13,6 +13,7 @@ import Image from 'next/image';
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem } from '@/lib/types';
 import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction} from '@/lib/actions';
+import TestCaseResultModal, { TestCaseResult } from '@/components/TestCaseResultModal';
 
 // Header.tsx からヘルパー関数と定数をコピー
 const MAX_HUNGER = 200; // 満腹度の最大値
@@ -71,6 +72,7 @@ type SubmitResult = {
     message: string;
     yourOutput?: string;
     expected?: string;
+    testCaseResults?: TestCaseResult[];
 };
 
 // --- Aceのアノテーション型を定義 ---
@@ -341,7 +343,7 @@ const ProblemSolverPage = () => {
 
     const [problem, setProblem] = useState<SerializableProblem | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedLanguage, setSelectedLanguage] = useState('python');
+    const [selectedLanguage, setSelectedLanguage] = useState('python3');
     const [selectedTheme, setSelectedTheme] = useState('solarized_light');
     const [userCode, setUserCode] = useState('');
     const [stdin, setStdin] = useState('');
@@ -356,9 +358,10 @@ const ProblemSolverPage = () => {
     const [annotations, setAnnotations] = useState<AceAnnotation[]>([]);
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+    const [isResultModalOpen, setIsResultModalOpen] = useState(false);
 
     const languages = [
-        { value: 'python', label: 'Python' },
+        { value: 'python3', label: 'Python 3' },
         { value: 'javascript', label: 'JavaScript' },
         { value: 'typescript', label: 'TypeScript' },
         { value: 'java', label: 'Java' },
@@ -538,6 +541,18 @@ const ProblemSolverPage = () => {
             const data = await response.json();
             setSubmitResult(data);
 
+            // APIが成功を返し、かつテストケース結果が含まれていればモーダルを開く
+            if (data.testCaseResults && data.testCaseResults.length > 0) {
+                setIsResultModalOpen(true);
+            }
+
+            // 従来のエラーハンドリング（API接続エラーなど）
+            else if (!data.success) {
+                 setExecutionResult(`エラー: ${data.message}`);
+                 setAlertMessage(data.message);
+                 setShowAlert(true);
+            }
+
             if (data.success) {
                 setSubmitResult({ success: true, message: '正解です！おめでとうございます！' }); 
                 await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1); //正解判定後にXPを付与.プログラミング問題はsubjectidが1なので1を渡す
@@ -607,6 +622,15 @@ const ProblemSolverPage = () => {
     return (
         <div className="h-screen p-4 overflow-hidden">
             {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
+
+            {/* テストケース結果モーダルの追加 */}
+            <TestCaseResultModal 
+                isOpen={isResultModalOpen}
+                onClose={() => setIsResultModalOpen(false)}
+                success={submitResult?.success ?? false}
+                results={submitResult?.testCaseResults ?? []}
+                message={submitResult?.message}
+            />
 
             {/* 一覧へ戻るボタン */}
             <div className="mb-2">

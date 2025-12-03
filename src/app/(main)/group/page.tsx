@@ -14,6 +14,7 @@ interface Group {
     description: string;
     color: string;
     teacher: string;
+    teacherIcon: string | null;
     memberCount: number;
     members: Member[]; // メンバー情報を追加
     inviteCode: string; // 招待コードを追加
@@ -126,6 +127,7 @@ const ClassroomApp: React.FC = () => {
                 const members: Member[] = group.groups_User || [];
                 const admin = members.find(member => member.admin_flg);
                 const teacherName = admin?.user?.username || '管理者';
+                const teacherIcon = admin?.user?.icon || null;
 
                 return {
                     id: group.id,
@@ -134,6 +136,7 @@ const ClassroomApp: React.FC = () => {
                     description: group.body,
                     color: '#00bcd4',
                     teacher: teacherName,
+                    teacherIcon: teacherIcon,
                     memberCount: group._count?.groups_User || 0,
                     members: members,
                     inviteCode: group.invite_code || ''
@@ -656,7 +659,7 @@ const handleCreateGroup = async () => {
                                             alignItems: 'center',
                                             marginTop: '12px'
                                         }}>
-                                            {/* 教師情報 */}
+                                            {/* 教師情報（ここもアイコンを表示する場合） */}
                                             <div style={{
                                                 fontSize: '12px',
                                                 color: '#5f6368',
@@ -674,9 +677,19 @@ const handleCreateGroup = async () => {
                                                     marginRight: '6px',
                                                     color: '#fff',
                                                     fontSize: '10px',
-                                                    fontWeight: 'bold'
+                                                    fontWeight: 'bold',
+                                                    overflow: 'hidden' // 追加
                                                 }}>
-                                                    {group.teacher ? group.teacher.charAt(0) : '管'}
+                                                    {/* ここも同様に修正 */}
+                                                    {group.teacherIcon ? (
+                                                        <img 
+                                                            src={group.teacherIcon} 
+                                                            alt={group.teacher} 
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                        />
+                                                    ) : (
+                                                        group.teacher ? group.teacher.charAt(0) : '管'
+                                                    )}
                                                 </div>
                                                 {group.teacher}
                                             </div>

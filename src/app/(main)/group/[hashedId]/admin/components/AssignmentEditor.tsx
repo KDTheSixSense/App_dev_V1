@@ -44,6 +44,8 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     const [showProblemTypeModal, setShowProblemTypeModal] = useState(false);
 
     const editorRef = useRef<HTMLDivElement>(null);
+    const STORAGE_KEY = 'assignment_create_draft';
+    const STORAGE_FLAG_KEY = 'assignment_create_in_progress';
 
     // 初期データが渡された場合（編集モード）、stateを更新
     useEffect(() => {
@@ -70,11 +72,42 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 editorRef.current.innerHTML = initialAssignment.description;
             }
         } else {
-            // 新規作成モードへの切り替え時はリセット（必要なら）
-            // handleReset() is called on collapse, so maybe not strictly needed here
-            // unless switching directly from edit to create without collapse
+            // 新規作成モードの場合、特定の遷移（問題作成）から戻ってきた場合のみ復元
+            const shouldRestore = sessionStorage.getItem(STORAGE_FLAG_KEY) === 'true';
+
+            if (shouldRestore) {
+                const savedDraft = sessionStorage.getItem(STORAGE_KEY);
+                if (savedDraft) {
+                    try {
+                        const { title: savedTitle, description: savedDescription, dueDate: savedDueDate } = JSON.parse(savedDraft);
+                        if (savedTitle) setTitle(savedTitle);
+                        if (savedDescription) {
+                            setDescription(savedDescription);
+                            if (editorRef.current) {
+                                editorRef.current.innerHTML = savedDescription;
+                            }
+                        }
+                        if (savedDueDate) setDueDate(savedDueDate);
+                    } catch (e) {
+                        console.error('Failed to parse assignment draft', e);
+                    }
+                }
+                // フラグを消費（次回は復元しない）
+                sessionStorage.removeItem(STORAGE_FLAG_KEY);
+            } else {
+                // 通常の遷移で来た場合はドラフトをクリア（クリーンな状態で開始）
+                sessionStorage.removeItem(STORAGE_KEY);
+            }
         }
     }, [initialAssignment]);
+
+    // stateが変更されたらsessionStorageに保存（新規作成モードのみ）
+    useEffect(() => {
+        if (!initialAssignment) {
+            const draft = { title, description, dueDate };
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+        }
+    }, [title, description, dueDate, initialAssignment]);
 
     // エディター内容変更処理
     const handleEditorChange = () => {
@@ -127,6 +160,9 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 }
 
                 await onCreateAssignment(assignmentData);
+                // 作成成功時にドラフトとフラグを削除
+                sessionStorage.removeItem(STORAGE_KEY);
+                sessionStorage.removeItem(STORAGE_FLAG_KEY);
             }
             handleReset();
         } catch (error) {
@@ -144,6 +180,11 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         setShowCreateOptions(false);
         if (editorRef.current) {
             editorRef.current.innerHTML = '';
+        }
+        // キャンセル時もドラフトを削除
+        if (!initialAssignment) {
+            sessionStorage.removeItem(STORAGE_KEY);
+            sessionStorage.removeItem(STORAGE_FLAG_KEY);
         }
         onCollapse();
     };
@@ -519,10 +560,14 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 isOpen={showProblemTypeModal}
                 onClose={() => setShowProblemTypeModal(false)}
                 onSelectProgrammingProblem={() => {
+                    // 問題作成へ遷移する前にフラグを立てる
+                    sessionStorage.setItem(STORAGE_FLAG_KEY, 'true');
                     onNavigateToCreateProblem();
                     setShowProblemTypeModal(false);
                 }}
                 onSelectSelectionProblem={() => {
+                    // 問題作成へ遷移する前にフラグを立てる
+                    sessionStorage.setItem(STORAGE_FLAG_KEY, 'true');
                     onNavigateToCreateSelectionProblem();
                     setShowProblemTypeModal(false);
                 }}
@@ -530,3 +575,4 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         </div>
     );
 };
+
