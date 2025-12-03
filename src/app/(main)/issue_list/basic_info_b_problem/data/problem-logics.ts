@@ -1339,19 +1339,7 @@ const linkedListAppendLogicWrapper = {
     // 静的ステップと動的ステップを組み合わせる
     traceLogic: [
         ...linkedListAppendLogic.traceLogic.slice(0, 12), // 0~11行目は静的
-        (vars: VariablesState) => { // 12行目 (Line 13) は動的
-             // ここで variant を参照したいが、引数に来ないため、
-             // アプリケーション側で「VariablesStateにselectedLogicVariantを含める」か、
-             // `pseudoCodeLogic` を修正して variant を渡す必要があります。
-             
-             // 現状の設計（VariablesStateに variant が含まれていない）場合、
-             // ここでは「常に正解（ア）」または「何もしない」しか返せません。
-             
-             // ただし、problem-logics.tsの末尾にある `pseudoCodeLogic` では
-             // `traceLogic` は `vars` しか受け取っていません。
-             // 解決策として、ProblemClient側で `onSetLogicVariant` した際に
-             // `variables` にも `_variant` のような隠しプロパティでセットすることをお勧めします。
-             
+        (vars: VariablesState) => { // 12行目 (Line 13) は動的             
              const variant = vars._variant as string || 'ア'; // _variantがあれば使う
              const stepFunc = linkedListAppendStepLogics[variant] || linkedListAppendStepLogics['default'];
              return stepFunc(vars);

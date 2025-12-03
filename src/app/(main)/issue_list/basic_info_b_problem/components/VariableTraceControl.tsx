@@ -198,7 +198,7 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
             })
           .map(([name, value]) => {
             // initialized フラグはUIに表示しない
-            if (['initialized', 'problemId', 'currentLine'].includes(name)) return null;
+            if (['initialized', 'problemId', 'currentLine', '_variant'].includes(name)) return null;
 
             let displayValue: string;
             

@@ -971,7 +971,7 @@ export const problems: Problem[] = [
         logicType: 'ADMISSION_FEE',
         title: { ja: "基本情報技術者試験 科目B プログラムの条件分岐", en: "Fundamental Information Technology Engineer Examination, Subject B, Question 21" },
         description: {
-            ja: "次のプログラム中の□に入れる正しい答えを、解答群の中から選べ。\n\nある施設の入場料は、0歳から3歳までは100円、4歳から9歳までは300円、10歳以上は500円である。関数 fee は、年齢を表す0以上の整数(num)を引数として受け取り、入場料を返す。",
+            ja: "次のプログラム中の[  ?  ]に入れる正しい答えを、解答群の中から選べ。\n\nある施設の入場料は、0歳から3歳までは100円、4歳から9歳までは300円、10歳以上は500円である。関数 fee は、年齢を表す0以上の整数(num)を引数として受け取り、入場料を返す。",
             en: "Select the correct answer for the blank in the following program from the answer choices.\n\nThe admission fee for a certain facility is 100 yen for ages 0 to 3, 300 yen for ages 4 to 9, and 500 yen for ages 10 and over. The function 'fee' takes a non-negative integer representing age(num) as an argument and returns the admission fee."
         },
         programLines: {
@@ -980,7 +980,7 @@ export const problems: Problem[] = [
                 ' 2:   整数型: ret',
                 ' 3:   if (num が 3 以下)',
                 ' 4:     ret ← 100',
-                ' 5:   elseif (            )',
+                ' 5:   elseif (  [  ?  ]  )',
                 ' 6:     ret ← 300',
                 ' 7:   else',
                 ' 8:     ret ← 500',
@@ -992,7 +992,7 @@ export const problems: Problem[] = [
                 ' 2:   integer: ret',
                 ' 3:   if (num <= 3)',
                 ' 4:     ret ← 100',
-                ' 5:   elseif (            )',
+                ' 5:   elseif (  [  ?  ]  )',
                 ' 6:     ret ← 300',
                 ' 7:   else',
                 ' 8:     ret ← 500',
