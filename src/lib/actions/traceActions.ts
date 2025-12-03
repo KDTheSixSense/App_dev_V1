@@ -1,11 +1,12 @@
 'use server';
 
-import fs from 'fs/promises';
-import path from 'path';
-import { exec } from 'child_process';
+import { promises as fs } from 'fs';
+import * as path from 'path';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 
 const execPromise = promisify(exec);
+import { executeCodeSchema } from '../validations';
 
 /**
  * OpenAIのGPT-4oモデルに疑似言語コードの生成をリクエストするサーバーアクション
@@ -75,7 +76,7 @@ yとzの値をこの順にコンマ区切りで出力する
 　for (i を 2 から inの要素数 まで 1 ずつ増やす)
 　　tail ← out[outの要素数]
 　　outの末尾に (tail + in[i]) の結果を追加する
-　endfor
+endfor
 　return out
 
 ## 例4: (サンプル問題 [科目B] 問4)
@@ -90,14 +91,14 @@ yとzの値をこの順にコンマ区切りで出力する
 　　else
 　　　y ← y - x
 　　endif
-　endwhile
+endwhile
 　return x
 
 ## 例5: (サンプル問題 [科目B] 問5)
 ### 指示: √x²+y² の計算 (pow関数使用)
 ### 生成コード:
 ○実数型: calc(実数型: x, 実数型: y)
-  return pow(pow(x, 2) + pow(y, 2), 0.5)
+return pow(pow(x, 2) + pow(y, 2), 0.5)
 
 ## 例6: (サンプル問題 [科目B] 問6)
 ### 指示: 8ビットのビット並びを逆順にする
@@ -105,11 +106,11 @@ yとzの値をこの順にコンマ区切りで出力する
 ○8ビット型: rev(8ビット型: byte)
   8ビット型: rbyte ← byte
   8ビット型: r ← 00000000
-  整数型: i
+整数型: i
   for (i を 1 から 8 まで 1 ずつ増やす)
     r ← (r << 1) ∨ (rbyte ∧ 00000001)
     rbyte ← rbyte >> 1
-  endfor
+endfor
   return r
 
 ## 例7: (サンプル問題 [科目B] 問7)
@@ -158,7 +159,7 @@ yとzの値をこの順にコンマ区切りで出力する
     nを出力
   else
     nを出力
-  endif
+endif
 
 ## 例10: (サンプル問題 [科目B] 問10)
 ### 指示: 単方向リストの要素削除
@@ -173,7 +174,7 @@ yとzの値をこの順にコンマ区切りで出力する
     prev ← listHead
    for (i を 2 から pos - 1 まで 1 ずつ増やす)
      prev ← prev.next
-   endfor
+endfor
    prev.next ← prev.next.next
   endif
 
@@ -201,7 +202,7 @@ yとzの値をこの順にコンマ区切りで出力する
     if (s1[i] = s2[i])
       cnt ← cnt + 1
     endif
-  endfor
+endfor
   return cnt ÷ s1の要素数
 
 ## 例13: (サンプル問題 [科目B] 問13)
@@ -220,14 +221,14 @@ yとzの値をこの順にコンマ区切りで出力する
     else
       return middle
     endif
-  endwhile
+endwhile
    return -1
 
 ## 例14: (サンプル問題 [科目B] 問14)
 ### 指示: 五数要約
 ### 生成コード:
 ○実数型: findRank(実数型の配列: sortedData, 実数型: p)
-  整数型: i
+整数型: i
   i ← (sortedDataの要素数 - 1) × p の小数点以下を切り上げた値
   return sortedData[i + 1]
 ○実数型の配列: summarize(実数型の配列: sortedData)
@@ -236,7 +237,7 @@ yとzの値をこの順にコンマ区切りで出力する
  整数型: i
  for (i を 1 から pの要素数 まで 1 ずつ増やす)
    rankDataの末尾に findRank(sortedData, p[i])の戻り値 を追加する
- endfor
+endfor
  return rankData
 
 ## 例15: (サンプル問題 [科目B] 問16)
@@ -249,7 +250,7 @@ yとzの値をこの順にコンマ区切りで出力する
  for (i を utf8Bytesの要素数 から 1 まで 1 ずつ減らす)
    utf8Bytes[i] ← utf8Bytes[i] + (cp ÷ 64 の余り)
    cp ← cp ÷ 64 の商
- endfor
+endfor
  return utf8Bytes
 
 ## 例16: (基本情報技術者試験 科目B 問21)
@@ -284,202 +285,202 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
 ### 生成コード:
 大域: ListElement: listHead ← 未定義の値
 ○append(文字列型: qVal)
-  ListElement: prev, curr
-  curr ← ListElement(qVal)
-  if (listHead が 未定義)
-    listHead ← curr
-  else
-    prev ← listHead
-    while (prev.next が 未定義でない)
-      prev ← prev.next
-    endwhile
-    prev.next ← curr
-  endif
+  ListElement: prev, curr
+  curr ← ListElement(qVal)
+  if (listHead が 未定義)
+    listHead ← curr
+  else
+    prev ← listHead
+    while (prev.next が 未定義でない)
+      prev ← prev.next
+    endwhile
+    prev.next ← curr
+  endif
 
 ## 例19: (基本情報技術者試験 科目B 問24)
 ### 指示: 疎行列（スパースマトリックス）への変換
 ### 生成コード:
 ○整数型配列の配列: transformSparseMatrix(整数型の二次元配列: matrix)
-  整数型: i, j
-  整数型配列の配列: sparseMatrix
-  sparseMatrix ← {{}, {}, {}}
-  for (i を 1 から matrixの行数 まで 1 ずつ増やす)
-    for (j を 1 から matrixの列数 まで 1 ずつ増やす)
-      if (matrix[i, j] が 0 でない)
-        sparseMatrix[1]の末尾に iの値 を追加する
-        sparseMatrix[2]の末尾に jの値 を追加する
-        sparseMatrix[3]の末尾に matrix[i, j]の値 を追加する
-      endif
-    endfor
-  endfor
-  return sparseMatrix
+  整数型: i, j
+  整数型配列の配列: sparseMatrix
+  sparseMatrix ← {{}, {}, {}}
+  for (i を 1 から matrixの行数 まで 1 ずつ増やす)
+    for (j を 1 から matrixの列数 まで 1 ずつ増やす)
+      if (matrix[i, j] が 0 でない)
+        sparseMatrix[1]の末尾に iの値 を追加する
+        sparseMatrix[2]の末尾に jの値 を追加する
+        sparseMatrix[3]の末尾に matrix[i, j]の値 を追加する
+      endif
+    endfor
+  endfor
+  return sparseMatrix
 
 ## 例20: (基本情報技術者試験 科目B 問25)
 ### 指示: 条件付き確率の計算
 ### 生成コード:
 ○実数型: prob(文字型: c1, 文字型: c2)
-  文字列型: s1 ← c1の1文字だけから成る文字列
-  文字列型: s2 ← c2の1文字だけから成る文字列
-  if (words.freq(s1 + s2) が 0 より大きい)
-    return words.freq(s1 + s2) ÷ (words.freq(s1) - words.freqE(s1))
-  else
-    return 0
-  endif
+  文字列型: s1 ← c1の1文字だけから成る文字列
+  文字列型: s2 ← c2の1文字だけから成る文字列
+  if (words.freq(s1 + s2) が 0 より大きい)
+    return words.freq(s1 + s2) ÷ (words.freq(s1) - words.freqE(s1))
+  else
+    return 0
+  endif
 
 ## 例21: (令和5年 科目B 問1)
 ### 指示: 素数探索（試し割り法）
 ### 生成コード:
 ○整数型の配列: findPrimeNumbers(整数型: num)
-  整数型の配列: pnList ← {}
-  整数型: i, j
-  論理型: divideFlag
-  for (i を 2 から num まで 1 ずつ増やす)
-    divideFlag ← true
-    for (j を 2 から iの正の平方根の整数部分 まで 1 ずつ増やす)
-      if (i ÷ j の余り が 0 と等しい)
-        divideFlag ← false
-        繰返し処理を終了する
-      endif
-    endfor
-    if (divideFlag が true と等しい)
-      pnListの末尾に iの値を 追加する
-    endif
-  endfor
-  return pnList
+  整数型の配列: pnList ← {}
+  整数型: i, j
+  論理型: divideFlag
+  for (i を 2 から num まで 1 ずつ増やす)
+    divideFlag ← true
+    for (j を 2 から iの正の平方根の整数部分 まで 1 ずつ増やす)
+      if (i ÷ j の余り が 0 と等しい)
+        divideFlag ← false
+        繰返し処理を終了する
+      endif
+    endfor
+    if (divideFlag が true と等しい)
+      pnListの末尾に iの値を 追加する
+    endif
+  endfor
+  return pnList
 
 ## 例22: (令和5年 科目B 問2)
 ### 指示: 手続きの呼び出し順トレース
 ### 生成コード:
 ○proc1()
-  "A" を出力する
-  proc3()
+  "A" を出力する
+  proc3()
 ○proc2()
-  proc3()
-  "B" を出力する
-  proc1()
+  proc3()
+  "B" を出力する
+  proc1()
 ○proc3()
-  "C" を出力する
+  "C" を出力する
 
 ## 例23: (令和5年 科目B 問3)
 ### 指示: クイックソート
 ### 生成コード:
 ○sort(整数型: first, 整数型: last)
-  整数型: pivot, i, j
-  pivot ← data[(first + last) ÷ 2の商]
-  i ← first
-  j ← last
-  while (true)
-    while (data[i] < pivot)
-      i ← i + 1
-    endwhile
-    while (pivot < data[j])
-      j ← j - 1
-    endwhile
-    if (i ≧ j)
-      繰返し処理を終了する
-    endif
-    data[i]とdata[j]の値を入れ替える
-    i ← i + 1
-    j ← j - 1
-  endwhile
-  dataの全要素の値を要素番号の順に空白区切りで出力する
-  if (first < i - 1)
-    sort(first, i - 1)
-  endif
-  if (j + 1 < last)
-    sort(j + 1, last)
-  endif
+  整数型: pivot, i, j
+  pivot ← data[(first + last) ÷ 2の商]
+  i ← first
+  j ← last
+  while (true)
+    while (data[i] < pivot)
+      i ← i + 1
+    endwhile
+    while (pivot < data[j])
+      j ← j - 1
+    endwhile
+    if (i ≧ j)
+      繰返し処理を終了する
+    endif
+    data[i]とdata[j]の値を入れ替える
+    i ← i + 1
+    j ← j - 1
+  endwhile
+  dataの全要素の値を要素番号の順に空白区切りで出力する
+  if (first < i - 1)
+    sort(first, i - 1)
+  endif
+  if (j + 1 < last)
+    sort(j + 1, last)
+  endif
 
 ## 例25: (令和5年 科目B 問5)
 ### 指示: コサイン類似度の計算
 ### 生成コード:
 ○実数型: calcCosineSimilarity(実数型の配列: vector1, 実数型の配列: vector2)
-  実数型: similarity, numerator, denominator, temp ← 0
-  整数型: i
-  numerator ← 0
-  for (i を 1 から vector1の要素数 まで 1 ずつ増やす)
-    numerator ← numerator + vector1[i] × vector2[i]
-  endfor
-  for (i を 1 から vector1の要素数 まで 1 ずつ増やす)
-    temp ← temp + vector1[i]の2乗
-  endfor
-  denominator ← tempの正の平方根
-  temp ← 0
-  for (i を 1 から vector2の要素数 まで 1 ずつ増やす)
-    temp ← temp + vector2[i]の2乗
-  endfor
-  denominator ← denominator × (tempの正の平方根)
-  similarity ← numerator ÷ denominator
-  return similarity
+  実数型: similarity, numerator, denominator, temp ← 0
+  整数型: i
+  numerator ← 0
+  for (i を 1 から vector1の要素数 まで 1 ずつ増やす)
+    numerator ← numerator + vector1[i] × vector2[i]
+  endfor
+  for (i を 1 から vector1の要素数 まで 1 ずつ増やす)
+    temp ← temp + vector1[i]の2乗
+  endfor
+  denominator ← tempの正の平方根
+  temp ← 0
+  for (i を 1 から vector2の要素数 まで 1 ずつ増やす)
+    temp ← temp + vector2[i]の2乗
+  endfor
+  denominator ← denominator × (tempの正の平方根)
+  similarity ← numerator ÷ denominator
+  return similarity
 
 ## 例26: (令和6年 科目B 問1)
 ### 指示: 3つの数の最大値
 ### 生成コード:
 ○整数型: maximum(整数型: x, 整数型: y, 整数型: z)
-  if (x > y and x > z)
-    return x
-  elseif (y > z)
-    return y
-  else
-    return z
-  endif
+  if (x > y and x > z)
+    return x
+  elseif (y > z)
+    return y
+  else
+    return z
+  endif
 
 ## 例27: (令和6年 科目B 問2)
 ### 指示: 2進数文字列から10進数への変換
 ### 生成コード:
 ○整数型: convDecimal(文字列型: binary)
-  整数型: i, length, result ← 0
-  length ← binaryの文字数
-  for (i を 1 から length まで 1 ずつ増やす)
-    result ← result × 2 + int(binary の i文字目の文字)
-  endfor
-  return result
+  整数型: i, length, result ← 0
+  length ← binaryの文字数
+  for (i を 1 から length まで 1 ずつ増やす)
+    result ← result × 2 + int(binary の i文字目の文字)
+  endfor
+  return result
 
 ## 例28: (令和6年 科目B 問3)
 ### 指示: 辺リストから隣接行列への変換
 ### 生成コード:
 ○整数型の二次配列: edgesToMatrix(整数型配列の配列: edgeList, 整数型: nodeNum)
-  整数型の二次配列: adjMatrix ← {nodeNum行nodeNum列の 0}
-  整数型: i, u, v
-  for (i を 1 から edgeListの要素数 まで 1 ずつ増やす)
-    u ← edgeList[i][1]
-    v ← edgeList[i][2]
-    adjMatrix[u, v] ← 1
-    adjMatrix[v, u] ← 1
-  endfor
-   return adjMatrix
+  整数型の二次配列: adjMatrix ← {nodeNum行nodeNum列の 0}
+  整数型: i, u, v
+  for (i を 1 から edgeListの要素数 まで 1 ずつ増やす)
+    u ← edgeList[i][1]
+    v ← edgeList[i][2]
+    adjMatrix[u, v] ← 1
+    adjMatrix[v, u] ← 1
+  endfor
+   return adjMatrix
 
 ## 例29: (令和6年 科目B 問4)
 ### 指示: マージアルゴリズム
 ### 生成コード:
 ○整数型の配列: merge(整数型の配列: data1, 整数型の配列: data2)
-  整数型: n1 ← data1の要素数
-  整数型: n2 ← data2の要素数
-  整数型の配列: work ← {(n1 + n2)個の 未定義の値}
-  整数型: i ← 1
-  整数型: j ← 1
-  整数型: k ← 1
-  while ((i ≦ n1) and (j ≦ n2))
-    if (data1[i] ≦ data2[j])
-      work[k] ← data1[i]
-      i ← i + 1
-    else
-      work[k] ← data2[j]
-      j ← j + 1
-    endif
-    k ← k + 1
-  endwhile
-  while (i ≦ n1)
-    work[k] ← data1[i]
-    i ← i + 1
-    k ← k + 1
-  endwhile
-  while (j ≦ n2)
-    work[k] ← data2[j]
-    j ← j + 1
-    k ← k + 1
-  endwhile
-  return work
+  整数型: n1 ← data1の要素数
+  整数型: n2 ← data2の要素数
+  整数型の配列: work ← {(n1 + n2)個の 未定義の値}
+  整数型: i ← 1
+  整数型: j ← 1
+  整数型: k ← 1
+  while ((i ≦ n1) and (j ≦ n2))
+    if (data1[i] ≦ data2[j])
+      work[k] ← data1[i]
+      i ← i + 1
+    else
+      work[k] ← data2[j]
+      j ← j + 1
+    endif
+    k ← k + 1
+  endwhile
+  while (i ≦ n1)
+    work[k] ← data1[i]
+    i ← i + 1
+    k ← k + 1
+  endwhile
+  while (j ≦ n2)
+    work[k] ← data2[j]
+    j ← j + 1
+    k ← k + 1
+  endwhile
+  return work
 
 ---
 以上のルールと例を厳守し、ユーザーの指示に対する疑似言語コードのみを、追加の説明やマークダウン(\`\`\`)なしで直接生成してください。`;
@@ -487,7 +488,7 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
   try {
     // ChatGPT APIのエンドポイント
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
-    
+
     // APIキーを環境変数から取得します。
     // Next.jsの環境変数(.env.localなど)に OPENAI_API_KEY="あなたのAPIキー" を設定してください。
     const apiKey = process.env.OPENAI_API_KEY;
@@ -513,17 +514,16 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
 
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        // AuthorizationヘッダーでAPIキーを送信
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
-        const errorBody = await response.json();
-        throw new Error(`APIリクエストに失敗しました: ${response.statusText} (${JSON.stringify(errorBody)})`);
+      const errorBody = await response.json();
+      throw new Error(`APIリクエストに失敗しました: ${response.statusText} (${JSON.stringify(errorBody)})`);
     }
 
     const result = await response.json();
@@ -536,9 +536,9 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
 
     // 生成されたテキストからコメント行を念のため除去する処理を追加
     const codeWithoutComments = generatedText
-        .split('\n')
-        .filter((line: string) => !line.trim().startsWith('//')) // '//' で始まる行を除外
-        .join('\n');
+      .split('\n')
+      .filter((line: string) => !line.trim().startsWith('//')) // '//' で始まる行を除外
+      .join('\n');
 
     return codeWithoutComments.trim();
 
@@ -555,10 +555,10 @@ export async function saveErrorLogAction(errorMsg: string, code: string, line: n
   try {
     // プロジェクトルートを取得
     const cwd = process.cwd();
-    
+
     // パスの中に 'src' が既に含まれているかチェックして重複を防ぐ
-    const targetPath = cwd.endsWith('src') 
-      ? 'app/(main)/customize_trace' 
+    const targetPath = cwd.endsWith('src')
+      ? 'app/(main)/customize_trace'
       : 'src/app/(main)/customize_trace';
 
     const logDir = path.join(cwd, targetPath);
@@ -661,7 +661,7 @@ print(sum_val)
 
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
@@ -669,8 +669,8 @@ print(sum_val)
     });
 
     if (!response.ok) {
-        const errorBody = await response.json();
-        throw new Error(`APIリクエストに失敗しました: ${response.statusText} (${JSON.stringify(errorBody)})`);
+      const errorBody = await response.json();
+      throw new Error(`APIリクエストに失敗しました: ${response.statusText} (${JSON.stringify(errorBody)})`);
     }
 
     const result = await response.json();
@@ -682,11 +682,11 @@ print(sum_val)
 
     // コードブロックが含まれている場合の除去処理
     let cleanCode = generatedText.replace(/^```python\n/, '').replace(/^```\n/, '').replace(/\n```$/, '');
-    
+
     return cleanCode.trim();
 
   } catch (error: any) {
-    console.error("Pythonコード生成エラー:", error);
+    console.error("AIコード生成エラー:", error);
     throw new Error(`コードの生成に失敗しました: ${error.message}`);
   }
 }
@@ -696,15 +696,33 @@ print(sum_val)
  */
 export async function runPythonTraceAction(code: string) {
   console.log("--- [Debug] runPythonTraceAction Started ---");
-  
+
+  // 1. Zod Validation
+  const validationResult = executeCodeSchema.safeParse({ source_code: code, language: 'python' });
+  if (!validationResult.success) {
+    throw new Error(`Validation Error: ${(validationResult.error as any).errors.map((e: any) => e.message).join(', ')}`);
+  }
+
+  // 2. Keyword Blocking
+  const forbiddenKeywords = [
+    'import os', 'from os', 'import sys', 'from sys', 'import subprocess', 'from subprocess',
+    'import shutil', 'from shutil', 'import pathlib', 'from pathlib',
+    'open(', 'exec(', 'eval(', '__import__', 'input('
+  ];
+  for (const keyword of forbiddenKeywords) {
+    if (code.includes(keyword)) {
+      throw new Error(`Security Error: Forbidden keyword "${keyword}" detected.`);
+    }
+  }
+
   try {
     const cwd = process.cwd();
     console.log("[Debug] Current Working Directory:", cwd);
-    
+
     // パス解決のロジック
     let scriptRelativePath = 'src/lib/python_tracer.py';
     if (cwd.endsWith('src')) {
-        scriptRelativePath = 'lib/python_tracer.py';
+      scriptRelativePath = 'lib/python_tracer.py';
     }
 
     const tracerPath = path.join(cwd, scriptRelativePath);
@@ -712,94 +730,94 @@ export async function runPythonTraceAction(code: string) {
 
     // ファイル存在確認
     try {
-        await fs.access(tracerPath);
-        console.log("[Debug] Tracer file found.");
+      await fs.access(tracerPath);
+      console.log("[Debug] Tracer file found.");
     } catch (e) {
-        console.error("[Debug] Tracer file NOT found at:", tracerPath);
-        throw new Error(`Tracer file not found at ${tracerPath}`);
+      console.error("[Debug] Tracer file NOT found at:", tracerPath);
+      throw new Error(`Tracer file not found at ${tracerPath}`);
     }
-    
-    const pythonCommand = 'python3'; 
+
+    const pythonCommand = 'python3';
     console.log(`[Debug] Spawning ${pythonCommand} with ${tracerPath}`);
-    
-    const child = require('child_process').spawn(pythonCommand, [tracerPath]);
-    
+
+    const child = spawn(pythonCommand, [tracerPath]);
+
     let stdoutData = '';
     let stderrData = '';
 
     return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-            child.kill();
-            console.error("[Debug] Execution Timed Out");
-            reject(new Error('Execution timed out'));
-        }, 5000);
+      const timeout = setTimeout(() => {
+        child.kill();
+        console.error("[Debug] Execution Timed Out");
+        reject(new Error('Execution timed out'));
+      }, 5000);
 
-        // ★修正点: エンコーディングを指定して書き込み、エラーハンドリングを追加
-        try {
-            child.stdin.write(code, 'utf-8');
-            child.stdin.end();
-        } catch (writeErr) {
-            console.error("[Debug] stdin write error:", writeErr);
-            reject(new Error("Failed to write code to Python process."));
-            return;
+      // ★修正点: エンコーディングを指定して書き込み、エラーハンドリングを追加
+      try {
+        child.stdin.write(code, 'utf-8');
+        child.stdin.end();
+      } catch (writeErr) {
+        console.error("[Debug] stdin write error:", writeErr);
+        reject(new Error("Failed to write code to Python process."));
+        return;
+      }
+
+      child.stdout.on('data', (data: any) => {
+        stdoutData += data.toString();
+      });
+
+      child.stderr.on('data', (data: any) => {
+        stderrData += data.toString();
+      });
+
+      child.on('close', (code: number) => {
+        clearTimeout(timeout);
+        console.log("[Debug] Process closed with code:", code);
+
+        if (stderrData) {
+          console.log("[Debug] Python stderr:", stderrData);
         }
 
-        child.stdout.on('data', (data: any) => {
-            stdoutData += data.toString();
-        });
+        if (code !== 0) {
+          // エラーメッセージをわかりやすく返す
+          if (stderrData.includes("No such file or directory")) {
+            reject(new Error(`Python file not found. Check path: ${tracerPath}`));
+          } else if (stderrData.includes("command not found")) {
+            reject(new Error(`Python command not found. Is python3 installed?`));
+          } else {
+            reject(new Error(`Python runtime error: ${stderrData}`));
+          }
+          return;
+        }
 
-        child.stderr.on('data', (data: any) => {
-            stderrData += data.toString();
-        });
+        console.log("[Debug] stdout:", stdoutData);
 
-        child.on('close', (code: number) => {
-            clearTimeout(timeout);
-            console.log("[Debug] Process closed with code:", code);
-            
-            if (stderrData) {
-                console.log("[Debug] Python stderr:", stderrData);
-            }
+        try {
+          if (!stdoutData.trim()) {
+            console.error("[Debug] stdout is empty");
+            reject(new Error("Python script produced no output."));
+            return;
+          }
 
-            if (code !== 0) {
-                // エラーメッセージをわかりやすく返す
-                if (stderrData.includes("No such file or directory")) {
-                     reject(new Error(`Python file not found. Check path: ${tracerPath}`));
-                } else if (stderrData.includes("command not found")) {
-                     reject(new Error(`Python command not found. Is python3 installed?`));
-                } else {
-                     reject(new Error(`Python runtime error: ${stderrData}`));
-                }
-                return;
-            }
+          const lines = stdoutData.trim().split('\n');
+          const lastLine = lines.pop() || '[]';
+          const result = JSON.parse(lastLine);
 
-            console.log("[Debug] stdout:", stdoutData);
+          console.log("[Debug] Parsed JSON successfully. Items:", result.length);
+          resolve(result);
 
-            try {
-                if (!stdoutData.trim()) {
-                    console.error("[Debug] stdout is empty");
-                    reject(new Error("Python script produced no output."));
-                    return;
-                }
-                
-                const lines = stdoutData.trim().split('\n');
-                const lastLine = lines.pop() || '[]';
-                const result = JSON.parse(lastLine);
-                
-                console.log("[Debug] Parsed JSON successfully. Items:", result.length);
-                resolve(result);
+        } catch (e) {
+          console.error("[Debug] JSON Parse Error:", e);
+          console.error("[Debug] Raw output was:", stdoutData);
+          reject(new Error(`Failed to parse trace result.`));
+        }
+      });
 
-            } catch (e) {
-                console.error("[Debug] JSON Parse Error:", e);
-                console.error("[Debug] Raw output was:", stdoutData);
-                reject(new Error(`Failed to parse trace result.`));
-            }
-        });
-        
-        child.on('error', (err: any) => {
-            clearTimeout(timeout);
-            console.error("[Debug] Spawn Error:", err);
-            reject(new Error(`Failed to start Python process: ${err.message}`));
-        });
+      child.on('error', (err: any) => {
+        clearTimeout(timeout);
+        console.error("[Debug] Spawn Error:", err);
+        reject(new Error(`Failed to start Python process: ${err.message}`));
+      });
     });
 
   } catch (error: any) {

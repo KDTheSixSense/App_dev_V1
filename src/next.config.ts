@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   /* config options here */
 
   output: 'standalone',
+  reactStrictMode: false,
+  transpilePackages: ['three', 'three-stdlib', '@react-three/drei', 'troika-three-text', 'troika-worker-utils'],
   images: {
     // remotePatterns (推奨される新しい形式) を使用
     remotePatterns: [
@@ -43,6 +45,10 @@ const nextConfig: NextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://lh3.googleusercontent.com; font-src 'self'; connect-src 'self' https://raw.githubusercontent.com blob: data:; worker-src 'self' blob: data: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'none';",
           },
         ],
       },

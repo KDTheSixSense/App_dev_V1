@@ -16,6 +16,7 @@ export const sessionOptions: SessionOptions = {
   cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
   },
 };
 
@@ -24,21 +25,21 @@ export const sessionOptions: SessionOptions = {
  */
 // IronSessionData の型定義を拡張
 declare module 'iron-session' {
-  interface IronSessionData {
-    // 既存のログイン済みユーザー情報
-    user?: {
-      id: number;
-      email: string;
-      username: string | null;
-      lastlogin?: Date | null;
-    };
-    // Google新規登録確認用の一時データ
-    googleSignupProfile?: {
-      email: string;
-      name: string;
-      picture: string | null;
-    };
-  }
+  interface IronSessionData {
+    // 既存のログイン済みユーザー情報
+    user?: {
+      id: number;
+      email: string;
+      username: string | null;
+      lastlogin?: Date | null;
+    };
+    // Google新規登録確認用の一時データ
+    googleSignupProfile?: {
+      email: string;
+      name: string;
+      picture: string | null;
+    };
+  }
 }
 
 /**
