@@ -116,6 +116,7 @@ const Register = () => {
               <input
                 {...register("username", { required: "ユーザー名は必須です" })}
                 type="text"
+                autoComplete="username"
                 placeholder="例：山田 太郎"
                 className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]" />
               {errors.username && <span className="text-sm text-red-500">{errors.username.message}</span>}
@@ -133,6 +134,7 @@ const Register = () => {
                   },
                 })}
                 type="email"
+                autoComplete="email"
                 placeholder="mail@example.com"
                 className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
               />
@@ -148,6 +150,7 @@ const Register = () => {
                   minLength: { value: 8, message: "8文字以上のパスワードを設定してください" },
                 })}
                 type="password"
+                autoComplete="new-password"
                 className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
               />
               {errors.newpassword && <span className="text-sm text-red-500">{errors.newpassword.message}</span>}
@@ -162,6 +165,7 @@ const Register = () => {
                   validate: (value) => value === getValues("newpassword") || "パスワードが一致しません",
                 })}
                 type="password"
+                autoComplete="new-password"
                 className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
               />
               {errors.anspassword && <span className="text-sm text-red-500">{errors.anspassword.message}</span>}
@@ -173,6 +177,7 @@ const Register = () => {
               <input
                 {...register("birth")}
                 type="date"
+                autoComplete="bday"
                 className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01] [color-scheme:dark]"
               />
             </div>

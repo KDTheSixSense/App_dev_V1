@@ -1,4 +1,3 @@
-//middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -130,28 +129,73 @@ export async function middleware(req: NextRequest) {
     new RegExp(`^${path.replace(/:\w+\*/, '.*')}$`).test(pathname)
   );
 
+  // --- Security Headers ---
+  // Use crypto.randomUUID() directly (works in Edge Runtime and Node.js 19+)
+  const nonce = crypto.randomUUID();
+
+  // CSPの設定
+  const isDev = process.env.NODE_ENV !== 'production';
+  const scriptSrc = isDev
+    ? `'self' 'unsafe-eval' 'unsafe-inline' blob:`
+    : `'self' 'nonce-${nonce}' blob:`; // unsafe-inline removed in prod
+
+  const cspHeader = `
+    default-src 'self';
+    script-src ${scriptSrc};
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' blob: data: https://lh3.googleusercontent.com;
+    font-src 'self';
+    connect-src 'self' https://raw.githubusercontent.com blob: data:;
+    worker-src 'self' blob: data: 'unsafe-inline' 'unsafe-eval';
+    frame-ancestors 'none';
+    form-action 'self';
+    base-uri 'self';
+  `.replace(/\s{2,}/g, ' ').trim();
+
+  // リクエストヘッダーにnonceを設定
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', cspHeader);
+
+  // レスポンスの初期化
+  let response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
   if (isProtectedRoute) {
     if (!hasCookie) {
       console.log(`[Middleware] No cookie found. Redirecting to /auth/login...`);
       const absoluteURL = new URL('/auth/login', req.nextUrl.origin);
-      return NextResponse.redirect(absoluteURL.toString());
+      response = NextResponse.redirect(absoluteURL.toString());
     }
-
-    // 3. (Optional but recommended) セッションの中身を簡易検証
-    // Edge Runtimeでは iron-session の完全な復号化が難しい場合があるため、
-    // ここでは「クッキー値が明らかに不正でないか」程度のチェックに留めるか、
-    // または getIronSession を Edge 互換で使う。
-    // 今回は、少なくとも「クッキーがある」こと以上のチェックとして、
-    // 値が空でないことなどを確認する（iron-sessionは署名付きなので改ざんは検知される）。
-
-    // より厳密な検証は各ページ/APIの getSession() で行われるが、
-    // ここで明らかに無効なものを弾けるとベスト。
   }
 
-  return NextResponse.next();
+  // レスポンスヘッダーにセキュリティ設定を追加
+  response.headers.set('Content-Security-Policy', cspHeader);
+  response.headers.set('X-DNS-Prefetch-Control', 'on');
+  response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+  // --- CORS Headers for API Routes ---
+  if (pathname.startsWith('/api')) {
+    response.headers.set('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+
+  // Prevent caching for security
+  response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+
+  return response;
 }
 
 export const config = {
   // api, _next/static, _next/image, .png, .ico, .json を除くすべてのパスにミドルウェアを適用
-  matcher: '/((?!api|_next/static|_next/image|.*\\.png$|favicon\\.ico|.*\\.json$).*)',
+  matcher: '/((?!_next/static|_next/image|.*\\.png$|favicon\\.ico|.*\\.json$).*)',
 };
