@@ -25,7 +25,7 @@ spec:
         - name: migrator
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          workingDir: /usr/src/app/src # ★注意: Dockerイメージ内の作業ディレクトリ
+          workingDir: /app # ★注意: Dockerイメージ内の作業ディレクトリ
           command: {{ .Values.migration.command | toYaml | nindent 12 }}
           env:
             - name: PG_USER
@@ -68,7 +68,7 @@ spec:
         - name: seeder
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          workingDir: /usr/src/app/src # ★注意: Dockerイメージ内の作業ディレクトリ
+          workingDir: /app # ★注意: Dockerイメージ内の作業ディレクトリ
           command: {{ .Values.seeding.command | toYaml | nindent 12 }}
           env:
             - name: PG_USER

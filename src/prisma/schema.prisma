@@ -236,6 +236,8 @@ model Questions_Algorithm {
   subject    Subject    @relation(fields: [subjectId], references: [id])
   difficulty Difficulty @relation(fields: [difficultyId], references: [id])
   language   Language   @relation(fields: [language_id], references: [id])
+
+  @@unique([title, description])
 }
 
 model Questions {

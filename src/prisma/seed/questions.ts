@@ -85,7 +85,10 @@ async function seedProblemsFromExcel(prisma: PrismaClient) {
         };
 
         await prisma.questions_Algorithm.upsert({
-          where: { title: dataToUpsert.title },
+          where: {
+            title: dataToUpsert.title,
+            description: dataToUpsert.description,
+          },
           update: dataToUpsert,
           create: dataToUpsert,
         });
