@@ -12,14 +12,9 @@ import Image from 'next/image';
 import DOMPurify from 'dompurify';
 
 // --- データと型のインポート ---
-<<<<<<< HEAD
 import type { Problem as SerializableProblem } from '@/lib/problem-types';
-import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction} from '@/lib/actions';
-=======
-import type { Problem as SerializableProblem } from '@/lib/types';
 import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
 import TestCaseResultModal, { TestCaseResult } from '@/components/TestCaseResultModal';
->>>>>>> origin/Kent01212
 
 // Header.tsx からヘルパー関数と定数をコピー
 const MAX_HUNGER = 200; // 満腹度の最大値

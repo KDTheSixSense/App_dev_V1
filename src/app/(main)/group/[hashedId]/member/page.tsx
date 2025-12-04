@@ -12,15 +12,9 @@ export const dynamic = 'force-dynamic';
 interface Post {
     id: number;
     content: string;
-<<<<<<< HEAD
-    authorName: string; 
-    authorAvatar: string;
-    authorIcon: string | null;
-=======
     authorName: string;
     authorAvatar: string; // 頭文字
     authorIcon: string | null; // 画像URL
->>>>>>> origin/Kent01212
     createdAt: string;
 }
 
@@ -152,12 +146,8 @@ const MemberGroupPage: React.FC = () => {
                             authorName: post.author.username || '不明なユーザー',
 
                             authorAvatar: post.author.username?.charAt(0) || '?',
-<<<<<<< HEAD
-
-=======
                             // ★ここでAPIから返ってきた icon をセットしています
                             authorIcon: post.author.icon || null,
->>>>>>> origin/Kent01212
                             createdAt: new Date(post.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }),
 
                         }));
@@ -170,11 +160,6 @@ const MemberGroupPage: React.FC = () => {
 
                     }
 
-<<<<<<< HEAD
-                    
-
-=======
->>>>>>> origin/Kent01212
                     if (assignmentsRes.ok) {
 
                         const assignmentsData = await assignmentsRes.json();
@@ -355,20 +340,9 @@ const MemberGroupPage: React.FC = () => {
     return (
 
         <GroupLayout>
-<<<<<<< HEAD
-
-            {loading && <div style={{ padding: '2rem' }}>読み込み中...</div>}
-
-            {error && <div style={{ padding: '2rem', color: 'red' }}>エラー: {error}</div>}
-
-            {!loading && !group && <div style={{ padding: '2rem' }}>グループが見つかりません。</div>}
-
-            
-=======
             {loading && <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>読み込み中...</div>}
             {error && <div style={{ padding: '2rem', color: 'red', textAlign: 'center' }}>エラー: {error}</div>}
             {!loading && !group && <div style={{ padding: '2rem', textAlign: 'center' }}>グループが見つかりません。</div>}
->>>>>>> origin/Kent01212
 
             {group && (
 
@@ -405,13 +379,7 @@ const MemberGroupPage: React.FC = () => {
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
 
                         >
-<<<<<<< HEAD
-
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#2e7d32"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-
-=======
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="#2e7d32"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" /></svg>
->>>>>>> origin/Kent01212
                         </button>
 
                         <h1 style={{ fontSize: '24px', color: '#2e7d32', margin: '0 0 8px 0', fontWeight: '500' }}>
@@ -456,11 +424,6 @@ const MemberGroupPage: React.FC = () => {
 
                     </div>
 
-<<<<<<< HEAD
-                    
-
-=======
->>>>>>> origin/Kent01212
                     {/* タブコンテンツ */}
 
                     <div style={{ padding: '24px', backgroundColor: '#f9f9f9' }}>
@@ -475,12 +438,6 @@ const MemberGroupPage: React.FC = () => {
 
                                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
 
-<<<<<<< HEAD
-                                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#4CAF50', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', fontWeight: 'bold' }}>
-
-                                                {post.authorAvatar}
-
-=======
                                             {/* ★ 修正箇所: アイコン表示ロジック */}
                                             <div style={{
                                                 width: '32px', height: '32px', borderRadius: '50%',
@@ -499,7 +456,6 @@ const MemberGroupPage: React.FC = () => {
                                                     // アイコンがない場合は頭文字を表示
                                                     post.authorAvatar
                                                 )}
->>>>>>> origin/Kent01212
                                             </div>
 
                                             <div>
@@ -511,13 +467,7 @@ const MemberGroupPage: React.FC = () => {
                                             </div>
 
                                         </div>
-<<<<<<< HEAD
-
-                                        <div dangerouslySetInnerHTML={{ __html: post.content }} />
-
-=======
                                         <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
->>>>>>> origin/Kent01212
                                     </div>
 
                                 )) : <p>お知らせはありません。</p>}
@@ -536,204 +486,6 @@ const MemberGroupPage: React.FC = () => {
 
                         )}
 
-<<<<<<< HEAD
-
-
-                                                                        {activeTab === '課題' && (
-
-
-
-                                                                            <div>
-
-
-
-                                                                                {kadaiViewMode === 'list' && (
-
-
-
-                                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-
-
-                                                                                        {kadaiList.length > 0 ? kadaiList.map((kadai) => (
-
-
-
-                                                                                            <div
-
-
-
-                                                                                                key={kadai.id}
-
-
-
-                                                                                                style={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', cursor: 'pointer', transition: 'box-shadow 0.2s' }}
-
-
-
-                                                                                                onClick={() => handleKadaiDetail(kadai)}
-
-
-
-                                                                                                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
-
-
-
-                                                                                                onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
-
-
-
-                                                                                            >
-
-
-
-                                                                                                <div style={{ display: 'flex', alignItems: 'center' }}>
-
-
-
-                                                                                                    <div style={{
-
-
-
-                                                                                                        width: '32px', height: '32px', borderRadius: '50%',
-
-
-
-                                                                                                        backgroundColor: kadai.completed ? '#4caf50' : '#d32f2f',
-
-
-
-                                                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '16px', flexShrink: 0
-
-
-
-                                                                                                    }}>
-
-
-
-                                                                                                        {kadai.completed ? (
-
-
-
-                                                                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-
-
-
-                                                                                                        ) : (
-
-
-
-                                                                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-
-
-
-                                                                                                        )}
-
-
-
-                                                                                                    </div>
-
-
-
-                                                                                                    <div>
-
-
-
-                                                                                                        <h3 style={{ margin: '0 0 4px 0' }}>{kadai.title}</h3>
-
-
-
-                                                                                                        <p style={{ fontSize: '14px', color: '#5f6368', margin: 0 }}>期限: {kadai.dueDate ? new Date(kadai.dueDate).toLocaleString('ja-JP') : '未設定'}</p>
-
-
-
-                                                                                                    </div>
-
-
-
-                                                                                                </div>
-
-
-
-                                                                                            </div>
-
-
-
-                                                                                        )) : <p>課題はありません。</p>}
-
-
-
-                                                                                        {hasMoreKadai && (
-
-
-
-                                                                                            <button onClick={handleLoadMoreKadai} disabled={loadingMoreKadai} style={{ marginTop: '16px', padding: '10px 16px', border: '1px solid #00bcd4', color: '#00bcd4', backgroundColor: 'white', borderRadius: '4px', cursor: 'pointer' }}>
-
-
-
-                                                                                                {loadingMoreKadai ? '読み込み中...' : 'もっと見る'}
-
-
-
-                                                                                            </button>
-
-
-
-                                                                                        )}
-
-
-
-                                                                                    </div>
-
-
-
-                                                                                )}
-
-
-
-                                                                                
-
-
-
-                                                                                {kadaiViewMode === 'detail' && selectedKadai && (
-
-
-
-                                                                                    <AssignmentDetailView
-
-
-
-                                                                                        kadai={selectedKadai}
-
-
-
-                                                                                        hashedId={hashedId}
-
-
-
-                                                                                        onBack={handleBackToKadaiList}
-
-
-
-                                                                                        onAssignmentSubmit={handleAssignmentSubmit}
-
-
-
-                                                                                    />
-
-
-
-                                                                                )}
-
-
-
-                                                                            </div>
-
-
-
-                                                                        )}
-
-=======
                         {activeTab === '課題' && (
                             <div>
                                 {kadaiViewMode === 'list' && (
@@ -784,7 +536,6 @@ const MemberGroupPage: React.FC = () => {
                                 )}
                             </div>
                         )}
->>>>>>> origin/Kent01212
                     </div>
 
                 </div>

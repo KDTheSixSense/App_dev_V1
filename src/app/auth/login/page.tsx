@@ -115,30 +115,11 @@ const Login = () => {
       style={{ backgroundImage: "url('/images/Infopia_Login_Ragister_Background.png')" }}
     >
 
-<<<<<<< HEAD
-        {/* --- コンテンツラッパー (z-10) --- */}
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          
-          {/* --- ヘッダーロゴ (中央配置) --- */}
-          <header className="relative flex h-40 items-center justify-center py-6">
-            {/* ★ <a>タグに変更 */}
-            <a href="/" className="relative h-full w-full max-w-lg">
-                {/* ★ <img>タグに変更 (Next/Imageのfillとobject-containのスタイルを再現) */}
-                <img 
-                  src="/images/infopia_logo.png"
-                  alt="Infopia Logo"
-                  className="absolute inset-0 w-full h-full object-contain" 
-                  loading="eager" // priorityの代わりにeagerを使用
-                />
-            </a>
-          </header>
-=======
       {/* --- 背景の装飾 (オーバーレイ) --- */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-slate-950/60" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent opacity-70"></div>
       </div>
->>>>>>> origin/Kent01212
 
       {/* --- コンテンツラッパー (z-10) --- */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

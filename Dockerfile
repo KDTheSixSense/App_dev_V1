@@ -7,7 +7,7 @@ ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 
 WORKDIR /app
-COPY src/package.json src/package-lock.json* ./
+COPY src/package.json src/package-lock.json ./
 # prismaもdependenciesに含めておく
 RUN npm ci
 COPY src/ .
