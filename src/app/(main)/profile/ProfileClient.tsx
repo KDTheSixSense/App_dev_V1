@@ -304,7 +304,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
             <PetStatusView
               initialHunger={initialUser.Status_Kohaku?.[0].hungerlevel ?? 200}
               maxHunger={200}
-              adviceText={aiAdvice ? DOMPurify.sanitize(aiAdvice) : ''} // XSS対策: AIアドバイスをサニタイズ
+              adviceText={aiAdvice || ''} // Reactがエスケープするためサニタイズ不要
               petname={initialUser.Status_Kohaku?.[0].name || 'コハク'}
               petBirthdate={formattedPetBirthdate}
             />
