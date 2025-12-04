@@ -8,12 +8,8 @@ import { Play, Send, CheckCircle, ChevronDown, FileText, Code, GripVertical } fr
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import dynamic from 'next/dynamic';
 import { recordStudyTimeAction } from '@/lib/actions';
-<<<<<<< HEAD
 import type { Problem as SerializableProblem } from '@/lib/problem-types';
-=======
-import type { Problem as SerializableProblem } from '@/lib/types';
 import DOMPurify from 'dompurify';
->>>>>>> origin/Kent01212
 
 const DynamicAceEditor = dynamic(
     () => import('@/components/AceEditorWrapper'),

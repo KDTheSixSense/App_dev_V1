@@ -127,8 +127,8 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
           </p>
           
           {/* (配列プリセットのボタン) */}
-          {showArrayPresets && (
-             <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
+          {showArrayPresets && (
+             <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
                {(showArrayPresets as {label: string, value: any}[]).map((preset) => {
                 // プリセット(preset.value)内のすべてのキー(例: 'data', 'target')が
                 // 現在の変数(variables)と一致するかを判定する
