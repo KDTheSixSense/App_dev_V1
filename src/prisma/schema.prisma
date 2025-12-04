@@ -265,7 +265,7 @@ model Questions {
 /// プログラミング選択問題モデル
 model SelectProblem {
   id            Int     @id @default(autoincrement())
-  title         String // 問題タイトル
+  title         String @unique // 問題タイトル
   description   String  @db.Text // 問題文 (Markdown)
   explanation   String? @db.Text // 解説文
   answerOptions Json // 選択肢 (例: ["選択肢A", "選択肢B", ...])
