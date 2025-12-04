@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import toast from 'react-hot-toast';
 import {
     GroupDetail,
     Member,
@@ -62,13 +63,9 @@ export const useAdminData = (hashedId: string) => {
                 setMembers(members);
                 setMemberStats(memberStats);
 
-                // 日付の整形はここで行う
                 const formattedPosts = posts.map((post: any) => ({
                     ...post,
-                    date: new Date(post.createdAt).toLocaleDateString('ja-JP', {
-                        month: 'long',
-                        day: 'numeric'
-                    }),
+                    date: post.createdAt,
                     showMenu: false,
                     comments: [],
                     showComments: false,
@@ -138,7 +135,7 @@ export const useAdminData = (hashedId: string) => {
                     setAvailableSelectionProblems(data.map((p: any) => ({ ...p, type: 'select' })));
                 }
             }
-        } catch(e) {
+        } catch (e) {
             console.error(e);
         } finally {
             if (isMounted.current) {
@@ -156,10 +153,10 @@ export const useAdminData = (hashedId: string) => {
         if (currentStatus === true) {
             // 現在の管理者数をカウント
             const adminCount = members.filter(m => m.isAdmin).length;
-            
+
             // 管理者が1人しかいない場合は変更をブロック
             if (adminCount <= 1) {
-                alert('グループには最低1人の管理者が必要です。最後の管理者の権限は変更できません。');
+                toast.error('グループには最低1人の管理者が必要です。最後の管理者の権限は変更できません。');
                 return; // ここで処理を終了し、APIリクエストを送らない
             }
         }
@@ -180,7 +177,7 @@ export const useAdminData = (hashedId: string) => {
             if (!data.success) {
                 // 失敗したら元に戻す
                 setMembers(previousMembers);
-                alert(data.message || '権限の変更に失敗しました');
+                toast.error(data.message || '権限の変更に失敗しました');
             } else {
                 // 統計情報だけ再取得する（全体リロードはしない）
                 fetchGroupMembers();
@@ -188,7 +185,7 @@ export const useAdminData = (hashedId: string) => {
         } catch (error) {
             setMembers(previousMembers);
             console.error('権限変更エラー:', error);
-            alert('権限の変更中にエラーが発生しました');
+            toast.error('権限の変更中にエラーが発生しました');
         }
     };
 
@@ -206,8 +203,11 @@ export const useAdminData = (hashedId: string) => {
         const newPost: Post = {
             id: result.data.id,
             content: result.data.content,
-            author: result.data.author.username || '不明なユーザー',
-            date: new Date().toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' }),
+            author: {
+                username: result.data.author.username || '不明なユーザー',
+                icon: result.data.author.icon || null
+            },
+            date: new Date().toISOString(),
             showMenu: false,
             comments: [],
             showComments: false,
@@ -216,13 +216,44 @@ export const useAdminData = (hashedId: string) => {
         setPosts([newPost, ...posts]);
     };
 
-    // 他のアクション関数
-    const updatePost = (postId: number, content: string) => {
-        setPosts(posts.map(post => post.id === postId ? { ...post, content, isEditing: false } : post));
+    const updatePost = async (postId: number, content: string) => {
+        try {
+            const response = await fetch(`/api/groups/${hashedId}/posts/${postId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content }),
+            });
+
+            const result = await response.json();
+            if (!result.success) throw new Error(result.message);
+
+            setPosts(posts.map(post => post.id === postId ? { ...post, content, isEditing: false } : post));
+            toast.success('お知らせを更新しました');
+        } catch (error) {
+            console.error('お知らせ更新エラー:', error);
+            toast.error('お知らせの更新に失敗しました');
+        }
     };
-    const deletePost = (postId: number) => {
-        if (confirm('この投稿を削除しますか？')) setPosts(posts.filter(p => p.id !== postId));
+
+    const deletePost = async (postId: number) => {
+        if (!confirm('この投稿を削除しますか？')) return;
+
+        try {
+            const response = await fetch(`/api/groups/${hashedId}/posts/${postId}`, {
+                method: 'DELETE',
+            });
+
+            const result = await response.json();
+            if (!result.success) throw new Error(result.message);
+
+            setPosts(posts.filter(p => p.id !== postId));
+            toast.success('お知らせを削除しました');
+        } catch (error) {
+            console.error('お知らせ削除エラー:', error);
+            toast.error('お知らせの削除に失敗しました');
+        }
     };
+
     const addComment = (postId: number, content: string) => { /* 省略(変更なし) */ };
     const updateComment = (postId: number, commentId: number, content: string) => { /* 省略(変更なし) */ };
     const deleteComment = (postId: number, commentId: number) => { /* 省略(変更なし) */ };
@@ -298,10 +329,10 @@ export const useAdminData = (hashedId: string) => {
                 selectProblem: assignment.selectProblem
             } : a));
 
-            alert('課題を更新しました');
+            toast.success('課題を更新しました');
         } catch (error) {
             console.error('課題更新エラー:', error);
-            alert('課題の更新に失敗しました');
+            toast.error('課題の更新に失敗しました');
             throw error;
         }
     };
@@ -320,10 +351,10 @@ export const useAdminData = (hashedId: string) => {
 
             // ローカルステート更新
             setAssignments(assignments.filter(a => a.id !== assignment.id));
-            alert('課題を削除しました');
+            toast.success('課題を削除しました');
         } catch (error) {
             console.error('課題削除エラー:', error);
-            alert('課題の削除に失敗しました');
+            toast.error('課題の削除に失敗しました');
         }
     };
 
@@ -341,7 +372,7 @@ export const useAdminData = (hashedId: string) => {
     const copyInviteCode = () => {
         if (group?.invite_code) {
             navigator.clipboard.writeText(group.invite_code)
-                .then(() => alert(`招待コード「${group.invite_code}」をコピーしました！`));
+                .then(() => toast.success(`招待コード「${group.invite_code}」をコピーしました！`));
         }
     };
 
@@ -361,7 +392,7 @@ export const useAdminData = (hashedId: string) => {
 
         // 最適化した関数をエクスポート
         fetchAvailableProblems: fetchAllProblems, // 名前を合わせて中身は統合版を使用
-        fetchAvailableSelectionProblems: () => {}, // 上記でまとめて取得するので空関数でOK
+        fetchAvailableSelectionProblems: () => { }, // 上記でまとめて取得するので空関数でOK
         toggleAdmin,
         refreshData: fetchAllInitialData
     };

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { generateTraceCodeFromAI, saveErrorLogAction } from '@/lib/actions/traceActions';
+import toast from 'react-hot-toast';
 import { recordStudyTimeAction } from '@/lib/actions';
 
 // --- サンプルコード ---
@@ -186,7 +187,6 @@ const TraceClient = () => {
   const [programLines, setProgramLines] = useState<string[]>([]);
   const [currentLine, setCurrentLine] = useState(-1);
   const [output, setOutput] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [isTraceStarted, setIsTraceStarted] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('カウンターが0になるまでデクリメントする');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -556,7 +556,7 @@ const TraceClient = () => {
   const handleNextStep = useCallback(async () => {
     if (!isTraceStarted || currentLine < 0 || currentLine >= programLines.length) {
         if (currentLine >= programLines.length) {
-             setError('トレースが終了しました。');
+             toast.success('トレースが終了しました。');
              setIsTraceStarted(false);
              recordStudyTime();
         }
@@ -576,7 +576,6 @@ const TraceClient = () => {
     const parentIfBlock = getParentIfBlock(tempControlFlowStack);
 
     try {
-      setError(null);
 
       // 正規表現に「大域」を追加
       const declarationMatch = line.match(/^(?:大域\s*[:：]\s*)?(整数型|文字列型|配列型|論理型|実数型|8ビット型|整数型配列の配列|整数型の配列|文字列型の配列|実数型の配列)(?:\s*配列)?:\s*(.+)/);
@@ -1058,7 +1057,7 @@ const TraceClient = () => {
       }
 
       if (nextLine >= programLines.length) {
-           setError('トレースが正常に終了しました。');
+           toast.success('トレースが正常に終了しました。');
            setIsTraceStarted(false);
            recordStudyTime();
            setCurrentLine(nextLine);
@@ -1068,7 +1067,7 @@ const TraceClient = () => {
 
     } catch (e: any) {
        const errorMsg = e instanceof Error ? e.message : String(e);
-       setError(`エラー (行 ${lineIndex + 1}): ${errorMsg}`);
+       toast.error(`エラー (行 ${lineIndex + 1}): ${errorMsg}`);
        setIsTraceStarted(false);
 
        // 自動エラー報告（裏で実行）
@@ -1081,7 +1080,6 @@ const TraceClient = () => {
   // --- UIイベントハンドラ ---
   const handleStartTrace = () => {
     try {
-      setError(null);
       
       const fixedInitialVars = initialVarsString.replace(/:\s*(0\d+)/g, ': "$1"');
       const parsedVars = fixedInitialVars.trim() ? JSON.parse(fixedInitialVars) : {};
@@ -1183,9 +1181,9 @@ const TraceClient = () => {
 
       } catch (e) {
       if (e instanceof SyntaxError) {
-          setError(`初期変数のJSON形式が正しくありません: ${e.message}`);
+          toast.error(`初期変数のJSON形式が正しくありません: ${e.message}`);
       } else {
-          setError(`初期変数の処理中にエラーが発生しました: ${e instanceof Error ? e.message : String(e)}`);
+          toast.error(`初期変数の処理中にエラーが発生しました: ${e instanceof Error ? e.message : String(e)}`);
       }
       setIsTraceStarted(false);
     }
@@ -1201,23 +1199,21 @@ const TraceClient = () => {
     setVariables({});
     setVariableTypes({}); 
     setOutput([]);
-    setError(null);
     setControlFlowStack([]);
     setCallStack([]);
   };
 
   const handleGenerateCode = async () => {
      if (!aiPrompt) {
-       setError("コハクへの指示を入力してください。");
+       toast.error("コハクへの指示を入力してください。");
        return;
      }
      setIsGenerating(true);
-     setError(null);
      try {
        const generatedText = await generateTraceCodeFromAI(aiPrompt);
        setCode(generatedText);
      } catch (error: any) {
-       setError(`コハクコード生成エラー: ${error.message}`);
+       toast.error(`コハクコード生成エラー: ${error.message}`);
      } finally {
        setIsGenerating(false);
      }
@@ -1315,7 +1311,6 @@ const TraceClient = () => {
         </button>
 
         {/* エラー表示 */}
-        {error && <div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-300 rounded-md">{error}</div>}
 
         {/* トレース画面 */}
         <div className="mb-6">

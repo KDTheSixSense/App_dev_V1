@@ -7,6 +7,7 @@ import { FcGoogle } from "react-icons/fc"; // Googleアイコンをインポー�
 import Image from 'next/image'; // ★ デザイン反映のために追加
 import Link from 'next/link'; // ★ デザイン反映のために追加
 import DOMPurify from 'dompurify';
+import toast from 'react-hot-toast';
 
 type Inputs = {
   username: string;
@@ -49,15 +50,15 @@ const Register = () => {
       });
 
       if (result.success) {
-        alert('登録に成功しました！ログインページに移動します。');
+        toast.success('登録に成功しました！ログインページに移動します。');
         router.push('/auth/login');
       } else {
         // Server Actionからのエラーメッセージを表示
-        alert(result.error || '登録に失敗しました');
+        toast.error(result.error || '登録に失敗しました');
       }
     } catch (err) {
       console.error('登録時エラー:', err);
-      alert('登録中に予期せぬエラーが発生しました');
+      toast.error('登録中に予期せぬエラーが発生しました');
     }
   };
 

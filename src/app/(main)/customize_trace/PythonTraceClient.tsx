@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { recordStudyTimeAction } from '@/lib/actions';
 import { generatePythonCodeFromAI, runPythonTraceAction } from '@/lib/actions/traceActions';
 import AceEditorWrapper from '@/components/AceEditorWrapper';
-import { useNotification } from '@/app/contexts/NotificationContext';
+import toast from 'react-hot-toast';
 import { lintCode, Annotation } from '@/lib/lint';
 
 // --- 型定義 ---
@@ -27,14 +27,14 @@ print("ループが終了しました")
 
 // ★追加: 表示から除外するシステム変数のリスト
 const IGNORED_VARS = new Set([
-    '__name__', 
-    '__doc__', 
-    '__package__', 
-    '__loader__', 
-    '__spec__', 
-    '__annotations__', 
-    '__builtins__', 
-    '__file__', 
+    '__name__',
+    '__doc__',
+    '__package__',
+    '__loader__',
+    '__spec__',
+    '__annotations__',
+    '__builtins__',
+    '__file__',
     '__cached__',
     'copyright',
     'credits',
@@ -43,18 +43,17 @@ const IGNORED_VARS = new Set([
 ]);
 
 const PythonTraceClient = () => {
-    const { showNotification } = useNotification();
 
     const [code, setCode] = useState(sampleCode);
     const [isGenerating, setIsGenerating] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('1から10までの合計を計算する');
-    
+
     const [isTraceStarted, setIsTraceStarted] = useState(false);
     const [traceSteps, setTraceSteps] = useState<TraceStepData[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
-    
+
     const [error, setError] = useState<string | null>(null);
-    
+
     const [currentLine, setCurrentLine] = useState(-1);
     const [variables, setVariables] = useState<Record<string, any>>({});
     const [output, setOutput] = useState<string>("");
@@ -80,11 +79,11 @@ const PythonTraceClient = () => {
                 setLintAnnotations([]);
                 return;
             }
-            
+
             // APIを呼び出してPythonの構文チェック
             const annotations = await lintCode(newCode, 'python');
             setLintAnnotations(annotations);
-        }, 800); 
+        }, 800);
     };
 
     // 最後まで一気にスキップする関数
@@ -93,9 +92,9 @@ const PythonTraceClient = () => {
             const lastIndex = traceSteps.length - 1;
             setCurrentStepIndex(lastIndex);
             updateDisplay(traceSteps[lastIndex]);
-            
+
             // 完了通知と時間記録
-            showNotification({ message: 'トレースが完了しました', type: 'success' });
+            toast.success('トレースが完了しました');
             recordStudyTime();
         }
     };
@@ -132,10 +131,10 @@ const PythonTraceClient = () => {
     const handleStartTrace = async () => {
         try {
             setError(null);
-            setIsTraceStarted(true); 
-            
+            setIsTraceStarted(true);
+
             const steps = await runPythonTraceAction(code) as TraceStepData[];
-            
+
             if (!steps || steps.length === 0) {
                 throw new Error("トレース結果が取得できませんでした。");
             }
@@ -154,7 +153,7 @@ const PythonTraceClient = () => {
     };
 
     const updateDisplay = (step: TraceStepData) => {
-        setCurrentLine(step.line); 
+        setCurrentLine(step.line);
         setVariables(step.variables || {});
         setOutput(step.stdout || "");
 
@@ -168,9 +167,9 @@ const PythonTraceClient = () => {
             const nextIndex = currentStepIndex + 1;
             setCurrentStepIndex(nextIndex);
             updateDisplay(traceSteps[nextIndex]);
-            
+
             if (nextIndex === traceSteps.length - 1) {
-                showNotification({ message: 'トレースが完了しました', type: 'success' });
+                toast.success('トレースが完了しました');
                 recordStudyTime();
             }
         }
@@ -292,11 +291,11 @@ const PythonTraceClient = () => {
                         />
                     </div>
                 </div>
-                
+
                 <div className="flex space-x-4 mt-auto">
-                    <button 
-                        onClick={handleStartTrace} 
-                        disabled={isTraceStarted || !code.trim()} 
+                    <button
+                        onClick={handleStartTrace}
+                        disabled={isTraceStarted || !code.trim()}
                         className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 disabled:bg-gray-400"
                     >
                         トレース開始
@@ -310,7 +309,7 @@ const PythonTraceClient = () => {
             {/* 右パネル */}
             <div className="bg-white p-6 rounded-lg shadow-md border flex flex-col h-full">
                 <div className="flex space-x-2 mb-6">
-                     <button onClick={handlePrevStep} disabled={!isTraceStarted || currentStepIndex === 0} className="flex-1 py-3 bg-yellow-500 text-white font-bold rounded-md hover:bg-yellow-600 disabled:bg-gray-300">
+                    <button onClick={handlePrevStep} disabled={!isTraceStarted || currentStepIndex === 0} className="flex-1 py-3 bg-yellow-500 text-white font-bold rounded-md hover:bg-yellow-600 disabled:bg-gray-300">
                         前のトレース
                     </button>
                     <button onClick={handleNextStep} disabled={!isTraceStarted || isTraceFinished} className="flex-1 py-3 bg-green-600 text-white font-bold rounded-md hover:bg-green-700 disabled:bg-gray-300">

@@ -9,6 +9,7 @@ import { updateUserProfileAction } from './actions';
 import { changePasswordAction } from '@/lib/actions';
 import dynamic from 'next/dynamic';
 import DOMPurify from 'dompurify';
+import toast from 'react-hot-toast';
 
 const DailyActivityChart = dynamic(
   () => import('./Chart/DailyActivityChart'),
@@ -186,12 +187,12 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
       }
       setIsEditing(false);
       setShowPasswordChange(false);
-      // 成功メッセージをアラートで表示することもできます
-      alert('プロフィール情報を更新しました。' + (showPasswordChange ? 'パスワードも変更されました。' : ''));
+      // 成功メッセージをトーストで表示
+      toast.success('プロフィール情報を更新しました。' + (showPasswordChange ? '\nパスワードも変更されました。' : ''));
       router.refresh();
     } else {
       // エラーメッセージを表示
-      alert(errorMessage);
+      toast.error(errorMessage);
     }
   };
 

@@ -7,6 +7,7 @@ import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, TextCur
 // パネルのリサイズ機能を提供するライブラリのコンポーネントをインポートします
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import DOMPurify from 'dompurify';
+import toast from 'react-hot-toast';
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem, SampleCase } from '@/lib/types';
@@ -18,12 +19,7 @@ type ActiveTab = 'input' | 'output';
 
 // --- UIコンポーネント ---
 
-// カスタムアラートモーダル
-const CustomAlertModal: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
-        <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4"><p className="text-lg text-gray-800 mb-4">{message}</p><button onClick={onClose} className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">OK</button></div>
-    </div>
-);
+
 
 // 左パネル: 問題文
 const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ problem }) => (
@@ -150,8 +146,7 @@ const ProblemSolverPage = () => {
     const [executionResult, setExecutionResult] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitResult, setSubmitResult] = useState<any>(null);
-    const [showAlert, setShowAlert] = useState(false);
-    const [alertMessage, setAlertMessage] = useState('');
+
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [isAiLoading, setIsAiLoading] = useState(false);
 
@@ -187,7 +182,7 @@ const ProblemSolverPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (!userCode.trim()) { alert('コードを入力してから完了を選択してください。'); return; }
+        if (!userCode.trim()) { toast.error('コードを入力してから完了を選択してください。'); return; }
         setIsSubmitting(true);
         setExecutionResult('確認中...');
         try {
@@ -206,7 +201,7 @@ const ProblemSolverPage = () => {
         if (!problem) return;
         const nextId = await getNextProgrammingProblemId(parseInt(problem.id));
         if (nextId) { router.push(`/issue_list/programming_problem/${nextId}`); }
-        else { setAlertMessage("これが最後の問題です！お疲れ様でした。"); setShowAlert(true); }
+        else { toast.success("これが最後の問題です！お疲れ様でした。"); }
     };
 
     const handleUserMessage = async (message: string) => {
@@ -257,7 +252,6 @@ const ProblemSolverPage = () => {
 
     return (
         <div className="h-screen bg-gray-100 p-4 overflow-hidden">
-            {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
             <PanelGroup direction="horizontal">
                 <Panel defaultSize={35} minSize={20}>
                     <ProblemDescriptionPanel problem={problem} />

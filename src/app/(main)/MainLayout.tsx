@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import MobileFooter from '@/components/MobileFooter';
 import type { UserWithPetStatus } from './layout';
 import React, { useState } from 'react';
-import { Toaster } from 'react-hot-toast';
+
 export default function MainLayout({
   children,
   userWithPet,
@@ -20,7 +20,7 @@ export default function MainLayout({
       <main className={`flex-grow w-full transition-all duration-300 ease-out pb-20 md:pt-20`}>
 
 
-        <Toaster position="bottom-right" />
+
         <style jsx global>{`
           main a {
             color: #1a0dab;

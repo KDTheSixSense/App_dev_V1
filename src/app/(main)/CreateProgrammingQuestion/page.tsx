@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 // --- 型定義 ---
 interface Case {
@@ -47,7 +48,7 @@ export default function CreateProgrammingQuestionPage() {
   // フォームの状態管理
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // FOUC対策: マウント状態を管理するステートを追加
   const [mounted, setMounted] = useState(false);
 
@@ -68,13 +69,13 @@ export default function CreateProgrammingQuestionPage() {
     isPublic: false,
     allowTestCaseView: false
   })
-  
+
   const [sampleCases, setSampleCases] = useState<Case[]>([
-    { id: null, input: '', expectedOutput: '', description: '' } 
+    { id: null, input: '', expectedOutput: '', description: '' }
   ])
 
   const [testCases, setTestCases] = useState<TestCase[]>([
-    { id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' } 
+    { id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' }
   ])
 
   // 選択問題用の状態 ---
@@ -86,7 +87,7 @@ export default function CreateProgrammingQuestionPage() {
   ]);
   const [correctAnswer, setCorrectAnswer] = useState<string>('a');
   const [explanation, setExplanation] = useState<string>('');
-  
+
   const [tagInput, setTagInput] = useState('')
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [showPreview, setShowPreview] = useState(false)
@@ -112,7 +113,7 @@ export default function CreateProgrammingQuestionPage() {
 
     const idFromQuery = searchParams.get('id');
     const typeFromQuery = searchParams.get('type');
-    
+
     // typeに応じて初期カテゴリを設定
     if (typeFromQuery === 'select') {
       setSelectedCategory('itpassport');
@@ -129,7 +130,7 @@ export default function CreateProgrammingQuestionPage() {
         setProblemId(parsedId);
         setIsEditMode(true);
       } else {
-        alert('エラー: 無効な問題IDです');
+        toast.error('エラー: 無効な問題IDです');
         setIsEditMode(false);
         setProblemId(null);
       }
@@ -145,7 +146,7 @@ export default function CreateProgrammingQuestionPage() {
       const fetchProblemData = async () => {
         const isSelectProblem = selectedCategory === 'itpassport';
         const apiUrl = isSelectProblem ? `/api/select-problems/${problemId}` : `/api/problems/${problemId}`;
-        
+
         try {
           const response = await fetch(apiUrl);
           if (!response.ok) throw new Error(`問題データの読み込みに失敗しました (Status: ${response.status})`);
@@ -190,13 +191,13 @@ export default function CreateProgrammingQuestionPage() {
             setTestCases(data.testCases?.length > 0 ? data.testCases : [{ id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' }]);
           }
         } catch (error: any) {
-          alert(`データ読み込みエラー: ${error.message}`);
+          toast.error(`データ読み込みエラー: ${error.message}`);
           router.push('/issue_list/mine_issue_list/problems');
         }
       };
       fetchProblemData();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problemId, isEditMode, selectedCategory, router]);
 
   // カテゴリリスト
@@ -208,7 +209,7 @@ export default function CreateProgrammingQuestionPage() {
   // カテゴリ選択処理
   const handleCategorySelect = (categoryId: string) => {
     if (isEditMode) {
-      alert("編集モード中は問題のカテゴリを変更できません。");
+      toast.error("編集モード中は問題のカテゴリを変更できません。");
       return;
     }
 
@@ -231,7 +232,7 @@ export default function CreateProgrammingQuestionPage() {
   };
 
   const handleOptionChange = (id: string, text: string) => {
-    setAnswerOptions(options => 
+    setAnswerOptions(options =>
       options.map(opt => (opt.id === id ? { ...opt, text } : opt))
     );
   };
@@ -278,7 +279,7 @@ export default function CreateProgrammingQuestionPage() {
     e.preventDefault();
     setIsSubmitting(true);
     if (!problemId) {
-      alert('エラー: 更新する問題IDが見つかりません。');
+      toast.error('エラー: 更新する問題IDが見つかりません。');
       setIsSubmitting(false);
       return;
     }
@@ -313,10 +314,10 @@ export default function CreateProgrammingQuestionPage() {
         const errorData = await response.json();
         throw new Error(errorData.message || '問題の更新に失敗しました');
       }
-      alert('問題が正常に更新されました！');
+      toast.success('問題が正常に更新されました！');
       router.push('/issue_list/mine_issue_list/problems');
     } catch (error: any) {
-      alert(`エラー: ${error.message}`);
+      toast.error(`エラー: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -334,16 +335,16 @@ export default function CreateProgrammingQuestionPage() {
           explanation: explanation,
           answerOptions: answerOptions.map(opt => opt.text),
           correctAnswer: answerOptions.find(opt => opt.id === correctAnswer)?.text || '',
-          subjectId: 4, 
+          subjectId: 4,
           difficultyId: formData.difficulty,
         };
-          const response = await fetch('/api/selects_problems', {
+        const response = await fetch('/api/selects_problems', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
         });
         if (!response.ok) throw new Error((await response.json()).message || '選択問題の作成に失敗しました。');
         await response.json();
-        alert('選択問題が正常に投稿されました！');
+        toast.success('選択問題が正常に投稿されました！');
       } else {
         const problemData = {
           ...formData,
@@ -357,16 +358,16 @@ export default function CreateProgrammingQuestionPage() {
         });
         if (!response.ok) throw new Error((await response.json()).error || 'コーディング問題の投稿に失敗しました');
         await response.json();
-        alert('コーディング問題が正常に投稿されました！');
+        toast.success('コーディング問題が正常に投稿されました！');
       }
-      
+
       // 作成成功後、自分の問題リストへ遷移
       router.push('/issue_list/mine_issue_list/problems');
 
     } catch (error) {
       const message = error instanceof Error ? error.message : '不明なエラーが発生しました。';
       console.error('Error:', error);
-      alert(`エラー: ${message}`);
+      toast.error(`エラー: ${message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -397,7 +398,7 @@ export default function CreateProgrammingQuestionPage() {
     setTestCases([{ id: 1, name: 'ケース1', input: '', expectedOutput: '', description: '' }])
     setActiveTab('basic')
     setIsEditMode(false)
-  } 
+  }
 
   // プログラミング用のタブ（ファイルタブを削除）
   const programmingTabs = [
@@ -586,10 +587,10 @@ export default function CreateProgrammingQuestionPage() {
             {/* ヘッダー */}
             <div className="header">
               <h1 className="header-title">
-                {isEditMode 
-                  ? '問題編集' 
-                  : selectedCategory === 'itpassport' 
-                    ? '選択問題作成' 
+                {isEditMode
+                  ? '問題編集'
+                  : selectedCategory === 'itpassport'
+                    ? '選択問題作成'
                     : 'プログラミング問題作成'
                 }
               </h1>
@@ -616,428 +617,428 @@ export default function CreateProgrammingQuestionPage() {
                 // 4択問題作成フォーム
                 <>
                   {activeTab === 'basic' && (
-                      <div className="card">
-                          <div className="card-header">基本情報</div>
-                          <div className="card-body">
-                              {/* 全ての基本項目をここに集約 */}
-                              <div className="form-group">
-                                  <label className="form-label"><span className="required-badge">必須</span>問題タイトル</label>
-                                  <input type="text" className="form-input" value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} placeholder="例: Pythonの変数宣言について" required />
-                              </div>
-                              <div className="form-group">
-                                  <label className="form-label"><span className="required-badge">必須</span>問題文</label>
-                                  <textarea className="form-textarea" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="問題文を記述してください..." rows={8} required />
-                              </div>
-                              <div className="form-group">
-                                  <label className="form-label"><span className="required-badge">必須</span>選択肢と正解</label>
-                                  {answerOptions.map((option, index) => (
-                                      <div key={option.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                          <input type="radio" name="correctAnswer" value={option.id} checked={correctAnswer === option.id} onChange={(e) => setCorrectAnswer(e.target.value)} style={{ marginRight: '1rem', transform: 'scale(1.2)' }} />
-                                          <input type="text" className="form-input" value={option.text} onChange={(e) => handleOptionChange(option.id, e.target.value)} placeholder={`選択肢 ${index + 1}`} required />
-                                      </div>
-                                  ))}
-                              </div>
-                              <div className="form-group">
-                                  <label className="form-label">解説</label>
-                                  <textarea className="form-textarea" value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="正解の解説を記述してください..." rows={6} />
-                              </div>
-                              <div className="form-group">
-                                  <label className="form-label">難易度</label>
-                                  <select className="form-select" value={formData.difficulty} onChange={(e) => setFormData(prev => ({ ...prev, difficulty: parseInt(e.target.value) }))}>
-                                      <option value={1}>1 (やさしい)</option>
-                                      <option value={2}>2 (かんたん)</option>
-                                      <option value={3}>3 (ふつう)</option>
-                                      <option value={4}>4 (むずかしい)</option>
-                                      <option value={5}>5 (鬼むず)</option>
-                                  </select>
-                              </div>
-                          </div>
+                    <div className="card">
+                      <div className="card-header">基本情報</div>
+                      <div className="card-body">
+                        {/* 全ての基本項目をここに集約 */}
+                        <div className="form-group">
+                          <label className="form-label"><span className="required-badge">必須</span>問題タイトル</label>
+                          <input type="text" className="form-input" value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} placeholder="例: Pythonの変数宣言について" required />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label"><span className="required-badge">必須</span>問題文</label>
+                          <textarea className="form-textarea" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="問題文を記述してください..." rows={8} required />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label"><span className="required-badge">必須</span>選択肢と正解</label>
+                          {answerOptions.map((option, index) => (
+                            <div key={option.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
+                              <input type="radio" name="correctAnswer" value={option.id} checked={correctAnswer === option.id} onChange={(e) => setCorrectAnswer(e.target.value)} style={{ marginRight: '1rem', transform: 'scale(1.2)' }} />
+                              <input type="text" className="form-input" value={option.text} onChange={(e) => handleOptionChange(option.id, e.target.value)} placeholder={`選択肢 ${index + 1}`} required />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">解説</label>
+                          <textarea className="form-textarea" value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="正解の解説を記述してください..." rows={6} />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">難易度</label>
+                          <select className="form-select" value={formData.difficulty} onChange={(e) => setFormData(prev => ({ ...prev, difficulty: parseInt(e.target.value) }))}>
+                            <option value={1}>1 (やさしい)</option>
+                            <option value={2}>2 (かんたん)</option>
+                            <option value={3}>3 (ふつう)</option>
+                            <option value={4}>4 (むずかしい)</option>
+                            <option value={5}>5 (鬼むず)</option>
+                          </select>
+                        </div>
                       </div>
+                    </div>
                   )}
-              
+
                   {/* アクションボタン */}
-              <div className="action-buttons">
-                
-                {isEditMode ? (
-                  <button
-                    type="submit"
-                    className="btn btn-success"
-                    disabled={isSubmitting}
-                  >
-                    問題を更新
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={isSubmitting}
-                  >
-                    問題を投稿
-                  </button>
-                )}
-                
-                <button type="button" className="btn btn-secondary" onClick={() => resetForm()} disabled={isSubmitting}>リセット</button>
-              </div>
-              </>
-          ) : (
+                  <div className="action-buttons">
+
+                    {isEditMode ? (
+                      <button
+                        type="submit"
+                        className="btn btn-success"
+                        disabled={isSubmitting}
+                      >
+                        問題を更新
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={isSubmitting}
+                      >
+                        問題を投稿
+                      </button>
+                    )}
+
+                    <button type="button" className="btn btn-secondary" onClick={() => resetForm()} disabled={isSubmitting}>リセット</button>
+                  </div>
+                </>
+              ) : (
                 // コーディング問題作成フォーム
                 <>
-              {/* 基本情報タブ */}
-              {activeTab === 'basic' && (
-                <div className="card">
-                  <div className="card-header">
-                    基本情報
-                  </div>
-                  <div className="card-body">
-                    <div className="form-group">
-                      <label className="form-label">
-                        <span className="required-badge">必須</span>
-                        問題タイトル
-                      </label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.title}
-                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="例: 配列の最大値を求める"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-col">
-                        <label className="form-label">問題タイプ</label>
-                        <select
-                          className="form-select"
-                          value={formData.problemType}
-                          onChange={(e) => setFormData(prev => ({ ...prev, problemType: e.target.value }))}
-                        >
-                          <option value="コーディング問題">コーディング問題</option>
-                          <option value="アルゴリズム問題">アルゴリズム問題</option>
-                          <option value="データ構造問題">データ構造問題</option>
-                          <option value="数学問題">数学問題</option>
-                        </select>
+                  {/* 基本情報タブ */}
+                  {activeTab === 'basic' && (
+                    <div className="card">
+                      <div className="card-header">
+                        基本情報
                       </div>
-                      {/* 制限時間の入力欄を削除しました */}
-                    </div>
+                      <div className="card-body">
+                        <div className="form-group">
+                          <label className="form-label">
+                            <span className="required-badge">必須</span>
+                            問題タイトル
+                          </label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.title}
+                            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                            placeholder="例: 配列の最大値を求める"
+                            required
+                          />
+                        </div>
 
-                    <div className="form-group">
-                      <label className="form-label">難易度</label>
-                      <select
-                        className="form-select"
-                        value={formData.difficulty}
-                        onChange={(e) => setFormData(prev => ({ ...prev, difficulty: parseInt(e.target.value) }))}
-                      >
-                        <option value={1}>1</option>
-                        <option value={2}>2</option>
-                        <option value={3}>3</option>
-                        <option value={4}>4</option>
-                        <option value={5}>5</option>
-                      </select>
-                    </div>
+                        <div className="form-row">
+                          <div className="form-col">
+                            <label className="form-label">問題タイプ</label>
+                            <select
+                              className="form-select"
+                              value={formData.problemType}
+                              onChange={(e) => setFormData(prev => ({ ...prev, problemType: e.target.value }))}
+                            >
+                              <option value="コーディング問題">コーディング問題</option>
+                              <option value="アルゴリズム問題">アルゴリズム問題</option>
+                              <option value="データ構造問題">データ構造問題</option>
+                              <option value="数学問題">数学問題</option>
+                            </select>
+                          </div>
+                          {/* 制限時間の入力欄を削除しました */}
+                        </div>
 
-                    <div className="form-row">
-                      <div className="form-col">
-                        <label className="form-label">トピック</label>
-                        <select
-                          className="form-select"
-                          value={formData.topic}
-                          onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
-                        >
-                          {topics.map((topic) => (
-                            <option key={topic} value={topic}>
-                              {topic}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                        <div className="form-group">
+                          <label className="form-label">難易度</label>
+                          <select
+                            className="form-select"
+                            value={formData.difficulty}
+                            onChange={(e) => setFormData(prev => ({ ...prev, difficulty: parseInt(e.target.value) }))}
+                          >
+                            <option value={1}>1</option>
+                            <option value={2}>2</option>
+                            <option value={3}>3</option>
+                            <option value={4}>4</option>
+                            <option value={5}>5</option>
+                          </select>
+                        </div>
 
-                    <div className="form-group">
-                      <label className="form-label">タグ</label>
-                      <div className="tags-container">
-                        {formData.tags.map((tag, index) => (
-                          <div key={index} className="tag">
-                            {tag}
+                        <div className="form-row">
+                          <div className="form-col">
+                            <label className="form-label">トピック</label>
+                            <select
+                              className="form-select"
+                              value={formData.topic}
+                              onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
+                            >
+                              {topics.map((topic) => (
+                                <option key={topic} value={topic}>
+                                  {topic}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">タグ</label>
+                          <div className="tags-container">
+                            {formData.tags.map((tag, index) => (
+                              <div key={index} className="tag">
+                                {tag}
+                                <button
+                                  type="button"
+                                  className="tag-remove"
+                                  onClick={() => removeTag(tag)}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="tag-input-container">
+                            <input
+                              type="text"
+                              className="tag-input"
+                              value={tagInput}
+                              onChange={(e) => setTagInput(e.target.value)}
+                              placeholder="タグを入力してEnterキーで追加"
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  addTag()
+                                }
+                              }}
+                            />
                             <button
                               type="button"
-                              className="tag-remove"
-                              onClick={() => removeTag(tag)}
+                              className="btn btn-primary btn-small"
+                              onClick={addTag}
                             >
-                              ×
+                              追加
                             </button>
                           </div>
-                        ))}
-                      </div>
-                      <div className="tag-input-container">
-                        <input
-                          type="text"
-                          className="tag-input"
-                          value={tagInput}
-                          onChange={(e) => setTagInput(e.target.value)}
-                          placeholder="タグを入力してEnterキーで追加"
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault()
-                              addTag()
-                            }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-small"
-                          onClick={addTag}
-                        >
-                          追加
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 問題文タブ */}
-              {activeTab === 'description' && (
-                <div className="card">
-                  <div className="card-header">
-                    問題文作成
-                  </div>
-                  <div className="card-body">
-                    <div className="form-group">
-                      <label className="form-label">
-                        <span className="required-badge">必須</span>
-                        問題文
-                      </label>
-                      {/* Markdownツールバーは削除されました */}
-                      <textarea
-                        className="form-textarea"
-                        value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="問題文をMarkdown形式で記述してください..."
-                        rows={15}
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">コードテンプレート</label>
-                      <textarea
-                        className="form-textarea"
-                        value={formData.codeTemplate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, codeTemplate: e.target.value }))}
-                        placeholder="初期コードテンプレートを記述してください..."
-                        rows={10}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* サンプルケースタブ */}
-              {activeTab === 'sample-cases' && (
-                <div className="card">
-                  <div className="card-header">
-                    サンプルケース管理
-                  </div>
-                  <div className="card-body">
-                    <div className="form-group">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <label className="form-label">サンプルケース</label>
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-small"
-                          onClick={addSampleCase}
-                        >
-                          + サンプル追加
-                        </button>
-                      </div>
-                      
-                      {sampleCases.map((sampleCase, index) => (
-                        <div key={sampleCase.id ?? `new-sample-${index}`} className="case-item">
-                          <div className="case-header">
-                            <div className="case-title">サンプル {index + 1}</div>
-                            {sampleCases.length > 1 && (
-                              <button
-                                type="button"
-                                className="btn btn-secondary btn-small"
-                                onClick={() => removeSampleCase(sampleCase.id)}
-                              >
-                                削除
-                              </button>
-                            )}
-                          </div>
-                          <div className="case-fields">
-                            <div>
-                              <label className="form-label">入力</label>
-                              <textarea
-                                className="form-textarea"
-                                value={sampleCase.input}
-                                onChange={(e) => {
-                                  setSampleCases(prev => prev.map(c => 
-                                    c.id === sampleCase.id ? { ...c, input: e.target.value } : c
-                                  ))
-                                }}
-                                placeholder="入力例を記述..."
-                                rows={4}
-                              />
-                            </div>
-                            <div>
-                              <label className="form-label">期待出力</label>
-                              <textarea
-                                className="form-textarea"
-                                value={sampleCase.expectedOutput}
-                                onChange={(e) => {
-                                  setSampleCases(prev => prev.map(c => 
-                                    c.id === sampleCase.id ? { ...c, expectedOutput: e.target.value } : c
-                                  ))
-                                }}
-                                placeholder="期待される出力を記述..."
-                                rows={4}
-                              />
-                            </div>
-                            <div className="case-description">
-                              <label className="form-label">説明</label>
-                              <input
-                                type="text"
-                                className="form-input"
-                                value={sampleCase.description}
-                                onChange={(e) => {
-                                  setSampleCases(prev => prev.map(c => 
-                                    c.id === sampleCase.id ? { ...c, description: e.target.value } : c
-                                  ))
-                                }}
-                                placeholder="このケースの説明..."
-                              />
-                            </div>
-                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* テストケースタブ */}
-              {activeTab === 'test-cases' && (
-                <div className="card">
-                  <div className="card-header">
-                    テストケース管理
-                  </div>
-                  <div className="card-body">
-                    <div className="form-group">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <label className="form-label">テストケース</label>
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-small"
-                          onClick={addTestCase}
-                        >
-                          + テスト追加
-                        </button>
                       </div>
-                      
-                      {testCases.map((testCase, index) => (
-                        <div key={testCase.id ?? `new-test-${index}`} className="case-item">
-                          <div className="case-header">
-                            <div className="case-title">{testCase.name}</div>
-                            {testCases.length > 1 && (
-                              <button
-                                type="button"
-                                className="btn btn-secondary btn-small"
-                                onClick={() => removeTestCase(testCase.id)}
-                              >
-                                削除
-                              </button>
-                            )}
-                          </div>
-                          <div className="case-fields">
-                            <div>
-                              <label className="form-label">ケース名</label>
-                              <input
-                                type="text"
-                                className="form-input"
-                                value={testCase.name}
-                                onChange={(e) => {
-                                  setTestCases(prev => prev.map(c => 
-                                    c.id === testCase.id ? { ...c, name: e.target.value } : c
-                                  ))
-                                }}
-                                placeholder="ケース名..."
-                              />
-                            </div>
-                            <div>
-                              <label className="form-label">説明</label>
-                              <input
-                                type="text"
-                                className="form-input"
-                                value={testCase.description}
-                                onChange={(e) => {
-                                  setTestCases(prev => prev.map(c => 
-                                    c.id === testCase.id ? { ...c, description: e.target.value } : c
-                                  ))
-                                }}
-                                placeholder="このケースの説明..."
-                              />
-                            </div>
-                            <div>
-                              <label className="form-label">入力</label>
-                              <textarea
-                                className="form-textarea"
-                                value={testCase.input}
-                                onChange={(e) => {
-                                  setTestCases(prev => prev.map(c => 
-                                    c.id === testCase.id ? { ...c, input: e.target.value } : c
-                                  ))
-                                }}
-                                placeholder="入力データを記述..."
-                                rows={4}
-                              />
-                            </div>
-                            <div>
-                              <label className="form-label">期待出力</label>
-                              <textarea
-                                className="form-textarea"
-                                value={testCase.expectedOutput}
-                                onChange={(e) => {
-                                  setTestCases(prev => prev.map(c => 
-                                    c.id === testCase.id ? { ...c, expectedOutput: e.target.value } : c
-                                  ))
-                                }}
-                                placeholder="期待される出力を記述..."
-                                rows={4}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {/* アクションボタン */}
-              <div className="action-buttons">
-                {isEditMode ? (
-                  <button
-                    type="submit"
-                    className="btn btn-success"
-                    disabled={isSubmitting}
-                  >
-                    問題を更新
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={isSubmitting}
-                  >
-                    問題を投稿
-                  </button>
-                )}
-                
-                <button type="button" className="btn btn-secondary" onClick={() => resetForm()} disabled={isSubmitting}>リセット</button>
-              </div>
-              </>
+                  {/* 問題文タブ */}
+                  {activeTab === 'description' && (
+                    <div className="card">
+                      <div className="card-header">
+                        問題文作成
+                      </div>
+                      <div className="card-body">
+                        <div className="form-group">
+                          <label className="form-label">
+                            <span className="required-badge">必須</span>
+                            問題文
+                          </label>
+                          {/* Markdownツールバーは削除されました */}
+                          <textarea
+                            className="form-textarea"
+                            value={formData.description}
+                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                            placeholder="問題文をMarkdown形式で記述してください..."
+                            rows={15}
+                            required
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">コードテンプレート</label>
+                          <textarea
+                            className="form-textarea"
+                            value={formData.codeTemplate}
+                            onChange={(e) => setFormData(prev => ({ ...prev, codeTemplate: e.target.value }))}
+                            placeholder="初期コードテンプレートを記述してください..."
+                            rows={10}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* サンプルケースタブ */}
+                  {activeTab === 'sample-cases' && (
+                    <div className="card">
+                      <div className="card-header">
+                        サンプルケース管理
+                      </div>
+                      <div className="card-body">
+                        <div className="form-group">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <label className="form-label">サンプルケース</label>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-small"
+                              onClick={addSampleCase}
+                            >
+                              + サンプル追加
+                            </button>
+                          </div>
+
+                          {sampleCases.map((sampleCase, index) => (
+                            <div key={sampleCase.id ?? `new-sample-${index}`} className="case-item">
+                              <div className="case-header">
+                                <div className="case-title">サンプル {index + 1}</div>
+                                {sampleCases.length > 1 && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-small"
+                                    onClick={() => removeSampleCase(sampleCase.id)}
+                                  >
+                                    削除
+                                  </button>
+                                )}
+                              </div>
+                              <div className="case-fields">
+                                <div>
+                                  <label className="form-label">入力</label>
+                                  <textarea
+                                    className="form-textarea"
+                                    value={sampleCase.input}
+                                    onChange={(e) => {
+                                      setSampleCases(prev => prev.map(c =>
+                                        c.id === sampleCase.id ? { ...c, input: e.target.value } : c
+                                      ))
+                                    }}
+                                    placeholder="入力例を記述..."
+                                    rows={4}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="form-label">期待出力</label>
+                                  <textarea
+                                    className="form-textarea"
+                                    value={sampleCase.expectedOutput}
+                                    onChange={(e) => {
+                                      setSampleCases(prev => prev.map(c =>
+                                        c.id === sampleCase.id ? { ...c, expectedOutput: e.target.value } : c
+                                      ))
+                                    }}
+                                    placeholder="期待される出力を記述..."
+                                    rows={4}
+                                  />
+                                </div>
+                                <div className="case-description">
+                                  <label className="form-label">説明</label>
+                                  <input
+                                    type="text"
+                                    className="form-input"
+                                    value={sampleCase.description}
+                                    onChange={(e) => {
+                                      setSampleCases(prev => prev.map(c =>
+                                        c.id === sampleCase.id ? { ...c, description: e.target.value } : c
+                                      ))
+                                    }}
+                                    placeholder="このケースの説明..."
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* テストケースタブ */}
+                  {activeTab === 'test-cases' && (
+                    <div className="card">
+                      <div className="card-header">
+                        テストケース管理
+                      </div>
+                      <div className="card-body">
+                        <div className="form-group">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <label className="form-label">テストケース</label>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-small"
+                              onClick={addTestCase}
+                            >
+                              + テスト追加
+                            </button>
+                          </div>
+
+                          {testCases.map((testCase, index) => (
+                            <div key={testCase.id ?? `new-test-${index}`} className="case-item">
+                              <div className="case-header">
+                                <div className="case-title">{testCase.name}</div>
+                                {testCases.length > 1 && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-small"
+                                    onClick={() => removeTestCase(testCase.id)}
+                                  >
+                                    削除
+                                  </button>
+                                )}
+                              </div>
+                              <div className="case-fields">
+                                <div>
+                                  <label className="form-label">ケース名</label>
+                                  <input
+                                    type="text"
+                                    className="form-input"
+                                    value={testCase.name}
+                                    onChange={(e) => {
+                                      setTestCases(prev => prev.map(c =>
+                                        c.id === testCase.id ? { ...c, name: e.target.value } : c
+                                      ))
+                                    }}
+                                    placeholder="ケース名..."
+                                  />
+                                </div>
+                                <div>
+                                  <label className="form-label">説明</label>
+                                  <input
+                                    type="text"
+                                    className="form-input"
+                                    value={testCase.description}
+                                    onChange={(e) => {
+                                      setTestCases(prev => prev.map(c =>
+                                        c.id === testCase.id ? { ...c, description: e.target.value } : c
+                                      ))
+                                    }}
+                                    placeholder="このケースの説明..."
+                                  />
+                                </div>
+                                <div>
+                                  <label className="form-label">入力</label>
+                                  <textarea
+                                    className="form-textarea"
+                                    value={testCase.input}
+                                    onChange={(e) => {
+                                      setTestCases(prev => prev.map(c =>
+                                        c.id === testCase.id ? { ...c, input: e.target.value } : c
+                                      ))
+                                    }}
+                                    placeholder="入力データを記述..."
+                                    rows={4}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="form-label">期待出力</label>
+                                  <textarea
+                                    className="form-textarea"
+                                    value={testCase.expectedOutput}
+                                    onChange={(e) => {
+                                      setTestCases(prev => prev.map(c =>
+                                        c.id === testCase.id ? { ...c, expectedOutput: e.target.value } : c
+                                      ))
+                                    }}
+                                    placeholder="期待される出力を記述..."
+                                    rows={4}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* アクションボタン */}
+                  <div className="action-buttons">
+                    {isEditMode ? (
+                      <button
+                        type="submit"
+                        className="btn btn-success"
+                        disabled={isSubmitting}
+                      >
+                        問題を更新
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={isSubmitting}
+                      >
+                        問題を投稿
+                      </button>
+                    )}
+
+                    <button type="button" className="btn btn-secondary" onClick={() => resetForm()} disabled={isSubmitting}>リセット</button>
+                  </div>
+                </>
               )}
             </form>
           </div>
