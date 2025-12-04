@@ -19,6 +19,27 @@ export async function updateUserProfileAction(formData: ProfileUpdateData) {
 
   const userId = Number(session.user.id);
 
+  // 1. バリデーション
+  if (formData.username && formData.username.length > 50) {
+    return { error: "ユーザー名は50文字以内で入力してください。" };
+  }
+
+  // 称号の所有権チェック
+  if (formData.selectedTitleId) {
+    const hasTitle = await prisma.userUnlockedTitle.findUnique({
+      where: {
+        userId_titleId: {
+          userId: userId,
+          titleId: formData.selectedTitleId,
+        },
+      },
+    });
+
+    if (!hasTitle) {
+      return { error: "未獲得の称号を選択することはできません。" };
+    }
+  }
+
   try {
     await prisma.user.update({
       where: { id: userId },
@@ -56,8 +77,8 @@ export async function getDailyActivityAction(timeframeDays: 7 | 14 | 30) {
   console.log(`[getDailyActivityAction] userId: ${userId}`);
 
   if (isNaN(userId)) { // userId が NaN でないかチェックを追加
-     console.error('[getDailyActivityAction] Error: Invalid userId.');
-     return { error: '無効なユーザーIDです。' };
+    console.error('[getDailyActivityAction] Error: Invalid userId.');
+    return { error: '無効なユーザーIDです。' };
   }
 
   try {
