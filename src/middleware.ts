@@ -1,58 +1,137 @@
 //middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getIronSession } from 'iron-session';
-import { sessionOptions, SessionData } from '@/lib/session';
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const session = await getIronSession<SessionData>(req, res, sessionOptions);
-  const { user } = session;
+// 保護したいページと、公開するページをここで定義します
+const routeConfig = {
+  // 保護対象のパス（正規表現が使えます）
+  protectedRoutes: [
+    '/home',
+    '/issue_list/:path*', // /issue_list 以下の全ページ
+    '/profile',
+    '/home/ranking',
+    '/create_questions',
 
-  const { pathname } = req.nextUrl;
+    // 他にも保護したいページがあればここに追加
+  ],
+  // 保護の対象外とするパス（ログインページなど）
+  publicRoutes: [
+    '/',
+    '/auth/login',
+    '/auth/mail',
+    '/auth/register',
+    '/auth/mail',
+    '/auth/password-reset',
+  ],
+};
 
-  // Prevent API routes from being processed by this middleware
-  if (pathname.startsWith('/api/')) {
-    return NextResponse.next();
-  }
-  
-  // ユーザーが存在し、かつ認証ページにアクセスしようとした場合
-  if (user && pathname.startsWith('/auth')) {
-    const homeUrl = new URL('/home', req.nextUrl.origin);
-    return NextResponse.redirect(homeUrl);
-  }
+// 簡易的なインメモリレート制限 (Edge Runtime対応のためMapを使用)
+interface RateLimitState {
+  count: number;
+  startTime: number;
+  blockedUntil: number;
+  violationCount: number;
+}
 
-  // ユーザーが存在しない、かつ保護されたルートにアクセスしようとした場合
-  if (!user && !pathname.startsWith('/auth')) {
-    const loginUrl = new URL('/auth/login', req.nextUrl.origin);
-    return NextResponse.redirect(loginUrl);
-  }
+const ipMap = new Map<string, RateLimitState>();
+const WINDOW_MS = 10 * 1000; // 10秒
+const LIMIT = 20; // 10秒間に20リクエスト (2 req/s)
+const CLEANUP_INTERVAL = 100; // 100リクエストごとにクリーンアップ
+let requestCounter = 0;
 
-  // ユーザーがセッションに存在する場合、DBにも実在するかAPI経由で確認
-  if (user?.id) {
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://infopia.nqg1t0.com' 
-      : 'http://localhost:3000';
-    const validateUrl = new URL('/api/validate-user', baseUrl);
-    const response = await fetch(validateUrl, {
-      headers: {
-        cookie: req.headers.get('cookie') || '',
-      },
-    });
+function getBlockDuration(violationCount: number): number {
+  if (violationCount <= 1) return 60 * 1000; // 1分
+  if (violationCount === 2) return 5 * 60 * 1000; // 5分
+  if (violationCount === 3) return 10 * 60 * 1000; // 10分
+  return 20 * 60 * 1000; // 20分 (最大)
+}
 
-    if (!response.ok) {
-      const loginUrl = new URL('/auth/login', req.nextUrl.origin);
-      loginUrl.searchParams.set('error', 'session_expired');
-      // Here we don't destroy the session, the API route does it.
-      // We just redirect.
-      const redirectResponse = NextResponse.redirect(loginUrl);
-      // Clear the session cookie by setting an expired cookie
-      redirectResponse.cookies.set(sessionOptions.cookieName, '', { maxAge: -1 });
-      return redirectResponse;
+function cleanupIpMap() {
+  const now = Date.now();
+  for (const [ip, state] of ipMap.entries()) {
+    if (state.blockedUntil > now) continue; // ブロック中は保持
+    if (now - state.startTime > WINDOW_MS && state.blockedUntil === 0) {
+      ipMap.delete(ip);
     }
   }
+}
 
-  return res;
+export async function middleware(req: NextRequest) {
+  // --- Global Rate Limiting ---
+  const ip = (req as any).ip || req.headers.get('x-forwarded-for') || 'unknown';
+  const now = Date.now();
+
+  // クリーンアップ (定期実行)
+  requestCounter++;
+  if (requestCounter % CLEANUP_INTERVAL === 0) {
+    cleanupIpMap();
+  }
+
+  let state = ipMap.get(ip);
+
+  if (!state) {
+    state = { count: 0, startTime: now, blockedUntil: 0, violationCount: 0 };
+    ipMap.set(ip, state);
+  }
+
+  // 1. ブロックチェック
+  if (state.blockedUntil > now) {
+    const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
+    return new NextResponse(
+      JSON.stringify({ error: `Too Many Requests. Blocked for ${remainingSeconds}s` }),
+      { status: 429, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // ブロック解除後のリセット (ブロック期間が過ぎていれば)
+  if (state.blockedUntil !== 0 && state.blockedUntil <= now) {
+    state.blockedUntil = 0;
+    state.count = 0;
+    state.startTime = now;
+  }
+
+  // 2. カウントアップ
+  if (now - state.startTime > WINDOW_MS) {
+    // ウィンドウリセット
+    state.count = 1;
+    state.startTime = now;
+  } else {
+    state.count++;
+  }
+
+  // 3. 制限チェック
+  if (state.count > LIMIT) {
+    state.violationCount++;
+    const blockDuration = getBlockDuration(state.violationCount);
+    state.blockedUntil = now + blockDuration;
+
+    console.warn(`[Middleware] IP ${ip} blocked for ${blockDuration}ms due to excessive requests.`);
+
+    return new NextResponse(
+      JSON.stringify({ error: `Too Many Requests. You are blocked.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // --- End Rate Limiting ---
+
+  const { pathname } = req.nextUrl;
+  console.log(`[Middleware] Path: ${pathname}`); // ① どのパスで実行されたか確認
+
+  const cookieName = process.env.COOKIE_NAME!;
+  const sessionCookie = req.cookies.get(cookieName);
+  console.log(`[Middleware] Cookie found: ${!!sessionCookie}`); // ② クッキーを見つけられたか確認
+
+const isProtectedRoute = routeConfig.protectedRoutes.some(path => 
+  new RegExp(`^${path.replace(/:\w+\*/, '.*')}$`).test(pathname)
+);  
+  if (isProtectedRoute && !sessionCookie) {
+    console.log(`[Middleware] Redirecting to /auth/login...`); // ③ リダイレクトが実行されたか確認
+    const absoluteURL = new URL('/auth/login', req.nextUrl.origin);
+    return NextResponse.redirect(absoluteURL.toString());
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

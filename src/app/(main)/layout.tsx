@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import type { User, Status_Kohaku } from '@prisma/client';
 import { ensureDailyMissionProgress } from '@/lib/actions';
 import MainLayout from './MainLayout';
+import ResponsiveHelpButton from "@/components/responsive-help/ResponsiveHelpButton";
 
 interface SessionData {
   user?: {
@@ -37,6 +38,7 @@ export default async function MainPagesLayout({
   return (
     <MainLayout userWithPet={userWithPet}>
       {children}
+      <ResponsiveHelpButton />
     </MainLayout>
   );
 }

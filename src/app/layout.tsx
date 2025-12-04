@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import Notification from "@/components/Notification";
-import ResponsiveHelpButton from "@/components/responsive-help/ResponsiveHelpButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +42,6 @@ export default function RootLayout({
       ><NotificationProvider>
         {children}
         <Notification />
-        <ResponsiveHelpButton />
       </NotificationProvider></body></html>
   );
 }

@@ -105,7 +105,7 @@ async function seedProblemsFromExcel(prisma: PrismaClient) {
 }
 
 async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: number = 1) {
-  // Googleスプレッドシートからエクスポートしたデータ
+  // Googleスプレッドシートからエクスポートしたデータ（にテストケースを追加）
   const spreadsheetProblems = [
     {
         title: 'A + B',
@@ -123,8 +123,18 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
         isPublished: true,
         sampleCases: {
             create: [
-                { input: '1 5', expectedOutput: '6', description: '1 + 5 = 6 です。', order: 1 },
-                { input: '10 20', expectedOutput: '30', description: '10 + 20 = 30 です。', order: 2 }
+                // 修正: inputを改行区切りに変更 ('1 5' -> '1\n5')
+                { input: '1\n5', expectedOutput: '6', description: '1 + 5 = 6 です。', order: 1 },
+                { input: '10\n20', expectedOutput: '30', description: '10 + 20 = 30 です。', order: 2 }
+            ]
+        },
+        // ▼ 追加: 採点用テストケース (ここも改行区切りにします)
+        testCases: {
+            create: [
+                { input: '100\n200', expectedOutput: '300', name: 'ケース1', order: 1 },
+                { input: '0\n0', expectedOutput: '0', name: 'ケース2', order: 2 },
+                { input: '-5\n5', expectedOutput: '0', name: 'ケース3', order: 3 },
+                { input: '12345\n67890', expectedOutput: '80235', name: 'ケース4', order: 4 }
             ]
         }
     },
@@ -147,6 +157,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: '1\n2\n3', expectedOutput: '6', description: '1 + 2 + 3 = 6 です。', order: 1 },
                 { input: '10\n-5\n2', expectedOutput: '7', description: '10 + (-5) + 2 = 7 です。', order: 2 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '100\n100\n100', expectedOutput: '300', name: 'ケース1', order: 1 },
+                { input: '0\n0\n0', expectedOutput: '0', name: 'ケース2', order: 2 },
+                { input: '-1\n-1\n-1', expectedOutput: '-3', name: 'ケース3', order: 3 }
+            ]
         }
     },
     {
@@ -167,6 +184,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '3\n10\n20\n30', expectedOutput: '60', description: '10 + 20 + 30 = 60 です。', order: 1 },
                 { input: '5\n1\n2\n3\n4\n5', expectedOutput: '15', description: '1から5までの和は15です。', order: 2 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '1\n100', expectedOutput: '100', name: 'ケース1', order: 1 },
+                { input: '4\n10\n-10\n5\n-5', expectedOutput: '0', name: 'ケース2', order: 2 },
+                { input: '10\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1', expectedOutput: '10', name: 'ケース3', order: 3 }
             ]
         }
     },
@@ -190,6 +214,14 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: '7', expectedOutput: 'Odd', description: '7は奇数です。', order: 2 },
                 { input: '0', expectedOutput: 'Even', description: '0は偶数です。', order: 3 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '2', expectedOutput: 'Even', name: 'ケース1', order: 1 },
+                { input: '1', expectedOutput: 'Odd', name: 'ケース2', order: 2 },
+                { input: '99', expectedOutput: 'Odd', name: 'ケース3', order: 3 },
+                { input: '1000', expectedOutput: 'Even', name: 'ケース4', order: 4 }
+            ]
         }
     },
     {
@@ -210,6 +242,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: 'hello\nworld', expectedOutput: 'helloworld', description: '単純な文字列連結です。', order: 1 },
                 { input: 'apple\npie', expectedOutput: 'applepie', order: 2 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: 'Code\nMonkey', expectedOutput: 'CodeMonkey', name: 'ケース1', order: 1 },
+                { input: 'Super\nMario', expectedOutput: 'SuperMario', name: 'ケース2', order: 2 },
+                { input: 'A\nB', expectedOutput: 'AB', name: 'ケース3', order: 3 }
             ]
         }
     },
@@ -232,6 +271,14 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: '5\n1 4 3 5 2', expectedOutput: '5', description: '与えられた5つの数の中で最大は5です。', order: 1 },
                 { input: '3\n-10 -5 -20', expectedOutput: '-5', description: '負の数を含む場合でも最大値を探します。', order: 2 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '5\n10 20 30 40 50', expectedOutput: '50', name: 'ケース1', order: 1 },
+                { input: '5\n50 40 30 20 10', expectedOutput: '50', name: 'ケース2', order: 2 },
+                { input: '1\n100', expectedOutput: '100', name: 'ケース3', order: 3 },
+                { input: '4\n-1 -2 -3 -4', expectedOutput: '-1', name: 'ケース4', order: 4 }
+            ]
         }
     },
     {
@@ -252,6 +299,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '15', expectedOutput: '1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz', description: '1から15までのFizzBuzzです。', order: 1 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '5', expectedOutput: '1\n2\nFizz\n4\nBuzz', name: 'ケース1', order: 1 },
+                { input: '3', expectedOutput: '1\n2\nFizz', name: 'ケース2', order: 2 },
+                { input: '16', expectedOutput: '1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz\n16', name: 'ケース3', order: 3 }
+            ]
         }
     },
     {
@@ -271,6 +325,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
         sampleCases: {
             create: [
                 { input: '5\n1 2 3 4 5', expectedOutput: '5 4 3 2 1', description: '配列を逆順に出力します。', order: 1 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '3\n10 20 30', expectedOutput: '30 20 10', name: 'ケース1', order: 1 },
+                { input: '1\n99', expectedOutput: '99', name: 'ケース2', order: 2 },
+                { input: '4\n8 6 4 2', expectedOutput: '2 4 6 8', name: 'ケース3', order: 3 }
             ]
         }
     },
@@ -293,6 +354,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: 'abracadabra\na', expectedOutput: '5', description: '`a`は5回出現します。', order: 1 },
                 { input: 'Hello World\nl', expectedOutput: '3', order: 2 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: 'banana\nn', expectedOutput: '2', name: 'ケース1', order: 1 },
+                { input: 'apple\nz', expectedOutput: '0', name: 'ケース2', order: 2 },
+                { input: 'Mississipi\ni', expectedOutput: '4', name: 'ケース3', order: 3 }
+            ]
         }
     },
     {
@@ -313,6 +381,14 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '5', expectedOutput: '120', description: '5! = 5 * 4 * 3 * 2 * 1 = 120', order: 1 },
                 { input: '0', expectedOutput: '1', description: '0の階乗は1です。', order: 2 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '1', expectedOutput: '1', name: 'ケース1', order: 1 },
+                { input: '3', expectedOutput: '6', name: 'ケース2', order: 2 },
+                { input: '6', expectedOutput: '720', name: 'ケース3', order: 3 },
+                { input: '10', expectedOutput: '3628800', name: 'ケース4', order: 4 }
             ]
         }
     },
@@ -336,6 +412,14 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: '10', expectedOutput: 'No', description: '10は2や5で割り切れるため素数ではありません。', order: 2 },
                 { input: '2', expectedOutput: 'Yes', description: '2は最小の素数です。', order: 3 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '13', expectedOutput: 'Yes', name: 'ケース1', order: 1 },
+                { input: '15', expectedOutput: 'No', name: 'ケース2', order: 2 },
+                { input: '97', expectedOutput: 'Yes', name: 'ケース3', order: 3 },
+                { input: '100', expectedOutput: 'No', name: 'ケース4', order: 4 }
+            ]
         }
     },
     {
@@ -356,6 +440,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '5 3\n1 2 3 4 5', expectedOutput: '2', description: '3はインデックス2にあります。', order: 1 },
                 { input: '5 6\n1 2 3 4 5', expectedOutput: '-1', description: '6は配列内に存在しません。', order: 2 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '5 1\n1 2 3 4 5', expectedOutput: '0', name: 'ケース1', order: 1 },
+                { input: '5 5\n1 2 3 4 5', expectedOutput: '4', name: 'ケース2', order: 2 },
+                { input: '3 2\n1 3 5', expectedOutput: '-1', name: 'ケース3', order: 3 }
             ]
         }
     },
@@ -378,6 +469,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: '51 15', expectedOutput: '3', description: '51と15の最大公約数は3です。', order: 1 },
                 { input: '10 20', expectedOutput: '10', order: 2 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '12 18', expectedOutput: '6', name: 'ケース1', order: 1 },
+                { input: '101 103', expectedOutput: '1', name: 'ケース2', order: 2 },
+                { input: '100 25', expectedOutput: '25', name: 'ケース3', order: 3 }
+            ]
         }
     },
     {
@@ -397,6 +495,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
         sampleCases: {
             create: [
                 { input: '5\n5 3 2 4 1', expectedOutput: '1 2 3 4 5', order: 1 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '3\n3 2 1', expectedOutput: '1 2 3', name: 'ケース1', order: 1 },
+                { input: '4\n1 3 2 4', expectedOutput: '1 2 3 4', name: 'ケース2', order: 2 },
+                { input: '5\n10 5 8 2 1', expectedOutput: '1 2 5 8 10', name: 'ケース3', order: 3 }
             ]
         }
     },
@@ -418,6 +523,12 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '5\n1 2 3 4 5\n2\n2 4\n1 5', expectedOutput: '9\n15', description: '区間[2,4]の和は2+3+4=9, 区間[1,5]の和は1+2+3+4+5=15です。', order: 1 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '3\n10 20 30\n3\n1 1\n1 2\n1 3', expectedOutput: '10\n30\n60', name: 'ケース1', order: 1 },
+                { input: '3\n1 1 1\n1\n2 3', expectedOutput: '2', name: 'ケース2', order: 2 }
+            ]
         }
     },
     {
@@ -437,6 +548,12 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
         sampleCases: {
             create: [
                 { input: '4 3\n1 2\n1 3\n2 4', expectedOutput: '1\n2\n4\n3', description: '頂点1->2->4->3の順に訪問します。', order: 1 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '3 2\n1 2\n2 3', expectedOutput: '1\n2\n3', name: 'ケース1', order: 1 },
+                { input: '5 4\n1 2\n1 3\n2 4\n2 5', expectedOutput: '1\n2\n4\n5\n3', name: 'ケース2', order: 2 }
             ]
         }
     },
@@ -458,6 +575,12 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '4 3\n1 2\n1 3\n2 4', expectedOutput: '1\n2\n3\n4', description: '頂点1->2->3->4の順に訪問します。', order: 1 }
             ]
+        },
+        testCases: {
+            create: [
+                 { input: '3 2\n1 2\n2 3', expectedOutput: '1\n2\n3', name: 'ケース1', order: 1 },
+                 { input: '5 4\n1 2\n1 3\n2 4\n2 5', expectedOutput: '1\n2\n3\n4\n5', name: 'ケース2', order: 2 }
+            ]
         }
     },
     {
@@ -477,6 +600,15 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
         sampleCases: {
             create: [
                 { input: '10', expectedOutput: '55', order: 1 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '0', expectedOutput: '0', name: 'ケース1', order: 1 },
+                { input: '1', expectedOutput: '1', name: 'ケース2', order: 2 },
+                { input: '2', expectedOutput: '1', name: 'ケース3', order: 3 },
+                { input: '5', expectedOutput: '5', name: 'ケース4', order: 4 },
+                { input: '20', expectedOutput: '6765', name: 'ケース5', order: 5 }
             ]
         }
     },
@@ -498,6 +630,12 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '3 8\n3 30\n4 50\n5 60', expectedOutput: '90', description: '品物1(重さ3,価値30)と品物3(重さ5,価値60)を選ぶと、重さ合計8で価値合計90となり最大です。', order: 1 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '2 10\n5 10\n5 20', expectedOutput: '30', name: 'ケース1', order: 1 },
+                { input: '3 3\n1 10\n1 20\n1 30', expectedOutput: '60', name: 'ケース2', order: 2 }
+            ]
         }
     },
     {
@@ -517,6 +655,11 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
         sampleCases: {
             create: [
                 { input: '4 5 0\n0 1 1\n0 2 4\n1 2 2\n2 3 1\n1 3 5', expectedOutput: '0\n1\n3\n4', order: 1 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '3 2 0\n0 1 10\n1 2 20', expectedOutput: '0\n10\n30', name: 'ケース1', order: 1 }
             ]
         }
     },
@@ -538,6 +681,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '2024 2 28', expectedOutput: '2024 2 29', description: '2024年はうるう年です。', order: 1 },
                 { input: '2023 12 31', expectedOutput: '2024 1 1', description: '年末の翌日は元旦です。', order: 2 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '2023 1 1', expectedOutput: '2023 1 2', name: 'ケース1', order: 1 },
+                { input: '2023 2 28', expectedOutput: '2023 3 1', name: 'ケース2', order: 2 },
+                { input: '2020 2 28', expectedOutput: '2020 2 29', name: 'ケース3', order: 3 }
             ]
         }
     },
@@ -561,6 +711,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: '([)]', expectedOutput: 'No', order: 2 },
                 { input: '())', expectedOutput: 'No', order: 3 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '()', expectedOutput: 'Yes', name: 'ケース1', order: 1 },
+                { input: '((', expectedOutput: 'No', name: 'ケース2', order: 2 },
+                { input: '(]', expectedOutput: 'No', name: 'ケース3', order: 3 }
+            ]
         }
     },
     {
@@ -580,6 +737,12 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
         sampleCases: {
             create: [
                 { input: '5\n10 50 30 50 20', expectedOutput: '0 3 2 3 1', order: 1 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '3\n100 10 50', expectedOutput: '2 0 1', name: 'ケース1', order: 1 },
+                { input: '3\n10 10 10', expectedOutput: '0 0 0', name: 'ケース2', order: 2 }
             ]
         }
     },
@@ -602,6 +765,12 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: '3\n70 80 90', expectedOutput: '80', order: 1 },
                 { input: '4\n100 85 90 77', expectedOutput: '88', order: 2 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '2\n10 20', expectedOutput: '15', name: 'ケース1', order: 1 },
+                { input: '2\n10 11', expectedOutput: '10', name: 'ケース2', order: 2 }
+            ]
         }
     },
     {
@@ -623,6 +792,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: 'HelloWorld', expectedOutput: 'UryybJbeyq', order: 1 },
                 { input: 'Programming', expectedOutput: 'Cebtenzzvat', order: 2 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: 'ABC', expectedOutput: 'NOP', name: 'ケース1', order: 1 },
+                { input: 'NOP', expectedOutput: 'ABC', name: 'ケース2', order: 2 },
+                { input: 'a', expectedOutput: 'n', name: 'ケース3', order: 3 }
+            ]
         }
     },
     {
@@ -643,6 +819,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '3\n10 5\n3 8\n7 7', expectedOutput: '1 1', description: '太郎君が1勝、花子さんが1勝、1引き分けです。', order: 1 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '1\n10 2', expectedOutput: '1 0', name: 'ケース1', order: 1 },
+                { input: '1\n2 10', expectedOutput: '0 1', name: 'ケース2', order: 2 },
+                { input: '1\n5 5', expectedOutput: '0 0', name: 'ケース3', order: 3 }
+            ]
         }
     },
     {
@@ -662,6 +845,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
         sampleCases: {
             create: [
                 { input: '12', expectedOutput: '1\n2\n3\n4\n6\n12', order: 1 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '6', expectedOutput: '1\n2\n3\n6', name: 'ケース1', order: 1 },
+                { input: '7', expectedOutput: '1\n7', name: 'ケース2', order: 2 },
+                { input: '1', expectedOutput: '1', name: 'ケース3', order: 3 }
             ]
         }
     },
@@ -684,6 +874,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
                 { input: 'level', expectedOutput: 'Yes', order: 1 },
                 { input: 'hello', expectedOutput: 'No', order: 2 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: 'aba', expectedOutput: 'Yes', name: 'ケース1', order: 1 },
+                { input: 'abc', expectedOutput: 'No', name: 'ケース2', order: 2 },
+                { input: 'a', expectedOutput: 'Yes', name: 'ケース3', order: 3 }
+            ]
         }
     },
     {
@@ -704,6 +901,11 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
             create: [
                 { input: '2 3 2\n1 2 3\n4 5 6\n7 8\n9 10\n11 12', expectedOutput: '58 64\n139 154', order: 1 }
             ]
+        },
+        testCases: {
+            create: [
+                { input: '2 2 2\n1 0\n0 1\n1 2\n3 4', expectedOutput: '1 2\n3 4', name: '単位行列との積', order: 1 }
+            ]
         }
     },
     {
@@ -723,6 +925,13 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
         sampleCases: {
             create: [
                 { input: '5 3', expectedOutput: '6', description: '5 (101) XOR 3 (011) = 6 (110)', order: 1 }
+            ]
+        },
+        testCases: {
+            create: [
+                { input: '0 0', expectedOutput: '0', name: 'ケース1', order: 1 },
+                { input: '1 0', expectedOutput: '1', name: 'ケース2', order: 2 },
+                { input: '12 10', expectedOutput: '6', name: 'ケース3', order: 3 }
             ]
         }
     }

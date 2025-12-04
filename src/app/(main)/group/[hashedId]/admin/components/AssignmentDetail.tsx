@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Assignment, AssignmentComment, User } from '../types/AdminTypes';
+import DOMPurify from 'dompurify';
 
 interface AssignmentDetailProps {
     assignment: Assignment;
@@ -23,7 +24,7 @@ type CommentWithAuthor = AssignmentComment & {
 export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, onBackToList }) => {
     const params = useParams();
     const problemTitle = assignment.programmingProblem?.title || assignment.selectProblem?.title;
-    
+
     const [comments, setComments] = useState<CommentWithAuthor[]>([]);
     const [newComment, setNewComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false); // isSubmittingCommentからisSubmittingに変更
@@ -83,7 +84,7 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                     }}
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '8px' }}>
-                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
                     </svg>
                     課題一覧に戻る
                 </button>
@@ -104,7 +105,7 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                             <div style={{ fontSize: '14px', color: '#5f6368' }}>
                                 {new Date(assignment.created_at).toLocaleDateString('ja-JP')}
                             </div>
-                            
+
                         </div>
                     </div>
 
@@ -125,17 +126,17 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
 
                     <div
                         style={{ fontSize: '14px', color: '#3c4043', marginBottom: '24px', lineHeight: '1.6' }}
-                        dangerouslySetInnerHTML={{ __html: assignment.description }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(assignment.description) }}
                     />
 
                     <div style={{ marginTop: '24px' }}>
                         {assignment.selectProblemId ? (
-                           <Link
-                               href={`/group/select-page/${assignment.selectProblemId}?assignmentId=${assignment.id}&hashedId=${params.hashedId as string}`}
-                               style={{ display: 'inline-block', padding: '10px 20px', backgroundColor: '#58A8fdff', color: 'white', textDecoration: 'none', borderRadius: '5px' }}
-                           >
-                               {problemTitle ? ` ${problemTitle}` : '問題に挑戦する'}
-                           </Link>
+                            <Link
+                                href={`/group/select-page/${assignment.selectProblemId}?assignmentId=${assignment.id}&hashedId=${params.hashedId as string}`}
+                                style={{ display: 'inline-block', padding: '10px 20px', backgroundColor: '#58A8fdff', color: 'white', textDecoration: 'none', borderRadius: '5px' }}
+                            >
+                                {problemTitle ? ` ${problemTitle}` : '問題に挑戦する'}
+                            </Link>
                         ) : assignment.programmingProblemId ? (
                             <Link
                                 href={`/group/coding-page/${assignment.programmingProblemId}?assignmentId=${assignment.id}&hashedId=${params.hashedId as string}`}
@@ -143,7 +144,7 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                             >
                                 {problemTitle ? ` ${problemTitle}` : '問題に挑戦する'}
                             </Link>
-                        ) :  (
+                        ) : (
                             <p style={{
                                 fontSize: '14px', color: '#718096', backgroundColor: '#f8f9fa',
                                 padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0'
@@ -156,7 +157,7 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                     {/* --- ▼▼▼ コメント機能 ▼▼▼ --- */}
                     <div style={{ marginTop: '32px', borderTop: '1px solid #e0e0e0', paddingTop: '24px' }}>
                         <h3 style={{ fontSize: '18px', fontWeight: '500', color: '#3c4043', margin: '0 0 16px 0' }}>コメント</h3>
-                        
+
                         {/* コメントリスト */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px', maxHeight: '300px', overflowY: 'scroll', paddingRight: '10px' }}>
                             {comments.length > 0 ? (
@@ -168,10 +169,10 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                                             flexShrink: 0, color: '#fff', fontWeight: 'bold', fontSize: '14px',
                                         }}>
                                             {comment.author.icon ? (
-                                                <img 
-                                                    src={comment.author.icon} 
-                                                    alt={comment.author.username || ''} 
-                                                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                                                <img
+                                                    src={comment.author.icon}
+                                                    alt={comment.author.username || ''}
+                                                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                                                 />
                                             ) : (comment.author.username?.charAt(0) || '？')}
                                         </div>
@@ -197,27 +198,28 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
                                     onChange={(e) => setNewComment(e.target.value)}
                                     placeholder="コメントを追加..."
                                     rows={3}
-                                    style={{ 
-                                        width: '100%', 
-                                        padding: '8px 12px', 
-                                        border: '1px solid #ccc', 
-                                        borderRadius: '4px', 
-                                        fontSize: '14px', 
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        border: '1px solid #ccc',
+                                        borderRadius: '4px',
+                                        fontSize: '14px',
                                         resize: 'vertical',
                                         boxSizing: 'border-box'
                                     }}
                                 />
-                                <button 
-                                    type="submit" 
-                                    disabled={isSubmitting || !newComment.trim()} 
-                                    style={{ 
-                                        marginTop: '8px', 
-                                        padding: '8px 16px', 
-                                        backgroundColor: '#1976d2', 
-                                        color: 'white', border: 'none', 
-                                        borderRadius: '4px', cursor: 'pointer', 
-                                        opacity: (isSubmitting || !newComment.trim()) ? 0.5 : 1 
-                                    }}>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting || !newComment.trim()}
+                                    style={{
+                                        marginTop: '8px',
+                                        padding: '8px 16px',
+                                        backgroundColor: '#1976d2',
+                                        color: 'white', border: 'none',
+                                        borderRadius: '4px', cursor: 'pointer',
+                                        opacity: (isSubmitting || !newComment.trim()) ? 0.5 : 1
+                                    }}
+                                >
                                     {isSubmitting ? '投稿中...' : '投稿'}
                                 </button>
                             </div>

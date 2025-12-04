@@ -152,6 +152,17 @@ export const useAdminData = (hashedId: string) => {
 
     // 権限変更
     const toggleAdmin = async (userId: number, currentStatus: boolean) => {
+        // 管理者からメンバーへ変更しようとしている場合（currentStatusがtrueで、反転させるのでfalseになる場合）
+        if (currentStatus === true) {
+            // 現在の管理者数をカウント
+            const adminCount = members.filter(m => m.isAdmin).length;
+            
+            // 管理者が1人しかいない場合は変更をブロック
+            if (adminCount <= 1) {
+                alert('グループには最低1人の管理者が必要です。最後の管理者の権限は変更できません。');
+                return; // ここで処理を終了し、APIリクエストを送らない
+            }
+        }
         // 楽観的UI更新: APIレスポンスを待たずにUIを即座に更新する
         const previousMembers = [...members];
         setMembers(members.map(m =>

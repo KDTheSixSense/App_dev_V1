@@ -2,6 +2,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";  // App Router用
+import DOMPurify from 'dompurify';
 
 type Inputs = {
   email: string;
@@ -27,33 +28,33 @@ const PasswordReset = () => {
 
   // フォーム送信時処理
   const onSubmit = async (data: Inputs) => {
-  try {
+    try {
 
-    const res = await fetch('/api/auth/password-reset', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: data.email,
-        newPassword: data.newpassword,
-      }),
-    });
+      const res = await fetch('/api/auth/password-reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: DOMPurify.sanitize(data.email),
+          newPassword: DOMPurify.sanitize(data.newpassword),
+        }),
+      });
 
-    const result = await res.json();
+      const result = await res.json();
 
-    if (!res.ok) {
-      alert(result.message || 'パスワード変更に失敗しました');
-      return;
+      if (!res.ok) {
+        alert(result.message || 'パスワード変更に失敗しました');
+        return;
+      }
+
+      alert('パスワードを変更しました');
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('エラー:', error);
+      alert('システムエラーが発生しました');
     }
-
-    alert('パスワードを変更しました');
-    router.push('/auth/login');
-  } catch (error) {
-    console.error('エラー:', error);
-    alert('システムエラーが発生しました');
-  }
-};
+  };
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">

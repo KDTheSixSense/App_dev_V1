@@ -9,58 +9,65 @@ import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVer
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import DOMPurify from 'dompurify';
 
 // --- データと型のインポート ---
+<<<<<<< HEAD
 import type { Problem as SerializableProblem } from '@/lib/problem-types';
 import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction} from '@/lib/actions';
+=======
+import type { Problem as SerializableProblem } from '@/lib/types';
+import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
+import TestCaseResultModal, { TestCaseResult } from '@/components/TestCaseResultModal';
+>>>>>>> origin/Kent01212
 
 // Header.tsx からヘルパー関数と定数をコピー
 const MAX_HUNGER = 200; // 満腹度の最大値
 
 const getPetDisplayState = (hungerLevel: number) => {
-  if (hungerLevel >= 150) {
-    return {
-      icon: '/images/Kohaku/kohaku-full.png',
-      colorClass: 'bg-gradient-to-r from-green-400 to-lime-500',
-    };
-  } else if (hungerLevel >= 100) {
-    return {
-      icon: '/images/Kohaku/kohaku-normal.png',
-      colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',
-    };
-  } else if (hungerLevel >= 50) {
-    return {
-      icon: '/images/Kohaku/kohaku-hungry.png',
-      colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500',
-    };
-  } else {
-    return {
-      icon: '/images/Kohaku/kohaku-starving.png',
-      colorClass: 'bg-gradient-to-r from-red-500 to-rose-600',
-    };
-  }
+    if (hungerLevel >= 150) {
+        return {
+            icon: '/images/Kohaku/kohaku-full.png',
+            colorClass: 'bg-gradient-to-r from-green-400 to-lime-500',
+        };
+    } else if (hungerLevel >= 100) {
+        return {
+            icon: '/images/Kohaku/kohaku-normal.png',
+            colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',
+        };
+    } else if (hungerLevel >= 50) {
+        return {
+            icon: '/images/Kohaku/kohaku-hungry.png',
+            colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500',
+        };
+    } else {
+        return {
+            icon: '/images/Kohaku/kohaku-starving.png',
+            colorClass: 'bg-gradient-to-r from-red-500 to-rose-600',
+        };
+    }
 };
 
 const DynamicAceEditor = dynamic(
-  () => import('@/components/AceEditorWrapper'),
-  {
-    ssr: false,
-    loading: () => (
-      <div style={{
-        height: '100%',
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f9f9f9',
-        border: '1px solid #e0e0e0',
-        color: '#666',
-        fontSize: '14px',
-      }}>
-        エディタを読み込んでいます...
-      </div>
-    )
-  }
+    () => import('@/components/AceEditorWrapper'),
+    {
+        ssr: false,
+        loading: () => (
+            <div style={{
+                height: '100%',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f9f9f9',
+                border: '1px solid #e0e0e0',
+                color: '#666',
+                fontSize: '14px',
+            }}>
+                エディタを読み込んでいます...
+            </div>
+        )
+    }
 );
 
 // --- 型定義 ---
@@ -71,6 +78,7 @@ type SubmitResult = {
     message: string;
     yourOutput?: string;
     expected?: string;
+    testCaseResults?: TestCaseResult[];
 };
 
 // --- Aceのアノテーション型を定義 ---
@@ -95,7 +103,7 @@ const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ p
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
         <div className="p-4 border-b flex-shrink-0"><h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>問{problem.id}: {problem.title.ja}</span></h2></div>
         <div className="p-6 space-y-6 overflow-y-auto">
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: problem.description.ja.replace(/\n/g, '<br />') }} />
+            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(problem.description.ja.replace(/\n/g, '<br />')) }} />
             <div>
                 <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
                 {problem.sampleCases?.map((sc, index) => (
@@ -130,6 +138,7 @@ const CodeEditorPanel: React.FC<{
     const getAceMode = (langValue: string) => {
         const mapping: { [key: string]: string } = {
             'python': 'python',
+            'python3': 'python',
             'javascript': 'javascript',
             'typescript': 'typescript',
             'java': 'java',
@@ -156,12 +165,12 @@ const CodeEditorPanel: React.FC<{
                         {showThemeDropdown && (
                             <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-20">
                                 {props.themes.map((theme) => (
-                                    <button 
-                                        key={theme.value} 
-                                        onClick={() => { 
-                                            props.onThemeSelect(theme.value); 
-                                            setShowThemeDropdown(false); 
-                                        }} 
+                                    <button
+                                        key={theme.value}
+                                        onClick={() => {
+                                            props.onThemeSelect(theme.value);
+                                            setShowThemeDropdown(false);
+                                        }}
                                         className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100"
                                     >
                                         {theme.label}
@@ -170,7 +179,7 @@ const CodeEditorPanel: React.FC<{
                             </div>
                         )}
                     </div>
-                    
+
                     {/* --- 言語選択プルダウン（既存） --- */}
                     <div className="relative">
                         <button onClick={() => setShowLanguageDropdown(!showLanguageDropdown)} className="flex items-center justify-between w-40 px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
@@ -240,8 +249,8 @@ const ExecutionPanel: React.FC<{
                     </div>
                     <div className="flex gap-2">
                         {props.submitResult?.success && (
-                            <button 
-                                onClick={props.onNextProblem} 
+                            <button
+                                onClick={props.onNextProblem}
                                 className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                             >
                                 次の問題へ
@@ -252,15 +261,15 @@ const ExecutionPanel: React.FC<{
                     </div>
                 </div>
             </div>
-            
+
             {/* --- タブのコンテンツエリア (残りの領域すべてを埋める) --- */}
             {/* flex-grow と min-h-0 を設定し、親パネルのサイズ変更に追従させます */}
             <div className="flex-grow min-h-0 overflow-y-auto border rounded-md p-2 m-4 mt-0">
                 {activeTab === 'input' && (
-                    <textarea 
-                        value={props.stdin} 
-                        onChange={(e) => props.setStdin(e.target.value)} 
-                        className="w-full h-full p-1 text-sm font-mono border-0 rounded-md resize-none focus:outline-none" 
+                    <textarea
+                        value={props.stdin}
+                        onChange={(e) => props.setStdin(e.target.value)}
+                        className="w-full h-full p-1 text-sm font-mono border-0 rounded-md resize-none focus:outline-none"
                         placeholder="コードへの入力値..."
                     />
                 )}
@@ -273,9 +282,9 @@ const ExecutionPanel: React.FC<{
                 )}
                 {activeTab === 'kohaku' && (
                     // AiChatPanel は既に h-full のコンポーネントなので、そのまま配置します
-                    <AiChatPanel 
-                        messages={props.chatMessages} 
-                        onSendMessage={props.onSendMessage} 
+                    <AiChatPanel
+                        messages={props.chatMessages}
+                        onSendMessage={props.onSendMessage}
                         isLoading={props.isAiLoading}
                         kohakuIcon={props.kohakuIcon}
                     />
@@ -288,31 +297,31 @@ const ExecutionPanel: React.FC<{
 CodeEditorPanel.displayName = 'CodeEditorPanel';
 
 // AiChatPanel の定義
-const AiChatPanel: React.FC<{ 
-    messages: ChatMessage[]; 
-    onSendMessage: (message: string) => void; 
-    isLoading: boolean; 
+const AiChatPanel: React.FC<{
+    messages: ChatMessage[];
+    onSendMessage: (message: string) => void;
+    isLoading: boolean;
     kohakuIcon: string; // <-- ★ アイコンパスを受け取るプロパティを追加
 }> = ({ messages, onSendMessage, isLoading, kohakuIcon }) => { // <-- ★ kohakuIcon を受け取る
-    const [input, setInput] = useState('');
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-    const handleSend = () => { if (input.trim() && !isLoading) { onSendMessage(input); setInput(''); } };
-    return (
+    const [input, setInput] = useState('');
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+    const handleSend = () => { if (input.trim() && !isLoading) { onSendMessage(input); setInput(''); } };
+    return (
         // 枠線と背景を削除し、親の ExecutionPanel にレイアウトを合わせる
-        <div className="flex flex-col h-full bg-white">
-        <div className="p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg text-gray-800 flex items-center gap-2"><Sparkles className="h-5 w-5 text-cyan-500" />コハクに質問</h3></div>
-            <div className="flex-grow p-4 overflow-y-scroll space-y-4">
-                {messages.map((msg, index) => (
+        <div className="flex flex-col h-full bg-white">
+            <div className="p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg text-gray-800 flex items-center gap-2"><Sparkles className="h-5 w-5 text-cyan-500" />コハクに質問</h3></div>
+            <div className="flex-grow p-4 overflow-y-scroll space-y-4">
+                {messages.map((msg, index) => (
                     <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.sender === 'kohaku' && (
                             //「コハク」テキストを Image コンポーネントに置き換え
-                            <Image 
+                            <Image
                                 src={kohakuIcon} // プロパティから受け取ったアイコンパスを使用
-                                alt="コハク" 
+                                alt="コハク"
                                 width={128}
-                                height={128} 
-                                className="w-14 h-14 rounded-full flex-shrink-0 object-cover" 
+                                height={128}
+                                className="w-14 h-14 rounded-full flex-shrink-0 object-cover"
                             />
                         )}
                         <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-xl shadow-sm ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white border'}`}>
@@ -320,17 +329,17 @@ const AiChatPanel: React.FC<{
                         </div>
                     </div>
                 ))}
-                {isLoading && <div className="text-center text-gray-500 text-sm">コハクが考えています...</div>}
-                <div ref={messagesEndRef} />
-            </div>
-            <div className="p-4 bg-white border-t flex-shrink-0">
-                <div className="flex gap-2">
-                    <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder={isLoading ? "コハクが応答中です..." : "ヒントを求める..."} disabled={isLoading} className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:bg-gray-100" />
-                    <button onClick={handleSend} disabled={isLoading} className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors disabled:bg-cyan-300 disabled:cursor-not-allowed"><Send className="h-5 w-5" /></button>
-                </div>
-            </div>
-        </div>
-    );
+                {isLoading && <div className="text-center text-gray-500 text-sm">コハクが考えています...</div>}
+                <div ref={messagesEndRef} />
+            </div>
+            <div className="p-4 bg-white border-t flex-shrink-0">
+                <div className="flex gap-2">
+                    <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder={isLoading ? "コハクが応答中です..." : "ヒントを求める..."} disabled={isLoading} className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:bg-gray-100" />
+                    <button onClick={handleSend} disabled={isLoading} className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors disabled:bg-cyan-300 disabled:cursor-not-allowed"><Send className="h-5 w-5" /></button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 // --- メインコンポーネント ---
@@ -341,7 +350,7 @@ const ProblemSolverPage = () => {
 
     const [problem, setProblem] = useState<SerializableProblem | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedLanguage, setSelectedLanguage] = useState('python');
+    const [selectedLanguage, setSelectedLanguage] = useState('python3');
     const [selectedTheme, setSelectedTheme] = useState('solarized_light');
     const [userCode, setUserCode] = useState('');
     const [stdin, setStdin] = useState('');
@@ -356,9 +365,10 @@ const ProblemSolverPage = () => {
     const [annotations, setAnnotations] = useState<AceAnnotation[]>([]);
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+    const [isResultModalOpen, setIsResultModalOpen] = useState(false);
 
     const languages = [
-        { value: 'python', label: 'Python' },
+        { value: 'python3', label: 'Python 3' },
         { value: 'javascript', label: 'JavaScript' },
         { value: 'typescript', label: 'TypeScript' },
         { value: 'java', label: 'Java' },
@@ -373,17 +383,17 @@ const ProblemSolverPage = () => {
         // --- 黒系 (Dark) テーマ ---
         { value: 'tomorrow_night', label: 'Tomorrow Night' },
         { value: 'monokai', label: 'Monokai (Dark)' },
-        { value: 'dracula', label: 'Dracula (Dark)' },          
-        { value: 'nord_dark', label: 'Nord Dark (Dark)' },      
+        { value: 'dracula', label: 'Dracula (Dark)' },
+        { value: 'nord_dark', label: 'Nord Dark (Dark)' },
         { value: 'terminal', label: 'Terminal (Dark)' },
         { value: 'merbivore_soft', label: 'Merbivore Soft' },
-        
+
         // --- 白系 (Light) テーマ ---
         { value: 'solarized_light', label: 'Solarized Light' },
         { value: 'chrome', label: 'Chrome (Light)' },
         { value: 'github', label: 'GitHub (Light)' },
-        { value: 'xcode', label: 'Xcode (Light)' },             
-        { value: 'textmate', label: 'TextMate (Light)' },       
+        { value: 'xcode', label: 'Xcode (Light)' },
+        { value: 'textmate', label: 'TextMate (Light)' },
         { value: 'kuroir', label: 'Kuroir (Light)' },
     ];
 
@@ -399,7 +409,7 @@ const ProblemSolverPage = () => {
                     // 取得した満腹度から表示状態を決定
                     const displayState = getPetDisplayState(data.hungerlevel);
                     // アイコンの状態を更新
-                    setKohakuIcon(displayState.icon); 
+                    setKohakuIcon(displayState.icon);
                     console.log(`[Page.tsx] コハクのアイコンを ${displayState.icon} に更新しました。`);
                 }
             } else {
@@ -438,7 +448,7 @@ const ProblemSolverPage = () => {
         return () => {
             window.removeEventListener('petStatusUpdated', refetchPetStatus);
         };
-    }, [problemId, refetchPetStatus]);
+    }, [problemId, refetchPetStatus]);
 
     // サーバーサイド・リンティングを呼び出すEffect
     useEffect(() => {
@@ -446,11 +456,11 @@ const ProblemSolverPage = () => {
         if (isLoading) {
             return;
         }
-        
+
         // コードが空になったらエラーをクリア
         if (!userCode.trim()) {
-             setAnnotations([]);
-             return;
+            setAnnotations([]);
+            return;
         }
 
         // ユーザーのタイピングが終わるのを待つ（デバウンス）
@@ -485,27 +495,27 @@ const ProblemSolverPage = () => {
      * 学習時間を計算し、サーバーに送信する
      */
     const recordStudyTime = useCallback(() => {
-      // まだこの問題の時間を記録していない場合のみ実行
-      if (!hasRecordedTime.current) {
-        const endTime = Date.now();
-        const timeSpentMs = endTime - problemStartedAt;
+        // まだこの問題の時間を記録していない場合のみ実行
+        if (!hasRecordedTime.current) {
+            const endTime = Date.now();
+            const timeSpentMs = endTime - problemStartedAt;
 
-        // 3秒以上の滞在のみを記録
-        if (timeSpentMs > 3000) {
-          console.log(`Recording ${timeSpentMs}ms for problem ${problemId}`);
-          recordStudyTimeAction(timeSpentMs);
-          hasRecordedTime.current = true; // 記録済みフラグを立てる
+            // 3秒以上の滞在のみを記録
+            if (timeSpentMs > 3000) {
+                console.log(`Recording ${timeSpentMs}ms for problem ${problemId}`);
+                recordStudyTimeAction(timeSpentMs);
+                hasRecordedTime.current = true; // 記録済みフラグを立てる
+            }
         }
-      }
     }, [problemId, problemStartedAt]);
 
     // --- 6. ページを離れる時に時間を記録する Effect を追加 ---
     useEffect(() => {
-      // このEffectは、problemStartedAt（＝新しい問題）が変わるたびに再登録される
-      return () => {
-        // クリーンアップ関数（ページ離脱時）に時間を記録
-        recordStudyTime();
-      };
+        // このEffectは、problemStartedAt（＝新しい問題）が変わるたびに再登録される
+        return () => {
+            // クリーンアップ関数（ページ離脱時）に時間を記録
+            recordStudyTime();
+        };
     }, [problemStartedAt, recordStudyTime]); // problemStartedAt が変わるたびにクリーンアップを再設定
 
     const handleExecute = async () => {
@@ -538,15 +548,27 @@ const ProblemSolverPage = () => {
             const data = await response.json();
             setSubmitResult(data);
 
+            // APIが成功を返し、かつテストケース結果が含まれていればモーダルを開く
+            if (data.testCaseResults && data.testCaseResults.length > 0) {
+                setIsResultModalOpen(true);
+            }
+
+            // 従来のエラーハンドリング（API接続エラーなど）
+            else if (!data.success) {
+                setExecutionResult(`エラー: ${data.message}`);
+                setAlertMessage(data.message);
+                setShowAlert(true);
+            }
+
             if (data.success) {
-                setSubmitResult({ success: true, message: '正解です！おめでとうございます！' }); 
+                setSubmitResult({ success: true, message: '正解です！おめでとうございます！' });
                 await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1); //正解判定後にXPを付与.プログラミング問題はsubjectidが1なので1を渡す
                 window.dispatchEvent(new CustomEvent('petStatusUpdated')); //ヘッダーのペットステータス更新を促すイベントを発火
             }
         } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '確認処理中にエラーが発生しました。' }); }
         finally { setIsSubmitting(false); }
     };
-    
+
     const handleNextProblem = async () => {
         if (!problem) return;
         recordStudyTime();
@@ -587,7 +609,7 @@ const ProblemSolverPage = () => {
 
             const data = await response.json();
             const kohakuResponse = data.hint || 'ヒントを生成できませんでした。もう一度試してみてください。';
-            
+
             // AIからの応答をチャットに追加
             setChatMessages((prev) => [...prev, { sender: 'kohaku', text: kohakuResponse }]);
 
@@ -608,6 +630,15 @@ const ProblemSolverPage = () => {
         <div className="h-screen p-4 overflow-hidden">
             {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
 
+            {/* テストケース結果モーダルの追加 */}
+            <TestCaseResultModal
+                isOpen={isResultModalOpen}
+                onClose={() => setIsResultModalOpen(false)}
+                success={submitResult?.success ?? false}
+                results={submitResult?.testCaseResults ?? []}
+                message={submitResult?.message}
+            />
+
             {/* 一覧へ戻るボタン */}
             <div className="mb-2">
                 <Link href="/issue_list/programming_problem/problems" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
@@ -615,25 +646,25 @@ const ProblemSolverPage = () => {
                     一覧へ戻る
                 </Link>
             </div>
-            
+
             {/* 既存の水平パネルグループ */}
             <PanelGroup direction="horizontal">
-                
+
                 {/* 左パネル: 問題文 (変更なし) */}
                 <Panel defaultSize={35} minSize={20}>
                     <ProblemDescriptionPanel problem={problem} />
                 </Panel>
-                
+
                 <PanelResizeHandle className="w-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
                     <GripVertical className="h-4 w-4 text-gray-600" />
                 </PanelResizeHandle>
-                
+
                 {/* 右パネル: ここにエディタと実行パネルを縦に並べる (ここからが変更点) */}
                 <Panel minSize={30}>
-                    
+
                     {/* ここに縦の PanelGroup を使います */}
                     <PanelGroup direction="vertical">
-                        
+
                         {/* 上: CodeEditorPanel (ステップ1で修正したもの) */}
                         <Panel defaultSize={70} minSize={25}>
                             <CodeEditorPanel

@@ -2,12 +2,13 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback,memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import DOMPurify from 'dompurify';
 
 import type { Problem as SerializableProblem } from '@/lib/problem-types';
 import { recordStudyTimeAction } from '@/lib/actions';
@@ -16,49 +17,49 @@ import { recordStudyTimeAction } from '@/lib/actions';
 const MAX_HUNGER = 200; // 満腹度の最大値
 
 const getPetDisplayState = (hungerLevel: number) => {
-  if (hungerLevel >= 150) {
-    return {
-      icon: '/images/Kohaku/kohaku-full.png',
-      colorClass: 'bg-gradient-to-r from-green-400 to-lime-500',
-    };
-  } else if (hungerLevel >= 100) {
-    return {
-      icon: '/images/Kohaku/kohaku-normal.png',
-      colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',
-    };
-  } else if (hungerLevel >= 50) {
-    return {
-      icon: '/images/Kohaku/kohaku-hungry.png',
-      colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500',
-    };
-  } else {
-    return {
-      icon: '/images/Kohaku/kohaku-starving.png',
-      colorClass: 'bg-gradient-to-r from-red-500 to-rose-600',
-    };
-  }
+    if (hungerLevel >= 150) {
+        return {
+            icon: '/images/Kohaku/kohaku-full.png',
+            colorClass: 'bg-gradient-to-r from-green-400 to-lime-500',
+        };
+    } else if (hungerLevel >= 100) {
+        return {
+            icon: '/images/Kohaku/kohaku-normal.png',
+            colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',
+        };
+    } else if (hungerLevel >= 50) {
+        return {
+            icon: '/images/Kohaku/kohaku-hungry.png',
+            colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500',
+        };
+    } else {
+        return {
+            icon: '/images/Kohaku/kohaku-starving.png',
+            colorClass: 'bg-gradient-to-r from-red-500 to-rose-600',
+        };
+    }
 };
 
 const DynamicAceEditor = dynamic(
-  () => import('@/components/AceEditorWrapper'),
-  {
-    ssr: false,
-    loading: () => (
-      <div style={{
-        height: '100%',
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f9f9f9',
-        border: '1px solid #e0e0e0',
-        color: '#666',
-        fontSize: '14px',
-      }}>
-        エディタを読み込んでいます...
-      </div>
-    )
-  }
+    () => import('@/components/AceEditorWrapper'),
+    {
+        ssr: false,
+        loading: () => (
+            <div style={{
+                height: '100%',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f9f9f9',
+                border: '1px solid #e0e0e0',
+                color: '#666',
+                fontSize: '14px',
+            }}>
+                エディタを読み込んでいます...
+            </div>
+        )
+    }
 );
 
 type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
@@ -118,25 +119,25 @@ const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ p
     const descriptionText = typeof problem.description === 'object' ? problem.description?.ja : problem.description;
 
     return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
-        <div className="p-4 border-b flex-shrink-0"><h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>問{problem.id}: {titleText}</span></h2></div>
-        <div className="p-6 space-y-6 overflow-y-auto">
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: (descriptionText ?? '説明がありません。').replace(/\n/g, '<br />') }} />
-            <div>
-                <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
-                {problem.sampleCases?.map((sc, index) => (
-                    <div key={index} className="mb-4 last:mb-0">
-                        <h4 className="font-medium text-sm mb-2 text-gray-800">サンプル {index + 1}</h4>
-                        {sc.description && <p className="text-xs text-gray-600 mb-2 pl-2 border-l-2 border-gray-300">{sc.description}</p>}
-                        <div className="space-y-2">
-                            <div><span className="text-xs font-semibold text-gray-600">入力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.input}</pre></div>
-                            <div><span className="text-xs font-semibold text-gray-600">期待する出力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.expectedOutput}</pre></div>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
+            <div className="p-4 border-b flex-shrink-0"><h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>問{problem.id}: {titleText}</span></h2></div>
+            <div className="p-6 space-y-6 overflow-y-auto">
+                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((descriptionText ?? '説明がありません。').replace(/\n/g, '<br />')) }} />
+                <div>
+                    <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
+                    {problem.sampleCases?.map((sc, index) => (
+                        <div key={index} className="mb-4 last:mb-0">
+                            <h4 className="font-medium text-sm mb-2 text-gray-800">サンプル {index + 1}</h4>
+                            {sc.description && <p className="text-xs text-gray-600 mb-2 pl-2 border-l-2 border-gray-300">{sc.description}</p>}
+                            <div className="space-y-2">
+                                <div><span className="text-xs font-semibold text-gray-600">入力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.input}</pre></div>
+                                <div><span className="text-xs font-semibold text-gray-600">期待する出力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.expectedOutput}</pre></div>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         </div>
-    </div>
     );
 };
 
@@ -184,12 +185,12 @@ const CodeEditorPanel: React.FC<{
                         {showThemeDropdown && (
                             <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-20">
                                 {props.themes.map((theme) => (
-                                    <button 
-                                        key={theme.value} 
-                                        onClick={() => { 
-                                            props.onThemeSelect(theme.value); 
-                                            setShowThemeDropdown(false); 
-                                        }} 
+                                    <button
+                                        key={theme.value}
+                                        onClick={() => {
+                                            props.onThemeSelect(theme.value);
+                                            setShowThemeDropdown(false);
+                                        }}
                                         className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100"
                                     >
                                         {theme.label}
@@ -198,7 +199,7 @@ const CodeEditorPanel: React.FC<{
                             </div>
                         )}
                     </div>
-                    
+
                     {/* --- 言語選択プルダウン（既存） --- */}
                     <div className="relative">
                         <button onClick={() => setShowLanguageDropdown(!showLanguageDropdown)} className="flex items-center justify-between w-40 px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
@@ -234,7 +235,7 @@ const CodeEditorPanel: React.FC<{
                         showPrintMargin: false, // 印刷マージン非表示
                     }}
                 />
-                </div>
+            </div>
         </div>
     );
 });
@@ -251,7 +252,7 @@ const ExecutionPanel: React.FC<{
     isAiLoading: boolean;
     kohakuIcon: string; // アイコンパスを受け取るプロパティを追加
     assignmentInfo: { assignmentId: string | null; hashedId: string | null; };
-    t: { nextProblemButton: string; };
+    t: { nextProblemButton: string; };
 }> = memo((props) => {
     const [activeTab, setActiveTab] = useState<ActiveTab>('input');
 
@@ -267,29 +268,29 @@ const ExecutionPanel: React.FC<{
                         <button onClick={() => setActiveTab('kohaku')} className={`px-3 py-1 text-sm rounded-md ${activeTab === 'kohaku' ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}>コハク</button>
                     </div>
                     <div className="flex gap-2">
-                        {props.submitResult?.success && ( 
-                            <div className="flex-shrink-0 pt-4 flex justify-center">
-                                {/* 修正2: handleNextProblem -> props.onNextProblem */}
-                                <button onClick={props.onNextProblem} className="w-full max-w-lg py-3 px-6 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-lg hover:bg-green-600">
-                                    {/* 修正3: assignmentInfo -> props.assignmentInfo, t -> props.t */}
-                                    {props.assignmentInfo.hashedId ? '課題一覧へ戻る' : props.t.nextProblemButton}
-                                </button>
-                            </div>
-                        )}
+                        {props.submitResult?.success && (
+                            <div className="flex-shrink-0 pt-4 flex justify-center">
+                                {/* 修正2: handleNextProblem -> props.onNextProblem */}
+                                <button onClick={props.onNextProblem} className="w-full max-w-lg py-3 px-6 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-lg hover:bg-green-600">
+                                    {/* 修正3: assignmentInfo -> props.assignmentInfo, t -> props.t */}
+                                    {props.assignmentInfo.hashedId ? '課題一覧へ戻る' : props.t.nextProblemButton}
+                                </button>
+                            </div>
+                        )}
                         <button onClick={props.onExecute} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"><Play className="h-4 w-4" /> 実行</button>
                         <button onClick={props.onSubmit} disabled={props.isSubmitting} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"><Send className="h-4 w-4" /> {props.isSubmitting ? '提出中...' : '提出'}</button>
                     </div>
                 </div>
             </div>
-            
+
             {/* --- タブのコンテンツエリア (残りの領域すべてを埋める) --- */}
             {/* flex-grow と min-h-0 を設定し、親パネルのサイズ変更に追従させます */}
             <div className="flex-grow min-h-0 overflow-y-auto border rounded-md p-2 m-4 mt-0">
                 {activeTab === 'input' && (
-                    <textarea 
-                        value={props.stdin} 
-                        onChange={(e) => props.setStdin(e.target.value)} 
-                        className="w-full h-full p-1 text-sm font-mono border-0 rounded-md resize-none focus:outline-none" 
+                    <textarea
+                        value={props.stdin}
+                        onChange={(e) => props.setStdin(e.target.value)}
+                        className="w-full h-full p-1 text-sm font-mono border-0 rounded-md resize-none focus:outline-none"
                         placeholder="コードへの入力値..."
                     />
                 )}
@@ -302,9 +303,9 @@ const ExecutionPanel: React.FC<{
                 )}
                 {activeTab === 'kohaku' && (
                     // AiChatPanel は既に h-full のコンポーネントなので、そのまま配置します
-                    <AiChatPanel 
-                        messages={props.chatMessages} 
-                        onSendMessage={props.onSendMessage} 
+                    <AiChatPanel
+                        messages={props.chatMessages}
+                        onSendMessage={props.onSendMessage}
                         isLoading={props.isAiLoading}
                         kohakuIcon={props.kohakuIcon}
                     />
@@ -317,31 +318,31 @@ const ExecutionPanel: React.FC<{
 CodeEditorPanel.displayName = 'CodeEditorPanel';
 
 // AiChatPanel の定義
-const AiChatPanel: React.FC<{ 
-    messages: ChatMessage[]; 
-    onSendMessage: (message: string) => void; 
-    isLoading: boolean; 
+const AiChatPanel: React.FC<{
+    messages: ChatMessage[];
+    onSendMessage: (message: string) => void;
+    isLoading: boolean;
     kohakuIcon: string; // アイコンパスを受け取るプロパティを追加
 }> = ({ messages, onSendMessage, isLoading, kohakuIcon }) => { // kohakuIcon を受け取る
-    const [input, setInput] = useState('');
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-    const handleSend = () => { if (input.trim() && !isLoading) { onSendMessage(input); setInput(''); } };
-    return (
+    const [input, setInput] = useState('');
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+    const handleSend = () => { if (input.trim() && !isLoading) { onSendMessage(input); setInput(''); } };
+    return (
         // 枠線と背景を削除し、親の ExecutionPanel にレイアウトを合わせる
-        <div className="flex flex-col h-full bg-white">
-        <div className="p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg text-gray-800 flex items-center gap-2"><Sparkles className="h-5 w-5 text-cyan-500" />コハクに質問</h3></div>
-            <div className="flex-grow p-4 overflow-y-auto space-y-4">
-                {messages.map((msg, index) => (
+        <div className="flex flex-col h-full bg-white">
+            <div className="p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg text-gray-800 flex items-center gap-2"><Sparkles className="h-5 w-5 text-cyan-500" />コハクに質問</h3></div>
+            <div className="flex-grow p-4 overflow-y-auto space-y-4">
+                {messages.map((msg, index) => (
                     <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.sender === 'kohaku' && (
                             //「コハク」テキストを Image コンポーネントに置き換え
-                            <Image 
+                            <Image
                                 src={kohakuIcon} // プロパティから受け取ったアイコンパスを使用
-                                alt="コハク" 
+                                alt="コハク"
                                 width={128}
-                                height={128} 
-                                className="w-14 h-14 rounded-full flex-shrink-0 object-cover" 
+                                height={128}
+                                className="w-14 h-14 rounded-full flex-shrink-0 object-cover"
                             />
                         )}
                         <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-xl shadow-sm ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white border'}`}>
@@ -349,17 +350,17 @@ const AiChatPanel: React.FC<{
                         </div>
                     </div>
                 ))}
-                {isLoading && <div className="text-center text-gray-500 text-sm">コハクが考えています...</div>}
-                <div ref={messagesEndRef} />
-            </div>
-            <div className="p-4 bg-white border-t flex-shrink-0">
-                <div className="flex gap-2">
-                    <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder={isLoading ? "コハクが応答中です..." : "ヒントを求める..."} disabled={isLoading} className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:bg-gray-100" />
-                    <button onClick={handleSend} disabled={isLoading} className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors disabled:bg-cyan-300 disabled:cursor-not-allowed"><Send className="h-5 w-5" /></button>
-                </div>
-            </div>
-        </div>
-    );
+                {isLoading && <div className="text-center text-gray-500 text-sm">コハクが考えています...</div>}
+                <div ref={messagesEndRef} />
+            </div>
+            <div className="p-4 bg-white border-t flex-shrink-0">
+                <div className="flex gap-2">
+                    <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder={isLoading ? "コハクが応答中です..." : "ヒントを求める..."} disabled={isLoading} className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:bg-gray-100" />
+                    <button onClick={handleSend} disabled={isLoading} className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors disabled:bg-cyan-300 disabled:cursor-not-allowed"><Send className="h-5 w-5" /></button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assignmentInfo }) => {
@@ -402,17 +403,17 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         // --- 黒系 (Dark) テーマ ---
         { value: 'tomorrow_night', label: 'Tomorrow Night' },
         { value: 'monokai', label: 'Monokai (Dark)' },
-        { value: 'dracula', label: 'Dracula (Dark)' },          
-        { value: 'nord_dark', label: 'Nord Dark (Dark)' },      
+        { value: 'dracula', label: 'Dracula (Dark)' },
+        { value: 'nord_dark', label: 'Nord Dark (Dark)' },
         { value: 'terminal', label: 'Terminal (Dark)' },
         { value: 'merbivore_soft', label: 'Merbivore Soft' },
-        
+
         // --- 白系 (Light) テーマ ---
         { value: 'solarized_light', label: 'Solarized Light' },
         { value: 'chrome', label: 'Chrome (Light)' },
         { value: 'github', label: 'GitHub (Light)' },
-        { value: 'xcode', label: 'Xcode (Light)' },             
-        { value: 'textmate', label: 'TextMate (Light)' },       
+        { value: 'xcode', label: 'Xcode (Light)' },
+        { value: 'textmate', label: 'TextMate (Light)' },
         { value: 'kuroir', label: 'Kuroir (Light)' },
     ];
 
@@ -428,7 +429,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
                     // 取得した満腹度から表示状態を決定
                     const displayState = getPetDisplayState(data.hungerlevel);
                     // アイコンの状態を更新
-                    setKohakuIcon(displayState.icon); 
+                    setKohakuIcon(displayState.icon);
                     console.log(`[Page.tsx] コハクのアイコンを ${displayState.icon} に更新しました。`);
                 }
             } else {
@@ -438,7 +439,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
             console.error("[Page.tsx] ペット情報の再取得に失敗:", error);
         }
     }, []); // この関数自体は変化しないので依存配列は空
-        
+
 
     useEffect(() => {
         // 静的エラーチェック（リンティング）
@@ -498,7 +499,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
             if (timeSpentMs > 3000) {
                 console.log(`Recording ${timeSpentMs}ms for group assignment problem ${problem.id}`);
                 // サーバーアクション (0 XP, timeSpentMs) を呼び出す
-                recordStudyTimeAction(timeSpentMs); 
+                recordStudyTimeAction(timeSpentMs);
                 hasRecordedTime.current = true; // 記録済みフラグを立てる
             }
         }
@@ -587,89 +588,89 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
 
     const handleNextProblem = async () => {
         try {
-          // 課題から遷移してきた場合は、課題詳細ページに戻る
-          if (assignmentInfo.hashedId && assignmentInfo.assignmentId) {
-            recordStudyTime();
-            router.push(`/group/${assignmentInfo.hashedId}/member`);
-            return;
-          }
-    
-          const res = await fetch(`/group/select-page/${problem.id}`);
-          const data = await res.json();
-          if (data.nextProblemId) { // 修正: 正しいパスへ遷移
-            recordStudyTime();
-            router.push(`/group/select-page/${data.nextProblemId}`);
-          } else {
-            setAlertMessage("最後の問題です！お疲れ様でした。");
-            setShowAlert(true);
-          }
+            // 課題から遷移してきた場合は、課題詳細ページに戻る
+            if (assignmentInfo.hashedId && assignmentInfo.assignmentId) {
+                recordStudyTime();
+                router.push(`/group/${assignmentInfo.hashedId}/member`);
+                return;
+            }
+
+            const res = await fetch(`/group/select-page/${problem.id}`);
+            const data = await res.json();
+            if (data.nextProblemId) { // 修正: 正しいパスへ遷移
+                recordStudyTime();
+                router.push(`/group/select-page/${data.nextProblemId}`);
+            } else {
+                setAlertMessage("最後の問題です！お疲れ様でした。");
+                setShowAlert(true);
+            }
         } catch (error) {
-          console.error("次の問題の取得に失敗しました:", error);
-          alert("次の問題の取得に失敗しました。");
+            console.error("次の問題の取得に失敗しました:", error);
+            alert("次の問題の取得に失敗しました。");
         }
-      };
+    };
 
     return (
-            <div className="h-screen bg-gray-100 p-4 overflow-hidden">
-                {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
-                
-                {/* 既存の水平パネルグループ */}
-                <PanelGroup direction="horizontal">
-                    
-                    {/* 左パネル: 問題文 (変更なし) */}
-                    <Panel defaultSize={35} minSize={20}>
-                        <ProblemDescriptionPanel problem={problem} />
-                    </Panel>
-                    
-                    <PanelResizeHandle className="w-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
-                        <GripVertical className="h-4 w-4 text-gray-600" />
-                    </PanelResizeHandle>
-                    
-                    {/* 右パネル: ここにエディタと実行パネルを縦に並べる (ここからが変更点) */}
-                    <Panel minSize={30}>
-                        
-                        {/* ここに縦の PanelGroup を使います */}
-                        <PanelGroup direction="vertical">
-                            
-                            {/* 上: CodeEditorPanel (ステップ1で修正したもの) */}
-                            <Panel defaultSize={70} minSize={25}>
-                                <CodeEditorPanel
-                                    userCode={userCode} setUserCode={setUserCode}
-                                    stdin={stdin} setStdin={setStdin}
-                                    onExecute={handleExecute} onSubmit={handleSubmit}
-                                    isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
-                                    selectedLanguage={selectedLanguage} languages={languages}
-                                    onLanguageSelect={setSelectedLanguage}
-                                    selectedTheme={selectedTheme} themes={themes}
-                                    onThemeSelect={setSelectedTheme}
-                                    annotations={annotations}
-                                />
-                            </Panel>
-    
-                            {/* 上下を分割するリサイズハンドルを追加 */}
-                            <PanelResizeHandle className="h-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
-                                {/* アイコンを90度回転させて水平線のように見せます */}
-                                <GripVertical className="h-4 w-4 text-gray-600 rotate-90" />
-                            </PanelResizeHandle>
-    
-                            {/* 変更点: 下: ExecutionPanel (ステップ2で追加したもの) */}
-                            <Panel defaultSize={30} minSize={20}>
-                                <ExecutionPanel
-                                    stdin={stdin} setStdin={setStdin}
-                                    onExecute={handleExecute} onSubmit={handleSubmit}
-                                    isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
-                                    onNextProblem={handleNextProblem}
-                                    chatMessages={chatMessages}
-                                    onSendMessage={handleUserMessage}
-                                    isAiLoading={isAiLoading}
-                                    kohakuIcon={kohakuIcon}
-                                    assignmentInfo={assignmentInfo}
-                                    t={t}
-                                />
-                            </Panel>
-                        </PanelGroup>
-                    </Panel>
-                </PanelGroup>
+        <div className="h-screen bg-gray-100 p-4 overflow-hidden">
+            {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
+
+            {/* 既存の水平パネルグループ */}
+            <PanelGroup direction="horizontal">
+
+                {/* 左パネル: 問題文 (変更なし) */}
+                <Panel defaultSize={35} minSize={20}>
+                    <ProblemDescriptionPanel problem={problem} />
+                </Panel>
+
+                <PanelResizeHandle className="w-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
+                    <GripVertical className="h-4 w-4 text-gray-600" />
+                </PanelResizeHandle>
+
+                {/* 右パネル: ここにエディタと実行パネルを縦に並べる (ここからが変更点) */}
+                <Panel minSize={30}>
+
+                    {/* ここに縦の PanelGroup を使います */}
+                    <PanelGroup direction="vertical">
+
+                        {/* 上: CodeEditorPanel (ステップ1で修正したもの) */}
+                        <Panel defaultSize={70} minSize={25}>
+                            <CodeEditorPanel
+                                userCode={userCode} setUserCode={setUserCode}
+                                stdin={stdin} setStdin={setStdin}
+                                onExecute={handleExecute} onSubmit={handleSubmit}
+                                isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
+                                selectedLanguage={selectedLanguage} languages={languages}
+                                onLanguageSelect={setSelectedLanguage}
+                                selectedTheme={selectedTheme} themes={themes}
+                                onThemeSelect={setSelectedTheme}
+                                annotations={annotations}
+                            />
+                        </Panel>
+
+                        {/* 上下を分割するリサイズハンドルを追加 */}
+                        <PanelResizeHandle className="h-2 bg-gray-200 hover:bg-blue-300 transition-colors flex items-center justify-center">
+                            {/* アイコンを90度回転させて水平線のように見せます */}
+                            <GripVertical className="h-4 w-4 text-gray-600 rotate-90" />
+                        </PanelResizeHandle>
+
+                        {/* 変更点: 下: ExecutionPanel (ステップ2で追加したもの) */}
+                        <Panel defaultSize={30} minSize={20}>
+                            <ExecutionPanel
+                                stdin={stdin} setStdin={setStdin}
+                                onExecute={handleExecute} onSubmit={handleSubmit}
+                                isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
+                                onNextProblem={handleNextProblem}
+                                chatMessages={chatMessages}
+                                onSendMessage={handleUserMessage}
+                                isAiLoading={isAiLoading}
+                                kohakuIcon={kohakuIcon}
+                                assignmentInfo={assignmentInfo}
+                                t={t}
+                            />
+                        </Panel>
+                    </PanelGroup>
+                </Panel>
+            </PanelGroup>
         </div>
     );
 };

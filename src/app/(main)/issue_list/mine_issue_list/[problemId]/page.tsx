@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, TextCursorInput, GripVertical } from 'lucide-react';
 // パネルのリサイズ機能を提供するライブラリのコンポーネントをインポートします
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import DOMPurify from 'dompurify';
 
 // --- データと型のインポート ---
 import type { Problem as SerializableProblem, SampleCase } from '@/lib/problem-types';
@@ -29,7 +30,9 @@ const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ p
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
         <div className="p-4 border-b flex-shrink-0"><h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>問{problem.id}: {problem.title.ja}</span></h2></div>
         <div className="p-6 space-y-6 overflow-y-auto">
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: problem.description.ja.replace(/\n/g, '<br />') }} />
+
+
+            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(problem.description.ja.replace(/\n/g, '<br />')) }} />
             <div>
                 <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
                 {problem.sampleCases?.map((sc, index) => (
@@ -152,7 +155,7 @@ const ProblemSolverPage = () => {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [isAiLoading, setIsAiLoading] = useState(false);
 
-    const languages = [ { value: 'python', label: 'Python' }, { value: 'javascript', label: 'JavaScript' }, { value: 'java', label: 'Java' }, { value: 'cpp', label: 'C++' }, { value: 'csharp', label: 'C#' }, ];
+    const languages = [{ value: 'python', label: 'Python' }, { value: 'javascript', label: 'JavaScript' }, { value: 'java', label: 'Java' }, { value: 'cpp', label: 'C++' }, { value: 'csharp', label: 'C#' },];
 
     useEffect(() => {
         if (!problemId) return;
@@ -198,7 +201,7 @@ const ProblemSolverPage = () => {
         } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '完了処理中にエラーが発生しました。' }); }
         finally { setIsSubmitting(false); }
     };
-    
+
     const handleNextProblem = async () => {
         if (!problem) return;
         const nextId = await getNextProgrammingProblemId(parseInt(problem.id));
@@ -235,7 +238,7 @@ const ProblemSolverPage = () => {
 
             const data = await response.json();
             const kohakuResponse = data.hint || 'ヒントを生成できませんでした。もう一度試してみてください。';
-            
+
             // AIからの応答をチャットに追加
             setChatMessages((prev) => [...prev, { sender: 'kohaku', text: kohakuResponse }]);
 
@@ -276,12 +279,12 @@ const ProblemSolverPage = () => {
                     <GripVertical className="h-4 w-4 text-gray-600" />
                 </PanelResizeHandle>
                 <Panel defaultSize={25} minSize={20}>
-                     <AiChatPanel messages={chatMessages} onSendMessage={handleUserMessage} isLoading={isAiLoading} />
+                    <AiChatPanel messages={chatMessages} onSendMessage={handleUserMessage} isLoading={isAiLoading} />
                 </Panel>
             </PanelGroup>
-             {submitResult?.success && (
+            {submitResult?.success && (
                 <div className="absolute bottom-10 right-1/4 left-1/4 z-20">
-                     <button onClick={handleNextProblem} className="w-full py-3 px-6 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600 transition-colors">次の問題へ</button>
+                    <button onClick={handleNextProblem} className="w-full py-3 px-6 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600 transition-colors">次の問題へ</button>
                 </div>
             )}
         </div>

@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from "next/navigation";  // App Router用
+import DOMPurify from 'dompurify';
 
 // フォームのデータ型を定義
 type Inputs = {
@@ -18,13 +19,13 @@ type Inputs = {
 export default function PasswordResetPage() {
     const router = useRouter();
     // 戻るボタン処理
-  const handleBack = () => {
-    router.push('/auth/login');  // 戻り先のパスを適宜設定してください
-  };
+    const handleBack = () => {
+        router.push('/auth/login');  // 戻り先のパスを適宜設定してください
+    };
 
 
 
-    
+
 
 
     // 1. useFormフックを呼び出し、必要な関数を取得します
@@ -42,26 +43,26 @@ export default function PasswordResetPage() {
         setApiError('');
 
         try {
-        const res = await fetch('/api/auth/mail', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
+            const res = await fetch('/api/auth/mail', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: DOMPurify.sanitize(data.email) }),
+            });
 
-        const text = await res.text(); // ← text() で取得してから判定
-        const result = text ? JSON.parse(text) : {};
+            const text = await res.text(); // ← text() で取得してから判定
+            const result = text ? JSON.parse(text) : {};
 
-        if (!res.ok) {
-            throw new Error(result.message || 'エラーが発生しました。');
-        }
+            if (!res.ok) {
+                throw new Error(result.message || 'エラーが発生しました。');
+            }
 
-        setSuccessMessage(result.message || 'パスワード再設定メールを送信しました。');
+            setSuccessMessage(result.message || 'パスワード再設定メールを送信しました。');
         } catch (err) {
-        if (err instanceof Error) {
-            setApiError(err.message);
-        } else {
-            setApiError('予期せぬエラーが発生しました。');
-        }
+            if (err instanceof Error) {
+                setApiError(err.message);
+            } else {
+                setApiError('予期せぬエラーが発生しました。');
+            }
         }
     };
 
@@ -113,29 +114,28 @@ export default function PasswordResetPage() {
                         </div>
 
                         <div className="flex justify-end gap-4 mt-4">
-                        <button
-                            type="button"
-                            onClick={handleBack}
-                            className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
-                        >
-                            戻る
-                        </button>
+                            <button
+                                type="button"
+                                onClick={handleBack}
+                                className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
+                            >
+                                戻る
+                            </button>
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className={`px-4 py-2 font-bold text-white rounded ${
-                            loading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'
-                            }`}
-                        >
-                            {loading ? '送信中...' : '送信'}
-                        </button>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className={`px-4 py-2 font-bold text-white rounded ${loading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'
+                                    }`}
+                            >
+                                {loading ? '送信中...' : '送信'}
+                            </button>
 
-                        
+
                         </div>
                     </>
                 )}
             </form>
         </div>
-        );
-    };
+    );
+};
