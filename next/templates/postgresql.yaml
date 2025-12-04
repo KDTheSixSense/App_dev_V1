@@ -1,0 +1,68 @@
+# -------------------------
+# PostgreSQL用 Service
+# -------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.releaseName }}-postgresql
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "postgresql.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+  selector:
+    {{- include "postgresql.selectorLabels" . | nindent 4 }}
+
+---
+# -------------------------
+# PostgreSQL用 StatefulSet
+# -------------------------
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.releaseName }}-postgresql
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "postgresql.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ .Values.releaseName }}-postgresql
+  selector:
+    matchLabels:
+      {{- include "postgresql.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "postgresql.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: postgresql
+          image: "postgres:15"
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.releaseName }}-postgresql
+                  key: password
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.user }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.database }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.postgresql.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.storageSize }}

@@ -236,6 +236,8 @@ model Questions_Algorithm {
   subject    Subject    @relation(fields: [subjectId], references: [id])
   difficulty Difficulty @relation(fields: [difficultyId], references: [id])
   language   Language   @relation(fields: [language_id], references: [id])
+
+  @@unique([title, description])
 }
 
 model Questions {
@@ -263,7 +265,7 @@ model Questions {
 /// プログラミング選択問題モデル
 model SelectProblem {
   id            Int     @id @default(autoincrement())
-  title         String // 問題タイトル
+  title         String @unique // 問題タイトル
   description   String  @db.Text // 問題文 (Markdown)
   explanation   String? @db.Text // 解説文
   answerOptions Json // 選択肢 (例: ["選択肢A", "選択肢B", ...])
@@ -293,7 +295,7 @@ model ProgrammingProblem {
   id Int @id @default(autoincrement())
 
   // --- 基本情報 ---
-  title       String // タイトル
+  title       String @unique // タイトル
   problemType String @default("コーディング問題") // 問題タイプ
   difficulty  Int    @default(4) // 難易度 (1-10)
   timeLimit   Int    @default(10) // 制限時間 (分)

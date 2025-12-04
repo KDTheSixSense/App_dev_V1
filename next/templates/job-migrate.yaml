@@ -1,0 +1,55 @@
+{{- if .Values.migration.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrate-job
+  namespace: {{ .Values.namespace }} # ★ ネームスペースを追加
+  labels:
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    # "pre-install,pre-upgrade" は、アプリのデプロイ「前」に実行
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    # 成功したフック(Job)は自動で削除する
+    "helm.sh/hook-delete-policy": "hook-succeeded,before-hook-creation"
+    # 実行順序の重み付け (マイナス値が先に実行)
+    "helm.sh/hook-weight": "-5"
+spec:
+  # ★ Jobが失敗した場合、1回だけリトライする
+  backoffLimit: 1
+    # Jobの最大実行時間を300秒 (5分) に設定
+  # 必要に応じて、この値を大きくしてください (例: 600秒 = 10分)
+  activeDeadlineSeconds: 300 
+  template:
+    metadata:
+      labels:
+        job-name: {{ .Release.Name }}-migrate-job
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          # ★ values.yaml からイメージ情報を組み立てる
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.migration.image.tagSuffix }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          
+          # ★★★ values.yaml から command を読み込む ★★★
+          command: {{ .Values.migration.command | toYaml | nindent 12 }}
+          
+          env:
+            # ★★★ values.yaml から DB 情報を読み込む ★★★
+            - name: PG_USER
+              value: {{ .Values.postgresql.user | quote }}
+            - name: PG_DB_NAME
+              value: {{ .Values.postgresql.database | quote }}
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql
+                  key: password
+            
+            # ★★★ 環境変数として DATABASE_URL を定義する ★★★
+            # (sh -c を使うより、この方がクリーンです)
+            - name: DATABASE_URL
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+{{- end }}

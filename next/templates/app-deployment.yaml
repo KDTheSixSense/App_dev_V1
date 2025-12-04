@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.releaseName }}-{{ .Values.appName }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "next.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "next.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "next.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        # -------------------------
+        # コンテナ1: アプリ本体 (Runner)
+        # -------------------------
+        - name: {{ .Values.appName }}
+          # ★ 'runner' イメージ (例: ...:9deb18d) を使用
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 3000
+
+          # --- ★構文エラー修正: 
+          # env: で google-callback-url (Secret) を指定するため、
+          # 競合する可能性のある google-app-config (ConfigMap) の参照をコメントアウト
+          envFrom:
+            # (もし 'my-app-secrets' も kubectl で管理しているならここに追加)
+            # - secretRef:
+            #     name: my-app-secrets 
+
+            # kubectl で作成した ConfigMap (公開URLなど)
+            # - configMapRef:
+            #     # 'google-callback-url' ではなく 'ConfigMap' で作成したと仮定
+            #     name: google-app-config
+
+          env:
+            # --- データベース接続情報 ---
+            - name: PG_USER
+              value: {{ .Values.postgresql.user | quote }}
+            - name: PG_DB_NAME
+              value: {{ .Values.postgresql.database | quote }}
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.releaseName }}-postgresql
+                  key: password
+            - name: DATABASE_URL
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Values.releaseName }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+            # --- アプリケーション設定 (固定値) ---
+            - name: COOKIE_NAME
+              value: {{ .Values.appEnv.COOKIE_NAME | quote }}
+            - name: EMAIL_SERVER_USER
+              value: {{ .Values.appEnv.EMAIL_SERVER_USER | quote }}
+            - name: EMAIL_FROM
+              value: {{ .Values.appEnv.EMAIL_FROM | quote }}
+            - name: NEXT_PUBLIC_BASE_URL
+              value: {{ .Values.appEnv.NEXT_PUBLIC_BASE_URL | quote }}
+            # --- アプリケーション設定 (Secretから) ---
+            - name: SECRET_COOKIE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-app-secrets # kubectl管理のSecret
+                  key: secret-cookie-password
+            - name: EMAIL_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-app-secrets # kubectl管理のSecret
+                  key: email-server-password
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openai-secret       # kubectl管理のSecret
+                  key: OPENAI_API_KEY
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: google-oauth-credentials # kubectl管理のSecret
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: google-oauth-credentials # kubectl管理のSecret
+                  key: GOOGLE_CLIENT_SECRET
+            - name: NEXT_PUBLIC_APP_URL
+              valueFrom:
+                secretKeyRef:
+                  name: google-callback-url # kubectl管理のSecret
+                  key: NEXT_PUBLIC_APP_URL # Secret内のキー名
+        
+        # -------------------------
+        # コンテナ2: Prismaマイグレーション用 (Migrator)
+        # -------------------------
+        - name: prisma-tools
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.migration.image.tagSuffix }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c", "tail -f /dev/null"]
+          env:
+            # --- DB接続情報 (アプリ本体と同一) ---
+            - name: PG_USER
+              value: {{ .Values.postgresql.user | quote }}
+            - name: PG_DB_NAME
+              value: {{ .Values.postgresql.database | quote }}
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.releaseName }}-postgresql
+                  key: password
+            - name: DATABASE_URL
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Values.releaseName }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
