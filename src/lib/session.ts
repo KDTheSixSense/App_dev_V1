@@ -19,6 +19,7 @@ export const sessionOptions: SessionOptions = {
     secure: true, // 常にSecure属性を付与 (ローカル開発でもHTTPS推奨、またはlocalhostは例外扱いされる場合あり)
     sameSite: 'lax',
   },
+  ttl: 86400, // 1日 (秒単位)
 };
 
 /**

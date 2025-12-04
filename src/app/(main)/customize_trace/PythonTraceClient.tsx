@@ -131,6 +131,8 @@ const PythonTraceClient = () => {
     const handleStartTrace = async () => {
         try {
             setError(null);
+            // 前回のセッションの時間を記録
+            recordStudyTime();
             setIsTraceStarted(true);
 
             const steps = await runPythonTraceAction(code) as TraceStepData[];
