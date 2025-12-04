@@ -295,7 +295,7 @@ model ProgrammingProblem {
   id Int @id @default(autoincrement())
 
   // --- 基本情報 ---
-  title       String // タイトル
+  title       String @unique // タイトル
   problemType String @default("コーディング問題") // 問題タイプ
   difficulty  Int    @default(4) // 難易度 (1-10)
   timeLimit   Int    @default(10) // 制限時間 (分)
