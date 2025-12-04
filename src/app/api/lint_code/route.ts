@@ -7,19 +7,7 @@ import 'acorn';
 import { LRUCache } from 'lru-cache';
 
 // --- Rate Limiting Setup ---
-const rateLimit = new LRUCache<string, number>({
-    max: 500, // 最大500ユーザー
-    ttl: 60 * 1000, // 1分間
-});
 
-function checkRateLimit(ip: string): boolean {
-    const count = rateLimit.get(ip) || 0;
-    if (count >= 10) { // 1分間に10回まで
-        return false;
-    }
-    rateLimit.set(ip, count + 1);
-    return true;
-}
 
 // Ace Editorが要求するアノテーションの型
 type Annotation = {
@@ -574,11 +562,7 @@ async function lintCode(code: string, language: string): Promise<Annotation[]> {
 
 export async function POST(req: NextRequest) {
     try {
-        // Rate Limiting Check
-        const ip = req.headers.get('x-forwarded-for') || 'unknown';
-        if (!checkRateLimit(ip)) {
-            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
-        }
+
 
         const body = await req.json();
         const { code, language } = body;

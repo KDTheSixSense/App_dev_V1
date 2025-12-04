@@ -25,95 +25,10 @@ const routeConfig = {
   ],
 };
 
-// 簡易的なインメモリレート制限 (Edge Runtime対応のためMapを使用)
-interface RateLimitState {
-  count: number;
-  startTime: number;
-  blockedUntil: number;
-  violationCount: number;
-}
 
-const ipMap = new Map<string, RateLimitState>();
-const WINDOW_MS = 10 * 1000; // 10秒
-const LIMIT = 20; // 10秒間に20リクエスト (2 req/s)
-const CLEANUP_INTERVAL = 100; // 100リクエストごとにクリーンアップ
-let requestCounter = 0;
-
-function getBlockDuration(violationCount: number): number {
-  if (violationCount <= 1) return 60 * 1000; // 1分
-  if (violationCount === 2) return 5 * 60 * 1000; // 5分
-  if (violationCount === 3) return 10 * 60 * 1000; // 10分
-  return 20 * 60 * 1000; // 20分 (最大)
-}
-
-function cleanupIpMap() {
-  const now = Date.now();
-  for (const [ip, state] of ipMap.entries()) {
-    if (state.blockedUntil > now) continue; // ブロック中は保持
-    if (now - state.startTime > WINDOW_MS && state.blockedUntil === 0) {
-      ipMap.delete(ip);
-    }
-  }
-}
 
 export async function middleware(req: NextRequest) {
-  // --- Global Rate Limiting ---
-  const ip = (req as any).ip || req.headers.get('x-forwarded-for') || 'unknown';
-  const now = Date.now();
 
-  // クリーンアップ (定期実行)
-  requestCounter++;
-  if (requestCounter % CLEANUP_INTERVAL === 0) {
-    cleanupIpMap();
-  }
-
-  let state = ipMap.get(ip);
-
-  if (!state) {
-    state = { count: 0, startTime: now, blockedUntil: 0, violationCount: 0 };
-    ipMap.set(ip, state);
-  }
-
-  // 1. ブロックチェック
-  if (state.blockedUntil > now) {
-    const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
-    return new NextResponse(
-      JSON.stringify({ error: `Too Many Requests. Blocked for ${remainingSeconds}s` }),
-      { status: 429, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  // ブロック解除後のリセット (ブロック期間が過ぎていれば)
-  if (state.blockedUntil !== 0 && state.blockedUntil <= now) {
-    state.blockedUntil = 0;
-    state.count = 0;
-    state.startTime = now;
-  }
-
-  // 2. カウントアップ
-  if (now - state.startTime > WINDOW_MS) {
-    // ウィンドウリセット
-    state.count = 1;
-    state.startTime = now;
-  } else {
-    state.count++;
-  }
-
-  // 3. 制限チェック
-  if (state.count > LIMIT) {
-    state.violationCount++;
-    const blockDuration = getBlockDuration(state.violationCount);
-    state.blockedUntil = now + blockDuration;
-
-    console.warn(`[Middleware] IP ${ip} blocked for ${blockDuration}ms due to excessive requests.`);
-
-    return new NextResponse(
-      JSON.stringify({ error: `Too Many Requests. You are blocked.` }),
-      { status: 429, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  // --- End Rate Limiting ---
 
   const { pathname } = req.nextUrl;
   console.log(`[Middleware] Path: ${pathname}`); // ① どのパスで実行されたか確認

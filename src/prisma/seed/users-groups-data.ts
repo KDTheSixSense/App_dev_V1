@@ -35,6 +35,8 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   await prisma.groups_User.deleteMany({});
   await prisma.userSubjectProgress.deleteMany({});
   await prisma.status_Kohaku.deleteMany({});
+  await prisma.submissions.deleteMany({});
+  await prisma.assignment.deleteMany({});
   await prisma.groups.deleteMany({});
   await prisma.create_event.deleteMany({});
   await prisma.userDailyMissionProgress.deleteMany({});

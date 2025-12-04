@@ -36,9 +36,12 @@ async function seedUsersAndGroups(prisma) {
     await prisma.groups_User.deleteMany({});
     await prisma.userSubjectProgress.deleteMany({});
     await prisma.status_Kohaku.deleteMany({});
+    await prisma.submissions.deleteMany({});
+    await prisma.assignment.deleteMany({});
     await prisma.groups.deleteMany({});
     await prisma.create_event.deleteMany({});
     await prisma.userDailyMissionProgress.deleteMany({});
+    await prisma.loginHistory.deleteMany({});
     await prisma.user.deleteMany({});
     console.log('🗑️ Cleared existing user and group data.');
     // --- 2. シーディングするユーザーの基本情報を定義 ---
