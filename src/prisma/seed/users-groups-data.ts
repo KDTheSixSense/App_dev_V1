@@ -41,6 +41,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   await prisma.create_event.deleteMany({});
   await prisma.userDailyMissionProgress.deleteMany({});
   await prisma.loginHistory.deleteMany({});
+  await prisma.userUnlockedTitle.deleteMany({});
   await prisma.user.deleteMany({});
   console.log('🗑️ Cleared existing user and group data.');
 
