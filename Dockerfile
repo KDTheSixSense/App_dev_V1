@@ -7,10 +7,10 @@ ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY src/package.json src/package-lock.json* ./
 # prismaもdependenciesに含めておく
 RUN npm ci
-COPY . .
+COPY src/ .
 RUN npx prisma generate
 RUN npm run build
 
