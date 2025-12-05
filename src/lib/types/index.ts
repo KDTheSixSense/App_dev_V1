@@ -41,6 +41,7 @@ export interface Problem {
   traceLogic: TraceStep[]; // プログラムの各行に対応するトレース処理の配列
   logicType: string;
   imagePath?: string; // 問題の画像パス (オプション)
+  sampleCases?: { id: number; problemId: number; input: string; expectedOutput: string; description: string; order: number }[]; // サンプルケース (オプション)
 
   // --- 以下は特定の種類の問題でのみ使用するオプションのプロパティです ---
 

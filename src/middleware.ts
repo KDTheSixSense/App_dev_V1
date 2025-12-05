@@ -77,7 +77,7 @@ export async function middleware(req: NextRequest) {
   });
 
   if (isProtectedRoute) {
-    if (!hasCookie) {
+    if (!sessionCookie) {
       console.log(`[Middleware] No cookie found. Redirecting to /auth/login...`);
       const absoluteURL = new URL('/auth/login', req.nextUrl.origin);
       response = NextResponse.redirect(absoluteURL.toString());

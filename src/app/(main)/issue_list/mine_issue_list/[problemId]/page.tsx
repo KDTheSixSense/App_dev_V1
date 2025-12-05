@@ -160,7 +160,7 @@ const ProblemSolverPage = () => {
             setExecutionResult('');
             setStdin('');
             const fetchedProblem = await getProblemByIdAction(problemId);
-            setProblem(fetchedProblem || null);
+            setProblem(fetchedProblem as SerializableProblem | null);
             if (fetchedProblem) {
                 setUserCode(fetchedProblem.programLines?.ja.join('\n') || '');
                 setChatMessages([{ sender: 'kohaku', text: `問${fetchedProblem.id}について、何かヒントは必要ですか？` }]);
