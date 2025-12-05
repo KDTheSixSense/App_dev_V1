@@ -50,7 +50,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
       <hr className="mb-6 border-gray-300" />
 
       {/* 問題文のエリア */}
-      <div className="mb-6 text-base text-gray-800 leading-relaxed">
+      <div className="mb-8 text-lg text-gray-800 leading-loose whitespace-pre-wrap">
         {description}
       </div>
 
@@ -60,7 +60,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
           <p className="font-semibold text-gray-700 mb-2">{t.programTitle}</p>
           {/* `pre`タグで整形済みテキストとしてプログラムコードを表示
               `whitespace-pre-wrap`で改行を保持し、`overflow-x-auto`で横スクロールを可能にする */}
-          <pre className="bg-gray-50 p-4 rounded-lg text-sm text-gray-800 whitespace-pre-wrap overflow-x-auto">
+          <pre className="bg-gray-50 p-4 rounded-lg text-base text-gray-800 whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed">
             {programText}
           </pre>
         </div>
@@ -70,7 +70,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
       <div className="mb-6">
         <p className="font-semibold text-gray-700 mb-3">{t.answerGroup}</p>
         {/* 解答群を2列グリッドで表示 */}
-        <div className="grid grid-cols-2 gap-4 text-base text-gray-800">
+        <div className="grid grid-cols-2 gap-4 text-lg text-gray-800">
           {/* `answerOptions`配列をマップして、各選択肢をボタンとしてレンダリング */}
           {answerOptions.map((option) => {
             // 各選択肢が正しい答えかどうかを判定
@@ -111,8 +111,11 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
           {/* 解説のテキストコンテンツ
               `whitespace-pre-line`で文字列内の改行をHTMLの改行として表示
               `explanation.split('\n').map`で各行を処理し、特定のキーワードを含む行をハイライト */}
-          <div className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
+          <div className="text-gray-800 text-base leading-loose">
             {explanation.split('\n').map((line, index) => {
+              if (line.trim() === '') {
+                 return <div key={index} className="h-4" />;
+              }
               // ハイライトしたいキーワードのリスト
               const highlightedKeywords = ['x ← y', 'y ← z', 'z ← x'];
               // 現在の行がハイライトキーワードを含んでいるか判定
