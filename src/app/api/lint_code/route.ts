@@ -547,9 +547,9 @@ async function lintPhp(code: string): Promise<Annotation[]> {
 async function lintCode(code: string, language: string): Promise<Annotation[]> {
     switch (language) {
         case 'python':
+        case 'python3':
             return await lintPython(code);
-
-        // 
+ 
         case 'javascript':
         case 'typescript':
             return await lintTypeScriptOrJavaScript(code, language);
