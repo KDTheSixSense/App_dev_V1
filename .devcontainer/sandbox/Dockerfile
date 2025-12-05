@@ -15,6 +15,9 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # Install TypeScript globally for compilation
 RUN npm install -g typescript
 
+# Create a non-root user
+RUN useradd -m -s /bin/bash sandboxuser
+
 # Setup app directory
 WORKDIR /app
 
@@ -25,8 +28,23 @@ RUN npm install
 # Copy server code
 COPY server.js ./
 
+# Install iptables
+RUN apt-get update && apt-get install -y iptables && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy entrypoint script
+COPY entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+
+# [Security] Restrict access to sensitive system files
+# Remove read permission for 'others' on /etc/passwd and /etc/group
+# Note: This might cause issues with some tools, but requested by user.
+RUN chmod o-r /etc/passwd /etc/group
+
+# We need to run as root initially to set iptables, then switch to user in entrypoint
+USER root
+
 # Expose port
 EXPOSE 4000
 
-# Start server
-CMD ["node", "server.js"]
+# Start server via entrypoint
+ENTRYPOINT ["./entrypoint.sh"]

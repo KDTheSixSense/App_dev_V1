@@ -17,10 +17,16 @@ function sanitizeOutput(output) {
     if (!output) return '';
     const tmpDir = os.tmpdir();
     let sanitized = output.split(tmpDir).join('/sandbox');
-    const username = os.userInfo().username;
-    if (username) {
-        sanitized = sanitized.split(username).join('user');
+
+    try {
+        const username = os.userInfo().username;
+        if (username) {
+            sanitized = sanitized.split(username).join('user');
+        }
+    } catch (e) {
+        // Ignore error if we can't read user info (e.g. strict permissions)
     }
+
     return sanitized;
 }
 
@@ -136,6 +142,15 @@ async function executeCode(language, sourceCode, input) {
         // Run
         await new Promise((resolve) => {
             const child = spawn(runCmd, runArgs, { cwd: tempDir });
+
+            child.on('error', (err) => {
+                result.stderr += `\nSpawn Error: ${err.message}`;
+                // If spawn fails, we should resolve?
+                // But 'close' might not fire if spawn fails immediately?
+                // Actually, 'error' is emitted *instead* of 'spawn' if it fails.
+                // And 'close' might not fire.
+                resolve();
+            });
 
             if (input) {
                 child.stdin.write(input);
