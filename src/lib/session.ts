@@ -16,10 +16,14 @@ export const sessionOptions: SessionOptions = {
   cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
     httpOnly: true,
-    secure: true, // 常にSecure属性を付与 (ローカル開発でもHTTPS推奨、またはlocalhostは例外扱いされる場合あり)
+    // 本番環境ではSecure属性を付与し、開発環境では無効化してローカルHTTPでも動作するようにします。
+    // 本番では `NODE_ENV=production` を想定してください。
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
   },
-  ttl: 86400, // 1日 (秒単位)
+  // ブラウザを閉じたときにセッションを無効化するため、ttl（サーバー側の有効期限）や
+  // cookie の `maxAge` / `expires` を設定しません。
+  // これによりクッキーはセッションCookie（ブラウザ終了で消える）になります。
 };
 
 /**
