@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { recordStudyTimeAction } from '@/lib/actions';
+import { recordStudyTimeAction, updateLoginStreakAction } from '@/lib/actions';
 import { generatePythonCodeFromAI, runPythonTraceAction } from '@/lib/actions/traceActions';
 import AceEditorWrapper from '@/components/AceEditorWrapper';
 import toast from 'react-hot-toast';
@@ -96,6 +96,7 @@ const PythonTraceClient = () => {
             // 完了通知と時間記録
             toast.success('トレースが完了しました');
             recordStudyTime();
+            updateLoginStreakAction(); // ログイン日数を更新
         }
     };
 
@@ -173,6 +174,7 @@ const PythonTraceClient = () => {
             if (nextIndex === traceSteps.length - 1) {
                 toast.success('トレースが完了しました');
                 recordStudyTime();
+                updateLoginStreakAction(); // ログイン日数を更新
             }
         }
     };

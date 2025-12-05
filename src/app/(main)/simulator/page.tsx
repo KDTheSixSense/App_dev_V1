@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { recordStudyTimeAction } from '@/lib/actions';
+import { recordStudyTimeAction, updateLoginStreakAction } from '@/lib/actions';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { Play, Trash2, Code } from 'lucide-react';
@@ -59,6 +59,7 @@ export default function SimulatorPage() {
     // 実行時にも学習時間を記録してタイマーリセット
     recordStudyTime();
     setTraceStartedAt(Date.now());
+    updateLoginStreakAction(); // ログイン日数を更新
 
     try {
       // 画面出力用のカスタム関数
@@ -148,8 +149,8 @@ export default function SimulatorPage() {
               <button
                 onClick={() => setActiveTab('console')}
                 className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'console'
-                    ? 'bg-slate-100 text-slate-700'
-                    : 'text-gray-400 hover:bg-gray-50'
+                  ? 'bg-slate-100 text-slate-700'
+                  : 'text-gray-400 hover:bg-gray-50'
                   }`}
               >
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -158,8 +159,8 @@ export default function SimulatorPage() {
               <button
                 onClick={() => setActiveTab('code')}
                 className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'code'
-                    ? 'bg-slate-100 text-slate-700'
-                    : 'text-gray-400 hover:bg-gray-50'
+                  ? 'bg-slate-100 text-slate-700'
+                  : 'text-gray-400 hover:bg-gray-50'
                   }`}
               >
                 <Code size={16} />
@@ -185,7 +186,7 @@ export default function SimulatorPage() {
                   outputLogs.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-600 gap-2 opacity-50 select-none">
                       <Play size={40} />
-                      <p className="text-center text-xs">「実行する」を押すと<br/>ここに結果が表示されます</p>
+                      <p className="text-center text-xs">「実行する」を押すと<br />ここに結果が表示されます</p>
                     </div>
                   ) : (
                     <div className="space-y-2">

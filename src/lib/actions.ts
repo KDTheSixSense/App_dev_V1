@@ -399,7 +399,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   updateDailyMissionProgress(1, 1); // デイリーミッションの「問題を解く」進捗を1増やす
 
   //subjectidがundefinedの場合は0に設定
-  if(!subjectid){
+  if (!subjectid) {
     subjectid = 0;
   }
 
@@ -505,7 +505,7 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
         });
         if (!existingUnlock) {
           await tx.userUnlockedTitle.create({
-            data: { userId: user_id, titleId: title.id,unlockedAt: nowJST },
+            data: { userId: user_id, titleId: title.id, unlockedAt: nowJST },
           });
           unlockedTitle = { name: title.name };
           console.log(`[称号獲得!] ${title.name} を獲得しました！`);
@@ -878,7 +878,7 @@ export async function updateUserLoginStats(userId: number) {
   if (user.lastlogin) {
     const daysSinceLastLogin = getDaysDiff(user.lastlogin, appToday);
 
-    if (daysSinceLastLogin === 0) {
+    if (isSameAppDay(user.lastlogin, now)) {
       console.log(`ユーザーID:${userId} は本日すでにログイン済みです。`);
       return;
     }
@@ -1952,5 +1952,31 @@ export async function updatePetName(newName: string) {
   } catch (error) {
     console.error('ペットの名前更新に失敗しました:', error);
     return { error: 'データベースエラーで名前を変更できませんでした。' };
+  }
+}
+
+/**
+ * クライアントからログイン連続日数を更新するためのアクション
+ */
+export async function updateLoginStreakAction() {
+  'use server';
+  const session = await getSession();
+  const user = session.user;
+
+  if (!user?.id) {
+    return { error: '認証が必要です。' };
+  }
+
+  const userId = Number(user.id);
+  if (isNaN(userId)) {
+    return { error: 'ユーザーIDが無効です。' };
+  }
+
+  try {
+    await updateUserLoginStats(userId);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to update login streak:', error);
+    return { error: 'ログイン日数の更新に失敗しました。' };
   }
 }
