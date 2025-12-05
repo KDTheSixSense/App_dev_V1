@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
         <header className="flex justify-center mb-10">
           <a href="/" className="relative h-16 w-48">
             <img
-              src="/images/Infopia_logo.png"
+              src="/images/infopia_logo.png"
               alt="Infopia Logo"
               className="absolute inset-0 w-full h-full object-contain"
             />

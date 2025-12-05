@@ -80,7 +80,7 @@ export default function PasswordResetPage() {
                 <header className="absolute top-0 left-0 w-full flex justify-center py-6">
                     <a href="/" className="relative h-20 w-60">
                         <img
-                            src="/images/Infopia_logo.png"
+                            src="/images/infopia_logo.png"
                             alt="Infopia Logo"
                             className="absolute inset-0 w-full h-full object-contain"
                         />
