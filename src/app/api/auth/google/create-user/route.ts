@@ -7,7 +7,7 @@ import { sessionOptions } from '@/lib/session';
 import { updateUserLoginStats } from '@/lib/actions'; // 既存のログイン統計アクション
 
 // MAX_HUNGER は actions.ts で 200 と定義されていますが、ここでは 150 で初期化します
-const INITIAL_HUNGER = 150; 
+const INITIAL_HUNGER = 150;
 
 export async function POST(req: Request) {
   const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         status_Kohaku: {
           create: {
             status: '満腹', // status_Kohaku の初期値は '元気' ではなく '満腹' にすべき
-            hungerlevel: INITIAL_HUNGER, 
+            hungerlevel: INITIAL_HUNGER,
             hungerLastUpdatedAt: new Date(), // 満腹度タイマーを今開始
           },
         },
@@ -67,7 +67,8 @@ export async function POST(req: Request) {
     await session.save();
 
     // 5. ログイン統計を更新 (これが初回ログインになる)
-    await updateUserLoginStats(user.id);
+    // 5. ログイン統計を更新 (これが初回ログインになる)
+    // await updateUserLoginStats(user.id); // 初期値は0であるべきとの要望により削除
 
     // 6. 成功レスポンス (UI側が /home にリダイレクトする)
     return NextResponse.json({ success: true });

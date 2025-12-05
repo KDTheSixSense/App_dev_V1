@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { GroupLayout } from '../../GroupLayout';
 import type { AssignmentComment } from '../admin/types/AdminTypes';
 import { AssignmentDetailView } from './components/AssignmentDetailView';
+import DOMPurify from 'dompurify';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
 interface Post {
     id: number;
     content: string;
-    authorName: string; 
+    authorName: string;
     authorAvatar: string; // 頭文字
     authorIcon: string | null; // 画像URL
     createdAt: string;
@@ -22,7 +23,7 @@ interface Kadai {
     id: number;
     title: string;
     description: string;
-    dueDate: string; 
+    dueDate: string;
     createdAt: string;
     completed?: boolean;
     programmingProblemId?: number;
@@ -97,14 +98,14 @@ const MemberGroupPage: React.FC = () => {
                             authorName: post.author.username || '不明なユーザー',
                             authorAvatar: post.author.username?.charAt(0) || '?',
                             // ★ここでAPIから返ってきた icon をセットしています
-                            authorIcon: post.author.icon || null, 
+                            authorIcon: post.author.icon || null,
                             createdAt: new Date(post.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }),
                         }));
                         setPosts(formattedPosts);
                         setPostsPage(postsData.page);
                         setHasMorePosts(postsData.page < postsData.totalPages);
                     }
-                    
+
                     if (assignmentsRes.ok) {
                         const assignmentsData = await assignmentsRes.json();
                         const formattedKadai: Kadai[] = assignmentsData.data.map((kadai: any) => ({
@@ -214,7 +215,7 @@ const MemberGroupPage: React.FC = () => {
             {loading && <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>読み込み中...</div>}
             {error && <div style={{ padding: '2rem', color: 'red', textAlign: 'center' }}>エラー: {error}</div>}
             {!loading && !group && <div style={{ padding: '2rem', textAlign: 'center' }}>グループが見つかりません。</div>}
-            
+
             {group && (
                 <div style={{
                     backgroundColor: '#fff',
@@ -233,7 +234,7 @@ const MemberGroupPage: React.FC = () => {
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#2e7d32"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#2e7d32"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" /></svg>
                         </button>
                         <h1 style={{ fontSize: '24px', color: '#2e7d32', margin: '0 0 8px 0', fontWeight: '500' }}>
                             {group.name}
@@ -256,7 +257,7 @@ const MemberGroupPage: React.FC = () => {
                             </button>
                         ))}
                     </div>
-                    
+
                     {/* タブコンテンツ */}
                     <div style={{ padding: '24px', backgroundColor: '#f9f9f9' }}>
                         {activeTab === 'お知らせ' && (
@@ -264,20 +265,20 @@ const MemberGroupPage: React.FC = () => {
                                 {posts.length > 0 ? posts.map(post => (
                                     <div key={post.id} style={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                                            
+
                                             {/* ★ 修正箇所: アイコン表示ロジック */}
-                                            <div style={{ 
-                                                width: '32px', height: '32px', borderRadius: '50%', 
-                                                backgroundColor: '#4CAF50', color: 'white', 
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                                marginRight: '8px', fontWeight: 'bold', overflow: 'hidden' 
+                                            <div style={{
+                                                width: '32px', height: '32px', borderRadius: '50%',
+                                                backgroundColor: '#4CAF50', color: 'white',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                marginRight: '8px', fontWeight: 'bold', overflow: 'hidden'
                                             }}>
                                                 {post.authorIcon ? (
                                                     // アイコンがある場合はimgタグを表示
-                                                    <img 
-                                                        src={post.authorIcon} 
-                                                        alt={post.authorName} 
-                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                    <img
+                                                        src={post.authorIcon}
+                                                        alt={post.authorName}
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     />
                                                 ) : (
                                                     // アイコンがない場合は頭文字を表示
@@ -290,7 +291,7 @@ const MemberGroupPage: React.FC = () => {
                                                 <div style={{ fontSize: '12px', color: '#888' }}>{post.createdAt}</div>
                                             </div>
                                         </div>
-                                        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+                                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
                                     </div>
                                 )) : <p style={{ textAlign: 'center', color: '#666' }}>お知らせはありません。</p>}
 
@@ -305,7 +306,7 @@ const MemberGroupPage: React.FC = () => {
                         {activeTab === '課題' && (
                             <div>
                                 {kadaiViewMode === 'list' && (
-                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                         {kadaiList.length > 0 ? kadaiList.map((kadai) => (
                                             <div
                                                 key={kadai.id}
@@ -321,9 +322,9 @@ const MemberGroupPage: React.FC = () => {
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '16px', flexShrink: 0
                                                     }}>
                                                         {kadai.completed ? (
-                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" /></svg>
                                                         ) : (
-                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
                                                         )}
                                                     </div>
                                                     <div>
@@ -341,7 +342,7 @@ const MemberGroupPage: React.FC = () => {
                                         )}
                                     </div>
                                 )}
-                                
+
                                 {kadaiViewMode === 'detail' && selectedKadai && (
                                     <AssignmentDetailView
                                         kadai={selectedKadai}

@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation'; // ★ 追加
 import Link from 'next/link';
 import type { AssignmentComment } from '../../admin/types/AdminTypes';
+import DOMPurify from 'dompurify';
+import toast from 'react-hot-toast';
 
 // page.tsxから型定義を移動またはインポート
 interface Kadai {
@@ -29,6 +32,7 @@ interface AssignmentDetailViewProps {
 }
 
 export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kadai, hashedId, onBack, onAssignmentSubmit }) => {
+    const router = useRouter(); // ★ 追加
     // コメント関連
     const [comments, setComments] = useState<CommentWithAuthor[]>([]);
     const [newComment, setNewComment] = useState('');
@@ -74,9 +78,10 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
             if (!response.ok) throw new Error('コメントの投稿に失敗しました');
             await fetchComments();
             setNewComment('');
+            router.refresh(); // ★ 追加: 画面更新
         } catch (error) {
             console.error(error);
-            alert('コメントの投稿に失敗しました。');
+            toast.error('コメントの投稿に失敗しました。');
         } finally {
             setIsSubmittingComment(false);
         }
@@ -92,7 +97,7 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
 
     const handleAssignmentSubmit = async () => {
         if (!selectedFile) {
-            alert('提出するファイルを選択してください。');
+            toast.error('提出するファイルを選択してください。');
             return;
         }
         setIsSubmittingAssignment(true);
@@ -105,11 +110,12 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
                 body: formData,
             });
             if (!res.ok) throw new Error('課題の提出に失敗しました。');
-            alert('課題を提出しました！');
+            toast.success('課題を提出しました！');
             onAssignmentSubmit(kadai.id, '提出済み'); // 提出ステータスを渡す
+            router.refresh(); // ★ 追加: 画面更新
         } catch (err) {
             console.error(err);
-            alert(err instanceof Error ? err.message : '予期せぬエラーが発生しました。');
+            toast.error(err instanceof Error ? err.message : '予期せぬエラーが発生しました。');
         } finally {
             setIsSubmittingAssignment(false);
         }
@@ -126,34 +132,35 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
                 </button>
                 <div style={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                      <h1 style={{ fontSize: '24px', fontWeight: '500', color: '#3c4043', margin: '0' }}>{kadai.title}</h1>
-                      {kadai.submissionStatus === '提出済み' && (
-                        <span style={{
-                          marginLeft: '12px', padding: '4px 8px', borderRadius: '4px',
-                          backgroundColor: '#e6fffa', color: '#38a169', fontSize: '12px', fontWeight: 'bold'
-                        }}>
-                          提出済み
-                        </span>
-                      )}
-                      {kadai.submissionStatus === '差し戻し' && (
-                        <span style={{
-                          marginLeft: '12px', padding: '4px 8px', borderRadius: '4px',
-                          backgroundColor: '#fffaf0', color: '#dd6b20', fontSize: '12px', fontWeight: 'bold'
-                        }}>
-                          差し戻し済み
-                        </span>
-                      )}
-                      {kadai.submissionStatus === null && (
-                        <span style={{
-                          marginLeft: '12px', padding: '4px 8px', borderRadius: '4px',
-                          backgroundColor: '#fee2e2', color: '#e53e3e', fontSize: '12px', fontWeight: 'bold'
-                        }}>
-                          未提出
-                        </span>
-                      )}
+                        <h1 style={{ fontSize: '24px', fontWeight: '500', color: '#3c4043', margin: '0' }}>{kadai.title}</h1>
+                        {kadai.submissionStatus === '提出済み' && (
+                            <span style={{
+                                marginLeft: '12px', padding: '4px 8px', borderRadius: '4px',
+                                backgroundColor: '#e6fffa', color: '#38a169', fontSize: '12px', fontWeight: 'bold'
+                            }}>
+                                提出済み
+                            </span>
+                        )}
+                        {kadai.submissionStatus === '差し戻し' && (
+                            <span style={{
+                                marginLeft: '12px', padding: '4px 8px', borderRadius: '4px',
+                                backgroundColor: '#fffaf0', color: '#dd6b20', fontSize: '12px', fontWeight: 'bold'
+                            }}>
+                                差し戻し済み
+                            </span>
+                        )}
+                        {kadai.submissionStatus === null && (
+                            <span style={{
+                                marginLeft: '12px', padding: '4px 8px', borderRadius: '4px',
+                                backgroundColor: '#fee2e2', color: '#e53e3e', fontSize: '12px', fontWeight: 'bold'
+                            }}>
+                                未提出
+                            </span>
+                        )}
                     </div>
                     <div style={{ fontSize: '14px', color: '#5f6368', marginBottom: '16px' }}>期限: {kadai.dueDate ? new Date(kadai.dueDate).toLocaleString('ja-JP') : '未設定'}</div>
-                    {kadai.description && <div dangerouslySetInnerHTML={{ __html: kadai.description }} style={{ lineHeight: '1.6' }} />}
+
+                    {kadai.description && <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(kadai.description) }} style={{ lineHeight: '1.6' }} />}
                     {(kadai.programmingProblemId || kadai.selectProblemId) && (
                         <div style={{ marginTop: '24px' }}>
                             {kadai.selectProblemId ? (
@@ -203,15 +210,15 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
             <div style={{ width: '300px', backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', alignSelf: 'flex-start' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '500', color: '#3c4043', margin: '0 0 16px 0' }}>あなたの課題</h3>
                 {kadai.submissionStatus === '提出済み' && (
-                  <p style={{ color: '#38a169', fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>提出済みです。</p>
+                    <p style={{ color: '#38a169', fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>提出済みです。</p>
                 )}
                 {kadai.submissionStatus === '差し戻し' && (
-                  <p style={{ color: '#dd6b20', fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>
-                    差し戻し済みです。再提出してください。
-                  </p>
+                    <p style={{ color: '#dd6b20', fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>
+                        差し戻し済みです。再提出してください。
+                    </p>
                 )}
                 {kadai.submissionStatus === null && (
-                  <p style={{ color: '#e53e3e', fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>未提出です。</p>
+                    <p style={{ color: '#e53e3e', fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>未提出です。</p>
                 )}
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
 

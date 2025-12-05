@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // ★ 追加
+import DOMPurify from 'dompurify';
+import toast from 'react-hot-toast';
 import { FormatState, ProgrammingProblem, Assignment } from '../types/AdminTypes';
 import { ProblemTypeSelectModal } from './ProblemTypeSelectModal';
 
@@ -42,6 +45,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     });
     const [showCreateOptions, setShowCreateOptions] = useState(false);
     const [showProblemTypeModal, setShowProblemTypeModal] = useState(false);
+    const router = useRouter(); // ★ 追加
 
     const editorRef = useRef<HTMLDivElement>(null);
     const STORAGE_KEY = 'assignment_create_draft';
@@ -69,7 +73,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             }
 
             if (editorRef.current) {
-                editorRef.current.innerHTML = initialAssignment.description;
+                editorRef.current.innerHTML = DOMPurify.sanitize(initialAssignment.description);
             }
         } else {
             // 新規作成モードの場合、特定の遷移（問題作成）から戻ってきた場合のみ復元
@@ -84,7 +88,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                         if (savedDescription) {
                             setDescription(savedDescription);
                             if (editorRef.current) {
-                                editorRef.current.innerHTML = savedDescription;
+                                editorRef.current.innerHTML = DOMPurify.sanitize(savedDescription);
                             }
                         }
                         if (savedDueDate) setDueDate(savedDueDate);
@@ -130,7 +134,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     // 課題作成・更新処理
     const handleSubmit = async () => {
         if (!title.trim() || !dueDate) {
-            alert('必須項目が不足しています');
+            toast.error('必須項目が不足しています');
             return;
         }
 
@@ -165,9 +169,10 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 sessionStorage.removeItem(STORAGE_FLAG_KEY);
             }
             handleReset();
+            router.refresh(); // ★ 追加: 画面更新
         } catch (error) {
             console.error('課題保存エラー:', error);
-            alert(`課題の保存に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+            toast.error(`課題の保存に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
         }
     };
 

@@ -52,7 +52,7 @@ function AnimatedFoxModel({ isMoving, run, isAirborne, isFalling }: { isMoving: 
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(FOX_MODEL_URL) as unknown as FoxGLTF;
   const { actions } = useAnimations(animations, group);
-  
+
   // ランダム待機モーション用のState
   const [idleSpeed, setIdleSpeed] = useState(1.0);
 
@@ -84,14 +84,14 @@ function AnimatedFoxModel({ isMoving, run, isAirborne, isFalling }: { isMoving: 
     if (isMoving || isAirborne) return;
 
     const interval = setInterval(() => {
-        const randomVal = Math.random();
-        if (randomVal > 0.6) {
-            setIdleSpeed(1.5);
-            setTimeout(() => setIdleSpeed(1.0), 1000);
-        } else if (randomVal < 0.2) {
-            setIdleSpeed(0.5);
-            setTimeout(() => setIdleSpeed(1.0), 1500);
-        }
+      const randomVal = Math.random();
+      if (randomVal > 0.6) {
+        setIdleSpeed(1.5);
+        setTimeout(() => setIdleSpeed(1.0), 1000);
+      } else if (randomVal < 0.2) {
+        setIdleSpeed(0.5);
+        setTimeout(() => setIdleSpeed(1.0), 1500);
+      }
     }, 3000);
 
     return () => clearInterval(interval);
@@ -114,9 +114,9 @@ function AnimatedFoxModel({ isMoving, run, isAirborne, isFalling }: { isMoving: 
       runAction.reset().fadeIn(fadeDuration).play();
 
       if (isFalling) {
-          runAction.timeScale = 0.4; // 落下中
+        runAction.timeScale = 0.4; // 落下中
       } else {
-          runAction.timeScale = 0.75; // 上昇中
+        runAction.timeScale = 0.75; // 上昇中
       }
 
     } else if (isMoving) {
@@ -155,31 +155,31 @@ function KohakuCharacter({ controlsRef }: { controlsRef: React.RefObject<OrbitCo
   const rigidBody = useRef<RapierRigidBody>(null);
   const containerRef = useRef<THREE.Group>(null);
   const [, getKeys] = useKeyboardControls();
-  
+
   const { world, rapier } = useRapier();
   const isRunning = useKeyboardControls((state) => state.run);
-  
+
   const [isMoving, setIsMoving] = useState(false);
   const [isAirborne, setIsAirborne] = useState(false);
   const [isFalling, setIsFalling] = useState(false);
   const canJumpRef = useRef(true);
-  const jumpCooldownRef = useRef(0); 
+  const jumpCooldownRef = useRef(0);
 
   // ★ワープイベントのリスナー設定
   useEffect(() => {
     const handleTeleport = (e: CustomEvent<{ position: [number, number, number] }>) => {
-        if (rigidBody.current) {
-            const [x, y, z] = e.detail.position;
-            // 物理演算の位置を強制更新
-            rigidBody.current.setTranslation({ x, y, z }, true);
-            // 速度をリセットして落下死などを防ぐ
-            rigidBody.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-        }
+      if (rigidBody.current) {
+        const [x, y, z] = e.detail.position;
+        // 物理演算の位置を強制更新
+        rigidBody.current.setTranslation({ x, y, z }, true);
+        // 速度をリセットして落下死などを防ぐ
+        rigidBody.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      }
     };
-    
+
     window.addEventListener('teleport-player', handleTeleport as EventListener);
     return () => {
-        window.removeEventListener('teleport-player', handleTeleport as EventListener);
+      window.removeEventListener('teleport-player', handleTeleport as EventListener);
     };
   }, []);
 
@@ -200,13 +200,13 @@ function KohakuCharacter({ controlsRef }: { controlsRef: React.RefObject<OrbitCo
     const rayOrigin = { x: currentPos.x, y: currentPos.y + 0.5, z: currentPos.z };
     const rayDirection = { x: 0, y: -1, z: 0 };
     const ray = new rapier.Ray(rayOrigin, rayDirection);
-    const hit = world.castRay(ray, 2.5, true); 
-    
+    const hit = world.castRay(ray, 2.5, true);
+
     const hitDistance = hit ? ((hit as any).timeOfImpact ?? (hit as any).toi) : 100;
-    
+
     // 多段ジャンプ防止ロジック
     const isStableGround = hitDistance < 0.8 && Math.abs(linvel.y) < 2.0;
-    
+
     setIsAirborne(!isStableGround);
     setIsFalling(linvel.y < -0.1);
 
@@ -232,12 +232,12 @@ function KohakuCharacter({ controlsRef }: { controlsRef: React.RefObject<OrbitCo
     const targetVelX = moveDirection.x * currentSpeed;
     const targetVelZ = moveDirection.z * currentSpeed;
     const currentVel = rigidBody.current.linvel();
-    
+
     // 入力判定
     setIsMoving(moveDirection.length() > 0.1);
 
-    const lerpFactor = isStableGround ? 0.2 : 0.05; 
-    
+    const lerpFactor = isStableGround ? 0.2 : 0.05;
+
     rigidBody.current.setLinvel({
       x: THREE.MathUtils.lerp(currentVel.x, targetVelX, lerpFactor),
       y: currentVel.y,
@@ -264,17 +264,17 @@ function KohakuCharacter({ controlsRef }: { controlsRef: React.RefObject<OrbitCo
     // 6. カメラ追従 (距離固定)
     if (controlsRef.current) {
       const idealTarget = new THREE.Vector3(currentPos.x, currentPos.y + 1.5, currentPos.z);
-      
+
       // 現在のターゲット位置
       const currentTarget = controlsRef.current.target;
-      
+
       // 次のターゲット位置を計算 (スムーズに移動)
       const nextTarget = currentTarget.clone().lerp(idealTarget, 0.1);
-      
+
       // ターゲットが移動した分だけ、カメラも平行移動させる
       const diff = nextTarget.clone().sub(currentTarget);
       state.camera.position.add(diff);
-      
+
       // ターゲット更新
       controlsRef.current.target.copy(nextTarget);
       controlsRef.current.update();
@@ -285,11 +285,11 @@ function KohakuCharacter({ controlsRef }: { controlsRef: React.RefObject<OrbitCo
     <RigidBody ref={rigidBody} colliders={false} position={[0, 5, 0]} enabledRotations={[false, false, false]} friction={0} restitution={0}>
       <CapsuleCollider args={[0.4, 0.4]} position={[0, 0.8, 0]} />
       <group ref={containerRef}>
-        <AnimatedFoxModel 
-            isMoving={isMoving} 
-            run={!!isRunning} 
-            isAirborne={isAirborne} 
-            isFalling={isFalling} 
+        <AnimatedFoxModel
+          isMoving={isMoving}
+          run={!!isRunning}
+          isAirborne={isAirborne}
+          isFalling={isFalling}
         />
       </group>
     </RigidBody>
@@ -339,7 +339,7 @@ function InstancedTrees({ count = 80 }: { count?: number }) {
 
       {treesData.map((data, i) => (
         <RigidBody key={`col-${i}`} type="fixed" position={data.position}>
-           <CylinderCollider args={[2.5 * data.scale, 0.5 * data.scale]} />
+          <CylinderCollider args={[2.5 * data.scale, 0.5 * data.scale]} />
         </RigidBody>
       ))}
     </group>
@@ -404,11 +404,16 @@ const Portal = ({ position, label, path }: { position: [number, number, number],
             />
           </mesh>
         </Float>
-        <Billboard position={[0, 2.5, 0]} follow={true}>
-          <Text fontSize={0.6} color="#ffffff" anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#000000">
+        <Html position={[0, 2.5, 0]} center distanceFactor={12}>
+          <div className="text-white font-bold whitespace-nowrap pointer-events-none select-none"
+            style={{
+              textShadow: '2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+              fontSize: '24px',
+              fontFamily: 'serif'
+            }}>
             {label}
-          </Text>
-        </Billboard>
+          </div>
+        </Html>
         <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[1.0, 1.5, 32]} />
           <meshBasicMaterial color={color} side={THREE.DoubleSide} transparent opacity={0.3} toneMapped={false} />
@@ -443,21 +448,21 @@ function CelestialBodies({ time, isNight }: { time: number, isNight: boolean }) 
     <>
       <mesh ref={sunRef} visible={!isNight}>
         <sphereGeometry args={[25, 32, 32]} />
-        <meshStandardMaterial 
-          color="#ffddaa" 
+        <meshStandardMaterial
+          color="#ffddaa"
           emissive="#ffddaa"
-          emissiveIntensity={5} 
-          toneMapped={false} 
+          emissiveIntensity={5}
+          toneMapped={false}
         />
       </mesh>
-      
+
       <mesh ref={moonRef} visible={isNight}>
         <sphereGeometry args={[15, 32, 32]} />
-        <meshStandardMaterial 
-          color="#ffffff" 
-          emissive="#aaddff" 
-          emissiveIntensity={2} 
-          toneMapped={false} 
+        <meshStandardMaterial
+          color="#ffffff"
+          emissive="#aaddff"
+          emissiveIntensity={2}
+          toneMapped={false}
         />
       </mesh>
     </>
@@ -466,200 +471,200 @@ function CelestialBodies({ time, isNight }: { time: number, isNight: boolean }) 
 
 // ◆ 新規追加: 中に入れる巨大お城と走り登れる階段 (内階段・床修正版)
 function ProceduralCastleAndStairs() {
-    // --- 外階段の設定 ---
-    const steps = 60;
-    const stepWidth = 15;
-    const stepHeight = 0.5;
-    const stepDepth = 3;
-    const totalHeight = steps * stepHeight; // 30m
-    const totalDepth = steps * stepDepth;   // 180m
-    const startZ = -10;
-    const castleFloorY = totalHeight;
-    const castleCenterZ = startZ - totalDepth - 30;
+  // --- 外階段の設定 ---
+  const steps = 60;
+  const stepWidth = 15;
+  const stepHeight = 0.5;
+  const stepDepth = 3;
+  const totalHeight = steps * stepHeight; // 30m
+  const totalDepth = steps * stepDepth;   // 180m
+  const startZ = -10;
+  const castleFloorY = totalHeight;
+  const castleCenterZ = startZ - totalDepth - 30;
 
-    // --- 内階段の設定 ---
-    const inStepHeight = 0.5;
-    const inStepDepth = 1.5;
-    const inStepWidth = 8; 
-    const floorThickness = 1; 
+  // --- 内階段の設定 ---
+  const inStepHeight = 0.5;
+  const inStepDepth = 1.5;
+  const inStepWidth = 8;
+  const floorThickness = 1;
 
-    // 1F -> 2F
-    const height1Fto2F = 12;
-    const steps1Fto2F = height1Fto2F / inStepHeight; // 24段
-    const depth1Fto2F = steps1Fto2F * inStepDepth;   // 36m
+  // 1F -> 2F
+  const height1Fto2F = 12;
+  const steps1Fto2F = height1Fto2F / inStepHeight; // 24段
+  const depth1Fto2F = steps1Fto2F * inStepDepth;   // 36m
 
-    // 2F -> 3F
-    const height2Fto3F = 16;
-    const steps2Fto3F = height2Fto3F / inStepHeight; // 32段
-    const depth2Fto3F = steps2Fto3F * inStepDepth;   // 48m
+  // 2F -> 3F
+  const height2Fto3F = 16;
+  const steps2Fto3F = height2Fto3F / inStepHeight; // 32段
+  const depth2Fto3F = steps2Fto3F * inStepDepth;   // 48m
 
-    const wallMaterial = new THREE.MeshStandardMaterial({ color: '#dddddd', roughness: 0.2 });
-    const floorMaterial = new THREE.MeshStandardMaterial({ color: '#334455', roughness: 0.8 });
-    const roofMaterial = new THREE.MeshStandardMaterial({ color: '#3366cc', roughness: 0.3 });
-    const stairsMaterial = new THREE.MeshStandardMaterial({ color: '#aaaaaa', roughness: 0.8 });
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: '#dddddd', roughness: 0.2 });
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: '#334455', roughness: 0.8 });
+  const roofMaterial = new THREE.MeshStandardMaterial({ color: '#3366cc', roughness: 0.3 });
+  const stairsMaterial = new THREE.MeshStandardMaterial({ color: '#aaaaaa', roughness: 0.8 });
 
-    // 物理演算用のスロープ角度と長さの計算
-    const rampAngle = Math.atan(stepHeight / stepDepth);
-    const rampLength = Math.sqrt(totalHeight ** 2 + totalDepth ** 2);
+  // 物理演算用のスロープ角度と長さの計算
+  const rampAngle = Math.atan(stepHeight / stepDepth);
+  const rampLength = Math.sqrt(totalHeight ** 2 + totalDepth ** 2);
 
-    // 内階段のスロープ計算
-    const rampAngle1F = Math.atan(height1Fto2F / depth1Fto2F);
-    const rampLength1F = Math.sqrt(height1Fto2F ** 2 + depth1Fto2F ** 2);
+  // 内階段のスロープ計算
+  const rampAngle1F = Math.atan(height1Fto2F / depth1Fto2F);
+  const rampLength1F = Math.sqrt(height1Fto2F ** 2 + depth1Fto2F ** 2);
 
-    const rampAngle2F = Math.atan(height2Fto3F / depth2Fto3F);
-    const rampLength2F = Math.sqrt(height2Fto3F ** 2 + depth2Fto3F ** 2);
+  const rampAngle2F = Math.atan(height2Fto3F / depth2Fto3F);
+  const rampLength2F = Math.sqrt(height2Fto3F ** 2 + depth2Fto3F ** 2);
 
-    // 1F階段の位置 (左の壁際 x=-24 へ)
-    const stairs1F_X = -24;
-    // 2F階段の位置 (右の壁際 x=24 へ)
-    const stairs2F_X = 24; 
+  // 1F階段の位置 (左の壁際 x=-24 へ)
+  const stairs1F_X = -24;
+  // 2F階段の位置 (右の壁際 x=24 へ)
+  const stairs2F_X = 24;
 
-    return (
-      <group>
-        {/* ================= 外階段 ================= */}
-        {Array.from({ length: steps }).map((_, i) => (
-          <mesh 
-             key={`step-${i}`} 
-             position={[0, i * stepHeight + stepHeight/2, startZ - (i * stepDepth + stepDepth/2)]}
-             receiveShadow castShadow material={stairsMaterial}
-          >
-            <boxGeometry args={[stepWidth, stepHeight, stepDepth]} />
-          </mesh>
-        ))}
-        <RigidBody type="fixed" position={[0, totalHeight / 2, startZ - totalDepth / 2]} rotation={[rampAngle, 0, 0]} friction={0}>
-             <CuboidCollider args={[stepWidth / 2, 0.1, rampLength / 2]} />
-        </RigidBody>
-  
-        {/* ================= 1階 ================= */}
-        {/* 1F床 */}
-        <RigidBody type="fixed" position={[0, castleFloorY, castleCenterZ]}>
-           <mesh receiveShadow castShadow material={floorMaterial}>
-               <boxGeometry args={[60, floorThickness, 60]} /> 
-           </mesh>
-        </RigidBody>
-
-        {/* 1F壁 (広間) */}
-        <group position={[0, castleFloorY + floorThickness/2 + height1Fto2F/2, castleCenterZ]}>
-            <RigidBody type="fixed" position={[0, 0, -28]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[60, height1Fto2F, 4]} /></mesh></RigidBody>
-            <RigidBody type="fixed" position={[-28, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, height1Fto2F, 60]} /></mesh></RigidBody>
-            <RigidBody type="fixed" position={[28, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, height1Fto2F, 60]} /></mesh></RigidBody>
-            <RigidBody type="fixed" position={[-20, 0, 28]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[20, height1Fto2F, 4]} /></mesh></RigidBody>
-            <RigidBody type="fixed" position={[20, 0, 28]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[20, height1Fto2F, 4]} /></mesh></RigidBody>
-            <RigidBody type="fixed" position={[0, height1Fto2F/2 - 2, 28]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[20, 4, 4]} /></mesh></RigidBody>
-        </group>
-
-        {/* --- 内部階段 1F -> 2F (左側配置) --- */}
-        {Array.from({ length: steps1Fto2F }).map((_, i) => (
-             <mesh key={`in-step1-${i}`} 
-                   position={[stairs1F_X, castleFloorY + floorThickness/2 + i*inStepHeight + inStepHeight/2, castleCenterZ + 18 - i*inStepDepth]} 
-                   material={stairsMaterial}>
-                 <boxGeometry args={[inStepWidth, inStepHeight, inStepDepth]} />
-             </mesh>
-        ))}
-        {/* 物理スロープ (1F->2F) */}
-        <RigidBody type="fixed" 
-                   position={[stairs1F_X, castleFloorY + floorThickness/2 + height1Fto2F/2, castleCenterZ + 18 - depth1Fto2F/2 + inStepDepth/2]} 
-                   rotation={[rampAngle1F, 0, 0]} // 奥へ登る角度
-                   friction={0.1}>
-             <CuboidCollider args={[inStepWidth/2, 0.1, rampLength1F/2]} />
-        </RigidBody>
-
-
-        {/* ================= 2階 ================= */}
-        {/* 2F床 */}
-        <group position={[0, castleFloorY + height1Fto2F + floorThickness/2, castleCenterZ]}>
-             <RigidBody type="fixed" position={[10, 0, 0]}>
-                 <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[40, floorThickness, 60]} /></mesh>
-             </RigidBody>
-             <RigidBody type="fixed" position={[-20, 0, 24]}>
-                 <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[20, floorThickness, 12]} /></mesh>
-             </RigidBody>
-             <RigidBody type="fixed" position={[-20, 0, -24]}>
-                 <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[20, floorThickness, 12]} /></mesh>
-             </RigidBody>
-        </group>
-
-        {/* 2F壁 */}
-        <group position={[0, castleFloorY + height1Fto2F + floorThickness + height2Fto3F/2, castleCenterZ]}>
-             <RigidBody type="fixed" position={[-15, 0, -20]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[14, height2Fto3F, 4]} /></mesh></RigidBody>
-             <RigidBody type="fixed" position={[15, 0, -20]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[14, height2Fto3F, 4]} /></mesh></RigidBody>
-             <RigidBody type="fixed" position={[0, height2Fto3F/2 - 2, -20]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[16, 4, 4]} /></mesh></RigidBody>
-             <RigidBody type="fixed" position={[0, 0, 20]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[44, height2Fto3F, 4]} /></mesh></RigidBody>
-             <RigidBody type="fixed" position={[-20, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, height2Fto3F, 44]} /></mesh></RigidBody>
-             <RigidBody type="fixed" position={[20, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, height2Fto3F, 44]} /></mesh></RigidBody>
-        </group>
-
-        {/* --- 内部階段 2F -> 3F (右側配置) --- */}
-        {Array.from({ length: steps2Fto3F }).map((_, i) => (
-             <mesh key={`in-step2-${i}`} 
-                   position={[stairs2F_X, castleFloorY + height1Fto2F + floorThickness + i*inStepHeight + inStepHeight/2, castleCenterZ + 15 - i*inStepDepth]} 
-                   material={stairsMaterial}>
-                 <boxGeometry args={[inStepWidth, inStepHeight, inStepDepth]} />
-             </mesh>
-        ))}
-        <RigidBody type="fixed" 
-                   position={[stairs2F_X, castleFloorY + height1Fto2F + floorThickness + height2Fto3F/2, castleCenterZ + 15 - depth2Fto3F/2 + inStepDepth/2]} 
-                   rotation={[rampAngle2F, 0, 0]} 
-                   friction={0.1}>
-             <CuboidCollider args={[inStepWidth/2, 0.1, rampLength2F/2]} />
-        </RigidBody>
-
-
-        {/* ================= 3階 ================= */}
-        {/* 3F床 */}
-         <group position={[0, castleFloorY + height1Fto2F + height2Fto3F + floorThickness*1.5, castleCenterZ]}>
-             <RigidBody type="fixed" position={[-12, 0, 0]}>
-                 <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[28, floorThickness, 44]} /></mesh>
-             </RigidBody>
-             <RigidBody type="fixed" position={[15, 0, 18.5]}>
-                 <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[inStepWidth+18, floorThickness, 7]} /></mesh>
-             </RigidBody>
-             <RigidBody type="fixed" position={[15, 0, -20]}>
-                 <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[inStepWidth+18, floorThickness, 4]} /></mesh>
-             </RigidBody>
-        </group>
-
-        {/* 3F壁 */}
-        <group position={[0, castleFloorY + height1Fto2F + height2Fto3F + floorThickness*2 + 5, castleCenterZ]}>
-             <RigidBody type="fixed" position={[0, 0, -12]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[28, 10, 4]} /></mesh></RigidBody>
-             <RigidBody type="fixed" position={[0, 0, 12]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[28, 10, 4]} /></mesh></RigidBody>
-             <RigidBody type="fixed" position={[-12, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, 10, 28]} /></mesh></RigidBody>
-             <RigidBody type="fixed" position={[12, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, 10, 28]} /></mesh></RigidBody>
-        </group>
-
-        {/* ================= 屋根・尖塔 ================= */}
-        <mesh position={[0, castleFloorY + height1Fto2F + height2Fto3F + floorThickness*2 + 10 + 8, castleCenterZ]} material={roofMaterial}>
-             <Cone args={[20, 16, 4]} rotation={[0, Math.PI/4, 0]}/>
+  return (
+    <group>
+      {/* ================= 外階段 ================= */}
+      {Array.from({ length: steps }).map((_, i) => (
+        <mesh
+          key={`step-${i}`}
+          position={[0, i * stepHeight + stepHeight / 2, startZ - (i * stepDepth + stepDepth / 2)]}
+          receiveShadow castShadow material={stairsMaterial}
+        >
+          <boxGeometry args={[stepWidth, stepHeight, stepDepth]} />
         </mesh>
+      ))}
+      <RigidBody type="fixed" position={[0, totalHeight / 2, startZ - totalDepth / 2]} rotation={[rampAngle, 0, 0]} friction={0}>
+        <CuboidCollider args={[stepWidth / 2, 0.1, rampLength / 2]} />
+      </RigidBody>
 
-        {[[-30, -30], [30, -30], [-30, 30], [30, 30]].map(([x, z], i) => (
-            <group key={`tower-${i}`} position={[x, castleFloorY, castleCenterZ + z]}>
-                <RigidBody type="fixed" position={[0, 30, 0]}>
-                    <mesh receiveShadow castShadow material={wallMaterial}>
-                        <cylinderGeometry args={[6, 7, 60, 12]} />
-                    </mesh>
-                </RigidBody>
-                <mesh position={[0, 65, 0]} material={roofMaterial}>
-                    <Cone args={[7, 15, 12]} />
-                </mesh>
-            </group>
-        ))}
+      {/* ================= 1階 ================= */}
+      {/* 1F床 */}
+      <RigidBody type="fixed" position={[0, castleFloorY, castleCenterZ]}>
+        <mesh receiveShadow castShadow material={floorMaterial}>
+          <boxGeometry args={[60, floorThickness, 60]} />
+        </mesh>
+      </RigidBody>
 
-        {/* ポータル群 (1F広間 - 位置を右側の広いスペースへ移動) */}
-        <group position={[15, castleFloorY + floorThickness + 1, castleCenterZ]}>
-             <Portal position={[0, 0, -15]} label="ホーム" path="/home" />
-             <Portal position={[-8, 0, -5]} label="問題ー覧" path="/issue_list" />
-             <Portal position={[8, 0, -5]} label="問題作成" path="/CreateProgrammingQuestion" />
-             <Portal position={[-8, 0, 10]} label="グループ" path="/group" />
-             <Portal position={[8, 0, 10]} label="課題" path="/unsubmitted-assignments" />
-             <Portal position={[0, 0, 15]} label="イベント" path="/event/event_list" />
-             <Portal position={[0, 0, 0]} label="カスタムトレース" path="/customize_trace" />
-             <Portal position={[-32, 0, -5]} label="ノーコード" path="/simulator" />
-             <Portal position={[-32, 0, 5]} label="プロフィール" path="/profile" />
-        </group>
+      {/* 1F壁 (広間) */}
+      <group position={[0, castleFloorY + floorThickness / 2 + height1Fto2F / 2, castleCenterZ]}>
+        <RigidBody type="fixed" position={[0, 0, -28]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[60, height1Fto2F, 4]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[-28, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, height1Fto2F, 60]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[28, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, height1Fto2F, 60]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[-20, 0, 28]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[20, height1Fto2F, 4]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[20, 0, 28]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[20, height1Fto2F, 4]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[0, height1Fto2F / 2 - 2, 28]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[20, 4, 4]} /></mesh></RigidBody>
       </group>
-    );
-  }
+
+      {/* --- 内部階段 1F -> 2F (左側配置) --- */}
+      {Array.from({ length: steps1Fto2F }).map((_, i) => (
+        <mesh key={`in-step1-${i}`}
+          position={[stairs1F_X, castleFloorY + floorThickness / 2 + i * inStepHeight + inStepHeight / 2, castleCenterZ + 18 - i * inStepDepth]}
+          material={stairsMaterial}>
+          <boxGeometry args={[inStepWidth, inStepHeight, inStepDepth]} />
+        </mesh>
+      ))}
+      {/* 物理スロープ (1F->2F) */}
+      <RigidBody type="fixed"
+        position={[stairs1F_X, castleFloorY + floorThickness / 2 + height1Fto2F / 2, castleCenterZ + 18 - depth1Fto2F / 2 + inStepDepth / 2]}
+        rotation={[rampAngle1F, 0, 0]} // 奥へ登る角度
+        friction={0.1}>
+        <CuboidCollider args={[inStepWidth / 2, 0.1, rampLength1F / 2]} />
+      </RigidBody>
+
+
+      {/* ================= 2階 ================= */}
+      {/* 2F床 */}
+      <group position={[0, castleFloorY + height1Fto2F + floorThickness / 2, castleCenterZ]}>
+        <RigidBody type="fixed" position={[10, 0, 0]}>
+          <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[40, floorThickness, 60]} /></mesh>
+        </RigidBody>
+        <RigidBody type="fixed" position={[-20, 0, 24]}>
+          <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[20, floorThickness, 12]} /></mesh>
+        </RigidBody>
+        <RigidBody type="fixed" position={[-20, 0, -24]}>
+          <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[20, floorThickness, 12]} /></mesh>
+        </RigidBody>
+      </group>
+
+      {/* 2F壁 */}
+      <group position={[0, castleFloorY + height1Fto2F + floorThickness + height2Fto3F / 2, castleCenterZ]}>
+        <RigidBody type="fixed" position={[-15, 0, -20]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[14, height2Fto3F, 4]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[15, 0, -20]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[14, height2Fto3F, 4]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[0, height2Fto3F / 2 - 2, -20]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[16, 4, 4]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[0, 0, 20]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[44, height2Fto3F, 4]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[-20, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, height2Fto3F, 44]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[20, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, height2Fto3F, 44]} /></mesh></RigidBody>
+      </group>
+
+      {/* --- 内部階段 2F -> 3F (右側配置) --- */}
+      {Array.from({ length: steps2Fto3F }).map((_, i) => (
+        <mesh key={`in-step2-${i}`}
+          position={[stairs2F_X, castleFloorY + height1Fto2F + floorThickness + i * inStepHeight + inStepHeight / 2, castleCenterZ + 15 - i * inStepDepth]}
+          material={stairsMaterial}>
+          <boxGeometry args={[inStepWidth, inStepHeight, inStepDepth]} />
+        </mesh>
+      ))}
+      <RigidBody type="fixed"
+        position={[stairs2F_X, castleFloorY + height1Fto2F + floorThickness + height2Fto3F / 2, castleCenterZ + 15 - depth2Fto3F / 2 + inStepDepth / 2]}
+        rotation={[rampAngle2F, 0, 0]}
+        friction={0.1}>
+        <CuboidCollider args={[inStepWidth / 2, 0.1, rampLength2F / 2]} />
+      </RigidBody>
+
+
+      {/* ================= 3階 ================= */}
+      {/* 3F床 */}
+      <group position={[0, castleFloorY + height1Fto2F + height2Fto3F + floorThickness * 1.5, castleCenterZ]}>
+        <RigidBody type="fixed" position={[-12, 0, 0]}>
+          <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[28, floorThickness, 44]} /></mesh>
+        </RigidBody>
+        <RigidBody type="fixed" position={[15, 0, 18.5]}>
+          <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[inStepWidth + 18, floorThickness, 7]} /></mesh>
+        </RigidBody>
+        <RigidBody type="fixed" position={[15, 0, -20]}>
+          <mesh receiveShadow castShadow material={floorMaterial}><boxGeometry args={[inStepWidth + 18, floorThickness, 4]} /></mesh>
+        </RigidBody>
+      </group>
+
+      {/* 3F壁 */}
+      <group position={[0, castleFloorY + height1Fto2F + height2Fto3F + floorThickness * 2 + 5, castleCenterZ]}>
+        <RigidBody type="fixed" position={[0, 0, -12]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[28, 10, 4]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[0, 0, 12]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[28, 10, 4]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[-12, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, 10, 28]} /></mesh></RigidBody>
+        <RigidBody type="fixed" position={[12, 0, 0]}><mesh receiveShadow castShadow material={wallMaterial}><boxGeometry args={[4, 10, 28]} /></mesh></RigidBody>
+      </group>
+
+      {/* ================= 屋根・尖塔 ================= */}
+      <mesh position={[0, castleFloorY + height1Fto2F + height2Fto3F + floorThickness * 2 + 10 + 8, castleCenterZ]} material={roofMaterial}>
+        <Cone args={[20, 16, 4]} rotation={[0, Math.PI / 4, 0]} />
+      </mesh>
+
+      {[[-30, -30], [30, -30], [-30, 30], [30, 30]].map(([x, z], i) => (
+        <group key={`tower-${i}`} position={[x, castleFloorY, castleCenterZ + z]}>
+          <RigidBody type="fixed" position={[0, 30, 0]}>
+            <mesh receiveShadow castShadow material={wallMaterial}>
+              <cylinderGeometry args={[6, 7, 60, 12]} />
+            </mesh>
+          </RigidBody>
+          <mesh position={[0, 65, 0]} material={roofMaterial}>
+            <Cone args={[7, 15, 12]} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* ポータル群 (1F広間 - 位置を右側の広いスペースへ移動) */}
+      <group position={[15, castleFloorY + floorThickness + 1, castleCenterZ]}>
+        <Portal position={[0, 0, -15]} label="ホーム" path="/home" />
+        <Portal position={[-8, 0, -5]} label="問題ー覧" path="/issue_list" />
+        <Portal position={[8, 0, -5]} label="問題作成" path="/CreateProgrammingQuestion" />
+        <Portal position={[-8, 0, 10]} label="グループ" path="/group" />
+        <Portal position={[8, 0, 10]} label="課題" path="/unsubmitted-assignments" />
+        <Portal position={[0, 0, 15]} label="イベント" path="/event/event_list" />
+        <Portal position={[0, 0, 0]} label="カスタムトレース" path="/customize_trace" />
+        <Portal position={[-32, 0, -5]} label="ノーコード" path="/simulator" />
+        <Portal position={[-32, 0, 5]} label="プロフィール" path="/profile" />
+      </group>
+    </group>
+  );
+}
 
 // --- SceneContent ---
 function SceneContent() {
@@ -675,7 +680,7 @@ function SceneContent() {
     setCurrentTime(t);
 
     const sunY = Math.sin(t) * 300;
-    
+
     if (sunY < -20 && !isNight) setIsNight(true);
     if (sunY >= -20 && isNight) setIsNight(false);
 
@@ -688,23 +693,23 @@ function SceneContent() {
     }
 
     if (lightRef.current) {
-        const radius = 300;
-        lightRef.current.position.set(
-            Math.cos(t) * radius,
-            Math.sin(t) * radius,
-            -100
-        );
-        lightRef.current.intensity = isNight ? 0.2 : 1.5;
-        lightRef.current.color.setHSL(isNight ? 0.6 : 0.1, 0.5, 0.8);
+      const radius = 300;
+      lightRef.current.position.set(
+        Math.cos(t) * radius,
+        Math.sin(t) * radius,
+        -100
+      );
+      lightRef.current.intensity = isNight ? 0.2 : 1.5;
+      lightRef.current.color.setHSL(isNight ? 0.6 : 0.1, 0.5, 0.8);
     }
   });
 
   return (
     <>
       <ambientLight intensity={isNight ? 0.3 : 0.6} />
-      <directionalLight 
+      <directionalLight
         ref={lightRef}
-        castShadow 
+        castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0005}
       >
@@ -712,10 +717,10 @@ function SceneContent() {
       </directionalLight>
 
       <CelestialBodies time={currentTime} isNight={isNight} />
-      
+
       {!isNight && <Sky sunPosition={[0, 1, 0]} turbidity={10} rayleigh={0.5} mieCoefficient={0.005} mieDirectionalG={0.8} />}
       {isNight && <Stars radius={300} depth={50} count={3000} factor={4} fade speed={1} />}
-      
+
       <Sparkles count={200} scale={150} size={4} speed={0.2} opacity={0.5} color={isNight ? "#aaaaff" : "#ffffaa"} position={[0, 20, 0]} />
 
       <Physics gravity={[0, -20, 0]}>
@@ -724,37 +729,37 @@ function SceneContent() {
           <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
             <planeGeometry args={[400, 400]} />
             <MeshReflectorMaterial
-                blur={[300, 100]}
-                resolution={1024} 
-                mixBlur={1}
-                mixStrength={10} 
-                roughness={1}
-                depthScale={1.0}
-                minDepthThreshold={0.4}
-                maxDepthThreshold={1.4}
-                color="#aacc44"
-                metalness={0.1} 
-                mirror={0}
+              blur={[300, 100]}
+              resolution={1024}
+              mixBlur={1}
+              mixStrength={10}
+              roughness={1}
+              depthScale={1.0}
+              minDepthThreshold={0.4}
+              maxDepthThreshold={1.4}
+              color="#aacc44"
+              metalness={0.1}
+              mirror={0}
             />
           </mesh>
         </RigidBody>
 
         <InstancedTrees />
         <InstancedRocks />
-        
+
         <ProceduralCastleAndStairs />
-        
+
         <KohakuCharacter controlsRef={controlsRef} />
       </Physics>
 
-      <OrbitControls 
-        ref={controlsRef} 
-        enablePan={false} 
-        enableZoom={true} 
-        minDistance={5} 
-        maxDistance={40} 
-        maxPolarAngle={Math.PI / 2} 
-        makeDefault 
+      <OrbitControls
+        ref={controlsRef}
+        enablePan={false}
+        enableZoom={true}
+        minDistance={5}
+        maxDistance={40}
+        maxPolarAngle={Math.PI / 2}
+        makeDefault
       />
 
       <EffectComposerAny disableNormalPass multisampling={0}>
@@ -801,28 +806,28 @@ export default function Scene404({ onBack }: Scene404Props) {
 
       {/* 左上のタイトルと操作説明 */}
       <div className="absolute top-6 left-6 p-6 bg-slate-900/60 rounded-xl text-emerald-50 backdrop-blur-md border border-emerald-500/30 pointer-events-none select-none shadow-2xl font-serif">
-         <h1 className="text-4xl font-extrabold tracking-widest mb-3 text-transparent bg-clip-text bg-gradient-to-br from-emerald-200 to-cyan-400">Lost Garden</h1>
-         <div className="text-sm opacity-90 space-y-2 font-medium">
-           <p><kbd className="bg-slate-700 px-2 py-1 rounded border border-slate-500">WASD</kbd> 移動 <kbd className="bg-slate-700 px-2 py-1 rounded border border-slate-500 ml-2">Space</kbd> 跳躍</p>
-           <p><kbd className="bg-slate-700 px-2 py-1 rounded border border-slate-500">Shift</kbd> 疾走 <span className="ml-2">[ドラッグ]</span> 視点</p>
-         </div>
+        <h1 className="text-4xl font-extrabold tracking-widest mb-3 text-transparent bg-clip-text bg-gradient-to-br from-emerald-200 to-cyan-400">Lost Garden</h1>
+        <div className="text-sm opacity-90 space-y-2 font-medium">
+          <p><kbd className="bg-slate-700 px-2 py-1 rounded border border-slate-500">WASD</kbd> 移動 <kbd className="bg-slate-700 px-2 py-1 rounded border border-slate-500 ml-2">Space</kbd> 跳躍</p>
+          <p><kbd className="bg-slate-700 px-2 py-1 rounded border border-slate-500">Shift</kbd> 疾走 <span className="ml-2">[ドラッグ]</span> 視点</p>
+        </div>
       </div>
 
       {/* ワープメニュー */}
       <div className={`absolute bottom-24 left-10 flex flex-col gap-2 transition-all duration-300 ${showMenu ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
-          {WARP_POINTS.map((point, idx) => (
-              <button 
-                  key={idx}
-                  onClick={() => triggerTeleport(point.pos)}
-                  className="bg-slate-800/90 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg backdrop-blur-md border border-emerald-500/30 shadow-lg text-left font-serif tracking-wide transition-colors"
-              >
-                  {point.name}
-              </button>
-          ))}
+        {WARP_POINTS.map((point, idx) => (
+          <button
+            key={idx}
+            onClick={() => triggerTeleport(point.pos)}
+            className="bg-slate-800/90 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg backdrop-blur-md border border-emerald-500/30 shadow-lg text-left font-serif tracking-wide transition-colors"
+          >
+            {point.name}
+          </button>
+        ))}
       </div>
 
       {/* メニューボタン (❖) */}
-      <button 
+      <button
         onClick={() => setShowMenu(!showMenu)}
         className="absolute bottom-10 left-10 bg-slate-800/80 hover:bg-emerald-900/90 text-emerald-100 border border-emerald-500/50 w-14 h-14 rounded-full backdrop-blur-md transition-all shadow-xl hover:shadow-emerald-500/30 pointer-events-auto flex items-center justify-center text-2xl group z-50"
       >

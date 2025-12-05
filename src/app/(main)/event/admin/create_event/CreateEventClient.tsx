@@ -1,6 +1,7 @@
 // /workspaces/my-next-app/src/app/(main)/event/admin/create_event/CreateEventClient.tsx
 'use client';
 
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { type ProblemSelectItem } from './page'; // page.tsx から型をインポート
 import {
@@ -40,11 +41,9 @@ export function CreateEventClient({ problems }: Props) {
 
   // 通信状態
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // 下書き保存ハンドラ
   const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [draftMessage, setDraftMessage] = useState<string | null>(null);
 
   const [draftsList, setDraftsList] = useState<DraftEvent[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string>('');
@@ -57,7 +56,7 @@ export function CreateEventClient({ problems }: Props) {
       if (result.data) {
         setDraftsList(result.data);
       } else if (result.error) {
-        setError(result.error); // 
+        toast.error(result.error); // 
       }
     };
     loadDrafts();
@@ -66,12 +65,10 @@ export function CreateEventClient({ problems }: Props) {
   // 下書き読み込みボタンのハンドラ
   const handleLoadDraft = async () => {
     if (!selectedDraftId) {
-      setError('読み込む下書きを選択してください。');
+      toast.error('読み込む下書きを選択してください。');
       return;
     }
 
-    setError(null);
-    setDraftMessage(null);
     setIsLoadingDraft(true);
 
     try {
@@ -85,12 +82,12 @@ export function CreateEventClient({ problems }: Props) {
         setEndTime(data.endTime);
         setPublicTime(data.publicTime);
         setSelectedProblemIds(data.selectedProblemIds);
-        setDraftMessage('下書きを読み込みました。');
+        toast.success('下書きを読み込みました。');
       } else {
-        setError(result.error || '読み込みに失敗しました。');
+        toast.error(result.error || '読み込みに失敗しました。');
       }
     } catch (err) {
-      setError('クライアントエラーが発生しました。');
+      toast.error('クライアントエラーが発生しました。');
     } finally {
       setIsLoadingDraft(false);
     }
@@ -107,34 +104,32 @@ export function CreateEventClient({ problems }: Props) {
 
   // イベント作成ボタンのハンドラ
   const handleSubmit = async () => {
-    setError(null);
-    setDraftMessage(null); // エラーが出たら成功メッセージは消す
     
     // 1. 基本設定タブの必須項目をチェック
     if (!title) {
-      setError('イベントタイトル名を入力してください。');
+      toast.error('イベントタイトル名を入力してください。');
       setActiveTab('basic'); // エラーのあるタブに強制移動
       return;
     }
     if (!description) {
-      setError('イベント説明を入力してください。');
+      toast.error('イベント説明を入力してください。');
       setActiveTab('basic');
       return;
     }
     if (!startTime || !endTime || !publicTime) {
-      setError('すべての日時（開始・終了・公開）を入力してください。');
+      toast.error('すべての日時（開始・終了・公開）を入力してください。');
       setActiveTab('basic');
       return;
     }
     if (new Date(endTime) <= new Date(startTime)) {
-       setError('終了日時は開始日時より後に設定してください。');
+       toast.error('終了日時は開始日時より後に設定してください。');
        setActiveTab('basic');
        return;
     }
 
     // 2. プログラミング問題タブの必須項目をチェック
     if (selectedProblemIds.length === 0) {
-      setError('プログラミング問題を1つ以上選択してください。');
+      toast.error('プログラミング問題を1つ以上選択してください。');
       setActiveTab('problems'); // エラーのあるタブに強制移動
       return;
     }
@@ -152,14 +147,14 @@ export function CreateEventClient({ problems }: Props) {
       });
 
       if (result.success) {
-        alert('イベントを作成しました！');
+        toast.success('イベントを作成しました！');
         // イベント詳細ページや一覧ページにリダイレクト
         router.push(`/event/event_list`); // TODO: 適切なパスに変更
       } else {
-        setError(result.error || '不明なエラーが発生しました。');
+        toast.error(result.error || '不明なエラーが発生しました。');
       }
     } catch (err) {
-      setError('クライアントエラーが発生しました。');
+      toast.error('クライアントエラーが発生しました。');
     } finally {
       setIsLoading(false);
     }
@@ -167,12 +162,10 @@ export function CreateEventClient({ problems }: Props) {
 
   // ▼▼▼ 下書き保存ボタンのハンドラを新しく作成 ▼▼▼
   const handleSaveDraft = async () => {
-    setError(null);
-    setDraftMessage(null);
 
     // 下書き用のクライアントバリデーション (タイトルのみ)
     if (!title) {
-      setError('下書き保存するには、イベントタイトル名が必須です。');
+      toast.error('下書き保存するには、イベントタイトル名が必須です。');
       setActiveTab('basic');
       return;
     }
@@ -190,13 +183,13 @@ export function CreateEventClient({ problems }: Props) {
       });
 
       if (result.success) {
-        setDraftMessage(result.message || '下書きを保存しました。');
+        toast.success(result.message || '下書きを保存しました。');
         // ここではページ遷移せず、成功メッセージを出すだけ
       } else {
-        setError(result.error || '不明なエラーが発生しました。');
+        toast.error(result.error || '不明なエラーが発生しました。');
       }
     } catch (err) {
-      setError('クライアントエラーが発生しました。');
+      toast.error('クライアントエラーが発生しました。');
     } finally {
       setIsSavingDraft(false);
     }
@@ -337,18 +330,8 @@ export function CreateEventClient({ problems }: Props) {
       </div>
 
       {/* エラーメッセージ */}
-      {error && (
-        <div className={styles.errorBox}>
-          {error}
-        </div>
-      )}
 
       {/*  成功メッセージ(下書き用) を追加  */}
-      {draftMessage && (
-        <div className={styles.successBox}>
-          {draftMessage}
-        </div>
-      )}
 
       {/* フッターボタン */}
       <div className={styles.footerActions}>

@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation'
-import FloatingActionButton from './button/FloatingActionButton'; 
-import { createGroupAction,getGroupsAction,joinGroupAction } from '@/lib/actions'; // グループ作成アクションをインポート
+import FloatingActionButton from './button/FloatingActionButton';
+import { createGroupAction, getGroupsAction, joinGroupAction } from '@/lib/actions'; // グループ作成アクションをインポート
 import MemberList from './components/MemberList'; // メンバーリストコンポーネントをインポート
+import toast from 'react-hot-toast';
 
 // グループデータの型定義
 interface Group {
@@ -84,10 +85,10 @@ const ClassroomApp: React.FC = () => {
     });
 
     // ★ 修正: グループ作成フォーム専用のstateを用意
-    const [createGroupForm, setCreateGroupForm] = useState({
-        className: '',
-        description: ''
-    });
+    const [createGroupForm, setCreateGroupForm] = useState({
+        className: '',
+        description: ''
+    });
 
     const [classCode, setClassCode] = useState('');
 
@@ -121,7 +122,7 @@ const ClassroomApp: React.FC = () => {
             if (result.currentUserId) {
                 setCurrentUserId(result.currentUserId);
             }
-            
+
             // Actionから返されたデータを整形する
             const formattedGroups: Group[] = result.data.map((group: any) => {
                 const members: Member[] = group.groups_User || [];
@@ -147,7 +148,7 @@ const ClassroomApp: React.FC = () => {
 
         } catch (error) {
             console.error("グループ取得エラー:", error);
-            alert(error instanceof Error ? error.message : '不明なエラーが発生しました');
+            toast.error(error instanceof Error ? error.message : '不明なエラーが発生しました');
         }
     };
 
@@ -231,48 +232,48 @@ const ClassroomApp: React.FC = () => {
     const handlePost = async () => {
         // ★ グループが選択されているかチェック
         if (!selectedGroup) {
-          alert('投稿するグループを選択してください。');
-          return;
+            toast.error('投稿するグループを選択してください。');
+            return;
         }
 
         if (!editorContent.trim()) {
-            alert('内容が空です。');
+            toast.error('内容が空です。');
             return;
         }
-    
+
         try {
             const response = await fetch('/api/posts', { // Next.jsのAPIルートのパスを指定
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     content: editorContent,
                     groupId: selectedGroup.id
-                 }),
+                }),
             });
-        
+
             // レスポンスが成功でなければエラーを投げる
             if (!response.ok) {
                 // サーバーからのエラーメッセージを取得試行
                 const errorData = await response.json().catch(() => ({ message: 'サーバーでエラーが発生しました。' }));
                 throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
-        
+
             // 成功した場合
             const result = await response.json();
-            alert(`投稿に成功しました: ${result.message}`);
+            toast.success(`投稿に成功しました: ${result.message}`);
             handleEditorCollapse();
-        
+
         } catch (error) {
             console.error('投稿エラー:', error);
-            alert(`投稿に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+            toast.error(`投稿に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
         }
     };
     // フォーマット適用
     const applyFormat = (command: string) => {
         document.execCommand(command, false, undefined);
-        
+
         // 状態を更新
         setFormatState({
             bold: document.queryCommandState('bold'),
@@ -282,7 +283,7 @@ const ClassroomApp: React.FC = () => {
         });
     };
 
-    
+
     // リンク挿入
     const handleLinkInsert = () => {
         const url = prompt('URLを入力してください:');
@@ -299,74 +300,76 @@ const ClassroomApp: React.FC = () => {
     };
 
     // --- ★ 修正: グループ作成処理 (API呼び出し) ---
-const handleCreateGroup = async () => {
-    // 2. フォームから値を取得
-    const groupName = createGroupForm.className.trim();
-    const description = createGroupForm.description;
+    const handleCreateGroup = async () => {
+        // 2. フォームから値を取得
+        const groupName = createGroupForm.className.trim();
+        const description = createGroupForm.description;
 
-    if (!groupName) {
-        alert('クラス名を入力してください。');
-        return;
-    }
-
-    try {
-        // 3. fetchの代わりに、インポートしたServer Actionを直接呼び出す
-        const result = await createGroupAction({ 
-            groupName: groupName, 
-            body: description 
-        });
-
-        // 4. Actionからの戻り値で成功・失敗を判定
-        if (result.success) {
-            setShowCreateModal(false);
-            setCreateGroupForm({ className: '',description: ''});
-            fetchGroups(); // Server ActionのrevalidatePathが機能するため、これは不要になる場合があります
-        } else {
-            // エラーがあればそれを表示
-            throw new Error(result.error || 'グループの作成に失敗しました');
+        if (!groupName) {
+            toast.error('クラス名を入力してください。');
+            return;
         }
-    } catch (error) {
-        console.error(error);
-        alert(error instanceof Error ? error.message : '不明なエラー');
-    }
-};
+
+        try {
+            // 3. fetchの代わりに、インポートしたServer Actionを直接呼び出す
+            const result = await createGroupAction({
+                groupName: groupName,
+                body: description
+            });
+
+            // 4. Actionからの戻り値で成功・失敗を判定
+            if (result.success) {
+                setShowCreateModal(false);
+                setCreateGroupForm({ className: '', description: '' });
+                fetchGroups(); // Server ActionのrevalidatePathが機能するため、これは不要になる場合があります
+                router.refresh(); // ★ 追加: 画面更新
+            } else {
+                // エラーがあればそれを表示
+                throw new Error(result.error || 'グループの作成に失敗しました');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error(error instanceof Error ? error.message : '不明なエラー');
+        }
+    };
 
     // クラス参加処理
     const handleJoinGroup = async () => {
         if (!classCode.trim()) {
-            alert('招待コードを入力してください。');
+            toast.error('招待コードを入力してください。');
             return;
         }
-        
+
         try {
             // Server Actionを呼び出して、実際に入室処理を行う
             const result = await joinGroupAction(classCode);
 
             if (result.success) {
-                alert(`「${result.groupName}」に参加しました！`);
+                toast.success(`「${result.groupName}」に参加しました！`);
                 setShowJoinModal(false);
                 setClassCode('');
                 // ★★★ 成功したら、グループ一覧を再取得して画面を更新 ★★★
                 fetchGroups();
+                router.refresh(); // ★ 追加: 画面更新
             } else {
                 throw new Error(result.error || 'グループへの参加に失敗しました。');
             }
         } catch (error) {
             console.error(error);
-            alert(error instanceof Error ? error.message : '不明なエラー');
+            toast.error(error instanceof Error ? error.message : '不明なエラー');
         }
     };
     // グループクリック処理
     const handleGroupClick = (group: Group) => {
         // 中間ページを経由せず、権限を見て直接ページへ飛ばす
-        
+
         if (currentUserId) {
             // メンバーリストの中から自分を探す
             const myMembership = group.members.find(m => m.user.id === currentUserId);
-            
+
             if (myMembership) {
                 // 自分が管理者なら /admin、そうでなければ /member へ直接遷移
-                const targetPath = myMembership.admin_flg 
+                const targetPath = myMembership.admin_flg
                     ? `/group/${group.hashedId}/admin`
                     : `/group/${group.hashedId}/member`;
                 router.push(targetPath);
@@ -379,16 +382,16 @@ const handleCreateGroup = async () => {
         // ▲▲▲ 修正ここまで ▲▲▲
     };
 
-    
+
 
     // グループ登録解除処理
     const handleUnregisterGroup = (groupId: number, event: React.MouseEvent) => {
         event.stopPropagation();
         if (confirm('このクラスの登録を解除しますか？')) {
             setGroups(groups.filter(group => group.id !== groupId));
-            alert(`グループ ID ${groupId} の登録を解除しました`);
+            toast.success(`グループ ID ${groupId} の登録を解除しました`);
             setActiveDropdown(null);
-            
+
             if (groups.length <= 1) {
                 setCurrentView('empty');
             }
@@ -463,7 +466,7 @@ const handleCreateGroup = async () => {
                 position: 'relative',
                 minHeight: 'calc(100vh - 80px)'
             }}>
-{/* メインコンテンツ */}
+                {/* メインコンテンツ */}
                 <main style={{
                     flex: 1,
                     padding: '24px',
@@ -501,7 +504,7 @@ const handleCreateGroup = async () => {
                                     borderRadius: '8px',
                                     transform: 'rotate(-5deg)'
                                 }} />
-                                
+
                                 {/* フォルダ（黄） */}
                                 <div style={{
                                     position: 'absolute',
@@ -513,7 +516,7 @@ const handleCreateGroup = async () => {
                                     borderRadius: '8px',
                                     border: '2px solid #e0e0e0'
                                 }} />
-                                
+
                                 {/* ノート */}
                                 <div style={{
                                     position: 'absolute',
@@ -627,7 +630,7 @@ const handleCreateGroup = async () => {
                                         color: '#fff'
                                     }}>
 
-                                        
+
 
                                         <div>
                                             <h3 style={{
@@ -682,10 +685,10 @@ const handleCreateGroup = async () => {
                                                 }}>
                                                     {/* ここも同様に修正 */}
                                                     {group.teacherIcon ? (
-                                                        <img 
-                                                            src={group.teacherIcon} 
-                                                            alt={group.teacher} 
-                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                        <img
+                                                            src={group.teacherIcon}
+                                                            alt={group.teacher}
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                         />
                                                     ) : (
                                                         group.teacher ? group.teacher.charAt(0) : '管'
@@ -702,7 +705,7 @@ const handleCreateGroup = async () => {
                                                 alignItems: 'center'
                                             }}>
                                                 <svg style={{ marginRight: '4px' }} width="12" height="12" viewBox="0 0 24 24" fill="#5f6368">
-                                                    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A2.996 2.996 0 0 0 17.06 7c-.8 0-1.54.5-1.85 1.26l-1.92 5.63c-.25.72.11 1.51.83 1.76.72.25 1.51-.11 1.76-.83L16.5 12H18v8h2zM12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .9-2 2 .89 2 2 2zm2.5 16v-7H6v-2.5c0-1.1.9-2 2-2h3c1.1 0 2 .9 2 2V15h-2v7h-3z"/>
+                                                    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A2.996 2.996 0 0 0 17.06 7c-.8 0-1.54.5-1.85 1.26l-1.92 5.63c-.25.72.11 1.51.83 1.76.72.25 1.51-.11 1.76-.83L16.5 12H18v8h2zM12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .9-2 2 .89 2 2 2zm2.5 16v-7H6v-2.5c0-1.1.9-2 2-2h3c1.1 0 2 .9 2 2V15h-2v7h-3z" />
                                                 </svg>
                                                 {group.memberCount}人
                                             </div>
@@ -711,8 +714,8 @@ const handleCreateGroup = async () => {
                                 </div>
                             ))}
                             <FloatingActionButton
-                            onCreateClick={() => setShowCreateModal(true)}
-                            onJoinClick={() => setShowJoinModal(true)}
+                                onCreateClick={() => setShowCreateModal(true)}
+                                onJoinClick={() => setShowJoinModal(true)}
                             />
                         </div>
                     )}
@@ -746,7 +749,7 @@ const handleCreateGroup = async () => {
                                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                 >
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="#2e7d32">
-                                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
                                     </svg>
                                 </button>
                                 <h1 style={{
@@ -854,7 +857,7 @@ const handleCreateGroup = async () => {
                                                         alignItems: 'center',
                                                         marginBottom: '16px'
                                                     }}>
-                                                        
+
                                                         <span style={{ fontSize: '14px', color: '#3c4043' }}>
                                                             クラスへの連絡事項を入力
                                                         </span>
@@ -919,7 +922,7 @@ const handleCreateGroup = async () => {
                                                         >
                                                             I
                                                         </button>
-                                                        
+
                                                         <button
                                                             onClick={handleLinkInsert}
                                                             style={{
@@ -933,7 +936,7 @@ const handleCreateGroup = async () => {
                                                             title="リンク"
                                                         >
                                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                                                <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H6.9C4.29 7 2.2 9.09 2.2 11.7s2.09 4.7 4.7 4.7H11v-1.9H6.9c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm5-6h4.1c2.61 0 4.7 2.09 4.7 4.7s-2.09 4.7-4.7 4.7H13v1.9h4.1c2.61 0 4.7-2.09 4.7-4.7S19.71 7 17.1 7H13v1.9z"/>
+                                                                <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H6.9C4.29 7 2.2 9.09 2.2 11.7s2.09 4.7 4.7 4.7H11v-1.9H6.9c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm5-6h4.1c2.61 0 4.7 2.09 4.7 4.7s-2.09 4.7-4.7 4.7H13v1.9h4.1c2.61 0 4.7-2.09 4.7-4.7S19.71 7 17.1 7H13v1.9z" />
                                                             </svg>
                                                         </button>
                                                     </div>
@@ -1008,9 +1011,9 @@ const handleCreateGroup = async () => {
                                 {activeTab === 'メンバー' && (
                                     // selectedGroup.groups_User (APIから取得したメンバーリスト) と
                                     // selectedGroup._count.groups_User (メンバー数) を渡す
-                                    <MemberList 
-                                        members={selectedGroup.members} 
-                                        memberCount={selectedGroup.memberCount} 
+                                    <MemberList
+                                        members={selectedGroup.members}
+                                        memberCount={selectedGroup.memberCount}
                                         inviteCode={selectedGroup.inviteCode} // 招待コードを渡す
                                     />
                                 )}
@@ -1020,11 +1023,11 @@ const handleCreateGroup = async () => {
                     {/* 設定ページ表示 */}
                     {currentView === 'settings' && (
                         <div style={{ maxWidth: '1024px', margin: '0 auto' }}> {/* ★ デザイン改善: 横幅を広げる */}
-                            <h1 style={{ 
+                            <h1 style={{
                                 fontSize: '28px', // ★ デザイン改善
                                 color: '#2d3748', // ★ デザイン改善: 濃いグレー
                                 borderBottom: '1px solid #e2e8f0', // ★ デザイン改善: 薄いボーダー
-                                paddingBottom: '16px', 
+                                paddingBottom: '16px',
                                 marginBottom: '32px', // ★ デザイン改善
                                 fontWeight: 700, // ★ デザイン改善
                             }}>設定</h1>
@@ -1032,7 +1035,7 @@ const handleCreateGroup = async () => {
                             {/* 通知セクション */}
                             <div style={{ marginBottom: '40px' }}>
                                 <h2 style={{ fontSize: '20px', color: '#2d3748', marginBottom: '16px', fontWeight: 600 }}>通知</h2>
-                                <div style={{ 
+                                <div style={{
                                     backgroundColor: '#ffffff', // ★ デザイン改善
                                     borderRadius: '12px', // ★ デザイン改善
                                     padding: '8px 32px', // ★ デザイン改善
@@ -1043,7 +1046,7 @@ const handleCreateGroup = async () => {
                                         label="メール通知を許可"
                                         checked={notificationSettings.email}
                                         onChange={handleNotificationChange}
-                                        // description="これらの設定はメールで受信する通知に適用されます"
+                                    // description="これらの設定はメールで受信する通知に適用されます"
                                     />
                                     <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: 0 }} />
                                     <div style={{ padding: '8px 0' }}>
@@ -1121,13 +1124,13 @@ const handleCreateGroup = async () => {
                         }}>
                             クラスを作成する
                         </h2>
-                        
+
                         {/* クラス名（必須） */}
                         <div style={{ marginBottom: '24px', position: 'relative' }}>
                             <input
                                 type="text"
                                 value={createGroupForm.className}
-                                onChange={(e) => setCreateGroupForm({...createGroupForm, className: e.target.value})}
+                                onChange={(e) => setCreateGroupForm({ ...createGroupForm, className: e.target.value })}
                                 style={{
                                     width: '100%',
                                     padding: '12px 0 12px 12px',
@@ -1155,7 +1158,7 @@ const handleCreateGroup = async () => {
                             </label>
                         </div>
 
-                        
+
 
                         <div style={{
                             display: 'flex',

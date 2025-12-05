@@ -9,27 +9,28 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import dynamic from 'next/dynamic';
 import { recordStudyTimeAction } from '@/lib/actions';
 import type { Problem as SerializableProblem } from '@/lib/types';
+import DOMPurify from 'dompurify';
 
 const DynamicAceEditor = dynamic(
-  () => import('@/components/AceEditorWrapper'),
-  {
-    ssr: false,
-    loading: () => (
-      <div style={{
-        height: '100%',
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f9f9f9',
-        border: '1px solid #e0e0e0',
-        color: '#666',
-        fontSize: '14px',
-      }}>
-        エディタを読み込んでいます...
-      </div>
-    )
-  }
+    () => import('@/components/AceEditorWrapper'),
+    {
+        ssr: false,
+        loading: () => (
+            <div style={{
+                height: '100%',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f9f9f9',
+                border: '1px solid #e0e0e0',
+                color: '#666',
+                fontSize: '14px',
+            }}>
+                エディタを読み込んでいます...
+            </div>
+        )
+    }
 );
 
 type ActiveTab = 'input' | 'output';
@@ -77,30 +78,30 @@ const ProblemDescriptionPanel: React.FC<{
     const descriptionText = typeof problem.description === 'object' ? problem.description?.ja : problem.description;
 
     return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
-        <div className="p-4 border-b flex-shrink-0 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>{titleText}</span></h2>
-            <button onClick={onReturn} disabled={isReturning} className="py-2 px-4 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:bg-gray-400">
-                {isReturning ? '戻っています...' : '問題リストに戻る'}
-            </button>
-        </div>
-        <div className="p-6 space-y-6 overflow-y-auto">
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: (descriptionText ?? '説明がありません。').replace(/\n/g, '<br />') }} />
-            <div>
-                <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
-                {problem.sampleCases?.map((sc, index) => (
-                    <div key={index} className="mb-4 last:mb-0">
-                        <h4 className="font-medium text-sm mb-2 text-gray-800">サンプル {index + 1}</h4>
-                        {sc.description && <p className="text-xs text-gray-600 mb-2 pl-2 border-l-2 border-gray-300">{sc.description}</p>}
-                        <div className="space-y-2">
-                            <div><span className="text-xs font-semibold text-gray-600">入力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.input}</pre></div>
-                            <div><span className="text-xs font-semibold text-gray-600">期待する出力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.expectedOutput}</pre></div>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
+            <div className="p-4 border-b flex-shrink-0 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>{titleText}</span></h2>
+                <button onClick={onReturn} disabled={isReturning} className="py-2 px-4 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:bg-gray-400">
+                    {isReturning ? '戻っています...' : '問題リストに戻る'}
+                </button>
+            </div>
+            <div className="p-6 space-y-6 overflow-y-auto">
+                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((descriptionText ?? '説明がありません。').replace(/\n/g, '<br />')) }} />
+                <div>
+                    <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
+                    {problem.sampleCases?.map((sc, index) => (
+                        <div key={index} className="mb-4 last:mb-0">
+                            <h4 className="font-medium text-sm mb-2 text-gray-800">サンプル {index + 1}</h4>
+                            {sc.description && <p className="text-xs text-gray-600 mb-2 pl-2 border-l-2 border-gray-300">{sc.description}</p>}
+                            <div className="space-y-2">
+                                <div><span className="text-xs font-semibold text-gray-600">入力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.input}</pre></div>
+                                <div><span className="text-xs font-semibold text-gray-600">期待する出力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.expectedOutput}</pre></div>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         </div>
-    </div>
     );
 };
 
@@ -147,12 +148,12 @@ const CodeEditorPanel: React.FC<{
                         {showThemeDropdown && (
                             <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-20">
                                 {props.themes.map((theme) => (
-                                    <button 
-                                        key={theme.value} 
-                                        onClick={() => { 
-                                            props.onThemeSelect(theme.value); 
-                                            setShowThemeDropdown(false); 
-                                        }} 
+                                    <button
+                                        key={theme.value}
+                                        onClick={() => {
+                                            props.onThemeSelect(theme.value);
+                                            setShowThemeDropdown(false);
+                                        }}
                                         className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100"
                                     >
                                         {theme.label}
@@ -161,7 +162,7 @@ const CodeEditorPanel: React.FC<{
                             </div>
                         )}
                     </div>
-                    
+
                     {/* --- 言語選択プルダウン（既存） --- */}
                     <div className="relative">
                         <button onClick={() => setShowLanguageDropdown(!showLanguageDropdown)} className="flex items-center justify-between w-40 px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
@@ -221,13 +222,13 @@ const CodeEditorPanel: React.FC<{
                                             <CheckCircle className={`h-5 w-5 ${props.submitResult.status ? 'text-green-600' : 'text-red-600'}`} />
                                             <h4 className={`font-semibold ${props.submitResult.status ? 'text-green-800' : 'text-red-800'}`}>{props.submitResult.status ? '正解' : '不正解'}</h4>
                                         </div>
-                                        { typeof props.submitResult.score === 'number' &&
+                                        {typeof props.submitResult.score === 'number' &&
                                             <div className="font-bold text-lg">
                                                 獲得スコア: <span className="text-blue-600">{props.submitResult.score}</span>点
                                             </div>
                                         }
                                     </div>
-                                     <p className="text-sm mt-1">{props.submitResult.message}</p>
+                                    <p className="text-sm mt-1">{props.submitResult.message}</p>
                                     {!props.submitResult.status && props.submitResult.yourOutput !== undefined && (<><p className="text-sm mt-2 font-semibold">あなたの出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-red-700">{props.submitResult.yourOutput || '(空の出力)'}</pre><p className="text-sm mt-2 font-semibold">期待する出力:</p><pre className="bg-white p-2 mt-1 rounded text-xs text-green-700">{props.submitResult.expected}</pre></>)}
                                 </div>)}
                         </div>
@@ -272,17 +273,17 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         // --- 黒系 (Dark) テーマ ---
         { value: 'tomorrow_night', label: 'Tomorrow Night' },
         { value: 'monokai', label: 'Monokai (Dark)' },
-        { value: 'dracula', label: 'Dracula (Dark)' },          
-        { value: 'nord_dark', label: 'Nord Dark (Dark)' },      
+        { value: 'dracula', label: 'Dracula (Dark)' },
+        { value: 'nord_dark', label: 'Nord Dark (Dark)' },
         { value: 'terminal', label: 'Terminal (Dark)' },
         { value: 'merbivore_soft', label: 'Merbivore Soft' },
-        
+
         // --- 白系 (Light) テーマ ---
         { value: 'solarized_light', label: 'Solarized Light' },
         { value: 'chrome', label: 'Chrome (Light)' },
         { value: 'github', label: 'GitHub (Light)' },
-        { value: 'xcode', label: 'Xcode (Light)' },             
-        { value: 'textmate', label: 'TextMate (Light)' },       
+        { value: 'xcode', label: 'Xcode (Light)' },
+        { value: 'textmate', label: 'TextMate (Light)' },
         { value: 'kuroir', label: 'Kuroir (Light)' },
     ];
 
@@ -343,7 +344,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
             if (timeSpentMs > 3000) {
                 console.log(`Recording ${timeSpentMs}ms for event problem ${problem.id}`);
                 // サーバーアクション (0 XP, timeSpentMs) を呼び出す
-                recordStudyTimeAction(timeSpentMs); 
+                recordStudyTimeAction(timeSpentMs);
                 hasRecordedTime.current = true; // 記録済みフラグを立てる
             }
         }
@@ -430,7 +431,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
                     language: selectedLanguage,
                     source_code: userCode,
                     // イベント問題の採点は、常に最初のサンプルケースで行う
-                    input: problem?.sampleCases?.[0]?.input || '' 
+                    input: problem?.sampleCases?.[0]?.input || ''
                 }),
             });
 
@@ -441,7 +442,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
             const executeData = await executeRes.json();
             const output = (executeData.program_output?.stdout || '').trim();
             const expectedOutput = (problem?.sampleCases?.[0]?.expectedOutput || '').trim();
-            
+
             const isCorrect = output === expectedOutput;
 
             // イベント提出APIに送信
@@ -457,7 +458,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
             });
 
             const submissionData = await submissionRes.json();
-            
+
             if (!submissionRes.ok) {
                 throw new Error(submissionData.error || '提出処理に失敗しました。');
             }
@@ -471,16 +472,16 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
                     score: submissionData.score
                 });
             } else if (isCorrect) {
-                setSubmitResult({ 
-                    status: true, 
+                setSubmitResult({
+                    status: true,
                     message: `正解です！ ${submissionData.score}点を獲得しました！`,
-                    score: submissionData.score 
+                    score: submissionData.score
                 });
             } else {
-                setSubmitResult({ 
-                    status: false, 
-                    message: '不正解です。出力が異なります。', 
-                    yourOutput: output, 
+                setSubmitResult({
+                    status: false,
+                    message: '不正解です。出力が異なります。',
+                    yourOutput: output,
                     expected: expectedOutput,
                     score: 0
                 });
@@ -509,12 +510,12 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         recordStudyTime();
         router.push(`/event/event_detail/${eventId}`);
     };
-    
+
     return (
         <div className="h-screen bg-gray-100 p-4 flex flex-col">
             {/* ヘッダー部分を削除し、ボタンをProblemDescriptionPanel内に移動 */}
             {/* このブロックは不要になったため削除 */}
-            <div className="flex-grow min-h-0"> 
+            <div className="flex-grow min-h-0">
                 <PanelGroup direction="horizontal">
                     <Panel defaultSize={35} minSize={20}>
                         <ProblemDescriptionPanel problem={problem} onReturn={handleReturnToEvent} isReturning={isReturning} />
@@ -528,7 +529,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
                             stdin={stdin} setStdin={setStdin}
                             selectedLanguage={selectedLanguage} languages={languages}
                             selectedTheme={selectedTheme} themes={themes}
-                                    onThemeSelect={setSelectedTheme}
+                            onThemeSelect={setSelectedTheme}
                             onLanguageSelect={setSelectedLanguage}
                             onExecute={handleExecute} onSubmit={handleSubmit}
                             isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
@@ -539,9 +540,9 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
             </div>
             {isAnswered && (
                 <div className="flex-shrink-0 pt-4 flex justify-center">
-                <button onClick={handleReturnToEvent} disabled={isReturning} className="w-full max-w-lg py-3 px-6 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600 disabled:bg-gray-400">
-                    {isReturning ? 'イベント詳細に戻っています...' : 'イベント詳細に戻る'}
-                </button>
+                    <button onClick={handleReturnToEvent} disabled={isReturning} className="w-full max-w-lg py-3 px-6 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600 disabled:bg-gray-400">
+                        {isReturning ? 'イベント詳細に戻っています...' : 'イベント詳細に戻る'}
+                    </button>
                 </div>
             )}
         </div>

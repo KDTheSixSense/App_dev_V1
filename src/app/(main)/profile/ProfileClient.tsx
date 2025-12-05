@@ -8,6 +8,8 @@ import PetStatusView from '../profile/Pet/PetStatusview';
 import { updateUserProfileAction } from './actions';
 import { changePasswordAction } from '@/lib/actions';
 import dynamic from 'next/dynamic';
+import DOMPurify from 'dompurify';
+import toast from 'react-hot-toast';
 
 const DailyActivityChart = dynamic(
   () => import('./Chart/DailyActivityChart'),
@@ -53,8 +55,8 @@ interface ProfileClientProps {
 }
 
 const presetIcons = {
-  male: [ '/images/DefaultIcons/male1.jpg', '/images/DefaultIcons/male2.jpg', '/images/DefaultIcons/male3.jpg' ],
-  female: [ '/images/DefaultIcons/female1.jpg', '/images/DefaultIcons/female2.jpg', '/images/DefaultIcons/female3.jpg' ],
+  male: ['/images/DefaultIcons/male1.jpg', '/images/DefaultIcons/male2.jpg', '/images/DefaultIcons/male3.jpg'],
+  female: ['/images/DefaultIcons/female1.jpg', '/images/DefaultIcons/female2.jpg', '/images/DefaultIcons/female3.jpg'],
 };
 
 export default function ProfileClient({ initialUser, initialStats, aiAdvice }: ProfileClientProps) {
@@ -62,16 +64,16 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     username: initialUser.username || '',
     birth: initialUser.birth ? new Date(initialUser.birth).toISOString().split('T')[0] : '',
     icon: initialUser.icon || null,
     selectedTitleId: initialUser.selectedTitleId || null,
   });
-  
+
   const [initialData, setInitialData] = useState(formData);
-  
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -120,12 +122,12 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
     console.log("Icon upload logic goes here.");
     setIsIconModalOpen(false);
   };
-  
+
   const handlePresetIconSelect = (iconPath: string) => {
     setFormData((prev) => ({ ...prev, icon: iconPath }));
     setIsIconModalOpen(false);
   };
-  
+
   const handleTitleSelect = (titleId: number | null) => {
     setFormData((prev) => ({ ...prev, selectedTitleId: titleId }));
     setIsTitleModalOpen(false);
@@ -141,57 +143,58 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
 
     // 1. パスワード以外のプロフィール情報を更新
     const dataForAction = {
-        ...formData,
-        // L171: ★ 修正点: nullをundefinedに変換する (?? 演算子を使用)
-        // formData.icon が null の場合、updateUserProfileAction の icon: string | undefined に合わせるため undefined を渡す
-        icon: formData.icon ?? undefined, // 'Alice Smith' や 'null' が入っている可能性を排除する
-    };
-    
+      ...formData,
+      // L171: ★ 修正点: nullをundefinedに変換する (?? 演算子を使用)
+      // formData.icon が null の場合、updateUserProfileAction の icon: string | undefined に合わせるため undefined を渡す
+      icon: formData.icon ?? undefined, // 'Alice Smith' や 'null' が入っている可能性を排除する
+      username: formData.username ? DOMPurify.sanitize(formData.username) : undefined, // XSS対策: ユーザー名をサニタイズ
+    };
+
     const profileResult = await updateUserProfileAction(dataForAction);
     if (profileResult.error) {
-        success = false;
-        errorMessage = profileResult.error;
+      success = false;
+      errorMessage = profileResult.error;
     }
 
     // 2. パスワード変更が要求されている場合、パスワードも更新
     if (success && showPasswordChange) {
-        if (passwordData.newPassword !== passwordData.confirmPassword) {
-            success = false;
-            errorMessage = '新しいパスワードが一致しません。';
-        } else if (passwordData.newPassword.length < 8) {
-             success = false;
-             errorMessage = '新しいパスワードは8文字以上である必要があります。';
-        } else {
-            // 新しく作成したServer Actionを呼び出す
-            const passwordResult = await changePasswordAction(
-                passwordData.currentPassword,
-                passwordData.newPassword
-            );
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        success = false;
+        errorMessage = '新しいパスワードが一致しません。';
+      } else if (passwordData.newPassword.length < 8) {
+        success = false;
+        errorMessage = '新しいパスワードは8文字以上である必要があります。';
+      } else {
+        // 新しく作成したServer Actionを呼び出す
+        const passwordResult = await changePasswordAction(
+          passwordData.currentPassword,
+          passwordData.newPassword
+        );
 
-            if (!passwordResult.success) {
-                success = false;
-                errorMessage = '[パスワード変更エラー] :' + passwordResult.error;
-            }
+        if (!passwordResult.success) {
+          success = false;
+          errorMessage = '[パスワード変更エラー] :' + passwordResult.error;
         }
+      }
     }
 
     setIsLoading(false);
 
     if (success) {
-        // パスワード変更も成功した場合、パスワードフォームをリセット
-        if (showPasswordChange) {
-            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        }
-        setIsEditing(false);
-        setShowPasswordChange(false);
-        // 成功メッセージをアラートで表示することもできます
-        alert('プロフィール情報を更新しました。' + (showPasswordChange ? 'パスワードも変更されました。' : ''));
-        router.refresh();
+      // パスワード変更も成功した場合、パスワードフォームをリセット
+      if (showPasswordChange) {
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      }
+      setIsEditing(false);
+      setShowPasswordChange(false);
+      // 成功メッセージをトーストで表示
+      toast.success('プロフィール情報を更新しました。' + (showPasswordChange ? '\nパスワードも変更されました。' : ''));
+      router.refresh();
     } else {
-        // エラーメッセージを表示
-        alert(errorMessage);
+      // エラーメッセージを表示
+      toast.error(errorMessage);
     }
-};
+  };
 
   const petBirthdate = initialUser.Status_Kohaku?.[0]?.birthdate;
   let formattedPetBirthdate: string | null = null;
@@ -220,7 +223,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
         <header className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800">マイプロフィール</h1>
         </header>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 左カラム：プロフィール編集フォーム */}
           <div className="lg:col-span-2">
@@ -246,7 +249,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
                 {/* ニックネーム */}
                 <div>
                   <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">ニックネーム</label>
-                  <input type="text" id="username" name="username" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm read-only:bg-gray-100" value={formData.username || ''} onChange={handleChange} readOnly={!isEditing} />
+                  <input type="text" id="username" name="username" maxLength={50} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm read-only:bg-gray-100" value={formData.username || ''} onChange={handleChange} readOnly={!isEditing} />
                 </div>
 
                 {/* 生年月日 */}
@@ -297,15 +300,15 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
           </div>
 
           {/* 右カラム：ペットステータスとグラフ */}
-            <div className="lg:col-span-1 space-y-8">
-              <PetStatusView 
-              initialHunger={initialUser.Status_Kohaku?.[0].hungerlevel ?? 200} 
-              maxHunger={200} 
-              adviceText={aiAdvice} 
+          <div className="lg:col-span-1 space-y-8">
+            <PetStatusView
+              initialHunger={initialUser.Status_Kohaku?.[0].hungerlevel ?? 200}
+              maxHunger={200}
+              adviceText={aiAdvice || ''} // Reactがエスケープするためサニタイズ不要
               petname={initialUser.Status_Kohaku?.[0].name || 'コハク'}
               petBirthdate={formattedPetBirthdate}
             />
-            </div>
+          </div>
           {/* ---  新しい行：中央に配置するグラフ  --- */}
           <div className="lg:col-span-3">
             {/*  新しいチャートコンポーネントを配置  */}
@@ -316,31 +319,31 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
 
       {/* モーダル (称号・アイコン) はここに配置 */}
       {isTitleModalOpen && (
-         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl">
-                <h3 className="text-lg font-semibold mb-4">称号を選択</h3>
-                <ul className="space-y-2">
-                    <li><button onClick={() => handleTitleSelect(null)} className="w-full text-left p-2 hover:bg-gray-100 rounded">称号なし</button></li>
-                    {initialUser.unlockedTitles.map((ut) => (
-                        <li key={ut.title.id}><button onClick={() => handleTitleSelect(ut.title.id)} className="w-full text-left p-2 hover:bg-gray-100 rounded">{ut.title.name}</button></li>
-                    ))}
-                </ul>
-                <button onClick={() => setIsTitleModalOpen(false)} className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded">閉じる</button>
-            </div>
-         </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl">
+            <h3 className="text-lg font-semibold mb-4">称号を選択</h3>
+            <ul className="space-y-2">
+              <li><button onClick={() => handleTitleSelect(null)} className="w-full text-left p-2 hover:bg-gray-100 rounded">称号なし</button></li>
+              {initialUser.unlockedTitles.map((ut) => (
+                <li key={ut.title.id}><button onClick={() => handleTitleSelect(ut.title.id)} className="w-full text-left p-2 hover:bg-gray-100 rounded">{ut.title.name}</button></li>
+              ))}
+            </ul>
+            <button onClick={() => setIsTitleModalOpen(false)} className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded">閉じる</button>
+          </div>
+        </div>
       )}
       {isIconModalOpen && (
-         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md">
-                <h3 className="text-lg font-semibold mb-4">アイコンを選択</h3>
-                {/* プリセットアイコンの表示 */}
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                    {presetIcons.male.map(icon => <Image key={icon} src={icon} alt="icon" width={80} height={80} className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)}/>)}
-                    {presetIcons.female.map(icon => <Image key={icon} src={icon} alt="icon" width={80} height={80} className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)}/>)}
-                </div>
-                <button onClick={() => setIsIconModalOpen(false)} className="mt-6 bg-gray-200 text-gray-700 py-2 px-4 rounded w-full">閉じる</button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md">
+            <h3 className="text-lg font-semibold mb-4">アイコンを選択</h3>
+            {/* プリセットアイコンの表示 */}
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {presetIcons.male.map(icon => <Image key={icon} src={icon} alt="icon" width={80} height={80} className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)} />)}
+              {presetIcons.female.map(icon => <Image key={icon} src={icon} alt="icon" width={80} height={80} className="w-20 h-20 rounded-full object-cover cursor-pointer hover:ring-2" onClick={() => handlePresetIconSelect(icon)} />)}
             </div>
-         </div>
+            <button onClick={() => setIsIconModalOpen(false)} className="mt-6 bg-gray-200 text-gray-700 py-2 px-4 rounded w-full">閉じる</button>
+          </div>
+        </div>
       )}
     </div>
   );

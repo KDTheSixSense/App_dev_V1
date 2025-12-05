@@ -11,7 +11,7 @@ import KohakuChat from '@/components/KohakuChat';
 
 // --- データと型、アクションのインポート ---
 import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
-import { useNotification } from '@/app/contexts/NotificationContext';
+import toast from 'react-hot-toast';
 import type { SerializableProblem } from '@/lib/data';
 import { getHintFromAI } from '@/lib/actions/hintactions';
 import AnswerEffect from '@/components/AnswerEffect';
@@ -91,7 +91,7 @@ interface ProblemClientProps {
 
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits }) => {
   const router = useRouter();
-  const { showNotification } = useNotification();
+
   const [isPending, startTransition] = useTransition();
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
@@ -103,31 +103,31 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const startTimeRef = useRef<number | null>(null);
   const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
   const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null);
-  
-    // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
-    const refetchPetStatus = useCallback(async () => {
-      try {
-        const res = await fetch('/api/pet/status');
-        if (res.ok) {
-          const { data } = await res.json();
-          if (data) {
-            const displayState = getPetDisplayState(data.hungerlevel);
-            setKohakuIcon(displayState.icon);
-          }
+
+  // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
+  const refetchPetStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/pet/status');
+      if (res.ok) {
+        const { data } = await res.json();
+        if (data) {
+          const displayState = getPetDisplayState(data.hungerlevel);
+          setKohakuIcon(displayState.icon);
         }
-      } catch (error) {
-        console.error("ペット情報の取得に失敗:", error);
       }
-    }, []);
-  
-    // 初期ロード時とイベントリスナー設定
-    useEffect(() => {
-      refetchPetStatus();
-      window.addEventListener('petStatusUpdated', refetchPetStatus);
-      return () => {
-        window.removeEventListener('petStatusUpdated', refetchPetStatus);
-      };
-    }, [refetchPetStatus]);
+    } catch (error) {
+      console.error("ペット情報の取得に失敗:", error);
+    }
+  }, []);
+
+  // 初期ロード時とイベントリスナー設定
+  useEffect(() => {
+    refetchPetStatus();
+    window.addEventListener('petStatusUpdated', refetchPetStatus);
+    return () => {
+      window.removeEventListener('petStatusUpdated', refetchPetStatus);
+    };
+  }, [refetchPetStatus]);
 
   useEffect(() => {
     setProblem(initialProblem);
@@ -137,17 +137,17 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setChatMessages([{ sender: 'kohaku', text: textResources[language].problemStatement.hintInit }]);
     startTimeRef.current = Date.now();
     return () => {
-          if (startTimeRef.current) {
-            const endTime = Date.now();
-            const durationMs = endTime - startTimeRef.current;
-            // const problemIdForLog = initialProblem?.id || 'unknown';
-            startTimeRef.current = null;
-            // 滞在時間の記録が必要ならここで recordStudyTimeAction を呼び出す
-            if (durationMs > 3000) {
-                 recordStudyTimeAction(durationMs).catch(e => console.error(e));
-            }
-          }
-        };
+      if (startTimeRef.current) {
+        const endTime = Date.now();
+        const durationMs = endTime - startTimeRef.current;
+        // const problemIdForLog = initialProblem?.id || 'unknown';
+        startTimeRef.current = null;
+        // 滞在時間の記録が必要ならここで recordStudyTimeAction を呼び出す
+        if (durationMs > 3000) {
+          recordStudyTimeAction(durationMs).catch(e => console.error(e));
+        }
+      }
+    };
   }, [initialProblem, initialCredits, language]);
 
   const t = textResources[language].problemStatement;
@@ -166,13 +166,13 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           // 応用情報午前問題の subjectId は 5 と想定（DBシードに合わせて調整してください）
           const result = await awardXpForCorrectAnswer(numericId, undefined, 5, startTimeRef.current || Date.now());
           if (result.message === '経験値を獲得しました！') {
-              window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+            window.dispatchEvent(new CustomEvent('petStatusUpdated'));
           }
           if (result.unlockedTitle) {
-            showNotification({ message: `称号【${result.unlockedTitle.name}】を獲得しました！`, type: 'success' });
+            toast.success(`称号【${result.unlockedTitle.name}】を獲得しました！`);
           }
         } catch (error) {
-          showNotification({ message: '経験値の付与に失敗しました。', type: 'error' });
+          toast.error('経験値の付与に失敗しました。');
         }
       }
     }
@@ -186,44 +186,44 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   }, []);
 
   const handleUserMessage = async (message: string) => {
-        if (credits <= 0) {
-          setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
-          return;
-        }
-    
-        setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
-        setIsAiLoading(true);
-    
-        try {
-          const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
-          setCredits(data.newCredits);
-    
-          const context = { 
-            problemTitle: problem.title[currentLang], 
-            problemDescription: problem.description[currentLang],
-            problemType: problem.logicType,
-            // userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムはないので空文字か、選択肢を渡す
-            userCode: '',
-            answerOptions: JSON.stringify(problem.answerOptions?.[currentLang]), // AIに選択肢の情報を渡す
-            explanation: problem.explanationText?.[currentLang],
-          };
-          const hint = await getHintFromAI(message, context);
-          setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
-        } catch (error: any) {
-          setChatMessages(prev => [...prev, { sender: 'kohaku', text: error.message }]);
-        } finally {
-          setIsAiLoading(false);
-        }
+    if (credits <= 0) {
+      setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
+      return;
+    }
+
+    setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
+    setIsAiLoading(true);
+
+    try {
+      const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
+      setCredits(data.newCredits);
+
+      const context = {
+        problemTitle: problem.title[currentLang],
+        problemDescription: problem.description[currentLang],
+        problemType: problem.logicType,
+        // userCode: problem.programLines?.[currentLang]?.join('\n') || '' // プログラムはないので空文字か、選択肢を渡す
+        userCode: '',
+        answerOptions: JSON.stringify(problem.answerOptions?.[currentLang]), // AIに選択肢の情報を渡す
+        explanation: problem.explanationText?.[currentLang],
       };
+      const hint = await getHintFromAI(message, context);
+      setChatMessages(prev => [...prev, { sender: 'kohaku', text: hint }]);
+    } catch (error: any) {
+      setChatMessages(prev => [...prev, { sender: 'kohaku', text: error.message }]);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const handleNextProblem = async () => {
     const nextProblemId = await getNextProblemId(parseInt(problem.id), 'applied_info_morning_problem');
     if (nextProblemId) {
       router.push(`/issue_list/applied_info_morning_problem/${nextProblemId}`);
     } else {
-      showNotification({ message: "これが最後の問題です！", type: 'success' });
+      toast.success("これが最後の問題です！");
       router.push('/issue_list');
     }
   };
@@ -239,11 +239,11 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[600px] flex flex-col lg:col-span-8 lg:col-start-3">
           {/* 出典情報があれば表示するエリア（オプション） */}
           <div className="text-center text-gray-500 mb-2 text-sm">
-             {problem.sourceYear} {problem.sourceNumber}
+            {problem.sourceYear} {problem.sourceNumber}
           </div>
 
           <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-             {problem.title[currentLang]}
+            {problem.title[currentLang]}
           </h1>
           <ProblemStatement
             description={problem.description[currentLang]}
@@ -261,21 +261,21 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
         {/* コハクチャットエリア */}
         <div className="lg:w-1/3 w-full lg:sticky lg:top-10 mt-8 lg:mt-0">
-           <div className="bg-white p-3 rounded-t-lg shadow-lg border-b text-center">
-              <p className="text-sm text-gray-600">
-                AIアドバイス残り回数: <span className="font-bold text-lg text-blue-600">{credits}</span> 回
-              </p>
-              {credits <= 0 && (
-                <Link href="/profile" className="text-xs text-blue-500 hover:underline">
-                  (XPを消費して増やす)
-                </Link>
-              )}
-            </div>
+          <div className="bg-white p-3 rounded-t-lg shadow-lg border-b text-center">
+            <p className="text-sm text-gray-600">
+              AIアドバイス残り回数: <span className="font-bold text-lg text-blue-600">{credits}</span> 回
+            </p>
+            {credits <= 0 && (
+              <Link href="/profile" className="text-xs text-blue-500 hover:underline">
+                (XPを消費して増やす)
+              </Link>
+            )}
+          </div>
           <KohakuChat
             messages={chatMessages}
             onSendMessage={handleUserMessage}
             language={language}
-            textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
+            textResources={{ ...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder }}
             isLoading={isPending || isAiLoading}
             isDisabled={credits <= 0 || isPending || isAiLoading}
             kohakuIcon={kohakuIcon}

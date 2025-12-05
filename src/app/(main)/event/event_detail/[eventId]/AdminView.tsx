@@ -5,6 +5,7 @@ import { toggleEventStatusAction, deleteEventAction } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react'; // Import useState for local state management
 import type { Prisma } from '@prisma/client'; // Import Prisma namespace for types
+import toast from 'react-hot-toast';
 
 
 // コンポーネントで受け取るイベント詳細データの最終的な型
@@ -45,11 +46,11 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
     setIsClient(true);
   }, []);
 
-    // イベント作成者（isAdminがtrueの参加者）を特定
+  // イベント作成者（isAdminがtrueの参加者）を特定
   const eventCreator = event.participants.find(p => p.isAdmin);
   // その他の参加者（admin_flgがfalseの参加者）をフィルタリング
   const otherParticipants = event.participants.filter(p => !p.isAdmin);
-  
+
   // 参加者を獲得点数の降順でソート
   const sortedParticipants = [...otherParticipants].sort((a, b) => {
     const scoreA = a.event_getpoint ?? 0;
@@ -67,13 +68,13 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
     try {
       const result = await toggleEventStatusAction(event.id, true);
       if (result.error) throw new Error(result.error);
-      
+
       // 状態を即時反映させるために、ローカルstateも更新
       setEvent(prev => ({ ...prev, isStarted: true, hasBeenStarted: true, startTime: new Date() }));
-      alert('イベントを開始しました！');
+      toast.success('イベントを開始しました！');
     } catch (error) {
       console.error('イベント開始エラー:', error);
-      alert(`イベント開始中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      toast.error(`イベント開始中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -88,10 +89,10 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
 
       // 状態を即時反映
       setEvent(prev => ({ ...prev, isStarted: false }));
-      alert('イベントを終了しました。');
+      toast.success('イベントを終了しました。');
     } catch (error) {
       console.error('イベント終了エラー:', error);
-      alert(`イベント終了中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      toast.error(`イベント終了中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -104,11 +105,11 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
       const result = await deleteEventAction(event.id);
       if (result.error) throw new Error(result.error);
 
-      alert('イベントを削除しました。');
+      toast.success('イベントを削除しました。');
       router.push('/event/event_list');
     } catch (error) {
       console.error('イベント削除エラー:', error);
-      alert(`イベントの削除中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      toast.error(`イベントの削除中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -126,7 +127,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold text-blue-600">[Admin] {event.title}</h1>
       <p className="mt-2 text-gray-600">{event.description}</p>
-      
+
       {/* 招待コード表示とコピーボタン */}
       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
         <div>
@@ -145,7 +146,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
         <h2 className="text-2xl font-semibold">イベント作成者</h2>
         {eventCreator ? (
           <p>
-            {eventCreator.user.username} 
+            {eventCreator.user.username}
             <span className="ml-2 text-sm text-green-600">(管理者)</span>
           </p>
         ) : (
@@ -156,24 +157,24 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
       {/* イベント開始ボタン */}
       <div className="mt-6 flex items-center space-x-4">
         {!event.hasBeenStarted ? (
-            <button
-              onClick={handleStartEvent}
-              disabled={isSubmitting}
-              className="px-6 py-3 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400"
-            >
-              イベントを開始する
-            </button>
-          ) : event.isStarted ? (
-            <button
-              onClick={handleEndEvent}
-              disabled={isSubmitting}
-              className="px-6 py-3 text-lg font-semibold text-white bg-red-500 rounded-lg shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400"
-            >
-              イベントを終了する
-            </button>
-          ) : (
-            <p className="text-lg font-semibold text-gray-500">このイベントは終了しました。</p>
-          )}
+          <button
+            onClick={handleStartEvent}
+            disabled={isSubmitting}
+            className="px-6 py-3 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400"
+          >
+            イベントを開始する
+          </button>
+        ) : event.isStarted ? (
+          <button
+            onClick={handleEndEvent}
+            disabled={isSubmitting}
+            className="px-6 py-3 text-lg font-semibold text-white bg-red-500 rounded-lg shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400"
+          >
+            イベントを終了する
+          </button>
+        ) : (
+          <p className="text-lg font-semibold text-gray-500">このイベントは終了しました。</p>
+        )}
 
         {/* 削除ボタン */}
         <button
@@ -184,7 +185,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
           イベントを削除
         </button>
       </div>
-      
+
       <div className="mt-8">
         <h2 className="text-2xl font-semibold">イベント参加者一覧 ({otherParticipants.length}人)</h2>
         {sortedParticipants.length > 0 ? (
@@ -193,7 +194,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) { // 
               (() => {
                 // event_getpointフィールドから獲得点数を取得
                 const score = participant.event_getpoint ?? 0;
-                
+
                 return (
                   <li key={participant.id} className="mt-1">
                     {participant.user.username}  - <span className="font-bold text-lg text-indigo-600">{score}点</span>

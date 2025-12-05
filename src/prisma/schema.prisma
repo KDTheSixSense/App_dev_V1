@@ -49,6 +49,7 @@ model User {
   aiAdviceCredits          Int                   @default(5)
   assignmentComments       AssignmentComment[]
   dailyMissionProgresses UserDailyMissionProgress[]
+  auditLogs              AuditLog[]
 }
 
 model LoginHistory {
@@ -774,4 +775,15 @@ model AssignmentComment {
   author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([assignmentId])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String   // "LOGIN", "EXECUTE_CODE", "POST_CREATE" etc.
+  details   String?  @db.Text // JSON string or details
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id])
 }

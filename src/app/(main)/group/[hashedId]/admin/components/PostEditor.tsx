@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation'; // ★ 追加
 import { FormatState } from '../types/AdminTypes';
+import toast from 'react-hot-toast';
 
 interface PostEditorProps {
     onPost: (content: string) => Promise<void>;
 }
 
 export const PostEditor: React.FC<PostEditorProps> = ({ onPost }) => {
+    const router = useRouter(); // ★ 追加
     const [isExpanded, setIsExpanded] = useState(false);
     const [content, setContent] = useState('');
     const [formatState, setFormatState] = useState<FormatState>({
@@ -16,7 +19,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({ onPost }) => {
         underline: false,
         strikethrough: false
     });
-    
+
     const editorRef = useRef<HTMLDivElement>(null);
 
     // エディター展開処理
@@ -38,13 +41,14 @@ export const PostEditor: React.FC<PostEditorProps> = ({ onPost }) => {
     // 投稿処理
     const handleSubmit = async () => {
         if (!content.trim()) {
-            alert('内容が空です。');
+            toast.error('内容が空です。');
             return;
         }
-        
+
         try {
             await onPost(content);
             handleCollapse();
+            router.refresh(); // ★ 追加: 画面更新
         } catch (error) {
             console.error('投稿エラー:', error);
         }
@@ -189,7 +193,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({ onPost }) => {
                             fontStyle: 'italic'
                         }} title="斜体">I</button>
 
-                        
+
                         <button onClick={handleLinkInsert} style={{
                             padding: '6px 8px',
                             border: '1px solid #e0e0e0',
@@ -198,7 +202,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({ onPost }) => {
                             cursor: 'pointer'
                         }} title="リンク">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368">
-                                <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H6.9C4.29 7 2.2 9.09 2.2 11.7s2.09 4.7 4.7 4.7H11v-1.9H6.9c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm5-6h4.1c2.61 0 4.7 2.09 4.7 4.7s-2.09 4.7-4.7 4.7H13v1.9h4.1c2.61 0 4.7-2.09 4.7-4.7S19.71 7 17.1 7H13v1.9z"/>
+                                <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H6.9C4.29 7 2.2 9.09 2.2 11.7s2.09 4.7 4.7 4.7H11v-1.9H6.9c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm5-6h4.1c2.61 0 4.7 2.09 4.7 4.7s-2.09 4.7-4.7 4.7H13v1.9h4.1c2.61 0 4.7-2.09 4.7-4.7S19.71 7 17.1 7H13v1.9z" />
                             </svg>
                         </button>
                     </div>
