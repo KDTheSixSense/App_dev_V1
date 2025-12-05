@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 
 // セッションデータの型定義
 interface SessionData {
-  user?: { id: number; email: string };
+  user?: { id: string; email: string };
 }
 
 /**
@@ -61,7 +61,7 @@ export async function GET(
       where: {
         group_id_user_id: {
           group_id: group.id,
-          user_id: Number(session.user!.id),
+          user_id: session.user!.id,
         },
       },
     });

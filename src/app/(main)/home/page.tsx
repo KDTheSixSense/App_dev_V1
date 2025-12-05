@@ -26,7 +26,7 @@ export default async function HomePage({
 
   // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+  const userId = session.user?.id ? session.user.id : null;
   const assignmentCount = await getUnsubmittedAssignmentCount();
 
   // ログインユーザーの全情報を取得
@@ -39,13 +39,13 @@ export default async function HomePage({
     <div className='bg-white select-none'>
       <main className="grid grid-cols-1 md:grid-cols-2 justify-center min-h-screen text-center py-10 px-4 sm:px-6 lg:px-8 gap-10">
         <div className="order-1 md:col-start-1 md:row-start-1">
-          <User user={user} unsubmittedAssignmentCount={assignmentCount}/>
+          <User user={user} unsubmittedAssignmentCount={assignmentCount} />
         </div>
         <div className="order-4 md:col-start-1 md:row-start-2">
           <Ranking />
         </div>
         <div className="order-2 md:col-start-2 md:row-start-1">
-          <Pet user={user}/>
+          <Pet user={user} />
         </div>
         <div className="order-3 md:col-start-2 md:row-start-2">
           <Daily />

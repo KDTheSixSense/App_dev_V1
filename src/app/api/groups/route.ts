@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     }
 
     // TODO: 実際の認証情報からユーザーIDを取得する
-    const creatorId = 1; // 仮の作成者ID
+    const creatorId = "1"; // 仮の作成者ID
 
     const newGroup = await prisma.groups.create({
       data: {
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         body: description || '',
         groups_User: {
           create: {
-            user_id: creatorId,
+            user_id: creatorId as any,
             admin_flg: true,
           },
         },

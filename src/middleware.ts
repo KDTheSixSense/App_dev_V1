@@ -57,7 +57,7 @@ function cleanupIpMap() {
 
 export async function middleware(req: NextRequest) {
   // --- Global Rate Limiting ---
-  const ip = (req as any).ip || req.headers.get('x-forwarded-for') || 'unknown';
+  const ip = (req as any).ip || req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
   const now = Date.now();
 
   // クリーンアップ (定期実行)
@@ -72,31 +72,6 @@ export async function middleware(req: NextRequest) {
     state = { count: 0, startTime: now, blockedUntil: 0, violationCount: 0 };
     ipMap.set(ip, state);
   }
-
-//  // 1. ブロックチェック
-//  if (state.blockedUntil > now) {
-//    const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
-//    return new NextResponse(
-//      JSON.stringify({ error: `Too Many Requests. Blocked for ${remainingSeconds}s` }),
-//      { status: 429, headers: { 'Content-Type': 'application/json' } }
-//    );
-//  }
-//
-//  // ブロック解除後のリセット (ブロック期間が過ぎていれば)
-//  if (state.blockedUntil !== 0 && state.blockedUntil <= now) {
-//    state.blockedUntil = 0;
-//    state.count = 0;
-//    state.startTime = now;
-//  }
-//
-//  // 2. カウントアップ
-//  if (now - state.startTime > WINDOW_MS) {
-//    // ウィンドウリセット
-//    state.count = 1;
-//    state.startTime = now;
-//  } else {
-//    state.count++;
-//  }
 
   // 3. 制限チェック
   if (state.count > LIMIT) {
@@ -137,7 +112,7 @@ export async function middleware(req: NextRequest) {
   const isDev = process.env.NODE_ENV !== 'production';
   const scriptSrc = isDev
     ? `'self' 'unsafe-eval' 'unsafe-inline' blob:`
-    : `'self' 'nonce-${nonce}' blob:`; // unsafe-inline removed in prod
+    : `'self' 'nonce-${nonce}' blob:`;
 
   const cspHeader = `
     default-src 'self';
@@ -150,6 +125,7 @@ export async function middleware(req: NextRequest) {
     frame-ancestors 'none';
     form-action 'self';
     base-uri 'self';
+    upgrade-insecure-requests;
   `.replace(/\s{2,}/g, ' ').trim();
 
   // リクエストヘッダーにnonceを設定
@@ -177,9 +153,9 @@ export async function middleware(req: NextRequest) {
   response.headers.set('X-DNS-Prefetch-Control', 'on');
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
   // --- CORS Headers for API Routes ---

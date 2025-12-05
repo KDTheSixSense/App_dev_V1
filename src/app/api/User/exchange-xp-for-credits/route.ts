@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     if (!session.user) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    const userId = Number(session.user.id);
+    const userId = session.user.id;
 
     // トランザクションを使って、XPの消費とクレジットの付与を同時に行う
     const result = await prisma.$transaction(async (tx) => {

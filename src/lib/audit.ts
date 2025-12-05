@@ -9,7 +9,7 @@ export enum AuditAction {
 }
 
 export async function logAudit(
-    userId: number | null,
+    userId: string | null,
     action: AuditAction,
     details?: any
 ) {
@@ -19,7 +19,7 @@ export async function logAudit(
 
         await prisma.auditLog.create({
             data: {
-                userId,
+                userId: userId as any,
                 action,
                 details: details ? JSON.stringify(details) : null,
                 ipAddress,

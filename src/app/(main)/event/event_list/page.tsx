@@ -23,7 +23,7 @@ export type イベント = {
 const EventListPage = async () => {
   let initialEvents: イベント[] = [];
   const session = await getAppSession();
-  const userId = session?.user?.id ? Number(session.user.id) : null;
+  const userId = session?.user?.id ? session.user.id : null;
 
   try {
     // ログインしていない場合は何も表示しない

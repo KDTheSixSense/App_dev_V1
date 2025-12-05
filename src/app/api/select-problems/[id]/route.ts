@@ -25,10 +25,10 @@ export async function GET(
     if (!problem) {
       return NextResponse.json({ message: '問題が見つかりません' }, { status: 404 });
     }
-    
+
     // セキュリティ: ログインユーザーが作成者か確認
-    if (problem.createdBy !== Number(session.user.id)) {
-        return NextResponse.json({ message: '権限がありません' }, { status: 403 });
+    if (problem.createdBy !== session.user.id) {
+      return NextResponse.json({ message: '権限がありません' }, { status: 403 });
     }
 
     return NextResponse.json(problem);
@@ -51,13 +51,13 @@ export async function PUT(
 
     const problemId = parseInt(params.id, 10);
     if (isNaN(problemId)) {
-        return NextResponse.json({ message: '無効な問題IDです' }, { status: 400 });
+      return NextResponse.json({ message: '無効な問題IDです' }, { status: 400 });
     }
 
     // セキュリティ: ログインユーザーが作成者か確認
     const existingProblem = await prisma.selectProblem.findUnique({ where: { id: problemId } });
-    if (!existingProblem || existingProblem.createdBy !== Number(session.user.id)) {
-        return NextResponse.json({ message: '権限がありません' }, { status: 403 });
+    if (!existingProblem || existingProblem.createdBy !== session.user.id) {
+      return NextResponse.json({ message: '権限がありません' }, { status: 403 });
     }
 
     const body = await request.json();

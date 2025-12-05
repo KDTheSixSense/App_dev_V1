@@ -6,13 +6,13 @@ import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 interface SessionData {
-    user?: { id: number | string; email: string; username?: string | null };
+    user?: { id: string; email: string; username?: string | null };
 }
 
 // 課題を更新 (PUT)
 export async function PUT(req: NextRequest) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    const userId = session.user?.id ? Number(session.user.id) : null;
+    const userId = session.user?.id ? session.user.id : null;
 
     if (!userId) {
         return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
@@ -83,7 +83,7 @@ export async function PUT(req: NextRequest) {
 // 課題を削除 (DELETE)
 export async function DELETE(req: NextRequest) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    const userId = session.user?.id ? Number(session.user.id) : null;
+    const userId = session.user?.id ? session.user.id : null;
 
     if (!userId) {
         return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });

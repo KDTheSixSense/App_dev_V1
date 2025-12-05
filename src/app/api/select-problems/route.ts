@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 const prisma = new PrismaClient();
 
 interface SessionData {
-  user?: { id: number | string; email: string };
+    user?: { id: string; email: string };
 }
 
 export async function POST(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     if (!user || !user.id) {
         return NextResponse.json({ success: false, message: '認証されていません。' }, { status: 401 });
     }
-    const userId = Number(user.id);
+    const userId = user.id;
 
     try {
         const body = await req.json();
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 // 選択問題の一覧を取得するGETハンドラ (こちらも念のため記載)
 export async function GET(request: Request) {
     console.warn('DEPRECATED: /api/select-problems is deprecated. Use /api/selects_problems instead.');
-    
+
     // Redirect to the correct endpoint
     const url = new URL(request.url);
     const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/selects_problems${url.search}`, {
@@ -70,12 +70,12 @@ export async function GET(request: Request) {
         headers: {
             // Forward any authentication headers
             ...Object.fromEntries(
-                Array.from(request.headers.entries()).filter(([key]) => 
+                Array.from(request.headers.entries()).filter(([key]) =>
                     key.toLowerCase().includes('auth') || key.toLowerCase().includes('cookie')
                 )
             )
         }
     });
-    
+
     return response;
 }

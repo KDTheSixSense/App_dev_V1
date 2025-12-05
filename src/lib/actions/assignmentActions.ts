@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const UPLOAD_DIR = path.join(process.cwd(), 'public/uploads');
 
 export async function submitAssignment(
-  userId: number,
+  userId: string,
   assignmentId: string,
   formData: FormData
 ): Promise<{ success: true; message: string } | { success: false; message: string; status: number }> {

@@ -25,7 +25,7 @@ interface Group {
 interface Member {
     admin_flg: boolean;
     user: {
-        id: number;
+        id: string;
         username: string | null;
         icon: string | null;
     };
@@ -65,7 +65,7 @@ const ClassroomApp: React.FC = () => {
     // 状態管理
     const [currentView, setCurrentView] = useState<'empty' | 'groups' | 'detail' | 'settings'>('empty');
     const [groups, setGroups] = useState<Group[]>([]);
-    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
     const [activeTab, setActiveTab] = useState<'お知らせ' | '課題' | 'メンバー'>('お知らせ');
     const [activeDropdown, setActiveDropdown] = useState<number | null>(null);

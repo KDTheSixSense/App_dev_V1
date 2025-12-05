@@ -25,7 +25,7 @@ export default async function RankingPage() {
   const subjects = await prisma.subject.findMany(); // 科目リストは引き続き必要
 
   const rawRankings: Array<{
-    id: number;
+    id: string;
     name: string;
     iconUrl: string | null;
     score: number;

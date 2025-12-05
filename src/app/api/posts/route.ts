@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     // TODO: 実際の認証情報からユーザーIDを取得する
-    const authorId = 1; // 仮のユーザーID
+    const authorId = "1"; // 仮のユーザーID
 
     const newPost = await prisma.post.create({
       data: {

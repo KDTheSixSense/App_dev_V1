@@ -24,7 +24,7 @@ export default async function MainPagesLayout({
   children: React.ReactNode;
 }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+  const userId = session.user?.id ? session.user.id : null;
 
   let userWithPet: UserWithPetStatus | null = null;
   if (userId) {

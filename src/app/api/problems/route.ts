@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       isPublished: !Boolean(body.isDraft),
       creator: {
         connect: {
-          id: Number(userId),
+          id: userId,
         },
       },
       // ネストされたデータも、必要なプロパティだけを選んで新しいオブジェクトを作成

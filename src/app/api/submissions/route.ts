@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { sessionOptions } from '@/lib/session';
 
 interface SessionData {
-  user?: { id: number | string; email: string };
+  user?: { id: string; email: string };
 }
 
 /**
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: '課題IDが必要です' }, { status: 400 });
     }
 
-    const userId = Number(sessionUserId);
+    const userId = sessionUserId;
 
     // トランザクションで権限チェックと作成を同時に行う
     const newSubmission = await prisma.$transaction(async (tx) => {

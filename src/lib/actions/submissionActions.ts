@@ -4,7 +4,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-export async function returnSubmission(assignmentId: number, userId: number, groupId: string) {
+export async function returnSubmission(assignmentId: number, userId: string, groupId: string) {
   try {
     const submission = await prisma.submissions.findUnique({
       where: {
@@ -36,7 +36,7 @@ export async function returnSubmission(assignmentId: number, userId: number, gro
   }
 }
 
-export async function returnMultipleSubmissions(assignmentId: number, userIds: number[], groupId: string) {
+export async function returnMultipleSubmissions(assignmentId: number, userIds: string[], groupId: string) {
   try {
     if (userIds.length === 0) {
       return { success: true }; // No users to process

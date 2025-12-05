@@ -36,7 +36,7 @@ const BasicInfoBProblemDetailPage = async (props: PageProps) => {
   let userCredits = 0; // デフォルトは0回
   if (session.user) {
     const user = await prisma.user.findUnique({
-      where: { id: Number(session.user.id) },
+      where: { id: session.user.id },
       select: { aiAdviceCredits: true }
     });
     if (user) {
@@ -60,4 +60,3 @@ const BasicInfoBProblemDetailPage = async (props: PageProps) => {
 };
 
 export default BasicInfoBProblemDetailPage;
-

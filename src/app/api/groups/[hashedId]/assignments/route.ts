@@ -8,13 +8,13 @@ import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 interface SessionData {
-  user?: { id: number | string; email: string; username?: string | null };
+  user?: { id: string; email: string; username?: string | null };
 }
 
 // 課題一覧を取得 (GET)
 export async function GET(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+  const userId = session.user?.id ? session.user.id : null;
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
           where: { groupid: group.id },
           include: {
             // ログインユーザー自身の提出状況のみを取得
-            Submissions: { where: { userid: userId ?? -1 } },
+            Submissions: { where: { userid: userId ?? -1 as any } },
           },
           orderBy: { created_at: 'desc' },
           skip,
@@ -124,8 +124,8 @@ export async function POST(req: NextRequest) {
   if (!sessionUserId) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
-  
-  const userId = Number(sessionUserId);
+
+  const userId = sessionUserId;
 
   try {
     const urlParts = req.url.split('/');
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
     const membership = await prisma.groups_User.findFirst({
       where: {
         group_id: group.id,
-        user_id: userId,
+        user_id: userId as any,
         admin_flg: true,
       },
     });

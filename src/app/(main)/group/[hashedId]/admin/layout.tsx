@@ -1,4 +1,4 @@
-   import { getIronSession } from 'iron-session';
+import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { sessionOptions } from '@/lib/session';
@@ -28,7 +28,7 @@ export default async function AdminLayout({
   const { hashedId } = resolvedParams;
   // --- 1. セッションとユーザーIDを正しく取得 ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+  const userId = session.user?.id ? session.user.id : null;
 
   // ログインしていなければ、ログインページにリダイレクト
   if (!userId) {
@@ -37,12 +37,12 @@ export default async function AdminLayout({
 
   // --- 2. URLのhashedIdから、対象のグループの整数IDを取得 ---
   const group = await prisma.groups.findUnique({
-      where: { hashedId: hashedId },
-      select: { id: true }, // 必要なのは整数のIDだけ
+    where: { hashedId: hashedId },
+    select: { id: true }, // 必要なのは整数のIDだけ
   });
 
   if (!group) {
-      redirect('/group?error=not_found');
+    redirect('/group?error=not_found');
   }
 
   // --- 3. ログインユーザーがそのグループのメンバーであり、かつ管理者か確認 ---

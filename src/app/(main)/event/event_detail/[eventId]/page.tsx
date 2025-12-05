@@ -45,7 +45,7 @@ type Role = 'admin' | 'member';
 /**
  * イベント詳細とユーザーの役割を取得する
  */
-async function getEventAndUserRole(eventId: number, userId: number | null) {
+async function getEventAndUserRole(eventId: number, userId: string | null) {
   const event = await prisma.create_event.findUnique({
     where: { id: eventId },
     include: {
@@ -98,7 +98,7 @@ async function getEventAndUserRole(eventId: number, userId: number | null) {
 export default async function EventDetailPage({ params }: any) {
   const eventId = parseInt(params.eventId, 10);
   const session = await getAppSession();
-  const userId = session?.user?.id ? Number(session.user.id) : null;
+  const userId = session?.user?.id ? session.user.id : null;
 
   if (isNaN(eventId)) notFound();
 
@@ -132,7 +132,7 @@ export default async function EventDetailPage({ params }: any) {
       const score = event.participants.find(p => p.userId === userId)?.event_getpoint ?? 0;
       // イベント名をエンコード
       const eventName = encodeURIComponent(event.title);
-    
+
       // 結果表示用のパラメータを付けてイベント一覧ページにリダイレクト
       return redirect(`/event/event_list?event_ended=true&score=${score}&eventName=${eventName}`);
     }

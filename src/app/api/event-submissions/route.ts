@@ -48,37 +48,37 @@ async function calculateScore(eventIssueId: number, startedAt: Date, submittedAt
   return finalScore;
 }
 
-async function updateTotalScore(userId: number, eventId: number) {
-    console.log(`[updateTotalScore] Updating total score for userId: ${userId}, eventId: ${eventId}`);
-    const submissions = await prisma.event_Submission.findMany({
-      where: {
+async function updateTotalScore(userId: string, eventId: number) {
+  console.log(`[updateTotalScore] Updating total score for userId: ${userId}, eventId: ${eventId}`);
+  const submissions = await prisma.event_Submission.findMany({
+    where: {
+      userId: userId,
+      eventIssue: {
+        eventId: eventId,
+      },
+    },
+    select: {
+      score: true,
+    },
+  });
+  console.log(`[updateTotalScore] Found ${submissions.length} submissions.`);
+
+  const totalScore = submissions.reduce((acc, submission) => acc + submission.score, 0);
+  console.log(`[updateTotalScore] New total score: ${totalScore}`);
+
+  await prisma.event_Participants.update({
+    where: {
+      eventId_userId_unique: {
+        eventId: eventId,
         userId: userId,
-        eventIssue: {
-          eventId: eventId,
-        },
       },
-      select: {
-        score: true,
-      },
-    });
-    console.log(`[updateTotalScore] Found ${submissions.length} submissions.`);
-  
-    const totalScore = submissions.reduce((acc, submission) => acc + submission.score, 0);
-    console.log(`[updateTotalScore] New total score: ${totalScore}`);
-  
-    await prisma.event_Participants.update({
-      where: {
-        eventId_userId_unique: {
-          eventId: eventId,
-          userId: userId,
-        },
-      },
-      data: {
-        event_getpoint: totalScore,
-      },
-    });
-    console.log(`[updateTotalScore] Successfully updated event_getpoint.`);
-  }
+    },
+    data: {
+      event_getpoint: totalScore,
+    },
+  });
+  console.log(`[updateTotalScore] Successfully updated event_getpoint.`);
+}
 
 export async function POST(req: NextRequest) {
   console.log('\n--- [API] Event Submission POST request received ---');
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     const userId = session.user.id;
     const submittedAt = new Date();
 
-    if (isNaN(userId)) {
+    if (!userId) {
       console.error('[API] Invalid user ID in session.');
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
     }
@@ -117,13 +117,13 @@ export async function POST(req: NextRequest) {
         eventIssue: true,
       },
     });
-    console.log(`[API] Existing submission found:`, existingSubmission ? `id: ${existingSubmission.id}`: 'null');
+    console.log(`[API] Existing submission found:`, existingSubmission ? `id: ${existingSubmission.id}` : 'null');
 
     if (existingSubmission && existingSubmission.status === true) {
       console.log('[API] User has already correctly answered this problem. Preventing score update.');
-      return NextResponse.json({ 
+      return NextResponse.json({
         ...existingSubmission,
-        message: 'すでに正解済みです。' 
+        message: 'すでに正解済みです。'
       });
     }
 
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
           submittedAt,
         },
         include: {
-            eventIssue: true,
+          eventIssue: true,
         }
       });
     } else {
@@ -157,14 +157,14 @@ export async function POST(req: NextRequest) {
           submittedAt,
         },
         include: {
-            eventIssue: true,
+          eventIssue: true,
         }
       });
     }
     console.log('[API] Submission saved successfully:', submission);
 
     if (submission) {
-        await updateTotalScore(userId, submission.eventIssue.eventId);
+      await updateTotalScore(userId, submission.eventIssue.eventId);
     }
 
     console.log('--- [API] Event Submission POST request finished ---');

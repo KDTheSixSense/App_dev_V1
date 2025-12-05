@@ -55,7 +55,7 @@ export async function POST(
   if (!session?.user?.id) {
     return NextResponse.json({ error: '認証されていません。' }, { status: 401 });
   }
-  const authorId = Number(session.user.id);
+  const authorId = session.user.id;
 
   try {
     const assignmentId = parseInt(params.assignmentId);
@@ -69,7 +69,7 @@ export async function POST(
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return NextResponse.json({ error: 'Comment content is required' }, { status: 400 });
     }
-    
+
     // ユーザーがグループのメンバーであるかを確認
     const groupMember = await prisma.groups_User.findFirst({
       where: { group: { hashedId: params.hashedId }, user_id: authorId },

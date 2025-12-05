@@ -15,7 +15,7 @@ export async function PATCH(
   { params }: any
 ) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+  const userId = session.user?.id ? session.user.id : null;
 
   if (!userId) {
     return NextResponse.json({ error: '認証されていません。' }, { status: 401 });

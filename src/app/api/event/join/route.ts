@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   if (!session.user?.id) {
     return NextResponse.json({ error: '認証されていません。' }, { status: 401 });
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   try {
     const body = await request.json();

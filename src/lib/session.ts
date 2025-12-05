@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 
 export interface SessionData {
   user?: {
-    id: number;
+    id: string;
     email: string;
   };
 }
@@ -16,7 +16,7 @@ export const sessionOptions: SessionOptions = {
   cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
     httpOnly: true,
-    secure: true, // 常にSecure属性を付与 (ローカル開発でもHTTPS推奨、またはlocalhostは例外扱いされる場合あり)
+    secure: process.env.NODE_ENV === 'production', // 本番環境のみSecure属性を有効化
     sameSite: 'lax',
   },
   ttl: 86400, // 1日 (秒単位)
@@ -30,7 +30,7 @@ declare module 'iron-session' {
   interface IronSessionData {
     // 既存のログイン済みユーザー情報
     user?: {
-      id: number;
+      id: string;
       email: string;
       username: string | null;
       lastlogin?: Date | null;

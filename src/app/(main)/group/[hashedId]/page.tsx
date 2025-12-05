@@ -8,7 +8,7 @@ type Props = {
 };
 
 export default async function GroupRedirectPage({ params }: Props) {
-  const { hashedId } = await params; 
+  const { hashedId } = await params;
 
   const session = await getSession();
   const user = session.user;
@@ -17,16 +17,11 @@ export default async function GroupRedirectPage({ params }: Props) {
     redirect('/auth/login');
   }
 
-  const userIdAsNumber = parseInt(String(user.id), 10);
-
-  if (isNaN(userIdAsNumber)) {
-      console.error("Invalid user ID in session:", user.id);
-      redirect('/auth/login');
-  }
+  const userId = user.id;
 
   const groupMembership = await prisma.groups_User.findFirst({
     where: {
-      user_id: userIdAsNumber,
+      user_id: userId,
       group: {
         hashedId: hashedId, // awaitした変数を使用
       },

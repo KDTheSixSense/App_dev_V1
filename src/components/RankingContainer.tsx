@@ -9,7 +9,7 @@ import { UserForRanking } from "@/lib/types/ranking";
 type Props = {
   tabs: { name: string }[];
   allRankings: { [key: string]: UserForRanking[] };
-  allRankingsFull: { [key:string]: UserForRanking[] };
+  allRankingsFull: { [key: string]: UserForRanking[] };
 };
 
 export default function RankingContainer({
@@ -18,7 +18,7 @@ export default function RankingContainer({
   allRankingsFull,
 }: Props) {
   const [activeTab, setActiveTab] = useState('総合');
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isLoadingMyRank, setIsLoadingMyRank] = useState(true); // 自分の順位の読み込み状態
   const displayedUsers = allRankings[activeTab] || [];
 
@@ -31,7 +31,7 @@ export default function RankingContainer({
         if (res.ok) {
           const session = await res.json();
           if (session.user?.id) {
-            setCurrentUserId(Number(session.user.id));
+            setCurrentUserId(session.user.id);
           } else {
             setCurrentUserId(null); // ログインしていない場合
           }
@@ -55,7 +55,7 @@ export default function RankingContainer({
     return fullList.find(user => user.id === currentUserId) || null;
   }, [currentUserId, activeTab, allRankingsFull]);
 
-    const navRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [sliderStyle, setSliderStyle] = useState({});
 
@@ -72,7 +72,7 @@ export default function RankingContainer({
     }
   }, [activeTab, tabs]);
 
-    const handleTabClick = (event: MouseEvent<HTMLButtonElement>, tabName: string) => {
+  const handleTabClick = (event: MouseEvent<HTMLButtonElement>, tabName: string) => {
     setActiveTab(tabName);
     const clickedTab = event.currentTarget;
     clickedTab.scrollIntoView({
@@ -94,33 +94,32 @@ export default function RankingContainer({
           scrollbar-width: none; /* Firefox */
         }
       `}</style>
-      
+
       {/* タブ表示 */}
       <div className="mt-4 p-1 bg-sky-100/50 rounded-lg">
-        <nav 
+        <nav
           ref={navRef}
-          className="relative flex space-x-1 overflow-x-auto flex-nowrap hide-scrollbar" 
+          className="relative flex space-x-1 overflow-x-auto flex-nowrap hide-scrollbar"
           aria-label="Tabs"
         >
           {/* スライドする背景 */}
-          <div 
+          <div
             className="absolute h-full bg-white rounded-md shadow-sm transition-all duration-300 ease-in-out"
             style={sliderStyle}
           />
-          
+
           {tabs.map((tab, index) => (
             <button
-              ref={el => {buttonRefs.current[index] = el; }}
+              ref={el => { buttonRefs.current[index] = el; }}
               key={tab.name}
               onClick={(e) => handleTabClick(e, tab.name)}
               className={`
                 relative z-10 flex-shrink-0 whitespace-nowrap py-2 px-4 font-medium text-sm rounded-md transition-colors duration-300
                 focus:outline-none
-                ${
-                  activeTab === tab.name
-                    ? 'text-sky-600' // 選択中のテキスト色
-                    : 'text-slate-500 hover:text-slate-800' // 非選択のテキスト色
-                 }
+                ${activeTab === tab.name
+                  ? 'text-sky-600' // 選択中のテキスト色
+                  : 'text-slate-500 hover:text-slate-800' // 非選択のテキスト色
+                }
               `}
             >
               {tab.name}
