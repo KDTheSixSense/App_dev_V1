@@ -16,9 +16,8 @@ export const sessionOptions: SessionOptions = {
   cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
     httpOnly: true,
-    // 本番環境ではSecure属性を付与し、開発環境では無効化してローカルHTTPでも動作するようにします。
-    // 本番では `NODE_ENV=production` を想定してください。
-    secure: process.env.NODE_ENV === 'production',
+    // 本番環境（実環境/k8s）向けに常にSecure属性を付与します。
+    secure: true,
     sameSite: 'lax',
   },
   // ブラウザを閉じたときにセッションを無効化するため、ttl（サーバー側の有効期限）や

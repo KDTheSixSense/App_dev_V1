@@ -41,7 +41,7 @@ export async function middleware(req: NextRequest) {
 
   // CSPの設定（修正箇所）
   // 開発・本番問わず、まずは画面を表示させるために 'unsafe-inline' を許可します
-  const scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' 'nonce-${nonce}' blob:`;
+  const scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' 'nonce-${nonce}' blob: https://static.cloudflareinsights.com;`;
 
   const cspHeader = `
     default-src 'self';
