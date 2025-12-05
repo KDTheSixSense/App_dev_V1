@@ -24,32 +24,24 @@ const routeConfig = {
   ],
 };
 
-
-
 export async function middleware(req: NextRequest) {
-
-
   const { pathname } = req.nextUrl;
-  console.log(`[Middleware] Path: ${pathname}`); // ① どのパスで実行されたか確認
+  console.log(`[Middleware] Path: ${pathname}`);
 
   const cookieName = process.env.COOKIE_NAME!;
   const sessionCookie = req.cookies.get(cookieName);
-  console.log(`[Middleware] Cookie found: ${!!sessionCookie}`); // ② クッキーを見つけられたか確認
-
+  
   // 2. 保護対象のルートか判定
   const isProtectedRoute = routeConfig.protectedRoutes.some(path =>
     new RegExp(`^${path.replace(/:\w+\*/, '.*')}$`).test(pathname)
   );
 
   // --- Security Headers ---
-  // Use crypto.randomUUID() directly (works in Edge Runtime and Node.js 19+)
   const nonce = crypto.randomUUID();
 
-  // CSPの設定
-  const isDev = process.env.NODE_ENV !== 'production';
-  const scriptSrc = isDev
-    ? `'self' 'unsafe-eval' 'unsafe-inline' blob:`
-    : `'self' 'nonce-${nonce}' blob:`; // unsafe-inline removed in prod
+  // CSPの設定（修正箇所）
+  // 開発・本番問わず、まずは画面を表示させるために 'unsafe-inline' を許可します
+  const scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' 'nonce-${nonce}' blob:`;
 
   const cspHeader = `
     default-src 'self';
@@ -57,12 +49,14 @@ export async function middleware(req: NextRequest) {
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://lh3.googleusercontent.com;
     font-src 'self';
-    connect-src 'self' https://raw.githubusercontent.com blob: data:;
+    connect-src 'self' https://raw.githubusercontent.com blob: data: https://static.cloudflareinsights.com;
     worker-src 'self' blob: data: 'unsafe-inline' 'unsafe-eval';
     frame-ancestors 'none';
     form-action 'self';
     base-uri 'self';
+    frame-src 'self' https://www.youtube.com; 
   `.replace(/\s{2,}/g, ' ').trim();
+  // ↑ frame-src に youtube.com を追加しました
 
   // リクエストヘッダーにnonceを設定
   const requestHeaders = new Headers(req.headers);
