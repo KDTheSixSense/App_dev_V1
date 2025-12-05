@@ -153,7 +153,7 @@ model Category {
 
 model Basic_Info_A_Question {
   id          Int     @id @default(autoincrement())
-  title       String @unique(map: "basic_info_a_question_title_unique") // 問題タイトル
+  title       String @unique // 問題タイトル
   imagePath   String? // 問題画像のパス（Null許容）
   description String  @db.Text // 問題文
   explanation String  @db.Text // 解説
@@ -183,7 +183,9 @@ model Basic_Info_A_Question {
   userAnswers UserAnswer[]
 }
 
-  title       String @unique(map: "applied_am_question_title_unique") // 問題タイトル
+model Applied_am_Question {
+  id          Int     @id @default(autoincrement())
+  title       String @unique // 問題タイトル
   imagePath   String? // 問題画像のパス（Null許容）
   description String  @db.Text // 問題文
   explanation String  @db.Text // 解説
@@ -235,7 +237,7 @@ model Questions_Algorithm {
   difficulty Difficulty @relation(fields: [difficultyId], references: [id])
   language   Language   @relation(fields: [language_id], references: [id])
 
-  @@unique([title, description], map: "questions_algorithm_title_description_unique")
+  @@unique([title, description])
 }
 
 model Questions {
@@ -263,7 +265,7 @@ model Questions {
 /// プログラミング選択問題モデル
 model SelectProblem {
   id            Int     @id @default(autoincrement())
-  title         String @unique(map: "selectproblem_title_unique") // 問題タイトル
+  title         String @unique // 問題タイトル
   description   String  @db.Text // 問題文 (Markdown)
   explanation   String? @db.Text // 解説文
   answerOptions Json // 選択肢 (例: ["選択肢A", "選択肢B", ...])

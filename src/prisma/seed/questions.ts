@@ -89,15 +89,8 @@ async function seedProblemsFromExcel(prisma: PrismaClient) {
           options: {},
         };
 
-        await prisma.questions_Algorithm.upsert({
-          where: {
-            title_description: {
-              title: dataToUpsert.title,
-              description: dataToUpsert.description,
-            }
-          },
-          update: dataToUpsert,
-          create: dataToUpsert,
+        await prisma.questions_Algorithm.create({
+          data: dataToUpsert,
         });
       }
       console.log(`   ✅ Upserted questions from sheet: "${config.name}"`);
@@ -150,20 +143,8 @@ async function seedSampleProgrammingProblems(prisma: PrismaClient, creatorId: nu
       eventDifficultyId: eventDifficultyId,
     };
 
-    await prisma.programmingProblem.upsert({
-      where: { title: p.title },
-      update: {
-        ...data,
-        sampleCases: {
-          deleteMany: {},
-          create: p.sampleCases.create,
-        },
-        testCases: {
-          deleteMany: {},
-          create: p.testCases.create,
-        },
-      },
-      create: {
+    await prisma.programmingProblem.create({
+      data: {
         ...data,
         sampleCases: {
           create: p.sampleCases.create,
@@ -273,10 +254,8 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
   ];
 
   for (const problem of selectionProblems) {
-    await prisma.selectProblem.upsert({
-      where: { title: problem.title },
-      update: problem,
-      create: problem,
+    await prisma.selectProblem.create({
+      data: problem,
     });
   }
   console.log(`✅ Upserted ${selectionProblems.length} selection problems.`);
@@ -403,10 +382,8 @@ async function seedSelectProblemsFromExcel(prisma: PrismaClient) {
       };
 
       try {
-        await prisma.selectProblem.upsert({
-            where: { title: dataToSave.title },
-            update: dataToSave,
-            create: dataToSave,
+        await prisma.selectProblem.create({
+            data: dataToSave,
         });
         upsertedCount++;
       } catch (error: any) {
@@ -672,10 +649,8 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
       };
 
       try {
-          await prisma.basic_Info_A_Question.upsert({
-            where: { title: dataToSave.title },
-            update: dataToSave,
-            create: dataToSave,
+          await prisma.basic_Info_A_Question.create({
+            data: dataToSave,
           });
           upsertedCount++;
       } catch (error: any) {
@@ -785,10 +760,8 @@ async function seedAppliedInfoAmProblems(prisma: PrismaClient) {
       };
 
       try {
-        await prisma.applied_am_Question.upsert({
-          where: { title: dataToSave.title },
-          update: dataToSave,
-          create: dataToSave,
+        await prisma.applied_am_Question.create({
+          data: dataToSave,
         });
         upsertedCount++;
       } catch (error: any) {

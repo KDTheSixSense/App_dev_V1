@@ -32,16 +32,27 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   console.log('🌱 Seeding users and groups...');
 
   // --- 1. 既存データをクリア ---
-  await prisma.groups_User.deleteMany({});
-  await prisma.userSubjectProgress.deleteMany({});
-  await prisma.status_Kohaku.deleteMany({});
+  // 依存関係の末端から削除していく
+  await prisma.assignmentComment.deleteMany({});
+  await prisma.event_Submission.deleteMany({});
+  await prisma.event_Participants.deleteMany({});
+  await prisma.event_Issue_List.deleteMany({});
+  await prisma.create_event.deleteMany({});
+  await prisma.post.deleteMany({});
   await prisma.submissions.deleteMany({});
   await prisma.assignment.deleteMany({});
+  await prisma.groups_User.deleteMany({});
   await prisma.groups.deleteMany({});
-  await prisma.create_event.deleteMany({});
-  await prisma.userDailyMissionProgress.deleteMany({});
-  await prisma.loginHistory.deleteMany({});
+  await prisma.userAnswer.deleteMany({});
+  await prisma.answer_Algorithm.deleteMany({});
   await prisma.userUnlockedTitle.deleteMany({});
+  await prisma.dailyActivitySummary.deleteMany({});
+  await prisma.userDailyMissionProgress.deleteMany({});
+  await prisma.status_Kohaku.deleteMany({});
+  await prisma.userSubjectProgress.deleteMany({});
+  await prisma.loginHistory.deleteMany({});
+  await prisma.auditLog.deleteMany({});
+  // 最後にUserを削除
   await prisma.user.deleteMany({});
   console.log('🗑️ Cleared existing user and group data.');
 
