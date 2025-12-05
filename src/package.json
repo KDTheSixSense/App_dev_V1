@@ -16,10 +16,10 @@
     "db:reset": "prisma migrate reset -f",
     "db:deploy": "(npm run seed:compile && npm run db:migrate && npm run db:seed) || ( (echo 'Migrate/Seed failed, attempting full reset for recovery...') && npm run db:reset )",
     "prisma:migrate:dev": "prisma migrate dev",
-    "seed:programming-problems": "ts-node --compiler-options '{\\"module\\":\\"CommonJS\\"}' prisma/seed-programming-problems.ts",
-    "seed:selection-problems": "ts-node --compiler-options '{\\"module\\":\\"CommonJS\\"}' prisma/seed-selection-problems.ts",
-    "seed:basic-info-a-problems": "ts-node --compiler-options '{\\"module\\":\\"CommonJS\\"}' prisma/seed-basic-info-a-problems.ts",
-    "seed:applied-am-problems": "ts-node --compiler-options '{\\"module\\":\\"CommonJS\\"}' prisma/seed-applied-am-problems.ts"
+    "seed:programming-problems": "ts-node --project prisma/tsconfig.json prisma/seed-programming-problems.ts",
+    "seed:selection-problems": "ts-node --project prisma/tsconfig.json prisma/seed-selection-problems.ts",
+    "seed:basic-info-a-problems": "ts-node --project prisma/tsconfig.json prisma/seed-basic-info-a-problems.ts",
+    "seed:applied-am-problems": "ts-node --project prisma/tsconfig.json prisma/seed-applied-am-problems.ts"
   },
   "dependencies": {
     "@aws-sdk/client-lambda": "^3.943.0",
