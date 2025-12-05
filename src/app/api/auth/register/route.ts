@@ -4,15 +4,37 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { requestToBodyStream } from 'next/dist/server/body-streams';
 
+import { z } from 'zod';
+
+const registerApiSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  birth: z.string().optional(), // birth is optional in schema but required in logic? Original code required it.
+  // Let's keep original logic: required.
+});
+
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, birth } = await req.json();
+    const body = await req.json();
+
+    // Manual validation or Zod? Let's use Zod for consistency but keep it simple.
+    // Original code: if (!email || !password || !birth)
+
+    const { email, password, birth } = body;
 
     if (!email || !password || !birth) {
       return NextResponse.json({ message: 'email, password, birthは必須です' }, { status: 400 });
     }
 
+    // Additional Type Check to prevent Object Injection or weird types
+    if (typeof email !== 'string' || typeof password !== 'string' || typeof birth !== 'string') {
+      return NextResponse.json({ message: '無効なデータ形式です' }, { status: 400 });
+    }
+
     const birthDate = new Date(birth);
+    if (isNaN(birthDate.getTime())) {
+      return NextResponse.json({ message: '無効な日付です' }, { status: 400 });
+    }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {

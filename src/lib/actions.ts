@@ -34,19 +34,28 @@ const MAX_HUNGER = 200; //満腹度の最大値を一括管理
  * 新しいユーザーアカウントと、そのペットを作成するAction (改良版)
  * @param data - ユーザー名、メールアドレス、パスワード、生年月日
  */
+import { z } from 'zod';
+
+const registerSchema = z.object({
+  username: z.string().min(1, 'ユーザー名は必須です'),
+  email: z.string().email('有効なメールアドレスを入力してください'),
+  password: z.string().min(8, 'パスワードは8文字以上である必要があります'),
+  birth: z.string().optional(),
+  isAgreedToTerms: z.boolean().refine(val => val === true, '利用規約への同意が必要です'),
+  isAgreedToPrivacyPolicy: z.boolean().refine(val => val === true, 'プライバシーポリシーへの同意が必要です'),
+});
+
 export async function registerUserAction(data: {
   username: string, email: string, password: string, birth?: string, isAgreedToTerms: boolean,
   isAgreedToPrivacyPolicy: boolean
 }) {
-  const { username, email, password, birth, isAgreedToTerms, isAgreedToPrivacyPolicy } = data;
-
-  if (!username || !email || !password) {
-    return { error: '必須項目が不足しています。' };
+  // --- Input Validation with Zod ---
+  const validationResult = registerSchema.safeParse(data);
+  if (!validationResult.success) {
+    return { error: validationResult.error.issues[0].message };
   }
 
-  if (!isAgreedToTerms || !isAgreedToPrivacyPolicy) {
-    return { error: '利用規約とプライバシーポリシーへの同意が必要です。' };
-  }
+  const { username, email, password, birth, isAgreedToTerms, isAgreedToPrivacyPolicy } = validationResult.data;
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -472,7 +481,7 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
 
   updateDailyMissionProgress(3, xpAmount); // デイリーミッションの「XPを獲得する」進捗を更新
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const updatedProgress = await tx.userSubjectProgress.upsert({
       where: { user_id_subject_id: { user_id, subject_id } },
       create: { user_id, subject_id, xp: xpAmount, level: 1 },
@@ -586,7 +595,7 @@ export async function updateDailyMissionProgress(
   try {
     // --- 3. トランザクション開始 ---
     // 進捗更新 -> 達成確認 -> 完了フラグ更新 & XP付与 をアトミックに行う
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 
       // --- 3a. 現在の進捗とマスターデータを取得 (ロック) ---
       // findUniqueOrThrow を使い、レコードがない場合はエラーにする
@@ -701,7 +710,7 @@ export async function grantXpToUser(userId: number, xpAmount: number) {
   }
 
   // 複数のDB操作を安全に行うためトランザクションを使用
-  const { unlockedTitle } = await prisma.$transaction(async (tx) => {
+  const { unlockedTitle } = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 
     // 1. ユーザーの総XPを加算
     let user = await tx.user.update({
@@ -830,7 +839,7 @@ export async function ensureDailyMissionProgress(userId: number) {
     }
 
     // 5. 新しい進捗エントリのデータを準備
-    const newProgressData = missionMasters.map((master) => ({
+    const newProgressData = missionMasters.map((master: any) => ({
       userId: userId,
       missionId: master.id,
       date: missionDate,
@@ -1503,7 +1512,7 @@ export async function createEventAction(data: CreateEventFormData) {
     const inviteCode = nanoid(10); // 10桁のランダムな招待コードを生成
 
     // 3. データベースへの書き込み（トランザクション）
-    const newEvent = await prisma.$transaction(async (tx) => {
+    const newEvent = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // a. イベント本体を作成
       const event = await tx.create_event.create({
         data: {
@@ -1589,7 +1598,7 @@ export async function saveEventDraftAction(data: EventFormData) {
     const inviteCode = nanoid(10); // 下書きでも招待コードはユニークに発行
 
     // 3. データベースへの書き込み（トランザクション）
-    const newDraftEvent = await prisma.$transaction(async (tx) => {
+    const newDraftEvent = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // a. イベント本体を作成
       const event = await tx.create_event.create({
         data: {
@@ -1728,7 +1737,7 @@ export async function getDraftEventDetailsAction(eventId: number) {
       startTime: formatDateTimeForInput(event.startTime),
       endTime: formatDateTimeForInput(event.endTime),
       publicTime: formatDateTimeForInput(event.publicTime),
-      selectedProblemIds: event.issues.map((issue) => issue.problemId),
+      selectedProblemIds: event.issues.map((issue: any) => issue.problemId),
     };
 
     return { data: formattedEvent };

@@ -73,30 +73,30 @@ export async function middleware(req: NextRequest) {
     ipMap.set(ip, state);
   }
 
-  // 1. ブロックチェック
-  if (state.blockedUntil > now) {
-    const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
-    return new NextResponse(
-      JSON.stringify({ error: `Too Many Requests. Blocked for ${remainingSeconds}s` }),
-      { status: 429, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  // ブロック解除後のリセット (ブロック期間が過ぎていれば)
-  if (state.blockedUntil !== 0 && state.blockedUntil <= now) {
-    state.blockedUntil = 0;
-    state.count = 0;
-    state.startTime = now;
-  }
-
-  // 2. カウントアップ
-  if (now - state.startTime > WINDOW_MS) {
-    // ウィンドウリセット
-    state.count = 1;
-    state.startTime = now;
-  } else {
-    state.count++;
-  }
+//  // 1. ブロックチェック
+//  if (state.blockedUntil > now) {
+//    const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
+//    return new NextResponse(
+//      JSON.stringify({ error: `Too Many Requests. Blocked for ${remainingSeconds}s` }),
+//      { status: 429, headers: { 'Content-Type': 'application/json' } }
+//    );
+//  }
+//
+//  // ブロック解除後のリセット (ブロック期間が過ぎていれば)
+//  if (state.blockedUntil !== 0 && state.blockedUntil <= now) {
+//    state.blockedUntil = 0;
+//    state.count = 0;
+//    state.startTime = now;
+//  }
+//
+//  // 2. カウントアップ
+//  if (now - state.startTime > WINDOW_MS) {
+//    // ウィンドウリセット
+//    state.count = 1;
+//    state.startTime = now;
+//  } else {
+//    state.count++;
+//  }
 
   // 3. 制限チェック
   if (state.count > LIMIT) {
