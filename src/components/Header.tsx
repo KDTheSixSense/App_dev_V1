@@ -230,7 +230,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         <a href="/home" className="transition-opacity hover:opacity-80">
           {/* Imageをimgタグに変更 */}
           <Image
-            src="/images/Infopia_logo.png"
+            src="/images/infopia_logo.png"
             alt='Infopia'
             width={150}
             height={75}
