@@ -3,6 +3,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";  // App Router用
 import DOMPurify from 'dompurify';
+import toast from 'react-hot-toast';
 
 type Inputs = {
   email: string;
@@ -44,15 +45,15 @@ const PasswordReset = () => {
       const result = await res.json();
 
       if (!res.ok) {
-        alert(result.message || 'パスワード変更に失敗しました');
+        toast.error(result.message || 'パスワード変更に失敗しました');
         return;
       }
 
-      alert('パスワードを変更しました');
+      toast.success('パスワードを変更しました');
       router.push('/auth/login');
     } catch (error) {
       console.error('エラー:', error);
-      alert('システムエラーが発生しました');
+      toast.error('システムエラーが発生しました');
     }
   };
 

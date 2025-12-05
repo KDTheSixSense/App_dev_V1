@@ -9,7 +9,7 @@ import ProblemStatement from '../components/ProblemStatement'; // パスは環�
 import KohakuChat from '@/components/KohakuChat';
 import { recordStudyTimeAction, awardXpForCorrectAnswer } from '@/lib/actions';
 import AnswerEffect from '@/components/AnswerEffect';
-import { useNotification } from '@/app/contexts/NotificationContext'; // 通知用
+import toast from 'react-hot-toast'; // 通知用
 import { getHintFromAI } from '@/lib/actions/hintactions'; // AIヒント用
 
 const MAX_HUNGER = 200;
@@ -80,15 +80,15 @@ const isCorrectAnswer = (selected: string | null, correct: string): boolean => {
 
 const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: initialProblem, initialCredits }) => {
   const router = useRouter();
-  const { showNotification } = useNotification();
-  
+
+
   // データ整形関数
   const formatProblem = (p: SelectProblem & { imagePath?: string }): SerializableProblem => {
     const answerOptionsArray = Array.isArray(p.answerOptions) ? p.answerOptions.map(String) : [];
-    
+
     // seedで画像パスがdescriptionに含まれている場合の対応（念のため）
     // もしDBのimagePathカラムがあるなら p.imagePath を優先
-    let displayImagePath = p.imagePath; 
+    let displayImagePath = p.imagePath;
 
     // 問題IDを取得し、11以上なら 'A, B, C, D'、それ以外（1-10）なら 'ア, イ, ウ, エ' を使用
     const problemIdNum = parseInt(String(p.id), 10);
@@ -96,7 +96,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
 
     const labelsJa = useABCD ? ['A', 'B', 'C', 'D'] : ['ア', 'イ', 'ウ', 'エ'];
     const labelsEn = ['A', 'B', 'C', 'D'];
-    
+
     return {
       id: String(p.id),
       logicType: 'TYPE_A',
@@ -181,14 +181,14 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
       if (data.nextProblemId) {
         router.push(`/issue_list/selects_problems/${data.nextProblemId}`);
       } else {
-        showNotification({ message: "これが最後の問題です！お疲れ様でした。", type: 'success' });
+        toast.success("これが最後の問題です！お疲れ様でした。");
         router.push('/issue_list/selects_problems');
       }
     } catch (error) {
       console.error("次の問題の取得に失敗しました:", error);
     }
   };
-  
+
   const t = textResources[language].problemStatement;
   const currentLang = language;
 
@@ -201,18 +201,18 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
 
     // 2: 学習時間の記録 (正解・不正解にかかわらず記録)
     if (startTimeRef.current) {
-        const endTime = Date.now();
-        const durationMs = endTime - startTimeRef.current;
-        // 3秒以上滞在していれば記録
-        if (durationMs > 3000) {
-            recordStudyTimeAction(durationMs).catch(e => console.error(e));
-        }
-        // 重複記録を防ぐため、記録後にnullにするか、ページ遷移時に再設定するロジックが必要ですが
-        // ここでは「回答時点での時間」を記録し、ページ離脱時にも記録する設計の場合、
-        // 二重計上になる可能性があるため注意が必要です。
-        // 一般的には「回答時」か「離脱時」のどちらか一方で記録します。
-        // 今回は「回答時」に記録し、startTimeRefを更新して、その後の滞在時間は別途（離脱時に）記録するようにします。
-        startTimeRef.current = Date.now(); 
+      const endTime = Date.now();
+      const durationMs = endTime - startTimeRef.current;
+      // 3秒以上滞在していれば記録
+      if (durationMs > 3000) {
+        recordStudyTimeAction(durationMs).catch(e => console.error(e));
+      }
+      // 重複記録を防ぐため、記録後にnullにするか、ページ遷移時に再設定するロジックが必要ですが
+      // ここでは「回答時点での時間」を記録し、ページ離脱時にも記録する設計の場合、
+      // 二重計上になる可能性があるため注意が必要です。
+      // 一般的には「回答時」か「離脱時」のどちらか一方で記録します。
+      // 今回は「回答時」に記録し、startTimeRefを更新して、その後の滞在時間は別途（離脱時に）記録するようにします。
+      startTimeRef.current = Date.now();
     }
 
     if (correct) {
@@ -220,31 +220,31 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
       if (!isNaN(numericId)) {
         try {
           const result = await awardXpForCorrectAnswer(
-            numericId, 
-            undefined, 
-            4, 
+            numericId,
+            undefined,
+            4,
             startTimeRef.current || Date.now()
           );
 
           if (result.message === '経験値を獲得しました！') {
-              window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+            window.dispatchEvent(new CustomEvent('petStatusUpdated'));
           }
           if (result.unlockedTitle) {
-            showNotification({ message: `称号【${result.unlockedTitle.name}】を獲得しました！`, type: 'success' });
+            toast.success(`称号【${result.unlockedTitle.name}】を獲得しました！`);
           }
         } catch (error) {
           console.error("XP award error:", error);
-          showNotification({ message: '経験値の付与に失敗しました。', type: 'error' });
+          toast.error('経験値の付与に失敗しました。');
         }
       }
     }
-    
+
     // 簡単なヒントを表示（APIコールせず即時フィードバック）
     const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
-    
-    if(correct) {
-        window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+
+    if (correct) {
+      window.dispatchEvent(new CustomEvent('petStatusUpdated'));
     }
   };
 
@@ -293,23 +293,23 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
       {answerEffectType && (
         <AnswerEffect type={answerEffectType} onAnimationEnd={handleAnimationEnd} />
       )}
-      
+
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8 items-start">
-        
+
         {/* 左カラム：問題表示 */}
         <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[600px] flex flex-col lg:col-span-8 lg:col-start-3">
           <div className="text-center text-gray-500 mb-2 text-sm">
-             {/* 出典情報があれば表示（SelectProblemにフィールドがあれば） */}
-             {/* {initialProblem.sourceYear} {initialProblem.sourceNumber} */}
+            {/* 出典情報があれば表示（SelectProblemにフィールドがあれば） */}
+            {/* {initialProblem.sourceYear} {initialProblem.sourceNumber} */}
           </div>
 
           <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
             問{problem.id}: {problem.title[currentLang]}
           </h1>
-          
+
           <ProblemStatement
             description={problem.imagePath ? "" : problem.description[currentLang]}
-            imagePath={problem.imagePath} 
+            imagePath={problem.imagePath}
             programText=""
             answerOptions={problem.answerOptions?.[currentLang] || []}
             onSelectAnswer={handleSelectAnswer}
@@ -334,14 +334,14 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
               </Link>
             )}
           </div>
-          <KohakuChat 
-            messages={chatMessages} 
-            onSendMessage={handleUserMessage} 
-            language={language} 
-            textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}} 
-            isLoading={isPending || isAiLoading} 
+          <KohakuChat
+            messages={chatMessages}
+            onSendMessage={handleUserMessage}
+            language={language}
+            textResources={{ ...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder }}
+            isLoading={isPending || isAiLoading}
             isDisabled={credits <= 0 || isPending || isAiLoading}
-            kohakuIcon={kohakuIcon} 
+            kohakuIcon={kohakuIcon}
           />
         </div>
       </div>
@@ -349,8 +349,8 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
       {/* 次へボタン */}
       {isAnswered && (
         <div className="w-full max-w-lg mt-8 mb-10 flex justify-center px-4">
-          <button 
-            onClick={handleNextProblem} 
+          <button
+            onClick={handleNextProblem}
             className="w-full py-4 px-8 text-lg font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:scale-105"
           >
             {t.nextProblemButton}

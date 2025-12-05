@@ -32,7 +32,7 @@ export default function RankingListItem({ user, isCurrentUser = false }: Props) 
       </div>
       
       <div className="flex items-center justify-center w-12 h-12">
-        <Link href={`/users/${user.id}`}>
+        <div>
           <Image
             src={user.iconUrl}
             alt={`${user.name}のアイコン`}
@@ -40,7 +40,7 @@ export default function RankingListItem({ user, isCurrentUser = false }: Props) 
             height={48}
             className="rounded-full object-cover"
           />
-        </Link>
+        </div>
       </div>
 
       <div className="ml-4 font-semibold text-slate-800">

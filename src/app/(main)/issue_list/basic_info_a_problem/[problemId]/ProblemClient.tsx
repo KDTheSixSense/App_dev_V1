@@ -8,7 +8,7 @@ import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '@/components/KohakuChat'; // '@/' から始まるパスに変更 (B問題のコード例より)
 import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
 import { getHintFromAI } from '@/lib/actions/hintactions'; // インポート
-import { useNotification } from '@/app/contexts/NotificationContext';
+import toast from 'react-hot-toast';
 import type { SerializableProblem } from '@/lib/data';
 import AnswerEffect from '@/components/AnswerEffect';
 
@@ -104,13 +104,13 @@ interface ProblemClientProps {
 
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits }) => {
   const router = useRouter();
-  const { showNotification } = useNotification();
-  const [isPending, startTransition] = useTransition(); 
-  const [isAiLoading, setIsAiLoading] = useState(false); 
+
+  const [isPending, startTransition] = useTransition();
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const [problem, setProblem] = useState<SerializableProblem | null>(initialProblem);
   const [credits, setCredits] = useState(initialCredits);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); 
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
@@ -175,7 +175,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         startTimeRef.current = null; // リセット
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialProblem, language, initialCredits]); // initialCreditsも依存配列に追加 (元のコードに合わせる)
 
   const t = textResources[language].problemStatement;
@@ -192,15 +192,15 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       const numericId = parseInt(problem.id, 10);
       if (!isNaN(numericId)) {
         try {
-          const result = await awardXpForCorrectAnswer(numericId,undefined, 2);
+          const result = await awardXpForCorrectAnswer(numericId, undefined, 2);
           if (result.message === '経験値を獲得しました！') {
             window.dispatchEvent(new CustomEvent('petStatusUpdated'));
           }
           if (result.unlockedTitle) {
-            showNotification({ message: `称号【${result.unlockedTitle.name}】を獲得しました！`, type: 'success' });
+            toast.success(`称号【${result.unlockedTitle.name}】を獲得しました！`);
           }
         } catch (error) {
-          showNotification({ message: '経験値の付与に失敗しました。', type: 'error' });
+          toast.error('経験値の付与に失敗しました。');
         }
       }
     }
@@ -219,7 +219,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     if (nextProblemId) {
       router.push(`/issue_list/basic_info_a_problem/${nextProblemId}`);
     } else {
-      showNotification({ message: "これが最後の問題です！", type: 'success' });
+      toast.success("これが最後の問題です！");
       router.push('/issue_list');
     }
   };
@@ -230,8 +230,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       return;
     }
     if (!problem) {
-        setChatMessages(prev => [...prev, { sender: 'kohaku', text: '問題データが読み込まれていません。' }]);
-        return;
+      setChatMessages(prev => [...prev, { sender: 'kohaku', text: '問題データが読み込まれていません。' }]);
+      return;
     }
 
     // ユーザーのメッセージをチャットに追加
@@ -313,20 +313,20 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             <p className="text-sm text-gray-600">
               AIアドバイス残り回数: <span className="font-bold text-lg text-blue-600">{credits}</span> 回
             </p>
-            
+
             {credits <= 0 && (
               <Link href="/profile" className="text-xs text-blue-500 hover:underline">
                 (XPを消費して増やす)
               </Link>
             )}
-          
+
           </div>
           {/* KohakuChat コンポーネントを表示 */}
           <KohakuChat
             messages={chatMessages}
             onSendMessage={handleUserMessage} // 実装したハンドラを渡す
             language={language}
-            textResources={{...t, chatInputPlaceholder: t.chatInputPlaceholder}}
+            textResources={{ ...t, chatInputPlaceholder: t.chatInputPlaceholder }}
             isLoading={isAiLoading}
             isDisabled={isAiLoading}
             kohakuIcon={kohakuIcon}
@@ -338,15 +338,15 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
       {/* 次の問題へボタン */}
       {isAnswered && (
-         <div className="w-full max-w-lg mt-8 mb-4 flex justify-center px-4">
-           <button
-             onClick={handleNextProblem}
-             className="w-full py-4 px-8 text-lg font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:scale-105"
-           >
-             {t.nextProblemButton}
-           </button>
-         </div>
-       )}
+        <div className="w-full max-w-lg mt-8 mb-4 flex justify-center px-4">
+          <button
+            onClick={handleNextProblem}
+            className="w-full py-4 px-8 text-lg font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:scale-105"
+          >
+            {t.nextProblemButton}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -169,6 +169,7 @@ const Login = () => {
                   },
                 })}
                 type="email"
+                autoComplete="username"
                 placeholder="mail@example.com"
                 className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
               />
@@ -190,6 +191,7 @@ const Login = () => {
 
                 })}
                 type="password"
+                autoComplete="current-password"
                 className="w-full p-2 mt-1 rounded-md border border-white/20 bg-slate-800/50 text-white placeholder-slate-400 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:scale-[1.01]"
               />
               {errors.password && <span className="text-sm text-red-500">{errors.password.message}</span>}

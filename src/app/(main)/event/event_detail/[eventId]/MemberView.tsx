@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { Prisma } from '@prisma/client';
 import Link from 'next/link'; // Import useParams to get eventId for links
 import { useParams, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 // ★★★ 修正点: MemberViewが受け取るeventの型定義をエクスポート可能にする ★★★
 export type MemberViewEvent = Prisma.Create_eventGetPayload<{
@@ -94,8 +95,8 @@ function EventProblemList({ eventId, issues, currentUserParticipant }: {
           return (
             <li key={issue.id} className="bg-gray-50 p-3 rounded-md shadow-sm hover:bg-gray-100 transition-colors flex items-center">
               {/* 問題解答画面へのリンク */}
-              <Link 
-                href={`${eventId}/problem/${issue.problem.id}`} 
+              <Link
+                href={`${eventId}/problem/${issue.problem.id}`}
                 className="text-blue-600 hover:underline"
               >
                 {issue.problem.title} (難易度: {issue.problem.difficulty})
@@ -117,7 +118,7 @@ export default function MemberView({ event, role }: MemberViewProps) {
   // State to manage the popup visibility and member's acceptance status
   const [showAcceptPopup, setShowAcceptPopup] = useState(false);
   const [hasMemberAccepted, setHasMemberAccepted] = useState(event.currentUserParticipant?.hasAccepted || false);
-  
+
   // ポーリングでイベントの開始と終了をリアルタイムに検知するための修正
   const [currentEvent, setCurrentEvent] = useState(event);
   const eventRef = useRef(currentEvent);
@@ -145,7 +146,7 @@ export default function MemberView({ event, role }: MemberViewProps) {
           return;
         }
         const data = await response.json();
-        
+
         // サーバーからの最新のイベント状態でローカルステートを更新
         setCurrentEvent(prevEvent => ({ ...prevEvent, ...data }));
 
@@ -182,7 +183,7 @@ export default function MemberView({ event, role }: MemberViewProps) {
 
   const handleAcceptEventStart = async () => {
     if (!currentEvent.currentUserParticipant) {
-      alert('参加者情報が見つかりません。');
+      toast.error('参加者情報が見つかりません。');
       return;
     }
 
@@ -196,7 +197,7 @@ export default function MemberView({ event, role }: MemberViewProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-      body: JSON.stringify({ hasAccepted: true, userId: currentEvent.currentUserParticipant.userId }),
+        body: JSON.stringify({ hasAccepted: true, userId: currentEvent.currentUserParticipant.userId }),
       });
 
       if (!response.ok) {
@@ -206,10 +207,10 @@ export default function MemberView({ event, role }: MemberViewProps) {
       // 成功した場合、ローカルの状態を更新
       setHasMemberAccepted(true);
       setShowAcceptPopup(false);
-      alert('イベントへの参加を承認しました！問題リストが表示されます。');
+      toast.success('イベントへの参加を承認しました！問題リストが表示されます。');
     } catch (error) {
       console.error('参加承認エラー:', error);
-      alert(`参加承認中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      toast.error(`参加承認中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsAccepting(false);
     }
@@ -227,7 +228,7 @@ export default function MemberView({ event, role }: MemberViewProps) {
         {/* メンバー個人の獲得点数を表示 */}
         {role === 'member' && currentEvent.currentUserParticipant && (
           <div className="absolute top-0 right-0 bg-indigo-100 text-indigo-800 text-lg font-semibold px-4 py-2 rounded-lg shadow">
-            あなたのスコア: 
+            あなたのスコア:
             <span className="ml-2 font-bold text-2xl">{currentEvent.currentUserParticipant.event_getpoint ?? 0}</span>点
           </div>
         )}

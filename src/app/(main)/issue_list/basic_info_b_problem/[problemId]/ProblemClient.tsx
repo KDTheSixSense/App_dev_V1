@@ -10,8 +10,8 @@ import TraceScreen from '../components/TraceScreen';
 import VariableTraceControl from '../components/VariableTraceControl';
 import KohakuChat from '@/components/KohakuChat'; // KohakuChat コンポーネントをインポート
 import { getHintFromAI } from '@/lib/actions/hintactions';
-import { getNextProblemId, awardXpForCorrectAnswer,recordStudyTimeAction } from '@/lib/actions';
-import { useNotification } from '@/app/contexts/NotificationContext';
+import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
+import toast from 'react-hot-toast';
 import { problemLogicsMap } from '../data/problem-logics';
 import AnswerEffect from '@/components/AnswerEffect'; // AnswerEffect コンポーネントをインポート
 
@@ -125,7 +125,7 @@ type TraceHistoryItem = {
 
 const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits }) => {
   const router = useRouter();
-  const { showNotification } = useNotification();
+
 
   // --- 状態管理 ---
   const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
@@ -177,50 +177,50 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     let problemData = initialProblem;
     // ここで problemId を variables に注入する
     const initialVarsWithId = {
-        ...problemData.initialVariables,
-        problemId: problemData.id // これを追加
+      ...problemData.initialVariables,
+      problemId: problemData.id // これを追加
     };
 
     // 問13のデータがサーバーから不完全に渡された場合に備え、クライアント側でデータを補う
     if (initialProblem.id.toString() === '13') {
-        const initialVarsFor13 = {
-            data: null, target: null, low: null, high: null, middle: null, result: null, initialized: false,
-        };
-        const presetsFor13 = [
-            { label: 'ア: data:{10}, target:10', value: { data: [10], target: 10 } },
-            { label: 'イ: data:{10,20}, target:10', value: { data: [10, 20], target: 10 } },
-            { label: 'ウ: data:{10,20}, target:20', value: { data: [10, 20], target: 20 } },
-            { label: 'エ: data:{10,20,30,40}, target:30', value: { data: [10, 20, 30, 40], target: 30 } }
-        ];
-        problemData = {
-            ...initialProblem,
-            initialVariables: { ...initialVarsFor13, ...initialProblem.initialVariables },
-            traceOptions: {
-                ...initialProblem.traceOptions,
-                presets_array: initialProblem.traceOptions?.presets_array || presetsFor13,
-            }
-        };
+      const initialVarsFor13 = {
+        data: null, target: null, low: null, high: null, middle: null, result: null, initialized: false,
+      };
+      const presetsFor13 = [
+        { label: 'ア: data:{10}, target:10', value: { data: [10], target: 10 } },
+        { label: 'イ: data:{10,20}, target:10', value: { data: [10, 20], target: 10 } },
+        { label: 'ウ: data:{10,20}, target:20', value: { data: [10, 20], target: 20 } },
+        { label: 'エ: data:{10,20,30,40}, target:30', value: { data: [10, 20, 30, 40], target: 30 } }
+      ];
+      problemData = {
+        ...initialProblem,
+        initialVariables: { ...initialVarsFor13, ...initialProblem.initialVariables },
+        traceOptions: {
+          ...initialProblem.traceOptions,
+          presets_array: initialProblem.traceOptions?.presets_array || presetsFor13,
+        }
+      };
     }
 
     // 【追加点】問11のデータ補完処理
     if (initialProblem.id.toString() === '11') {
-        const initialVarsFor11 = {
-            data: null, n: null, bins: null, i: null,
-        };
-        const presetsFor11 = [
-            { label: 'ア: {2, 6, 3, 1, 4, 5}', value: { data: [2, 6, 3, 1, 4, 5] } },
-            { label: 'イ: {3, 1, 4, 4, 5, 2}', value: { data: [3, 1, 4, 4, 5, 2] } },
-            { label: 'ウ: {4, 2, 1, 5, 6, 2}', value: { data: [4, 2, 1, 5, 6, 2] } },
-            { label: 'エ: {5, 3, 4, 3, 2, 6}', value: { data: [5, 3, 4, 3, 2, 6] } },
-        ];
-        problemData = {
-            ...initialProblem,
-            initialVariables: { ...initialVarsFor11, ...initialProblem.initialVariables },
-            traceOptions: {
-                ...initialProblem.traceOptions,
-                presets_array: initialProblem.traceOptions?.presets_array || presetsFor11,
-            }
-        };
+      const initialVarsFor11 = {
+        data: null, n: null, bins: null, i: null,
+      };
+      const presetsFor11 = [
+        { label: 'ア: {2, 6, 3, 1, 4, 5}', value: { data: [2, 6, 3, 1, 4, 5] } },
+        { label: 'イ: {3, 1, 4, 4, 5, 2}', value: { data: [3, 1, 4, 4, 5, 2] } },
+        { label: 'ウ: {4, 2, 1, 5, 6, 2}', value: { data: [4, 2, 1, 5, 6, 2] } },
+        { label: 'エ: {5, 3, 4, 3, 2, 6}', value: { data: [5, 3, 4, 3, 2, 6] } },
+      ];
+      problemData = {
+        ...initialProblem,
+        initialVariables: { ...initialVarsFor11, ...initialProblem.initialVariables },
+        traceOptions: {
+          ...initialProblem.traceOptions,
+          presets_array: initialProblem.traceOptions?.presets_array || presetsFor11,
+        }
+      };
     }
 
     setProblem(problemData);
@@ -235,7 +235,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       { sender: 'kohaku', text: textResources[language].problemStatement.hintInit },
     ]);
     setCredits(initialCredits);
-  // コンポーネントマウント時に開始時刻を記録
+    // コンポーネントマウント時に開始時刻を記録
     startTimeRef.current = Date.now();
     console.log(`Problem ${problemData.id} mounted at: ${startTimeRef.current}`);
 
@@ -253,13 +253,13 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           recordStudyTimeAction(durationMs).catch(error => {
             console.error("Failed to record study time:", error);
             // 必要であればユーザーに通知 (ただし、ページ離脱時なので難しい場合も)
-            // showNotification({ message: '学習時間の記録に失敗しました。', type: 'error' });
+            // toast.error('学習時間の記録に失敗しました。');
           });
         }
         startTimeRef.current = null; // 念のためリセット
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialProblem, language, initialCredits]); // 依存配列は元のまま or 必要に応じて調整
 
   const t = textResources[language].problemStatement;
@@ -275,16 +275,16 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     if (correct) {
       try {
         const problemId = parseInt(problem.id, 10);
-        const result = await awardXpForCorrectAnswer(problemId,undefined ,3); // 科目Bの問題なのでsubjectidに3を渡す
+        const result = await awardXpForCorrectAnswer(problemId, undefined, 3); // 科目Bの問題なのでsubjectidに3を渡す
         // 処理が成功し、エラーでなければヘッダーのペットゲージを更新する
         if (result.message === '経験値を獲得しました！') {
-            window.dispatchEvent(new CustomEvent('petStatusUpdated'));
-        }        console.log(result.message); // "経験値を獲得しました！" or "既に正解済みです。"
+          window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+        } console.log(result.message); // "経験値を獲得しました！" or "既に正解済みです。"
         if (result.unlockedTitle) {
-          showNotification({ message: `称号【${result.unlockedTitle.name}】を獲得しました！`, type: 'success' });
+          toast.success(`称号【${result.unlockedTitle.name}】を獲得しました！`);
         }
       } catch (error) {
-        showNotification({ message: '経験値の付与に失敗しました。', type: 'error' });
+        toast.error('経験値の付与に失敗しました。');
       }
     }
     const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
@@ -324,11 +324,11 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       if ('getTraceStep' in logic && typeof (logic as any).getTraceStep === 'function') {
         // --- (A) getTraceStep を持つロジック (問6: ビット反転) ---
         traceStepFunction = (logic as any).getTraceStep(currentTraceLine, selectedLogicVariant);
-      
-      } else if ('traceLogic' in logic) { 
+
+      } else if ('traceLogic' in logic) {
         // --- (B) 従来の traceLogic 配列を持つロジック (問4など) ---
         traceStepFunction = (logic as any).traceLogic[currentTraceLine];
-      
+
       } else {
         // --- (C) どちらも持たない場合 (エラー) ---
         console.error(`Logic for ${problem.logicType} has neither getTraceStep nor traceLogic.`);
@@ -363,7 +363,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
   // リセット時の処理（修正）
   const handleResetTrace = () => {
-    setVariables({ 
+    setVariables({
       ...problem.initialVariables,
       problemId: problem.id
     });
@@ -381,23 +381,23 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     // 2. ロジック側が参照できるように variables._variant にも注入する
     setVariables((prev) => ({
       ...prev,
-      _variant: variantId, 
+      _variant: variantId,
     }));
 
     // (オプション) ロジックを変えたらトレースをリセットする場合
     setCurrentTraceLine(0);
     setIsTraceFinished(false);
   };
-  
+
   const handleSetData = (dataToSet: Record<string, any>, label: string = "") => {
     setVariables((prev) => ({
       ...problem.initialVariables, // まず初期状態に戻す
       ...dataToSet,                // 選択されたデータを上書き
-      
+
       // ★重要: 現在選択中のロジック(variant)を維持してセットする
       // これをしないと、データを変えた瞬間にロジック判定が消えてしまいます
-      _variant: selectedLogicVariant, 
-      
+      _variant: selectedLogicVariant,
+
       initialized: false,
       problemId: problem.id
     }));
@@ -408,21 +408,21 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setSelectedPresetLabel(label);
   };
 
- const handleSetNum = (num: number) => {
+  const handleSetNum = (num: number) => {
     setVariables({ ...problem.initialVariables, num: num, initialized: false, problemId: problem.id }); // initializedをfalseにリセット
     setCurrentTraceLine(0); // トレース行をリセット
     setTraceHistory([]);
     setIsPresetSelected(true); // プリセットが選択されたことを示すフラグを立てる
     setSelectedLogicVariant(null);
     setSelectedPresetLabel(String(num));
- };
+  };
 
   const handleNextProblem = async () => {
     const nextId = await getNextProblemId(parseInt(problem.id, 10), 'basic_info_b_problem');
     if (nextId) {
       router.push(`/issue_list/basic_info_b_problem/${nextId}`);
     } else {
-      showNotification({ message: "これが最後の問題です！", type: 'success' });
+      toast.success("これが最後の問題です！");
       router.push('/issue_list');
     }
   };
@@ -492,7 +492,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             messages={chatMessages}
             onSendMessage={handleUserMessage}
             language={language}
-            textResources={{...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder}}
+            textResources={{ ...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder }}
             isLoading={isAiLoading}
             isDisabled={isAiLoading || credits <= 0}
             kohakuIcon={kohakuIcon}
@@ -523,7 +523,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
               isAnswered={isAnswered}
               explanation={problem.explanationText[currentLang] || ''}
               language={language}
-              textResources={{...t, title: problem.title[currentLang]}}
+              textResources={{ ...t, title: problem.title[currentLang] }}
             />
           </div>
 
@@ -533,11 +533,11 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             <div className="lg:col-span-4 flex flex-col gap-4 sticky top-24">
               <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
                 <h2 className="text-lg font-bold text-gray-700 mb-3">{t.traceScreenTitle}</h2>
-                <TraceScreen 
-                  programLines={problem.programLines?.[currentLang] || []} 
-                  currentLine={currentTraceLine} 
-                  language={language} 
-                  textResources={t} 
+                <TraceScreen
+                  programLines={problem.programLines?.[currentLang] || []}
+                  currentLine={currentTraceLine}
+                  language={language}
+                  textResources={t}
                 />
               </div>
               {/* 変更点: コハクの質問をここ(中央カラム下)に移動 */}
@@ -547,23 +547,23 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
           {/* 3. 右カラム: トレース結果(変数) または コハクの質問(A問題用) */}
           <div className="lg:col-span-3 flex flex-col gap-4 sticky top-24">
-            
+
             {/* トレース結果 (トレースがある場合のみ) */}
             {showTraceUI && (
               <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
-                <VariableTraceControl 
-                  problem={problem} 
-                  variables={variables} 
-                  onNextTrace={handleNextTrace} 
+                <VariableTraceControl
+                  problem={problem}
+                  variables={variables}
+                  onNextTrace={handleNextTrace}
                   onPrevTrace={handlePrevTrace}
-                  isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)} 
+                  isTraceFinished={currentTraceLine >= 99 || (problem.programLines && currentTraceLine >= problem.programLines[currentLang].length)}
                   canGoBack={traceHistory.length > 0}
-                  onResetTrace={handleResetTrace} 
-                  currentTraceLine={currentTraceLine} 
-                  language={language} 
-                  textResources={t} 
-                  onSetData={handleSetData} 
-                  isPresetSelected={isPresetSelected} 
+                  onResetTrace={handleResetTrace}
+                  currentTraceLine={currentTraceLine}
+                  language={language}
+                  textResources={t}
+                  onSetData={handleSetData}
+                  isPresetSelected={isPresetSelected}
                   onSetNum={handleSetNum}
                   selectedPresetLabel={selectedPresetLabel}
                   selectedLogicVariant={selectedLogicVariant}

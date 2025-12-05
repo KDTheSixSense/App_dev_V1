@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation'; // ★ 追加
 import Link from 'next/link';
 import type { AssignmentComment } from '../../admin/types/AdminTypes';
 import DOMPurify from 'dompurify';
+import toast from 'react-hot-toast';
 
 // page.tsxから型定義を移動またはインポート
 interface Kadai {
@@ -30,6 +32,7 @@ interface AssignmentDetailViewProps {
 }
 
 export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kadai, hashedId, onBack, onAssignmentSubmit }) => {
+    const router = useRouter(); // ★ 追加
     // コメント関連
     const [comments, setComments] = useState<CommentWithAuthor[]>([]);
     const [newComment, setNewComment] = useState('');
@@ -75,9 +78,10 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
             if (!response.ok) throw new Error('コメントの投稿に失敗しました');
             await fetchComments();
             setNewComment('');
+            router.refresh(); // ★ 追加: 画面更新
         } catch (error) {
             console.error(error);
-            alert('コメントの投稿に失敗しました。');
+            toast.error('コメントの投稿に失敗しました。');
         } finally {
             setIsSubmittingComment(false);
         }
@@ -93,7 +97,7 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
 
     const handleAssignmentSubmit = async () => {
         if (!selectedFile) {
-            alert('提出するファイルを選択してください。');
+            toast.error('提出するファイルを選択してください。');
             return;
         }
         setIsSubmittingAssignment(true);
@@ -106,11 +110,12 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
                 body: formData,
             });
             if (!res.ok) throw new Error('課題の提出に失敗しました。');
-            alert('課題を提出しました！');
+            toast.success('課題を提出しました！');
             onAssignmentSubmit(kadai.id, '提出済み'); // 提出ステータスを渡す
+            router.refresh(); // ★ 追加: 画面更新
         } catch (err) {
             console.error(err);
-            alert(err instanceof Error ? err.message : '予期せぬエラーが発生しました。');
+            toast.error(err instanceof Error ? err.message : '予期せぬエラーが発生しました。');
         } finally {
             setIsSubmittingAssignment(false);
         }

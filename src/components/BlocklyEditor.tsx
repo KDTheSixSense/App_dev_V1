@@ -68,7 +68,7 @@ const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange 
 
     // ワークスペースの注入
     const workspace = Blockly.inject(blocklyDiv.current, {
-      renderer: 'zelos', 
+      renderer: 'zelos',
       theme: ScratchTheme,
       toolbox: `
         <xml xmlns="https://developers.google.com/blockly/xml">
@@ -311,6 +311,7 @@ const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange 
         colour: '#e0e0e0',
         snap: true,
       },
+      media: '/media/',
     });
 
     workspaceRef.current = workspace;
@@ -323,16 +324,16 @@ const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange 
     // アニメーション制御ロジック
     const handleToolboxSelection = (event: any) => {
       if (event.type === Blockly.Events.TOOLBOX_ITEM_SELECT && event.newItem) {
-        const toolbox = workspace.getToolbox() as any; 
+        const toolbox = workspace.getToolbox() as any;
         const flyout = workspace.getFlyout();
-        
+
         if (toolbox && flyout) {
           const items = toolbox.getToolboxItems();
           const newIndex = items.findIndex((item: any) => item.getId() === event.newItem);
-          
+
           if (newIndex !== -1) {
             const flyoutGroup = flyout.getWorkspace()?.getCanvas();
-            
+
             if (flyoutGroup) {
               flyoutGroup.classList.remove('flyout-anim-up');
               flyoutGroup.classList.remove('flyout-anim-down');
@@ -452,9 +453,9 @@ const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange 
           }
         }
       `}</style>
-      <div 
-        ref={blocklyDiv} 
-        style={{ width: '100%', height: '100%' }} 
+      <div
+        ref={blocklyDiv}
+        style={{ width: '100%', height: '100%' }}
         className="rounded-lg overflow-hidden border border-gray-300 shadow-inner bg-white"
       />
     </>

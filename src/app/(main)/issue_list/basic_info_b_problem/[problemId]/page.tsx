@@ -10,14 +10,15 @@ import { getProblemForClient } from '@/lib/data';
 import ProblemClient from './ProblemClient'; // 同じ階層のクライアントコンポーネントをインポート
 
 interface PageProps {
-  params: any;
+  params: Promise<{ problemId: string }>;
 }
 
 /**
  * 基本情報技術者試験 科目B の問題詳細ページ (サーバーコンポーネント)
  * ユーザーのクレジット数を取得し、クライアントに渡します
  */
-const BasicInfoBProblemDetailPage = async ({ params }: PageProps) => {
+const BasicInfoBProblemDetailPage = async (props: PageProps) => {
+  const params = await props.params;
   const problemId = parseInt(params.problemId, 10);
   if (isNaN(problemId)) {
     notFound();

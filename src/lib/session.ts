@@ -15,11 +15,11 @@ export const sessionOptions: SessionOptions = {
   password: process.env.SECRET_COOKIE_PASSWORD!,
   cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24, // 24時間
-    httpOnly: true, // JavaScriptからのアクセスを禁止
-    sameSite: 'lax', // CSRF対策
+    httpOnly: true,
+    secure: true, // 常にSecure属性を付与 (ローカル開発でもHTTPS推奨、またはlocalhostは例外扱いされる場合あり)
+    sameSite: 'lax',
   },
+  ttl: 86400, // 1日 (秒単位)
 };
 
 /**

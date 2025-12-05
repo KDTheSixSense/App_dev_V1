@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Lightbulb, Edit3, Check, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { updatePetName } from '@/lib/actions'; // 👈 後で作成するサーバーアクション
+import DOMPurify from 'dompurify';
 
 // Props に adviceText を追加
 interface PetStatusViewProps {
@@ -18,15 +19,15 @@ interface PetStatusViewProps {
 
 // 満腹度に応じた画像パスを返すヘルパー関数 (変更なし)
 const getPetDisplayInfo = (hungerLevel: number) => {
-    if (hungerLevel >= 150) {
-    return { image: '/images/Kohaku/kohaku-full.png' };
-  } else if (hungerLevel >= 100) {
-    return { image: '/images/Kohaku/kohaku-normal.png' };
-  } else if (hungerLevel >= 50) {
-    return { image: '/images/Kohaku/kohaku-hungry.png' };
-  } else {
-    return { image: '/images/Kohaku/kohaku-starving.png' };
-  }
+  if (hungerLevel >= 150) {
+    return { image: '/images/Kohaku/kohaku-full.png' };
+  } else if (hungerLevel >= 100) {
+    return { image: '/images/Kohaku/kohaku-normal.png' };
+  } else if (hungerLevel >= 50) {
+    return { image: '/images/Kohaku/kohaku-hungry.png' };
+  } else {
+    return { image: '/images/Kohaku/kohaku-starving.png' };
+  }
 };
 
 export default function PetStatusView({ initialHunger, maxHunger, adviceText, petname, petBirthdate }: PetStatusViewProps) {
@@ -54,9 +55,20 @@ export default function PetStatusView({ initialHunger, maxHunger, adviceText, pe
       return;
     }
 
+    // XSS対策: 入力値をサニタイズ
+    const sanitizedName = DOMPurify.sanitize(trimmedName);
+
+    // サニタイズ後に空になった場合もキャンセル (すべてタグだった場合など)
+    if (sanitizedName === '') {
+      toast.error('無効な名前です。');
+      setIsEditing(false);
+      setNewName(petname);
+      return;
+    }
+
     startTransition(async () => {
       try {
-        const result = await updatePetName(trimmedName); // サーバーアクション呼び出し
+        const result = await updatePetName(sanitizedName); // サーバーアクション呼び出し
         if (result.success) {
           toast.success('名前を変更しました！');
           setIsEditing(false);

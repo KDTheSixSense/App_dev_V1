@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 /**
  * ユーザー情報を表すインターフェース
@@ -181,7 +182,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       // パスワードの更新（必要な場合）
       if (showPasswordChange && passwordData.newPassword) {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-          alert('新しいパスワードが一致しません。');
+          toast.error('新しいパスワードが一致しません。');
           return;
         }
         const passwordResponse = await fetch('/api/auth/password-change', {
@@ -197,7 +198,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           console.error('Failed to update password');
           // エラーメッセージをユーザーに表示
           const errorData = await passwordResponse.json();
-          alert(errorData.message || 'パスワードの更新に失敗しました。');
+          toast.error(errorData.message || 'パスワードの更新に失敗しました。');
           return;
         }
       }
