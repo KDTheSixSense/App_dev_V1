@@ -182,6 +182,19 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
         <p className="text-center font-semibold mb-3 text-gray-700">{varStepNum}. 変数の状態</p>
         <div className="grid grid-cols-1 gap-2 w-full px-5">
           {Object.entries(variables)
+          .sort(([keyA], [keyB]) => {
+            const order = Object.keys(problem.initialVariables);
+            const indexA = order.indexOf(keyA);
+            const indexB = order.indexOf(keyB);
+            
+            // 両方とも定義にある場合は、その順序に従う
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            // 定義にあるものを優先して上に表示
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            // どちらも定義にない場合（内部変数など）は順序を変えない
+            return 0;
+          })
           .flatMap(([name, value]) => {
               // まずは現在の変数をリストに入れる
               const items = [[name, value]];
@@ -198,7 +211,16 @@ const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
             })
           .map(([name, value]) => {
             // initialized フラグはUIに表示しない
-            if (['initialized', 'problemId', 'currentLine', '_variant'].includes(name)) return null;
+            if ([
+                'initialized',
+                'problemId',
+                'currentLine', 
+                '_variant',
+                'p_values', 
+                'current_p', 
+                'isReturning',
+                '_calc_i'
+              ].includes(name)) return null;
 
             let displayValue: string;
             

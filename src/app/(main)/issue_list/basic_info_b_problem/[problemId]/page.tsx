@@ -18,7 +18,8 @@ interface PageProps {
  * ユーザーのクレジット数を取得し、クライアントに渡します
  */
 const BasicInfoBProblemDetailPage = async ({ params }: PageProps) => {
-  const problemId = parseInt(params.problemId, 10);
+  const resolvedParams = await params;
+  const problemId = parseInt(resolvedParams.problemId, 10);
   if (isNaN(problemId)) {
     notFound();
   }

@@ -1,6 +1,7 @@
 /**
  * @file DBのlogicTypeと、対応するトレース関数をマッピングします。
  */
+import { validateHeaderName } from 'http';
 import type { VariablesState, TraceStep} from './problems'; // 修正: QueueItem をインポート
 
 // 各ロジックの定義
@@ -220,23 +221,100 @@ const gcdSubtractionLogic: { traceLogic: TraceStep[]; calculateNextLine: (curren
   },
 };
 
-const expressionEvalLogic: { traceLogic: TraceStep[] } = {
+// =================================================================================
+// --- 問5: 計算式の評価ロジック ---
+// =================================================================================
+
+// 選択肢ごとの計算ロジック定義
+const expressionEvalStepLogics: Record<string, TraceStep> = {
+    // ア: (x^2 + y^2) / √2
+    'ア': (vars) => {
+        const x = vars.x as number;
+        const y = vars.y as number;
+        const result = (Math.pow(x, 2) + Math.pow(y, 2)) / Math.pow(2, 0.5);
+        return { ...vars, result };
+    },
+    // イ: (x^2 + y^2) / x^y
+    'イ': (vars) => {
+        const x = vars.x as number;
+        const y = vars.y as number;
+        // 0除算回避などを考慮しても良いが、ここでは単純実装
+        const result = (Math.pow(x, 2) + Math.pow(y, 2)) / Math.pow(x, y);
+        return { ...vars, result };
+    },
+    // ウ: 2^(√x) + 2^(√y)
+    'ウ': (vars) => {
+        const x = vars.x as number;
+        const y = vars.y as number;
+        const result = Math.pow(2, Math.pow(x, 0.5)) + Math.pow(2, Math.pow(y, 0.5));
+        return { ...vars, result };
+    },
+    // エ: √((2^x)^y)
+    'エ': (vars) => {
+        const x = vars.x as number;
+        const y = vars.y as number;
+        const result = Math.pow(Math.pow(Math.pow(2, x), y), 0.5);
+        return { ...vars, result };
+    },
+    // オ: √(x^2 + y^2)  ★正解
+    'オ': (vars) => {
+        const x = vars.x as number;
+        const y = vars.y as number;
+        const result = Math.pow(Math.pow(x, 2) + Math.pow(y, 2), 0.5);
+        return { ...vars, result };
+    },
+    // カ: (x^2 * y^2) / x^y
+    'カ': (vars) => {
+        const x = vars.x as number;
+        const y = vars.y as number;
+        const result = (Math.pow(x, 2) * Math.pow(y, 2)) / Math.pow(x, y);
+        return { ...vars, result };
+    },
+    // キ: (x^y) / √2
+    'キ': (vars) => {
+        const x = vars.x as number;
+        const y = vars.y as number;
+        const result = Math.pow(x, y) / Math.pow(2, 0.5);
+        return { ...vars, result };
+    },
+    // デフォルト（正解と同じ挙動にしておく）
+    'default': (vars) => {
+        const x = vars.x as number;
+        const y = vars.y as number;
+        const result = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+        return { ...vars, result };
+    },
+};
+
+const expressionEvalLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
   traceLogic: [
     // 1行目: ○実数型: calc(実数型: x, 実数型: y)
-    // この行では変数の変化はない
     (vars) => vars,
+
     // 2行目: return [ ... ]
-    // ここで計算を実行し、結果を result 変数に格納する
     (vars) => {
-      const x = vars.x as number;
-      const y = vars.y as number;
-      // 正解の式 pow(pow(x, 2) + pow(y, 2), 0.5) を計算
-      // Math.pow(base, exponent) は累乗を計算
-      // Math.sqrt(number) は平方根を計算
-      const result = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-      return { ...vars, result: result };
+      // x, y がセットされていない場合は計算しない
+      if (vars.x === null || vars.y === null) return vars;
+
+      // 選択されたバリアントを取得 (ア〜キ)
+      // ProblemClientでセットした _variant を参照
+      const variant = (vars._variant as string) || 'オ'; 
+
+      const stepFunc = expressionEvalStepLogics[variant] || expressionEvalStepLogics['default'];
+      return stepFunc(vars);
     },
   ],
+  
+  // 行制御: データがなければ進まない、計算したら終了
+  calculateNextLine: (currentLine, vars) => {
+      if (vars.x === null || vars.y === null) return currentLine;
+      
+      switch (currentLine) {
+          case 0: return 1;  // 1行目 -> 2行目
+          case 1: return 99; // 2行目(計算) -> 終了
+          default: return 99;
+      }
+  }
 };
 
 // 8ビットの2進数文字列に変換
@@ -349,42 +427,119 @@ const bitReverseLogic: {
     },
 };
 
-const recursiveFactorialLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+// =================================================================================
+// --- 問7: 再帰階乗ロジック ---
+// =================================================================================
+
+// 5行目: return [ ... ] の詳細ロジック
+const recursiveFactorialStepLogics: Record<string, TraceStep> = {
+    // ア: (n - 1) * factorial(n) -> nが変わらないので無限ループ
+    'ア': (vars) => {
+        const currentN = vars.current_n as number;
+        const result = vars.result as number;
+        return {
+            ...vars,
+            // 係数(n-1)を掛けるが、再帰引数(n)は減らない
+            result: result * (currentN - 1), 
+            current_n: currentN // nはそのまま（無限再帰）
+        };
+    },
+    // イ: factorial(n - 1) -> nを掛けていない
+    'イ': (vars) => {
+        const currentN = vars.current_n as number;
+        return {
+            ...vars,
+            // resultには何も掛けない
+            current_n: currentN - 1 
+        };
+    },
+    // ウ: n -> 再帰しない
+    'ウ': (vars) => {
+        return { ...vars, result: vars.current_n }; // 現在のnを返すだけ
+    },
+    // エ: n * (n - 1) -> 再帰しない
+    'エ': (vars) => {
+        const n = vars.current_n as number;
+        return { ...vars, result: n * (n - 1) };
+    },
+    // オ: n * factorial(1) -> 次のnがいきなり1になる
+    'オ': (vars) => {
+        const currentN = vars.current_n as number;
+        const result = vars.result as number;
+        return {
+            ...vars,
+            result: result * currentN,
+            current_n: 1 // 次の呼び出し引数は固定で 1
+        };
+    },
+    // カ: n * factorial(n - 1) -> 正解
+    'カ': (vars) => {
+        const currentN = vars.current_n as number;
+        const result = vars.result as number;
+        return {
+            ...vars,
+            result: result * currentN, // n を掛ける
+            current_n: currentN - 1    // 次は n-1
+        };
+    },
+    'default': (vars) => vars,
+};
+
+const recursiveFactorialLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState, variant: string | null) => number } = {
   traceLogic: [
     (vars) => vars, // 1: ○整数型: factorial(整数型: n)
     (vars) => vars, // 2: if (n = 0)
     (vars) => vars, // 3: return 1
     (vars) => vars, // 4: endif
-    (vars) => { // 5: return n * factorial(n - 1)
-        const currentN = vars.current_n as number;
-        const result = vars.result as number;
-        // 再帰の1ステップをシミュレート
-        return {
-            ...vars,
-            result: result * currentN, // これまでの結果に現在のnを掛ける
-            current_n: currentN - 1,   // 次の呼び出しのためにnを1減らす
-        };
+    
+    // 5: return [ ... ]
+    (vars) => { 
+        if (vars.current_n === null) return vars;
+        const variant = (vars._variant as string) || 'カ'; // デフォルトは正解
+        const stepFunc = recursiveFactorialStepLogics[variant] || recursiveFactorialStepLogics['default'];
+        return stepFunc(vars);
     },
   ],
-  calculateNextLine: (currentLine, vars) => {
+
+  calculateNextLine: (currentLine, vars, variant) => {
+      // 初期化待ち
+      if (vars.current_n === null) return currentLine;
+
       const currentN = vars.current_n as number;
+      const selectedVariant = variant || 'カ';
+
       // 0-indexedの行番号で分岐
       switch (currentLine) {
           case 0: return 1; // 1行目 -> 2行目
+          
           case 1: // 2行目 if (n = 0) の評価
-              return currentN === 0 ? 2 : 4; // 条件が真なら3行目へ、偽なら5行目へ
-          case 2: // 3行目 return 1 の実行後
-              return 5; // トレース完了（配列の長さを超えたインデックスを指定）
-          case 3: // 4行目 endif (ここには直接来ないが念のため)
+              // n=0 ならベースケース(Line 3)へ。そうでなければ Line 5へ（Line 4のendifはスキップ扱いで5へ）
+              return currentN === 0 ? 2 : 4; 
+          
+          case 2: // 3行目 return 1
+              return 99; // 終了
+          
+          case 3: // 4行目 endif
               return 4;
-          case 4: // 5行目 return n * ... の実行後
-              return 1; // 2行目のif文の評価にループバック
+
+          case 4: // 5行目 return [ ... ] の実行後
+              // ここで再帰するか、終了するかをVariantによって変える
+              
+              // ウ(n) と エ(n*(n-1)) は再帰呼び出しがないため、ここで終了
+              if (['ウ', 'エ'].includes(selectedVariant)) {
+                  return 99;
+              }
+              
+              // それ以外（ア, イ, オ, カ）は再帰呼び出しがあるので、
+              // 関数頭（Line 2: if文の判定）に戻る
+              // ※実際にはスタックに積まれるが、この簡易シミュレータではループで表現
+              return 1; 
+
           default:
-              return 5; // 想定外の場合はトレースを終了
+              return 99;
       }
   },
 };
-
 // 優先度付きキューの要素の型定義
 type QueueItem = { value: string; prio: number };
 
@@ -731,117 +886,218 @@ const binSortLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: 
     },
 };
 
-const fiveNumberSummaryLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+
+// =================================================================================
+// --- 問12: 類似度計算ロジック ---
+// =================================================================================
+const similarityRatioLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState, variant: string | null) => number } = {
+    // traceLogicは変数の更新のみを担当
     traceLogic: [
-        /* 1: findRank Def */ (vars) => vars,
-        /* 2: findRank i Dec */ (vars) => vars,
-        /* 3: i ← ... */ (vars) => {
-            const sortedData = vars.sortedData as number[];
-            const p = vars.current_p as number;
-            const i = Math.ceil((sortedData.length - 1) * p);
-            return { ...vars, findRank_i: i };
+        /* 0: Line 1 */ (vars) => vars,
+        /* 1: Line 2 */ (vars) => ({ ...vars, i: 1, cnt: 0, result: null }), // 初期化
+        /* 2: Line 3 */ (vars) => vars, // if
+        /* 3: Line 4 */ (vars) => ({ ...vars, result: -1 }), // return -1
+        /* 4: Line 5 */ (vars) => vars, // endif
+        /* 5: Line 6 */ (vars) => vars, // for (条件判定のみ)
+        /* 6: Line 7 */ (vars) => vars, // if (条件判定のみ)
+        /* 7: Line 8 */ (vars) => ({ ...vars, cnt: (vars.cnt as number) + 1 }), // cnt++
+        /* 8: Line 9 */ (vars) => vars, // endif
+        /* 9: Line 10 */(vars) => ({ ...vars, i: (vars.i as number) + 1 }), // endfor (i++)
+        /* 10: Line 11*/(vars) => {
+            const s1 = vars.s1 as string[];
+            const cnt = vars.cnt as number;
+            return { ...vars, result: cnt / s1.length };
         },
-        /* 4: return ... */ (vars) => vars,
-        /* 5: Space */ (vars) => vars,
-        /* 6: summarize Def */ (vars) => vars,
-        /* 7: rankData ← {} */ (vars) => ({ ...vars, rankData: [] }),
-        /* 8: p ← {...} */ (vars) => ({ ...vars, p_values: [0, 0.25, 0.5, 0.75, 1] }),
-        /* 9: i Dec */ (vars) => {
-             // ループ開始時にiを初期化
-            if (vars.i === null) return { ...vars, i: 1 };
-            return vars;
-        },
-        /* 10: for loop */ (vars) => vars,
-        /* 11: rankData.append */ (vars) => {
-            const sortedData = vars.sortedData as number[];
-            const findRank_i = vars.findRank_i as number;
-            const valueToAdd = sortedData[findRank_i]; // 1-based to 0-based index
-            return {
-                ...vars,
-                rankData: [...(vars.rankData as number[]), valueToAdd],
-            };
-        },
-        /* 12: endfor */ (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
-        /* 13: return rankData */ (vars) => vars,
     ],
-    calculateNextLine(currentLine, vars) {
-        const lineNum = currentLine + 1;
-        const callStack = (vars.callStack || []) as { name: string, return_to: number }[];
 
-        // --- summarize ループ制御 ---
-        if (lineNum === 10) { // for文の評価
-            const i = vars.i as number;
-            const p_values = vars.p_values as number[];
-            if (i <= p_values.length) {
-                // findRank呼び出し準備
-                vars.current_p = p_values[i - 1]; // iは1-based
-                callStack.push({ name: 'findRank', return_to: 12 }); // 戻り先はendfor
-                return 2; // findRankの3行目にジャンプ
-            } else {
-                return 12; // ループ終了、return rankDataへ
-            }
+    // calculateNextLineでフロー制御と条件分岐を行う
+    calculateNextLine(currentLine, vars, variant) {
+        // データ未選択時は待機
+        if (vars.s1 === null || vars.s2 === null) {
+             if (currentLine < 1) return currentLine + 1;
+             return currentLine;
         }
 
-        // --- findRank 実行後 ---
-        if (lineNum === 4) { // findRankのreturn後
-            const lastCall = callStack.pop();
-            if (lastCall) {
-                return 10; // rankData.append(11行目)へ
-            }
-        }
-        
-        // --- endfor後 ---
-        if (lineNum === 12) {
-             return 9; // forの条件評価に戻る
-        }
+        const lineNum = currentLine + 1; // 1-based line number for switch
+        const s1 = vars.s1 as string[];
+        const s2 = vars.s2 as string[];
+        const i = vars.i as number;
+        const cnt = vars.cnt as number;
+        // デフォルトは正解のエ
+        const selectedVariant = variant || 'エ'; 
 
-        // デフォルトは次の行へ
-        return currentLine + 1;
+        switch (lineNum) {
+            case 2: // Line 2: 初期化完了後 -> Line 3
+                return 2; 
+            
+            case 3: // Line 3: if (s1の要素数 ≠ s2の要素数)
+                return s1.length !== s2.length ? 3 : 5; // -> Line 4 (return -1) or Line 6 (for)
+            
+            case 4: // Line 4: return -1
+                return 99; // 終了
+            
+            case 5: // Line 5: endif (ここには来ないはずだが念のため)
+                return 5; // -> Line 6
+
+            case 6: // Line 6: for (i を 1 から s1の要素数 まで)
+                // iが初期化前(null)なら初期化ステップ(Line 2)に戻すか、ここで判定
+                // ※traceLogicでLine 2で初期化済みのはず
+                return (i <= s1.length) ? 6 : 10; // -> Line 7 (body) or Line 11 (return result)
+
+            case 7: // Line 7: if ([ ? ])
+                let isMatch = false;
+                // 配列は0-basedなのでインデックスを調整
+                const idx1 = i - 1; 
+                const idx2_i = i - 1; 
+                // cntは個数(0〜)だが、ウ・アの選択肢ではインデックスとして使われているため
+                // そのまま使う (ただし範囲外アクセスの可能性あり)
+                const idx2_cnt = cnt; 
+
+                if (selectedVariant === 'ア') { // s1[i] ≠ s2[cnt]
+                    // cntがs2の範囲外の場合はundefinedとの比較になる(JSの挙動)
+                    isMatch = s1[idx1] !== s2[idx2_cnt];
+                } else if (selectedVariant === 'イ') { // s1[i] ≠ s2[i]
+                    isMatch = s1[idx1] !== s2[idx2_i];
+                } else if (selectedVariant === 'ウ') { // s1[i] = s2[cnt]
+                    isMatch = s1[idx1] === s2[idx2_cnt];
+                } else { // エ (正解): s1[i] = s2[i]
+                    isMatch = s1[idx1] === s2[idx2_i];
+                }
+
+                return isMatch ? 7 : 8; // True: Line 8 (cnt++), False: Line 9 (endif)
+
+            case 8: // Line 8: cnt++ 完了後
+                return 8; // -> Line 9
+
+            case 9: // Line 9: endif
+                return 9; // -> Line 10 (endfor)
+
+            case 10: // Line 10: endfor (i++)
+                return 5; // -> Line 6 (loop check)
+
+            case 11: // Line 11: return result
+                return 99; // 終了
+
+            default:
+                return currentLine + 1;
+        }
     },
 };
 
-const similarityRatioLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
-    traceLogic: Array(11).fill((vars: VariablesState) => vars), // traceLogicは使いません
-    calculateNextLine(currentLine, vars) {
-        // トレースの最初のステップで変数を初期化
-        if (!vars.initialized) {
-            vars.i = 1;
-            vars.cnt = 0;
-            vars.result = null;
-            vars.initialized = true;
-        }
+// =================================================================================
+// --- 問14: 5数要約 (summarize -> findRank 順) ---
+// =================================================================================
+const fiveNumberSummaryLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState) => number } = {
+    traceLogic: [
+        /* 0: Line 1 (summarize def) */ (vars) => vars,
+        /* 1: Line 2 (rankData init) */ (vars) => ({ ...vars, rankData: [] }),
+        /* 2: Line 3 (p init) */        (vars) => ({ ...vars, p: [0, 0.25, 0.5, 0.75, 1] }),
+        /* 3: Line 4 (i decl) */        (vars) => vars,
+        /* 4: Line 5 (for loop) */      (vars) => {
+            if (vars.i === null) return { ...vars, i: 1 };
+            return vars;
+        },
+        
+        /* 5: Line 6 (call & append) */ (vars) => {
+            // ▼ 戻り時 (isReturning=true) の処理
+            if (vars.isReturning) {
+                const val = vars.findRank_ret as number;
+                return {
+                    ...vars,
+                    // rankDataに値を追加
+                    rankData: [...(vars.rankData as number[]), val],
+                    isReturning: false, // フラグを戻す
+                    findRank_ret: null,
+                    // UI上の findRank (i) をクリアして見やすくする
+                    findRank: null,
+                    current_p: null
+                };
+            }
+            // ▼ 呼び出し時 (isReturning=false) の処理
+            else {
+                const i = vars.i as number;
+                const p = vars.p as number[];
+                const val = p[i - 1];
+                return { 
+                    ...vars, 
+                    current_p: val,
+                    // ★修正: 関数呼び出し時に引数 p の値を表示する
+                    findRank: `p: ${val}` 
+                };
+            }
+        },
+        
+        /* 6: Line 7 (endfor) */        (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
+        /* 7: Line 8 (return) */        (vars) => vars,
+        /* 8: Line 9 (blank) */         (vars) => vars,
+        
+        /* 9: Line 10 (findRank def) */ (vars) => vars,
+        /* 10: Line 11 (i decl) */      (vars) => vars,
+        
+        /* 11: Line 12 (calc i) */      (vars) => {
+            const sortedData = vars.sortedData as number[];
+            const p = vars.current_p as number;
+            // i ← ceil((N - 1) * p)
+            const idx = Math.ceil((sortedData.length - 1) * p);
+            
+            return { 
+                ...vars, 
+                // ★修正1: 表示用に "p: 値, i: 値" の形式の文字列をセット
+                findRank: `p: ${p}, i: ${idx}`,
+                
+                // ★修正2: 次の行の計算用に、数値のインデックスを隠し変数に保存
+                _calc_i: idx 
+            };
+        },        
+        /* 12: Line 13 (return val) */  (vars) => {
+            const sortedData = vars.sortedData as number[];
 
-        const lineNum = currentLine + 1;
-        const s1 = vars.s1 as string[];
-        const s2 = vars.s2 as string[];
-        let i = vars.i as number;
-        let cnt = vars.cnt as number;
+            const idx = vars._calc_i as number;
+            
+            return { 
+                ...vars, 
+                findRank_ret: sortedData[idx],
+                isReturning: true 
+            };
+        },
+    ],
+
+    calculateNextLine(currentLine, vars) {
+        if (vars.sortedData === null) return currentLine;
+
+        const lineNum = currentLine + 1; // 1-based
 
         switch (lineNum) {
-            case 2: // cnt ← 0 (初期化ステップで実行済み)
-                return 2; // -> 3行目へ
-            case 3: // if (s1の要素数 ≠ s2の要素数)
-                return s1.length !== s2.length ? 3 : 5; // -> 4行目 or 6行目
-            case 4: // return -1
-                vars.result = -1;
-                return 99; // トレース終了
-            case 6: // for (i を 1 から s1の要素数 まで)
-                return i <= s1.length ? 6 : 10; // -> 7行目 or 11行目
-            case 7: // if (s1[i] = s2[i])
-                if (s1[i - 1] === s2[i - 1]) {
-                    return 7; // -> 8行目
+            // --- summarize ---
+            case 5: // Line 5: for (i ...)
+                const i = vars.i as number || 1;
+                const p = vars.p as number[];
+                // iが要素数以下ならループ継続(Line 6へ)、そうでなければ終了(Line 8へ)
+                return (i <= p.length) ? 5 : 7; 
+
+            case 6: // Line 6: rankData.append( findRank(...) )
+                if (vars.isReturning) {
+                    // 戻ってきた後 -> Line 7 (endfor)
+                    return 6; 
                 } else {
-                    return 8; // -> 9行目
+                    // これから呼び出す -> Line 10 (findRank def)
+                    return 9; 
                 }
-            case 8: // cnt ← cnt + 1
-                vars.cnt = cnt + 1;
-                return 8; // -> 9行目
-            case 9: // endif
-                vars.i = i + 1; // forループのインクリメント
-                return 5; // forループの条件判定(6行目)に戻る
-            case 11: // return cnt ÷ s1の要素数
-                vars.result = cnt / s1.length;
-                return 99; // トレース終了
+
+            case 7: // Line 7: endfor
+                return 4; // -> Line 5 (Loop check)
+
+            case 8: // Line 8: return rankData
+                return 99; // End
+
+            // --- findRank ---
+            case 10: return 10; // def -> decl
+            case 11: return 11; // decl -> calc
+            case 12: return 12; // calc -> return
+            case 13: // Line 13: return ...
+                // 呼び出し元に戻る (Line 6)
+                return 5; 
+
             default:
                 return currentLine + 1;
         }
