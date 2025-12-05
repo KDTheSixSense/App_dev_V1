@@ -41,8 +41,16 @@ services:
     env_file:
       - .env # docker-compose.ymlから見て一つ上の階層の.envファイル
 
+  # サンドボックスコンテナ (Code Execution)
+  sandbox:
+    build:
+      context: ./sandbox
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
 # 名前付きボリュームの定義
 volumes:
-  db_data:
-  # node_modules用の名前付きボリュームを定義
+  db_data: # node_modules用の名前付きボリュームを定義
+
   node_modules:
