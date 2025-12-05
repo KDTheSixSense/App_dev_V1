@@ -25,7 +25,6 @@ const nextConfig: NextConfig = {
     // AVIFを追加すると、対応ブラウザでさらに画像転送量が減ります
     formats: ['image/avif', 'image/webp'],
   },
-  poweredByHeader: false,
   async headers() {
     return [
       {

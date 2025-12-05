@@ -1365,3 +1365,5 @@ const ClassroomApp: React.FC = () => {
         </div>
     );
 }
+
+export default ClassroomApp;
