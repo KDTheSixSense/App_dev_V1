@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getSession } from '@/lib/session';
+import { executeAgainstTestCases } from '@/lib/sandbox';
 
 const prisma = new PrismaClient();
 
 async function calculateScore(eventIssueId: number, startedAt: Date, submittedAt: Date): Promise<number> {
-  console.log(`[calculateScore] Calculating for eventIssueId: ${eventIssueId}`);
+  // // console.log(`[calculateScore] Calculating for eventIssueId: ${eventIssueId}`);
+  // ... logs removed for security/performance
+
   const eventIssue = await prisma.event_Issue_List.findUnique({
     where: { id: eventIssueId },
     include: {
@@ -21,20 +24,20 @@ async function calculateScore(eventIssueId: number, startedAt: Date, submittedAt
     console.error("[calculateScore] Event difficulty not found for this problem.");
     return 0;
   }
-  console.log("[calculateScore] Found event difficulty:", eventIssue.problem.eventDifficulty);
+  // console.log("[calculateScore] Found event difficulty:", eventIssue.problem.eventDifficulty);
 
   const difficulty = eventIssue.problem.eventDifficulty;
   const timeDiffMinutes = (submittedAt.getTime() - startedAt.getTime()) / (1000 * 60);
-  console.log(`[calculateScore] Time difference: ${timeDiffMinutes} minutes`);
+  // console.log(`[calculateScore] Time difference: ${timeDiffMinutes} minutes`);
 
   if (timeDiffMinutes < 1) {
     const score = difficulty.basePoints + difficulty.maxBonusPoints;
-    console.log(`[calculateScore] Under 1 min, score: ${score}`);
+    // console.log(`[calculateScore] Under 1 min, score: ${score}`);
     return score;
   }
 
   if (timeDiffMinutes >= difficulty.expectedTimeMinutes) {
-    console.log(`[calculateScore] Over expected time, score: ${difficulty.basePoints}`);
+    // console.log(`[calculateScore] Over expected time, score: ${difficulty.basePoints}`);
     return difficulty.basePoints;
   }
 
@@ -43,13 +46,13 @@ async function calculateScore(eventIssueId: number, startedAt: Date, submittedAt
     difficulty.maxBonusPoints - Math.floor(timeDiffMinutes - 1) * difficulty.bonusPointsPerMinute
   );
   const finalScore = difficulty.basePoints + bonusPoints;
-  console.log(`[calculateScore] Calculated bonus: ${bonusPoints}, Final score: ${finalScore}`);
+  // console.log(`[calculateScore] Calculated bonus: ${bonusPoints}, Final score: ${finalScore}`);
 
   return finalScore;
 }
 
 async function updateTotalScore(userId: string, eventId: number) {
-  console.log(`[updateTotalScore] Updating total score for userId: ${userId}, eventId: ${eventId}`);
+  // console.log(`[updateTotalScore] Updating total score for userId: ${userId}, eventId: ${eventId}`);
   const submissions = await prisma.event_Submission.findMany({
     where: {
       userId: userId,
@@ -61,10 +64,10 @@ async function updateTotalScore(userId: string, eventId: number) {
       score: true,
     },
   });
-  console.log(`[updateTotalScore] Found ${submissions.length} submissions.`);
+  // console.log(`[updateTotalScore] Found ${submissions.length} submissions.`);
 
   const totalScore = submissions.reduce((acc, submission) => acc + submission.score, 0);
-  console.log(`[updateTotalScore] New total score: ${totalScore}`);
+  // console.log(`[updateTotalScore] New total score: ${totalScore}`);
 
   await prisma.event_Participants.update({
     where: {
@@ -77,11 +80,11 @@ async function updateTotalScore(userId: string, eventId: number) {
       event_getpoint: totalScore,
     },
   });
-  console.log(`[updateTotalScore] Successfully updated event_getpoint.`);
+  // console.log(`[updateTotalScore] Successfully updated event_getpoint.`);
 }
 
 export async function POST(req: NextRequest) {
-  console.log('\n--- [API] Event Submission POST request received ---');
+  // console.log('\n--- [API] Event Submission POST request received ---');
   const session = await getSession();
   if (!session?.user?.id) {
     console.error('[API] Unauthorized access attempt.');
@@ -90,8 +93,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { eventIssueId, codeLog, status, startedAt } = body;
-    console.log('[API] Request Body:', { eventIssueId, status, startedAt, codeLog: codeLog.substring(0, 100) + '...' });
+    const { eventIssueId, codeLog, startedAt, language } = body;
+    // statusはクライアントから受け取らず、サーバー側で判定する
+    // console.log('[API] Request Body:', { eventIssueId, startedAt, language, codeLog: codeLog.substring(0, 100) + '...' });
 
     const userId = session.user.id;
     const submittedAt = new Date();
@@ -101,10 +105,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
     }
 
-    console.log(`[API] Processing for userId: ${userId}`);
+    // 1. 問題IDを取得
+    const eventIssue = await prisma.event_Issue_List.findUnique({
+      where: { id: eventIssueId },
+    });
 
-    const score = await calculateScore(eventIssueId, new Date(startedAt), submittedAt);
-    console.log(`[API] Score calculated: ${score}`);
+    if (!eventIssue) {
+      return NextResponse.json({ error: 'Event Issue not found' }, { status: 404 });
+    }
+
+    // 2. サーバーサイドでコードを実行・検証
+    const executionResult = await executeAgainstTestCases(
+      language || 'python', // デフォルト言語 (python3 -> python に修正)
+      codeLog,
+      eventIssue.problemId
+    );
+
+    const isSuccess = executionResult.success;
+    const score = isSuccess ? await calculateScore(eventIssueId, new Date(startedAt), submittedAt) : 0;
+
+    // console.log(`[API] Execution Result: Success=${isSuccess}, Score=${score}`);
 
     const existingSubmission = await prisma.event_Submission.findUnique({
       where: {
@@ -117,26 +137,28 @@ export async function POST(req: NextRequest) {
         eventIssue: true,
       },
     });
-    console.log(`[API] Existing submission found:`, existingSubmission ? `id: ${existingSubmission.id}` : 'null');
+    // console.log(`[API] Existing submission found:`, existingSubmission ? `id: ${existingSubmission.id}` : 'null');
 
     if (existingSubmission && existingSubmission.status === true) {
-      console.log('[API] User has already correctly answered this problem. Preventing score update.');
+      // console.log('[API] User has already correctly answered this problem. Preventing score update.');
       return NextResponse.json({
         ...existingSubmission,
-        message: 'すでに正解済みです。'
+        message: 'すでに正解済みです。',
+        testCaseResults: executionResult.testCaseResults,
+        success: isSuccess
       });
     }
 
     let submission;
     if (existingSubmission) {
-      console.log('[API] Updating existing submission...');
+      // console.log('[API] Updating existing submission...');
       submission = await prisma.event_Submission.update({
         where: {
           id: existingSubmission.id,
         },
         data: {
           codeLog,
-          status,
+          status: isSuccess,
           score,
           submittedAt,
         },
@@ -145,13 +167,13 @@ export async function POST(req: NextRequest) {
         }
       });
     } else {
-      console.log('[API] Creating new submission...');
+      // console.log('[API] Creating new submission...');
       submission = await prisma.event_Submission.create({
         data: {
           userId,
           eventIssueId,
           codeLog,
-          status,
+          status: isSuccess,
           score,
           startedAt: new Date(startedAt),
           submittedAt,
@@ -161,14 +183,19 @@ export async function POST(req: NextRequest) {
         }
       });
     }
-    console.log('[API] Submission saved successfully:', submission);
+    // console.log('[API] Submission saved successfully:', submission);
 
-    if (submission) {
+    if (submission && isSuccess) {
       await updateTotalScore(userId, submission.eventIssue.eventId);
     }
 
-    console.log('--- [API] Event Submission POST request finished ---');
-    return NextResponse.json(submission);
+    // console.log('--- [API] Event Submission POST request finished ---');
+    return NextResponse.json({
+      ...submission,
+      testCaseResults: executionResult.testCaseResults,
+      success: isSuccess,
+      message: executionResult.message
+    });
 
   } catch (error) {
     console.error('--- [API] Error in Event Submission POST request ---', error);

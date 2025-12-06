@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { GroupLayout } from '../../GroupLayout';
+import toast from 'react-hot-toast';
 
 // 分離したコンポーネントをインポート
 import { PostEditor } from './components/PostEditor';
@@ -129,6 +130,12 @@ const GroupDetailPage: React.FC = () => {
         setEditingAssignment(null); // 編集中の課題もクリア
     };
 
+    // お知らせ投稿処理 (Toast表示用に追加)
+    const handleCreatePost = async (content: string) => {
+        await createPost(content);
+        toast.success("お知らせ投稿に成功しました");
+    };
+
     // 課題更新処理
     const handleAssignmentUpdate = async (assignmentData: Assignment) => {
         await updateAssignment(assignmentData);
@@ -139,6 +146,7 @@ const GroupDetailPage: React.FC = () => {
     const handleAssignmentCreate = async (assignmentData: any) => {
         const { title, description, dueDate, problem } = assignmentData;
         await createAssignment(title, description, dueDate, problem);
+        toast.success("課題投稿に成功しました");
         handleAssignmentEditorCollapse();
     };
 
@@ -225,7 +233,7 @@ const GroupDetailPage: React.FC = () => {
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="#2e7d32">
-                                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
                             </svg>
                         </button>
                         {/* グループ名と説明の表示 */}
@@ -256,7 +264,7 @@ const GroupDetailPage: React.FC = () => {
                         {/* お知らせセクション - 投稿の作成と一覧表示 */}
                         {activeTab === 'お知らせ' && (
                             <div>
-                                <PostEditor onPost={createPost} />
+                                <PostEditor onPost={handleCreatePost} />
                                 <PostList
                                     posts={posts}
                                     onEditPost={updatePost}
@@ -298,7 +306,7 @@ const GroupDetailPage: React.FC = () => {
                                         onBackToList={handleAssignmentBackToList}
 
                                     />
-                                    
+
                                 )}
 
                                 {/* 詳細表示モード */}

@@ -96,7 +96,8 @@ async function getEventAndUserRole(eventId: number, userId: string | null) {
 }
 
 export default async function EventDetailPage({ params }: any) {
-  const eventId = parseInt(params.eventId, 10);
+  const resolvedParams = await params;
+  const eventId = parseInt(resolvedParams.eventId, 10);
   const session = await getAppSession();
   const userId = session?.user?.id ? session.user.id : null;
 

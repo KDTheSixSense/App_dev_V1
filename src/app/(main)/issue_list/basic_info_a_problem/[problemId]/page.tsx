@@ -20,8 +20,9 @@ type BasicInfoAProblemDetailPageProps = {
 // --- 修正点 2: props の型から Promise を削除 ---
 const BasicInfoAProblemDetailPage = async ({ params, searchParams }: any) => {
 
-  // --- 修正点 3: 'await params' を削除し、'params.problemid' (小文字) から直接IDを取得 ---
-  const problemIdStr = params.problemId;
+  // --- 修正点 3: 'await params' を使用してパラメータを取得 ---
+  const resolvedParams = await params;
+  const problemIdStr = resolvedParams.problemId;
   const problemIdNum = parseInt(problemIdStr, 10);
   // const resolvedSearchParams = searchParams; // searchParams も await は不要です
 

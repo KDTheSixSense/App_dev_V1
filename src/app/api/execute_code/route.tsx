@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     let result;
 
     // Sandbox Execution
-    console.log('Executing code via Sandbox Container...');
+    // console.log('Executing code via Sandbox Container...');
 
     // Sandbox service URL (docker-compose service name 'sandbox')
     // Note: In Docker network, hostname is service name.

@@ -22,16 +22,16 @@ export async function POST(req: NextRequest) {
     const filename = `${session.user.id}-${Date.now()}-${file.name}`;
     const filePath = path.join(process.cwd(), 'public', 'uploads', 'icons', filename);
 
-    console.log(`Attempting to write file to: ${filePath}`);
+    // console.log(`Attempting to write file to: ${filePath}`);
     await writeFile(filePath, buffer);
-    console.log(`File written successfully: ${filePath}`);
+    // console.log(`File written successfully: ${filePath}`);
 
-    console.log(`Attempting to update user ${session.user.id} with icon path: /uploads/icons/${filename}`);
+    // console.log(`Attempting to update user ${session.user.id} with icon path: /uploads/icons/${filename}`);
     const user = await prisma.user.update({
       where: { id: session.user.id },
       data: { icon: `/uploads/icons/${filename}` },
     });
-    console.log(`User updated successfully: ${user.id}`);
+    // console.log(`User updated successfully: ${user.id}`);
 
     return NextResponse.json({ message: 'Icon uploaded successfully', iconPath: user.icon });
   } catch (error) {

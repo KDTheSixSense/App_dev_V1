@@ -321,6 +321,7 @@ const ClassroomApp: React.FC = () => {
             if (result.success) {
                 setShowCreateModal(false);
                 setCreateGroupForm({ className: '', description: '' });
+                toast.success('グループの作成に成功しました'); // 成功トーストを追加
                 fetchGroups(); // Server ActionのrevalidatePathが機能するため、これは不要になる場合があります
                 router.refresh(); // ★ 追加: 画面更新
             } else {
@@ -329,7 +330,7 @@ const ClassroomApp: React.FC = () => {
             }
         } catch (error) {
             console.error(error);
-            toast.error(error instanceof Error ? error.message : '不明なエラー');
+            toast.error(`グループの作成に失敗しました(エラーコード: ${error instanceof Error ? error.message : '不明なエラー'})`);
         }
     };
 
