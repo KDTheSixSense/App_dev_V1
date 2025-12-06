@@ -5,8 +5,9 @@ import { getSession } from '@/lib/session';
 // GET: IDに基づいて単一の選択問題を取得
 export async function GET(
   request: Request,
-  { params }: any
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const session = await getSession();
     if (!session.user) {
@@ -41,8 +42,9 @@ export async function GET(
 // PUT: IDに基づいて選択問題を更新
 export async function PUT(
   request: Request,
-  { params }: any
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const session = await getSession();
     if (!session.user) {

@@ -1,5 +1,3 @@
-//app/(main)/event/event_detail/[eventId]/problem/[problemId]/ProblemSolverClient.tsx
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -305,7 +303,6 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
 
         // ユーザーのタイピングが終わるのを待つ（デバウンス）
         const handler = setTimeout(async () => {
-            console.log(`[Lint] Running server-side lint for ${selectedLanguage}...`);
             try {
                 const res = await fetch('/api/lint_code', {
                     method: 'POST',
@@ -316,7 +313,6 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
                 if (res.ok) {
                     const data = await res.json();
                     if (data.annotations) {
-                        console.log("[Lint] Annotations received:", data.annotations);
                         setAnnotations(data.annotations); // 取得したアノテーションをセット
                     } else {
                         setAnnotations([]); // エラーがなくてもクリア
@@ -347,7 +343,6 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
 
             // 3秒以上の滞在のみを記録
             if (timeSpentMs > 3000) {
-                console.log(`Recording ${timeSpentMs}ms for event problem ${problem.id}`);
                 // サーバーアクション (0 XP, timeSpentMs) を呼び出す
                 recordStudyTimeAction(timeSpentMs);
                 hasRecordedTime.current = true; // 記録済みフラグを立てる
@@ -444,7 +439,6 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
             }
 
             const submissionData = await submissionRes.json();
-            console.log('[ProblemSolverClient] Submission Data:', submissionData);
             setExecutionResult('');
 
             if (submissionData.testCaseResults) {
@@ -453,20 +447,25 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
                     actualOutput: (r.actualOutput !== undefined && r.actualOutput !== '') ? r.actualOutput : '(Empty Output)'
                 }));
                 // alert(`Submission Received! Cases: ${results.length}`); // Enabled for user debug
-                console.log('[ProblemSolverClient] Mapped Results:', results);
                 setTestCaseResults(results);
                 setModalSuccess(submissionData.success);
                 setIsResultModalOpen(true);
             }
 
             if (submissionData.success) {
-                setSubmitResult({ success: true, message: submissionData.message });
+                setSubmitResult({
+                    status: true,
+                    message: submissionData.message,
+                });
             } else {
-                setSubmitResult({ success: false, message: submissionData.message });
+                setSubmitResult({
+                    status: false,
+                    message: submissionData.message,
+                });
             }
         } catch (error: any) {
             console.error('Error submitting code:', error);
-            setSubmitResult({ success: false, message: error.message || '提出処理中にエラーが発生しました。' });
+            setSubmitResult({ status: false, message: error.message || '提出処理中にエラーが発生しました。' });
             setExecutionResult('');
         } finally {
             setIsSubmitting(false);

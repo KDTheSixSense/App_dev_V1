@@ -1,17 +1,23 @@
 import { prisma } from '@/lib/prisma';
 
+// Updated interface to match the actual flat response structure from the sandbox service
 interface SandboxResult {
     build_result?: {
         stdout: string;
         stderr: string;
     };
+    // The service returns these at the root level, but we support both just in case
+    stdout?: string;
+    stderr?: string;
+    exit_code?: number;
+    error?: string;
+
+    // Legacy support if it ever returns nested
     program_output?: {
         stdout: string;
         stderr: string;
         exit_code: number;
     };
-    status: string;
-    error?: string;
 }
 
 export interface TestCaseResult {
@@ -81,7 +87,6 @@ export async function executeAgainstTestCases(
         }
 
         // 2. Sandboxサービスでの実行 (逐次実行)
-        // 並列実行するとサーバー負荷が高くなる可能性があるため、とりあえず逐次
         const results: TestCaseResult[] = [];
         const sandboxUrl = 'http://sandbox:4000/execute';
 
@@ -91,13 +96,23 @@ export async function executeAgainstTestCases(
             let isCorrect = false;
 
             try {
+                // INPUT INJECTION HACK:
+                // Sandbox service seems to fail piping stdin correctly for Python, causing EOFError.
+                // We inject sys.stdin mock directly into the code.
+                let codeToRun = sourceCode;
+                if ((language === 'python' || language === 'python3') && testCase.input) {
+                    const escapedInput = JSON.stringify(testCase.input);
+                    // Prepend stdin mocking
+                    codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO(${escapedInput})\n\n` + sourceCode;
+                }
+
                 const response = await fetch(sandboxUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         language,
-                        source_code: sourceCode,
-                        input: testCase.input.endsWith('\n') ? testCase.input : testCase.input + '\n',
+                        source_code: codeToRun,
+                        input: testCase.input, // Still send it just in case
                     }),
                 });
 
@@ -107,7 +122,6 @@ export async function executeAgainstTestCases(
                     console.error('Sandbox error response:', response.status, response.statusText);
                 } else {
                     const result: SandboxResult = await response.json();
-                    console.log(`Sandbox output for test case ${testCase.name || 'unknown'}:`, JSON.stringify(result));
 
                     if (result.error) {
                         status = 'System Error';
@@ -115,21 +129,27 @@ export async function executeAgainstTestCases(
                     } else if (result.build_result?.stderr) {
                         status = 'Compilation Error';
                         actualOutput = result.build_result.stderr;
-                    } else if (result.program_output?.stderr) {
-                        status = 'Runtime Error';
-                        actualOutput = result.program_output.stderr;
                     } else {
-                        actualOutput = (result.program_output?.stdout || '').trim();
+                        // Handle both flat and nested structure (prioritize flat as per recent observations)
+                        const runtimeStderr = result.stderr || result.program_output?.stderr;
+                        const runtimeStdout = result.stdout || result.program_output?.stdout || '';
 
-                        // 比較 (末尾の改行などはtrimして比較するのが一般的)
-                        const expected = testCase.expectedOutput.trim();
-
-                        if (actualOutput === expected) {
-                            status = 'Accepted';
-                            isCorrect = true;
+                        if (runtimeStderr) {
+                            status = 'Runtime Error';
+                            actualOutput = runtimeStderr;
                         } else {
-                            status = 'Wrong Answer';
-                            isCorrect = false;
+                            actualOutput = runtimeStdout.trim();
+
+                            // 比較 (末尾の改行などはtrimして比較するのが一般的)
+                            const expected = testCase.expectedOutput.trim();
+
+                            if (actualOutput === expected) {
+                                status = 'Accepted';
+                                isCorrect = true;
+                            } else {
+                                status = 'Wrong Answer';
+                                isCorrect = false;
+                            }
                         }
                     }
                 }

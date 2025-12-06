@@ -116,13 +116,23 @@ export async function POST(req: NextRequest) {
 
     // 2. サーバーサイドでコードを実行・検証
     const executionResult = await executeAgainstTestCases(
-      language || 'python', // デフォルト言語 (python3 -> python に修正)
+      language || 'python',
       codeLog,
       eventIssue.problemId
     );
 
-    const isSuccess = executionResult.success;
-    const score = isSuccess ? await calculateScore(eventIssueId, new Date(startedAt), submittedAt) : 0;
+    const isSuccess = executionResult.success ?? false;
+
+    // startedAt のバリデーション
+    const startDate = new Date(startedAt);
+    const validStartedAt = isNaN(startDate.getTime()) ? new Date() : startDate;
+
+    let calcedScore = 0;
+    if (isSuccess) {
+      const rawScore = await calculateScore(eventIssueId, validStartedAt, submittedAt);
+      calcedScore = isNaN(rawScore) ? 0 : Math.floor(rawScore || 0);
+    }
+    const score = calcedScore;
 
     // console.log(`[API] Execution Result: Success=${isSuccess}, Score=${score}`);
 
@@ -137,10 +147,8 @@ export async function POST(req: NextRequest) {
         eventIssue: true,
       },
     });
-    // console.log(`[API] Existing submission found:`, existingSubmission ? `id: ${existingSubmission.id}` : 'null');
 
     if (existingSubmission && existingSubmission.status === true) {
-      // console.log('[API] User has already correctly answered this problem. Preventing score update.');
       return NextResponse.json({
         ...existingSubmission,
         message: 'すでに正解済みです。',
@@ -151,7 +159,6 @@ export async function POST(req: NextRequest) {
 
     let submission;
     if (existingSubmission) {
-      // console.log('[API] Updating existing submission...');
       submission = await prisma.event_Submission.update({
         where: {
           id: existingSubmission.id,
@@ -159,7 +166,7 @@ export async function POST(req: NextRequest) {
         data: {
           codeLog,
           status: isSuccess,
-          score,
+          score: score, // Explicitly assign validated score
           submittedAt,
         },
         include: {
@@ -167,15 +174,14 @@ export async function POST(req: NextRequest) {
         }
       });
     } else {
-      // console.log('[API] Creating new submission...');
       submission = await prisma.event_Submission.create({
         data: {
           userId,
           eventIssueId,
           codeLog,
           status: isSuccess,
-          score,
-          startedAt: new Date(startedAt),
+          score: score,
+          startedAt: validStartedAt,
           submittedAt,
         },
         include: {
@@ -183,13 +189,11 @@ export async function POST(req: NextRequest) {
         }
       });
     }
-    // console.log('[API] Submission saved successfully:', submission);
 
     if (submission && isSuccess) {
       await updateTotalScore(userId, submission.eventIssue.eventId);
     }
 
-    // console.log('--- [API] Event Submission POST request finished ---');
     return NextResponse.json({
       ...submission,
       testCaseResults: executionResult.testCaseResults,

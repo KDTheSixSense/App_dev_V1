@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   req: Request,
-  { params }: any
+  context: { params: Promise<{ problemId: string }> }
 ) {
+  const params = await context.params;
   // console.log('--- API /api/select-problems/[problemId] CALLED ---'); // 1. APIが呼び出されたか確認
 
   try {

@@ -7,17 +7,12 @@ import type { Problem as SerializableProblem } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProblemSolverPage({ params }: any) {
-  const resolvedParams = await params;
-  console.log('[ProblemSolverPage] Resolved Params:', resolvedParams);
-
-  const eventId = parseInt(resolvedParams.eventId, 10);
-  const problemId = parseInt(resolvedParams.problemId, 10);
-
-  console.log(`[ProblemSolverPage] Parsed IDs: eventId=${eventId}, problemId=${problemId}`);
+export default async function ProblemSolverPage(props: { params: Promise<{ eventId: string; problemId: string }> }) {
+  const params = await props.params;
+  const eventId = parseInt(params.eventId, 10);
+  const problemId = parseInt(params.problemId, 10);
 
   if (isNaN(eventId) || isNaN(problemId)) {
-    console.error(`[ProblemSolverPage] Invalid IDs: eventId=${eventId}, problemId=${problemId}`);
     notFound();
   }
 
@@ -29,10 +24,7 @@ export default async function ProblemSolverPage({ params }: any) {
   });
 
   if (!problem) {
-    console.error(`[ProblemSolverPage] Problem not found in DB: id=${problemId}`);
     notFound();
-  } else {
-    console.log(`[ProblemSolverPage] Problem found: ${problem.title}`);
   }
 
   const eventIssue = await prisma.event_Issue_List.findFirst({
@@ -43,10 +35,7 @@ export default async function ProblemSolverPage({ params }: any) {
   });
 
   if (!eventIssue) {
-    console.error(`[ProblemSolverPage] EventIssue not found: eventId=${eventId}, problemId=${problemId}`);
     notFound();
-  } else {
-    console.log(`[ProblemSolverPage] EventIssue found: id=${eventIssue.id}`);
   }
 
   // PrismaのDateオブジェクトなどをシリアライズ可能な形式に変換

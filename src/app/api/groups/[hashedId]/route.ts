@@ -15,7 +15,7 @@ interface SessionData {
  */
 export async function GET(
   request: NextRequest,
-  { params }: any // Next.js 13+ の標準的な引数の書き方
+  { params }: { params: Promise<{ hashedId: string }> } // params is now a Promise in Next.js 15+
 ) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
@@ -24,7 +24,7 @@ export async function GET(
   }
 
   try {
-    const { hashedId } = params; // Next.js 13+ では context の代わりに params から取得します
+    const { hashedId } = await params; // await params explicitly
 
     if (!hashedId) {
       return NextResponse.json(
