@@ -38,7 +38,7 @@ async function executeLocally(language: string, sourceCode: string, input: strin
         runCmd = process.platform === 'win32' ? 'python' : 'python3';
         runArgs = [fileName];
         break;
-      
+
       case 'javascript':
         fileName = 'main.js';
         runCmd = 'node';
@@ -53,7 +53,7 @@ async function executeLocally(language: string, sourceCode: string, input: strin
         const tscPath = path.join(process.cwd(), 'node_modules', '.bin', tscExec);
         // --noEmitOnError false を明示 (エラーがあってもJSを出す)
         compileCmd = `"${tscPath}" "${fileName}" --target es2020 --module commonjs --outDir . --noResolve --noEmitOnError false`;
-        
+
         runCmd = 'node';
         runArgs = [compiledFile];
         break;
@@ -87,7 +87,7 @@ async function executeLocally(language: string, sourceCode: string, input: strin
         runCmd = 'java';
         runArgs = ['Main'];
         break;
-      
+
       case 'csharp':
         fileName = 'Program.cs';
         compiledFile = 'app.exe';
@@ -111,14 +111,14 @@ async function executeLocally(language: string, sourceCode: string, input: strin
         // コンパイルコマンドが失敗(exit code != 0)した場合でも、
         // 実行に必要なファイル(main.js等)が生成されていれば無視して進む
         const isArtifactCreated = compiledFile && fs.existsSync(path.join(tempDir, compiledFile));
-        
+
         if (!isArtifactCreated) {
-           // 成果物がない＝本当に致命的なエラー
-           return { 
-             output: '', 
-             error: `Compilation Error:\n${compileError.stdout || ''}\n${compileError.stderr || compileError.message}`, 
-             isError: true 
-           };
+          // 成果物がない＝本当に致命的なエラー
+          return {
+            output: '',
+            error: `Compilation Error:\n${compileError.stdout || ''}\n${compileError.stderr || compileError.message}`,
+            isError: true
+          };
         }
         // 成果物がある場合は、型エラーなどは無視して実行ステップへ進む
       }
@@ -126,7 +126,12 @@ async function executeLocally(language: string, sourceCode: string, input: strin
 
     // 5. プロセスを起動して実行
     return await new Promise((resolve) => {
-      const child = spawn(runCmd, runArgs, { cwd: tempDir });
+      // Dynamic command construction to avoid build-time static analysis
+      // trying to resolve these as module imports
+      const cmd = runCmd;
+      const args = [...runArgs];
+
+      const child = spawn(cmd, args, { cwd: tempDir });
 
       let stdout = '';
       let stderr = '';
@@ -191,9 +196,9 @@ export async function POST(req: Request) {
 
       const actualOutput = result.output.trim();
       const expectedOutput = testCase.expectedOutput.trim();
-      
+
       const isCorrect = !result.isError && actualOutput === expectedOutput;
-      
+
       let status = 'Accepted';
       if (result.isError) {
         status = result.error.includes('Time Limit') ? 'Time Limit Exceeded' : 'Runtime Error';
@@ -222,9 +227,9 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error('Local Execution Error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      message: '実行中にサーバーエラーが発生しました。' 
+    return NextResponse.json({
+      success: false,
+      message: '実行中にサーバーエラーが発生しました。'
     }, { status: 500 });
   }
 }

@@ -2,12 +2,12 @@
 
 
 import React from 'react';
-import { notFound, useSearchParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import ProblemSolverClient from './ProblemSolverClient';
 import type { Problem as SerializableProblem } from '@/lib/types';
 
-export default async function ProblemSolverPage({ params }: any) {  
+export default async function ProblemSolverPage({ params }: any) {
   const eventId = parseInt(params.eventId, 10);
   const problemId = parseInt(params.problemId, 10);
 

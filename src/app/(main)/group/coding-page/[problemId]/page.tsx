@@ -1,7 +1,7 @@
 // /workspaces/my-next-app/src/app/(main)/group/coding-page/[problemId]/page.tsx
 
 import React from 'react';
-import { notFound, useSearchParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import ProblemSolverClient from './ProblemSolverClient';
 import type { Problem as SerializableProblem } from '@/lib/types';
