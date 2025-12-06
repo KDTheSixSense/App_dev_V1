@@ -26,6 +26,7 @@ print("ループが終了しました")
 `;
 
 // ★追加: 表示から除外するシステム変数のリスト
+// ★追加: 表示から除外するシステム変数のリスト
 const IGNORED_VARS = new Set([
     '__name__',
     '__doc__',
@@ -34,15 +35,38 @@ const IGNORED_VARS = new Set([
     '__spec__',
     '__annotations__',
     '__builtins__',
-    '__file__',
-    '__cached__',
-    'copyright',
     'credits',
     'license',
     'help'
 ]);
 
+// --- 定数定義 ---
+const THEME_OPTIONS = [
+    { value: 'github', label: 'GitHub (Light)' },
+    { value: 'tomorrow_night', label: 'Tomorrow Night (Dark)' },
+    { value: 'monokai', label: 'Monokai (Dark)' },
+    { value: 'dracula', label: 'Dracula (Dark)' },
+    { value: 'solarized_light', label: 'Solarized Light' },
+    { value: 'chrome', label: 'Chrome (Light)' },
+    { value: 'nord_dark', label: 'Nord (Dark)' },
+    { value: 'xcode', label: 'Xcode (Light)' },
+    { value: 'textmate', label: 'TextMate (Light)' },
+    { value: 'terminal', label: 'Terminal (Dark)' },
+    { value: 'merbivore_soft', label: 'Merbivore Soft (Dark)' },
+    { value: 'kuroir', label: 'Kuroir (Light)' },
+];
+
+// Helper to convert hex to rgba
+const hexToRgba = (hex: string, alpha: number) => {
+
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const PythonTraceClient = () => {
+
 
     const [code, setCode] = useState(sampleCode);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -58,10 +82,43 @@ const PythonTraceClient = () => {
     const [variables, setVariables] = useState<Record<string, any>>({});
     const [output, setOutput] = useState<string>("");
 
+    // Customization State
+    const [editorTheme, setEditorTheme] = useState('github');
+    const [arrowColor, setArrowColor] = useState('#ff0000');
+    const [highlightColor, setHighlightColor] = useState('#ff0000');
+
     const [traceStartedAt, setTraceStartedAt] = useState<number | null>(null);
     const hasRecordedTime = useRef(false);
     const [lintAnnotations, setLintAnnotations] = useState<Annotation[]>([]);
     const lintTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Editor instance ref
+    const editorRef = useRef<any>(null);
+    // Track previous line to remove decoration
+    const prevLineRef = useRef<number>(-1);
+
+    const handleEditorLoad = (editor: any) => {
+        editorRef.current = editor;
+    };
+
+    // Update gutter decorations when currentLine changes
+    useEffect(() => {
+        const editor = editorRef.current;
+        if (!editor || !editor.session) return;
+
+        // Remove from previous line
+        if (prevLineRef.current >= 0) {
+            editor.session.removeGutterDecoration(prevLineRef.current - 1, 'ace_execution_gutter');
+        }
+
+        // Add to new line
+        if (currentLine > 0) {
+            editor.session.addGutterDecoration(currentLine - 1, 'ace_execution_gutter');
+            prevLineRef.current = currentLine;
+        } else {
+            prevLineRef.current = -1;
+        }
+    }, [currentLine]);
 
     // エディタへの入力があるたびに呼ばれます
     const handleCodeChange = (newCode: string) => {
@@ -219,19 +276,26 @@ const PythonTraceClient = () => {
             <style jsx global>{`
                 .ace_execution_line {
                     position: absolute;
-                    background-color: rgba(255, 0, 0, 0.05) !important;
-                    border-bottom: 1px solid rgba(255, 0, 0, 0.2);
+                    background-color: ${hexToRgba(highlightColor, 0.5)} !important; /* Customizable, Darker opacity */
+                    border-bottom: 1px solid ${hexToRgba(highlightColor, 0.8)};
                     z-index: 20;
                 }
-                .ace_execution_line::before {
-                    content: "▶";
+                /* Remove arrow from content marker */
+                
+                /* Gutter Decoration */
+                .ace_execution_gutter {
+                    position: relative;
+                }
+                .ace_execution_gutter::before {
+                    content: "ー▶";
                     position: absolute;
                     left: 2px;
-                    color: red;
+                    color: ${arrowColor}; /* Customizable */
                     font-weight: bold;
                     font-size: 12px;
                     line-height: 1;
-                    top: 2px;
+                    top: 4px; /* Adjust vertically */
+                    z-index: 999;
                 }
                 .ace_active-line {
                     background: transparent !important;
@@ -263,12 +327,55 @@ const PythonTraceClient = () => {
                     </div>
                 </div>
 
+                {/* 設定エリア */}
+                <div className="mb-4 p-3 bg-gray-50 border rounded-md">
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">表示設定</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <span className="text-xs text-gray-500 block mb-1">テーマ</span>
+                            <select
+                                value={editorTheme}
+                                onChange={(e) => setEditorTheme(e.target.value)}
+                                className="w-full p-2 border rounded text-sm"
+                            >
+                                {THEME_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <span className="text-xs text-gray-500 block mb-1">矢印の色</span>
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="color"
+                                    value={arrowColor}
+                                    onChange={(e) => setArrowColor(e.target.value)}
+                                    className="h-9 w-full p-0 border rounded cursor-pointer"
+                                    title="色を自由に選択"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <span className="text-xs text-gray-500 block mb-1">ハイライト色</span>
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="color"
+                                    value={highlightColor}
+                                    onChange={(e) => setHighlightColor(e.target.value)}
+                                    className="h-9 w-full p-0 border rounded cursor-pointer"
+                                    title="色を自由に選択"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="flex-grow mb-4 relative">
                     <label className="block text-lg font-semibold mb-2 text-gray-700">Pythonコード</label>
                     <div className="border rounded-md overflow-hidden" style={{ height: '500px' }}>
                         <AceEditorWrapper
                             mode="python"
-                            theme="github"
+                            theme={editorTheme}
                             name="python-trace-editor"
                             value={code}
                             onChange={handleCodeChange}
@@ -282,8 +389,10 @@ const PythonTraceClient = () => {
                                 enableLiveAutocompletion: true,
                                 enableSnippets: true,
                                 showLineNumbers: true,
+                                showPrintMargin: false, // Turn off the vertical line
                                 tabSize: 4,
                             }}
+                            onLoad={handleEditorLoad}
                             markers={isTraceStarted && currentLine > 0 ? [{
                                 startRow: currentLine - 1,
                                 startCol: 0,
@@ -357,7 +466,7 @@ const PythonTraceClient = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

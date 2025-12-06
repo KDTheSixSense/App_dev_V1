@@ -486,8 +486,12 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
 以上のルールと例を厳守し、ユーザーの指示に対する疑似言語コードのみを、追加の説明やマークダウン(\`\`\`)なしで直接生成してください。`;
 
   try {
-    // ChatGPT APIのエンドポイント
-    const apiUrl = 'https://api.openai.com/v1/chat/completions';
+    // ChatGPT APIのエンドポイント (Base URL対応)
+    const baseUrl = process.env.OPENAI_BASE_URL
+      ? process.env.OPENAI_BASE_URL.replace(/\/$/, "")
+      : 'https://api.openai.com/v1';
+
+    const apiUrl = `${baseUrl}/chat/completions`;
 
     // APIキーを環境変数から取得します。
     // Next.jsの環境変数(.env.localなど)に OPENAI_API_KEY="あなたのAPIキー" を設定してください。
@@ -638,7 +642,11 @@ print(sum_val)
 `;
 
   try {
-    const apiUrl = 'https://api.openai.com/v1/chat/completions';
+    const baseUrl = process.env.OPENAI_BASE_URL
+      ? process.env.OPENAI_BASE_URL.replace(/\/$/, "")
+      : 'https://api.openai.com/v1';
+
+    const apiUrl = `${baseUrl}/chat/completions`;
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
@@ -677,7 +685,7 @@ print(sum_val)
     const generatedText = result.choices?.[0]?.message?.content;
 
     if (!generatedText) {
-      throw new Error("AIからの応答が空でした。");
+      throw new Error("コハクからの応答が空でした。");
     }
 
     // コードブロックが含まれている場合の除去処理
