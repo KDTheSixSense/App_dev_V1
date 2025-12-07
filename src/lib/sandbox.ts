@@ -34,6 +34,8 @@ export interface ExecutionResult {
     message: string;
     testCaseResults: TestCaseResult[];
     score?: number;
+    passedCount?: number;
+    totalCount?: number;
 }
 
 /**
@@ -174,8 +176,10 @@ export async function executeAgainstTestCases(
 
         return {
             success: allPassed,
-            message: allPassed ? '正解です！おめでとうございます！' : '不正解のテストケースがあります。',
+            message: allPassed ? '正解です！おめでとうございます！' : `不正解のテストケースがあります。(${results.filter(r => r.isCorrect).length}/${results.length} ケース正解)`,
             testCaseResults: results,
+            passedCount: results.filter(r => r.isCorrect).length,
+            totalCount: results.length,
         };
 
     } catch (error: any) {

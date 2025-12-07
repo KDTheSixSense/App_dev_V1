@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       if (!executionSuccess) {
         return NextResponse.json({
           success: false,
-          message: '不正解のテストケースがあります。',
+          message: execResult.message,
           testCaseResults: testCaseResults,
         }, { status: 200 });
       }
