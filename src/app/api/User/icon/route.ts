@@ -18,8 +18,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
+    const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+    const ext = path.extname(file.name).toLowerCase();
+
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return NextResponse.json({ error: '無効なファイル形式です。画像ファイルのみアップロード可能です。' }, { status: 400 });
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = `${session.user.id}-${Date.now()}-${file.name}`;
+    const safeBasename = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${session.user.id}-${Date.now()}-${safeBasename}${ext}`;
     const filePath = path.join(process.cwd(), 'public', 'uploads', 'icons', filename);
 
     // console.log(`Attempting to write file to: ${filePath}`);

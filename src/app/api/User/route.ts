@@ -49,6 +49,17 @@ export async function PATCH(req: NextRequest) {
         icon: data.icon,
         selectedTitleId: data.selectedTitleId ? parseInt(data.selectedTitleId, 10) : null,
       },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        icon: true,
+        level: true,
+        xp: true,
+        birth: true,
+        selectedTitleId: true,
+        // パスワードやハッシュなどの機密情報は含めない
+      },
     });
 
     return NextResponse.json(updatedUser);

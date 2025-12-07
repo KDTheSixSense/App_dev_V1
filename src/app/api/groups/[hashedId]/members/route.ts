@@ -39,6 +39,14 @@ export async function GET(request: NextRequest, context: { params: Promise<{ has
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
 
+    // メンバーシップチェック: リクエストユーザーがグループのメンバーか確認
+    // 型の不一致を防ぐため String() で比較します
+    const isMember = group.groups_User.some(gu => String(gu.user.id) === String(session.user?.id));
+
+    if (!isMember) {
+      return NextResponse.json({ success: false, message: 'このグループのメンバーではありません' }, { status: 403 });
+    }
+
     // フロントエンドの型定義に合わせてデータを整形
     const members = group.groups_User.map(gu => ({
       id: gu.user.id,

@@ -32,10 +32,18 @@ export async function POST(request: Request, context: { params: Promise<{ proble
             const uploadedFileMetadata = [];
 
             for (const file of files) {
+                  const ALLOWED_EXTENSIONS = ['.pdf', '.zip', '.rar', '.7z', '.txt', '.md', '.c', '.cpp', '.h', '.hpp', '.py', '.java', '.js', '.ts', '.rb', '.go', '.rs', '.png', '.jpg', '.jpeg'];
+                  const ext = path.extname(file.name).toLowerCase();
+
+                  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                        continue; // Skip invalid files or throw error. Here we skip to avoid breaking the entire batch.
+                  }
+
                   const arrayBuffer = await file.arrayBuffer();
                   const buffer = Buffer.from(arrayBuffer);
 
-                  const fileName = `${Date.now()}-${file.name}`;
+                  const safeBasename = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+                  const fileName = `${Date.now()}-${safeBasename}${ext}`;
                   const filePath = path.join(uploadDir, fileName);
 
                   await fs.writeFile(filePath, buffer);
