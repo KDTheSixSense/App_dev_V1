@@ -6,7 +6,7 @@ import { registerUserAction } from '@/lib/actions'
 import { FcGoogle } from "react-icons/fc"; // Googleアイコンをインポート
 import Image from 'next/image'; // ★ デザイン反映のために追加
 import Link from 'next/link'; // ★ デザイン反映のために追加
-import DOMPurify from 'dompurify';
+
 import toast from 'react-hot-toast';
 
 type Inputs = {
@@ -41,10 +41,10 @@ const Register = () => {
     try {
       // Server Actionを直接呼び出す
       const result = await registerUserAction({
-        username: DOMPurify.sanitize(data.username),
-        email: DOMPurify.sanitize(data.email),
-        password: DOMPurify.sanitize(data.newpassword),
-        birth: data.birth ? DOMPurify.sanitize(data.birth) : undefined,
+        username: data.username,
+        email: data.email,
+        password: data.newpassword,
+        birth: data.birth || undefined,
         isAgreedToTerms: true,  // 利用規約への同意 (実際にはチェックボックスの値を使う)
         isAgreedToPrivacyPolicy: true,  // プライバシーポリシーへの同意 (実際にはチェックボックスの値を使う)
       });

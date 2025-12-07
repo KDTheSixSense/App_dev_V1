@@ -74,6 +74,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // 3. 制限チェック
+  //state.count++;
   if (state.count > LIMIT) {
     state.violationCount++;
     const blockDuration = getBlockDuration(state.violationCount);

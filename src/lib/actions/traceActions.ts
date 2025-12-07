@@ -704,7 +704,7 @@ print(sum_val)
  * (Security Update: Execute via Sandbox Service)
  */
 export async function runPythonTraceAction(code: string) {
-  console.log("--- [Debug] runPythonTraceAction Started (Sandbox Mode) ---");
+  // console.log("--- [Debug] runPythonTraceAction Started (Sandbox Mode) ---");
 
   // 1. Zod Validation
   const validationResult = executeCodeSchema.safeParse({ source_code: code, language: 'python' });
@@ -733,7 +733,7 @@ export async function runPythonTraceAction(code: string) {
       scriptRelativePath = 'lib/python_tracer.py';
     }
     const tracerPath = path.join(cwd, scriptRelativePath);
-    console.log("[Debug] Reading Tracer Path:", tracerPath);
+    // console.log("[Debug] Reading Tracer Path:", tracerPath);
 
     // Tracerのコードを読み込む
     let tracerCode = "";
@@ -747,7 +747,7 @@ export async function runPythonTraceAction(code: string) {
     // Sandbox URL (Env var or default)
     const sandboxUrl = process.env.SANDBOX_URL || 'http://sandbox:4000/execute';
 
-    console.log(`[Debug] Sending request to Sandbox: ${sandboxUrl}`);
+    // console.log(`[Debug] Sending request to Sandbox: ${sandboxUrl}`);
 
     // Sandboxへリクエスト
     const response = await fetch(sandboxUrl, {
@@ -768,7 +768,7 @@ export async function runPythonTraceAction(code: string) {
     }
 
     const result = await response.json();
-    console.log("[Debug] Sandbox Response received.");
+    // console.log("[Debug] Sandbox Response received.");
 
     // 結果の解析
     const programStdout = result.program_output?.stdout || result.stdout || "";
@@ -791,9 +791,6 @@ export async function runPythonTraceAction(code: string) {
     }
 
     // JSONパース
-    // python_tracer.py prints the JSON as the last line usually, or just JSON.
-    // The sandbox output might contain other things if not careful, but usually it captures stdout accurately.
-    // Let's try to find the JSON array in the output.
     const jsonMatch = programStdout.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       console.error("[Debug] No JSON found in output:", programStdout);

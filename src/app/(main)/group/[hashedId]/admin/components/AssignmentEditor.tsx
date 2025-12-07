@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // ★ 追加
-import DOMPurify from 'dompurify';
+import { sanitize } from '@/lib/sanitizer';
 import toast from 'react-hot-toast';
 import { FormatState, ProgrammingProblem, Assignment } from '../types/AdminTypes';
 import { ProblemTypeSelectModal } from './ProblemTypeSelectModal';
@@ -73,7 +73,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             }
 
             if (editorRef.current) {
-                editorRef.current.innerHTML = DOMPurify.sanitize(initialAssignment.description);
+                editorRef.current.innerHTML = sanitize(initialAssignment.description);
             }
         } else {
             // 新規作成モードの場合、特定の遷移（問題作成）から戻ってきた場合のみ復元
@@ -88,7 +88,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                         if (savedDescription) {
                             setDescription(savedDescription);
                             if (editorRef.current) {
-                                editorRef.current.innerHTML = DOMPurify.sanitize(savedDescription);
+                                editorRef.current.innerHTML = sanitize(savedDescription);
                             }
                         }
                         if (savedDueDate) setDueDate(savedDueDate);

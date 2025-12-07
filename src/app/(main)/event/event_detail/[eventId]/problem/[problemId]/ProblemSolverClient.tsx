@@ -8,8 +8,7 @@ import dynamic from 'next/dynamic';
 import { recordStudyTimeAction } from '@/lib/actions';
 import TestCaseResultModal, { TestCaseResult } from '@/components/TestCaseResultModal';
 import type { Problem as SerializableProblem } from '@/lib/types';
-// Simple fallback to prevent SSR crashes. In production, use client-side only DOMPurify or 'sanitize-html'.
-const DOMPurify = { sanitize: (s: string) => s };
+import { sanitize } from '@/lib/sanitizer';
 
 const DynamicAceEditor = dynamic(
     () => import('@/components/AceEditorWrapper'),
@@ -86,7 +85,7 @@ const ProblemDescriptionPanel: React.FC<{
                 </button>
             </div>
             <div className="p-6 space-y-6 overflow-y-auto">
-                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize ? DOMPurify.sanitize((descriptionText ?? '説明がありません。').replace(/\n/g, '<br />')) : (descriptionText ?? '説明がありません。') }} />
+                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitize((descriptionText ?? '説明がありません。').replace(/\n/g, '<br />')) }} />
                 <div>
                     <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
                     {problem.sampleCases?.map((sc, index) => (

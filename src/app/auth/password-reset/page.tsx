@@ -2,7 +2,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";  // App Router用
-import DOMPurify from 'dompurify';
+
 import toast from 'react-hot-toast';
 
 type Inputs = {
@@ -37,8 +37,8 @@ const PasswordReset = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: DOMPurify.sanitize(data.email),
-          newPassword: DOMPurify.sanitize(data.newpassword),
+          email: data.email,
+          newPassword: data.newpassword,
         }),
       });
 

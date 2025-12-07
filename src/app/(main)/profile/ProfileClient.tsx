@@ -8,7 +8,7 @@ import PetStatusView from '../profile/Pet/PetStatusview';
 import { updateUserProfileAction } from './actions';
 import { changePasswordAction } from '@/lib/actions';
 import dynamic from 'next/dynamic';
-import DOMPurify from 'dompurify';
+
 import toast from 'react-hot-toast';
 
 const DailyActivityChart = dynamic(
@@ -147,7 +147,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
       // L171: ★ 修正点: nullをundefinedに変換する (?? 演算子を使用)
       // formData.icon が null の場合、updateUserProfileAction の icon: string | undefined に合わせるため undefined を渡す
       icon: formData.icon ?? undefined, // 'Alice Smith' や 'null' が入っている可能性を排除する
-      username: formData.username ? DOMPurify.sanitize(formData.username) : undefined, // XSS対策: ユーザー名をサニタイズ
+      username: formData.username ? formData.username : undefined, // XSS対策: Reactがデフォルトでエスケープするため不要
     };
 
     const profileResult = await updateUserProfileAction(dataForAction);
