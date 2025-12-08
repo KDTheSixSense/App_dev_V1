@@ -1,4 +1,4 @@
- import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 // @/app/data/helpData のパスは、プロジェクトのエイリアス設定に合わせて調整してください
 import { helpSteps } from "@/app/data/helpData";
 import { HelpApiResponse } from "@/types/help";
@@ -93,18 +93,16 @@ export async function GET(request: Request) {
   }
 }
 
+import { prisma } from "@/lib/prisma";
+
 // イベント作成者かどうかをチェックする関数
 async function checkIfUserIsEventCreator(userId: string, eventId: string): Promise<boolean> {
-  // ここにデータベースからイベントを取得して作成者かどうかをチェックするロジックを追加
-  // 仮定: Prismaを使ってイベントを取得
   try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
     const event = await prisma.create_event.findUnique({
       where: { id: parseInt(eventId) },
       select: { creatorId: true },
     });
-    return event?.creatorId === parseInt(userId);
+    return event?.creatorId === userId;
   } catch (error) {
     console.error("Error checking event creator:", error);
     return false;

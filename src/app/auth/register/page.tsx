@@ -193,7 +193,7 @@ const Register = () => {
                   className="mt-1 h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
                 />
                 <label htmlFor="terms" className="text-sm text-slate-300">
-                  <Link href="/terms" target="_blank" className="text-cyan-400 hover:underline">利用規約</Link>
+                  <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">利用規約</Link>
                   に同意します
                 </label>
               </div>
@@ -207,7 +207,7 @@ const Register = () => {
                   className="mt-1 h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
                 />
                 <label htmlFor="privacy" className="text-sm text-slate-300">
-                  <Link href="/privacypolicy" target="_blank" className="text-cyan-400 hover:underline">プライバシーポリシー</Link>
+                  <Link href="/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">プライバシーポリシー</Link>
                   に同意します
                 </label>
               </div>

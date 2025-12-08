@@ -10,6 +10,7 @@ datasource db {
 model User {
   id                       String                @id @default(uuid()) // ID: UUID
   email                    String                @unique // メールアドレス: 文字列型、ユニーク
+  isAdmin                  Boolean               @default(false) // 管理者フラグ: デフォルトFalse
   password                 String? // パスワード: 文字列型
   hash                     String? // ハッシュ値: 文字列型、Null許容
   username                 String? // ユーザー名: 文字列型、Null許容
@@ -780,10 +781,22 @@ model AssignmentComment {
 model AuditLog {
   id        Int      @id @default(autoincrement())
   userId    String?
-  action    String   // "LOGIN", "EXECUTE_CODE", "POST_CREATE" etc.
-  details   String?  @db.Text // JSON string or details
+  action    String   // "LOGIN", "EXECUTE_CODE", "POST_CREATE", "PAGE_VIEW" etc.
+  details   String?  @db.Text // JSON string or details (Legacy / Simple)
+  
+  // New granular fields
   ipAddress String?
+  userAgent String?  // Browser/OS info
+  path      String?  // Requested URL path
+  method    String?  // HTTP Method (GET, POST etc.)
+  duration  Int?     // Duration in ms
+  metadata  Json?    // Structured data for easier querying
+
   createdAt DateTime @default(now())
 
   user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
