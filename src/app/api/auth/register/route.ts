@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { requestToBodyStream } from 'next/dist/server/body-streams';
 
 import { registerSchema } from '@/lib/validations';
+import { logAudit, AuditAction } from '@/lib/audit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,6 +37,13 @@ export async function POST(req: NextRequest) {
         birth: birthDate,
       },
     });
+
+    // Audit Log
+    try {
+      await logAudit(user.id, AuditAction.REGISTER, { email });
+    } catch (e) {
+      // Ignore audit failure
+    }
 
     return NextResponse.json({
       message: '登録完了',

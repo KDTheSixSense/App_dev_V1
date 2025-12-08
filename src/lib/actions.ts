@@ -13,6 +13,7 @@ import { nanoid } from 'nanoid';
 import { sessionOptions, SessionData as ImportedSessionData } from '@/lib/session';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import { TitleType } from '@prisma/client';
+import { logAudit, AuditAction } from '@/lib/audit';
 import { getMissionDate } from './utils';
 import { getNowJST, getAppToday, isSameAppDay, getDaysDiff } from './dateUtils';
 
@@ -1036,6 +1037,13 @@ export async function createGroupAction(data: { groupName: string, body: string 
       admin_flg: true, // 作成者は自動的に管理者
     },
   });
+
+  try {
+    await logAudit(userId, AuditAction.CREATE_GROUP, { groupId: newGroup.id, groupName: newGroup.groupname });
+  } catch (e) {
+    // ignore
+  }
+
   revalidatePath('/groups');
   return { success: true, groupName: newGroup.groupname, inviteCode: newGroup.invite_code };
 }
@@ -1077,6 +1085,12 @@ export async function joinGroupAction(inviteCode: string) {
       admin_flg: false, // 参加者はデフォルトで管理者ではない
     },
   });
+
+  try {
+    await logAudit(userId, AuditAction.JOIN_GROUP, { groupId: group.id, groupName: group.groupname });
+  } catch (e) {
+    // ignore
+  }
 
   revalidatePath('/groups');
   return { success: true, groupName: group.groupname };

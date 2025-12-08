@@ -23,7 +23,8 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = req.nextUrl;
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '20', 10);
+    const limit = Math.min(rawLimit, 50); // Hard cap at 50 to prevent DoS
     const skip = (page - 1) * limit;
 
     const group = await prisma.groups.findUnique({
@@ -33,6 +34,15 @@ export async function GET(req: NextRequest) {
 
     if (!group) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
+    }
+
+    // Verify membership
+    const membership = await prisma.groups_User.findFirst({
+      where: { group_id: group.id, user_id: session.user.id },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ success: false, message: 'グループのメンバーではありません' }, { status: 403 });
     }
 
     const [posts, total] = await Promise.all([

@@ -12,6 +12,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: '認証が必要です' }, { status: 401 });
     }
 
+    // 1-2. 管理者権限のチェック (Reverted: 生徒でも作成可能にする)
+    // admin check removed as per user request.
+
     // 2. リクエストボディから問題データを取得
     const body = await req.json();
     const {
@@ -42,7 +45,7 @@ export async function POST(req: Request) {
         subjectId,
         difficultyId,
         // デフォルト値や固定値が必要なカラム
-        initialVariable: {}, 
+        initialVariable: {},
         logictype: 'MULTIPLE_CHOICE',
         options: {},
       },

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { prisma } from "@/lib/prisma";
+import { getAppSession } from "@/lib/auth"; // セッション取得用
 
 // OpenAI APIのエンドポイント
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -16,6 +18,37 @@ const hintTemplate = `「{{question}}」についてですね！
 export async function POST(req: Request) {
   try {
     const { question, context } = await req.json();
+
+    // --- 0. 認証とレート制限 ---
+    const session = await getAppSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
+    }
+    const userId = session.user.id;
+
+    // レート制限: 過去1分間に5回以上の生成を禁止
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    const recentHints = await prisma.auditLog.count({
+      where: {
+        userId: userId,
+        action: 'GENERATE_HINT',
+        createdAt: { gte: oneMinuteAgo }
+      }
+    });
+
+    if (recentHints >= 5) {
+      return NextResponse.json({ error: 'ヒント生成の回数制限を超えました。少し時間を置いてから再試行してください。' }, { status: 429 });
+    }
+
+    // ログを記録
+    await prisma.auditLog.create({
+      data: {
+        userId: userId,
+        action: 'GENERATE_HINT',
+        details: `Question: ${question.substring(0, 50)}...`,
+        ipAddress: 'unknown' // 必要であれば取得
+      }
+    });
 
     // --- AIへの指示（プロンプト）を作成 ---
     // より構造化され、AIが役割を理解しやすくなりました。
@@ -127,7 +160,7 @@ ${context.userCode}
     // OpenAI APIを呼び出す
     const res = await fetch(OPENAI_API_URL, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
@@ -140,7 +173,7 @@ ${context.userCode}
     }
 
     const data = await res.json();
-    
+
     // AIからの応答を安全に処理
     let aiResponseJson;
     try {

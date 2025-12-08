@@ -18,9 +18,50 @@ export async function GET(
 ) {
   const params = await context.params;
   try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
+
+    // Verify group membership
+    const groupMember = await prisma.groups_User.findFirst({
+      where: {
+        group: { hashedId: params.hashedId },
+        user_id: userId
+      },
+    });
+
+    if (!groupMember) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Verify assignment belongs to group (Optional but good for strictness)
+    // The previous code trusted that if you have assignmentId, you can see comments. 
+    // But now we ensured you are in the group "hashedId". 
+    // Ideally we should also check if assignmentId belongs to hashedId's group, but 
+    // Prisma query `where: { assignmentId }` will verify existence. 
+    // If someone calls with assignmentId that is NOT in the group, they will just see comments 
+    // for that assignment if they are a member of *that assignment's group*? 
+    // Actually, `params.hashedId` is used to check membership. 
+    // If I put assignmentId=999 (from Group B) but use hashedId=GroupA (where I am member), 
+    // I would pass the membership check.
+    // So we MUST check if the assignment belongs to the group.
+
     const assignmentId = parseInt(params.assignmentId);
     if (isNaN(assignmentId)) {
       return NextResponse.json({ error: 'Invalid assignment ID' }, { status: 400 });
+    }
+
+    const assignment = await prisma.assignment.findFirst({
+      where: {
+        id: assignmentId,
+        group: { hashedId: params.hashedId }
+      }
+    });
+
+    if (!assignment) {
+      return NextResponse.json({ error: 'Assignment not found or not in this group' }, { status: 404 });
     }
 
     const comments = await prisma.assignmentComment.findMany({

@@ -89,14 +89,28 @@ export default async function ProfilePage() {
   const userId = session.user.id;
 
   // --- 1. ユーザー、称号、ペット情報を一括取得 ---
+  // セキュリティ対策: password/hashを含めないようにselectを使用
   const userWithDetails = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      level: true,
+      xp: true,
+      icon: true,
+      class: true,
+      year: true,
+      birth: true,
+      lastlogin: true,
+      continuouslogin: true,
+      isAgreedToTerms: true,
+      isAgreedToPrivacyPolicy: true,
       unlockedTitles: { include: { title: true } },
       selectedTitle: true,
-      status_Kohaku: true, // ペットのステータス情報を追加
+      status_Kohaku: true,
     },
-  });
+  }) as any; // セキュリティのためフィールドを制限した結果、型定義(User)と不一致になるためキャスト
 
   if (!userWithDetails) {
     redirect("/auth/login");
@@ -165,7 +179,7 @@ export default async function ProfilePage() {
     ...userWithDetails,
     birth: userWithDetails.birth?.toISOString() ?? null,
     lastlogin: userWithDetails.lastlogin?.toISOString() ?? null,
-    unlockedTitles: userWithDetails.unlockedTitles.map(ut => ({
+    unlockedTitles: userWithDetails.unlockedTitles.map((ut: any) => ({
       ...ut,
       unlockedAt: ut.unlockedAt.toISOString(),
     })),

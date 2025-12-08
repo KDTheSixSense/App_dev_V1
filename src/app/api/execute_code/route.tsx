@@ -1,14 +1,8 @@
 import { NextResponse } from 'next/server';
-import { spawn, exec } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
-import { promisify } from 'util';
 import { LRUCache } from 'lru-cache';
 import { executeCodeSchema } from '@/lib/validations';
 import { logAudit, AuditAction } from '@/lib/audit';
 
-const execPromise = promisify(exec);
 
 // --- Rate Limiting Setup ---
 const rateLimit = new LRUCache<string, number>({
@@ -26,16 +20,7 @@ function checkRateLimit(ip: string): boolean {
 }
 
 // --- Output Sanitization ---
-function sanitizeOutput(output: string): string {
-  const tmpDir = os.tmpdir();
-  let sanitized = output.split(tmpDir).join('/sandbox');
-  // ユーザー名なども隠す
-  const username = os.userInfo().username;
-  if (username) {
-    sanitized = sanitized.split(username).join('user');
-  }
-  return sanitized;
-}
+// --- Output Sanitization (Removed unused local function) ---
 
 // --- Basic Keyword Blocking (Defense in Depth) ---
 // Note: This is NOT a complete security solution.

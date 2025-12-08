@@ -5,7 +5,10 @@ export enum AuditAction {
     LOGIN = 'LOGIN',
     EXECUTE_CODE = 'EXECUTE_CODE',
     POST_CREATE = 'POST_CREATE',
-    // Add more actions as needed
+    REGISTER = 'REGISTER',
+    CREATE_GROUP = 'CREATE_GROUP',
+    JOIN_GROUP = 'JOIN_GROUP',
+    UPDATE_USER = 'UPDATE_USER',
 }
 
 export async function logAudit(

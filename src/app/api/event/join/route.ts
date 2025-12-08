@@ -35,6 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '無効な招待コードです。' }, { status: 404 });
     }
 
+    // イベント終了チェック
+    if (event.endTime && new Date(event.endTime) < new Date()) {
+      return NextResponse.json({ error: 'このイベントは既に終了しています。' }, { status: 400 });
+    }
+
     // 2. 既に参加済みか確認
     const existingParticipant = await prisma.event_Participants.findUnique({
       where: {

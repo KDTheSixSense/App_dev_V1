@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '20', 10);
+    const limit = Math.min(rawLimit, 100);
     const withSubmissions = searchParams.get('withSubmissions') === 'true';
     const skip = (page - 1) * limit;
 
@@ -129,17 +130,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const urlParts = req.url.split('/');
-    const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
+    const hashedId = urlParts[urlParts.length - 2];
     const body = await req.json();
     const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
 
     if (!title || !dueDate) {
       return NextResponse.json({ success: false, message: 'タイトルと期日は必須です。' }, { status: 400 });
     }
-    // 課題がなくても投稿できるようにする場合は、以下のチェックをコメントアウト
-    // if (!programmingProblemId && !selectProblemId) {
-    //   return NextResponse.json({ success: false, message: '課題となる問題が指定されていません。' }, { status: 400 });
-    // }
 
     if (typeof hashedId !== 'string') {
       return NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });
