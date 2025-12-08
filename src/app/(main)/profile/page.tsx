@@ -109,12 +109,25 @@ export default async function ProfilePage() {
       unlockedTitles: { include: { title: true } },
       selectedTitle: true,
       status_Kohaku: true,
+      password: true, // パスワードの有無を確認するために取得 (後で削除)
     },
   }) as any; // セキュリティのためフィールドを制限した結果、型定義(User)と不一致になるためキャスト
 
   if (!userWithDetails) {
     redirect("/auth/login");
   }
+
+  // パスワードが存在するかどうか（Googleログイン等の場合はnull/undefined想定）
+  // 空文字の場合も「パスワードなし」とみなす
+  const hasPassword = userWithDetails.password !== null &&
+    userWithDetails.password !== undefined &&
+    userWithDetails.password !== '';
+
+  console.log(`[ProfilePage] UserID: ${userId}, hasPassword: ${hasPassword} (Value: ${userWithDetails.password === null ? 'null' : typeof userWithDetails.password})`);
+
+
+  // クライアントに渡す前にpasswordフィールドを削除（セキュリティ対策）
+  delete userWithDetails.password;
 
   // --- 2. チャート用の統計データを取得・計算 ---
   const sevenDaysAgo = new Date();
@@ -192,6 +205,7 @@ export default async function ProfilePage() {
       initialUser={serializedUser}
       initialStats={userStats}
       aiAdvice={aiAdvice}
+      hasPassword={hasPassword}
     />
   );
 }

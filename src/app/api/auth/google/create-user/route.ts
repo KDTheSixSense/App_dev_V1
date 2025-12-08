@@ -62,6 +62,7 @@ export async function POST(req: Request) {
       id: user.id,
       email: user.email,
       username: user.username,
+      isAdmin: user.isAdmin,
       lastlogin: user.lastlogin,
     };
     await session.save();

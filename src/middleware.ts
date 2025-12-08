@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getIronSession } from 'iron-session';
+import { getIronSession, IronSessionData } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 
 // --- Configuration ---
@@ -78,7 +78,7 @@ export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     // 1. Global Rate Limiting
-    const ip = req.ip || req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    const ip = ((req as any).ip || req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown') as string;
     const now = Date.now();
 
     requestCounter++;
@@ -127,7 +127,7 @@ export async function middleware(req: NextRequest) {
     // 認証チェックが必要な場合のみ呼び出すか、常に呼び出して response に反映させる。
     // ここでは常に安全のために Session を確認するが、Public Route では強制しない。
 
-    const session = await getIronSession(req, response, sessionOptions);
+    const session = await getIronSession<IronSessionData>(req, response, sessionOptions);
 
     if (isProtected || isAdminPath) {
         if (!session.user) {
