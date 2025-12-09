@@ -1,6 +1,7 @@
 // /app/api/groups/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAppSession } from '@/lib/auth';
 
 // グループ一覧を取得
 export async function GET() {
@@ -30,8 +31,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'グループ名は必須です' }, { status: 400 });
     }
 
-    // TODO: 実際の認証情報からユーザーIDを取得する
-    const creatorId = "1"; // 仮の作成者ID
+    const session = await getAppSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: '認証されていません' }, { status: 401 });
+    }
+    const creatorId = session.user.id;
+
+    // 招待コードの生成 (ユニークな8桁の英数字)
+    const { nanoid } = await import('nanoid');
+    const invite_code = nanoid(8);
 
     const newGroup = await prisma.groups.create({
       data: {
@@ -39,11 +47,11 @@ export async function POST(request: Request) {
         body: description || '',
         groups_User: {
           create: {
-            user_id: creatorId as any,
+            user_id: creatorId,
             admin_flg: true,
           },
         },
-        invite_code: '', // 招待コードは後で生成するか、別の方法で設定する
+        invite_code: invite_code,
       },
     });
 

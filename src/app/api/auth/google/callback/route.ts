@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       // ログイン統計を更新
       await updateUserLoginStats(existingUser.id);
 
-      console.log(`Google Callback: 既存ユーザー ${email} (ID: ${existingUser.id}) でログインしました。`);
+      // console.log(`Google Callback: 既存ユーザー ${email} (ID: ${existingUser.id}) でログインしました。`);
 
       // ホーム画面にリダイレクト
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/home`);
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
       };
       await session.save();
 
-      console.log(`Google Callback: 新規ユーザー ${email} を確認待ちセッションに保存しました。`);
+      // console.log(`Google Callback: 新規ユーザー ${email} を確認待ちセッションに保存しました。`);
 
       // 新規登録確認ページにリダイレクト
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/auth/google/confirm`);

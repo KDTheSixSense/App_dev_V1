@@ -1100,9 +1100,6 @@ export async function getGroupsAction() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id || null;
 
-  // --- ▼▼▼ デバッグログ1: セッションから取得したユーザーIDを確認 ---
-  console.log('[DEBUG] getGroupsAction: userId from session is:', userId);
-
   if (!userId) {
     return { error: 'ログインしていません。' };
   }
@@ -1138,7 +1135,6 @@ export async function getGroupsAction() {
         },
       },
     });
-    console.log('[DEBUG] getGroupsAction: Raw groups from DB:', JSON.stringify(groups, null, 2));
     return { success: true, data: groups, currentUserId: userId };
   } catch (error) {
     console.error("Failed to fetch groups:", error);

@@ -36,32 +36,28 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Verify assignment belongs to group (Optional but good for strictness)
-    // The previous code trusted that if you have assignmentId, you can see comments. 
-    // But now we ensured you are in the group "hashedId". 
-    // Ideally we should also check if assignmentId belongs to hashedId's group, but 
-    // Prisma query `where: { assignmentId }` will verify existence. 
-    // If someone calls with assignmentId that is NOT in the group, they will just see comments 
-    // for that assignment if they are a member of *that assignment's group*? 
-    // Actually, `params.hashedId` is used to check membership. 
-    // If I put assignmentId=999 (from Group B) but use hashedId=GroupA (where I am member), 
-    // I would pass the membership check.
-    // So we MUST check if the assignment belongs to the group.
-
     const assignmentId = parseInt(params.assignmentId);
     if (isNaN(assignmentId)) {
       return NextResponse.json({ error: 'Invalid assignment ID' }, { status: 400 });
     }
 
-    const assignment = await prisma.assignment.findFirst({
+    const assignment = await prisma.assignment.findUnique({
       where: {
         id: assignmentId,
-        group: { hashedId: params.hashedId }
+      },
+      include: {
+        group: {
+          select: { hashedId: true }
+        }
       }
     });
 
     if (!assignment) {
-      return NextResponse.json({ error: 'Assignment not found or not in this group' }, { status: 404 });
+      return NextResponse.json({ error: `Assignment ${assignmentId} not found` }, { status: 404 });
+    }
+
+    if (assignment.group?.hashedId !== params.hashedId) {
+      return NextResponse.json({ error: `Assignment found but belongs to different group` }, { status: 404 });
     }
 
     const comments = await prisma.assignmentComment.findMany({
@@ -118,6 +114,20 @@ export async function POST(
 
     if (!groupMember) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Explicitly check assignment existence and group match for POST too
+    const assignment = await prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      include: { group: { select: { hashedId: true } } }
+    });
+
+    if (!assignment) {
+      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 });
+    }
+
+    if (assignment.group?.hashedId !== params.hashedId) {
+      return NextResponse.json({ error: 'Assignment group mismatch' }, { status: 404 });
     }
 
     const newComment = await prisma.assignmentComment.create({
