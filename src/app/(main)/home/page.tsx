@@ -44,6 +44,7 @@ export default async function HomePage({
       birth: true,
       lastlogin: true,
       continuouslogin: true,
+      totallogin: true,
       selectedTitle: true,
       status_Kohaku: true, // Petコンポーネントで必要
     }

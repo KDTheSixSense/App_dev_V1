@@ -45,7 +45,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     });
     const [showCreateOptions, setShowCreateOptions] = useState(false);
     const [showProblemTypeModal, setShowProblemTypeModal] = useState(false);
-    const router = useRouter(); // ★ 追加
+    const router = useRouter();
 
     const editorRef = useRef<HTMLDivElement>(null);
     const STORAGE_KEY = 'assignment_create_draft';
@@ -113,6 +113,18 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         }
     }, [title, description, dueDate, initialAssignment]);
 
+    // エディターが閉じられたときに確実にフォームをリセットする
+    useEffect(() => {
+        if (!isExpanded) {
+            setTitle('');
+            setDescription('');
+            setDueDate('');
+            setFormatState({ bold: false, italic: false, underline: false, strikethrough: false });
+            setShowCreateOptions(false);
+            // ※ editorRefはDOMから削除されるため、ここでinnerHTMLを操作する必要はありません
+        }
+    }, [isExpanded]);
+
     // エディター内容変更処理
     const handleEditorChange = () => {
         if (editorRef.current) {
@@ -169,7 +181,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 sessionStorage.removeItem(STORAGE_FLAG_KEY);
             }
             handleReset();
-            router.refresh(); // ★ 追加: 画面更新
+            router.refresh();
         } catch (error) {
             console.error('課題保存エラー:', error);
             toast.error(`課題の保存に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);

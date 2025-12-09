@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { GroupLayout } from '../../GroupLayout';
 import toast from 'react-hot-toast';
 
@@ -21,6 +21,7 @@ import { useAdminData } from './hooks/useAdminData';
 const GroupDetailPage: React.FC = () => {
     const params = useParams();
     const router = useRouter();
+    const pathname = usePathname();
     const hashedId = params.hashedId as string;
 
     // カスタムフックでデータ管理を集約
@@ -140,6 +141,7 @@ const GroupDetailPage: React.FC = () => {
     const handleAssignmentUpdate = async (assignmentData: Assignment) => {
         await updateAssignment(assignmentData);
         handleAssignmentEditorCollapse();
+        router.refresh();
     };
 
     // 課題作成処理
@@ -148,6 +150,12 @@ const GroupDetailPage: React.FC = () => {
         await createAssignment(title, description, dueDate, problem);
         toast.success("課題投稿に成功しました");
         handleAssignmentEditorCollapse();
+
+        // ★ URLパラメータをクリアしてリフレッシュ（タブ状態は維持）
+        if (pathname) {
+            router.replace(`${pathname}?tab=課題`);
+            router.refresh();
+        }
     };
 
     // プログラミング問題作成ページへ遷移 - 新しい問題を作成するために別ページへ移動
