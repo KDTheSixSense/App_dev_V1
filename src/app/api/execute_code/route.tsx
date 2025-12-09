@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { LRUCache } from 'lru-cache';
 import { executeCodeSchema } from '@/lib/validations';
 import { logAudit, AuditAction } from '@/lib/audit';
+import { getAppSession } from '@/lib/auth';
+import { executeCode } from '@/lib/sandbox';
 
 
 // --- Rate Limiting Setup ---
@@ -38,6 +40,11 @@ function containsForbiddenKeywords(code: string, language: string): boolean {
 
 export async function POST(request: Request) {
   try {
+    const session = await getAppSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Rate Limiting Check
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
     if (!checkRateLimit(ip)) {
@@ -75,29 +82,21 @@ export async function POST(request: Request) {
     // Sandbox Execution
     // console.log('Executing code via Sandbox Container...');
 
-    // Sandbox service URL (docker-compose service name 'sandbox')
-    // Note: In Docker network, hostname is service name.
-    const sandboxUrl = 'http://sandbox:4000/execute';
 
-    try {
-      const response = await fetch(sandboxUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ language, source_code, input }),
-      });
 
-      if (!response.ok) {
-        throw new Error(`Sandbox service error: ${response.statusText}`);
-      }
+    // Use shared execution logic
+    // Use shared execution logic
+    result = await executeCode(language, source_code, input || '') as any;
 
-      result = await response.json();
-    } catch (sandboxError: any) {
-      console.error('Sandbox connection error:', sandboxError);
-      // Fallback or error reporting
-      throw new Error(`Failed to connect to sandbox: ${sandboxError.message}. Make sure the sandbox container is running.`);
+    if (result.error && result.error.startsWith('Sandbox Error')) {
+      // Network/System error
+      throw new Error(result.error);
     }
+    // Note: If result.error is a compilation/runtime error string, it might be in result.error or stderr.
+    // The original code expected raw JSON. executeCode returns raw JSON (mostly).
+    // But executeCode MIGHT return { error: ... } if fetch failed.
+    // If fetch succeeded, it returns the JSON.
+
 
     // Format Response
     const formattedResult = {

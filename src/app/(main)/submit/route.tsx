@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAppSession } from '@/lib/auth';
+import { executeCode } from '@/lib/sandbox';
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getAppSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { userCode, language } = body;
 
@@ -22,43 +29,36 @@ export async function POST(request: NextRequest) {
     // EXECUTE USER CODE TO GET ACTUAL OUTPUT
     let actualOutput = '';
     let executionSuccess = false;
-    
-    try {
-      // Call execute_code API to get real output
-      const executeResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/execute_code`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          language: language,
-          source_code: userCode,
-        }),
-      });
 
-      if (executeResponse.ok) {
-        const executeData = await executeResponse.json();
-        
-        if (executeData.program_output && executeData.program_output.stdout) {
-          actualOutput = executeData.program_output.stdout.trim();
+    try {
+      // Call executeCode lib directly
+      const executeData: any = await executeCode(language, userCode, '');
+
+      if (executeData.error) {
+        actualOutput = `実行時エラー: ${executeData.error}`;
+        executionSuccess = false;
+      } else {
+        const runtimeStderr = executeData.stderr || executeData.program_output?.stderr;
+        const runtimeStdout = executeData.stdout || executeData.program_output?.stdout || '';
+        const buildStderr = executeData.build_result?.stderr;
+
+        if (runtimeStdout) {
+          actualOutput = runtimeStdout.trim();
           executionSuccess = true;
-        } else if (executeData.program_output && executeData.program_output.stderr) {
-          actualOutput = `実行時エラー: ${executeData.program_output.stderr}`;
+        } else if (runtimeStderr) {
+          actualOutput = `実行時エラー: ${runtimeStderr}`;
           executionSuccess = false;
-        } else if (executeData.build_result && executeData.build_result.stderr) {
-          actualOutput = `ビルドエラー: ${executeData.build_result.stderr}`;
+        } else if (buildStderr) {
+          actualOutput = `ビルドエラー: ${buildStderr}`;
           executionSuccess = false;
         } else {
-          actualOutput = 'コードの実行に失敗しました';
+          actualOutput = 'コードの実行に失敗しました（出力なし）';
           executionSuccess = false;
         }
-      } else {
-        actualOutput = 'コード実行APIエラー';
-        executionSuccess = false;
       }
-    } catch (executeError) {
+    } catch (executeError: any) {
       console.error('Execute API Error:', executeError);
-      actualOutput = 'コードの実行中にエラーが発生しました';
+      actualOutput = `コードの実行中にエラーが発生しました: ${executeError.message}`;
       executionSuccess = false;
     }
 
@@ -84,11 +84,11 @@ export async function POST(request: NextRequest) {
     // Compare actual output with expected output
     const normalizedActualOutput = actualOutput.trim().replace(/\r\n/g, '\n');
     const normalizedExpectedOutput = expectedOutputText.trim();
-    
+
     console.log('Actual Output:', JSON.stringify(normalizedActualOutput));
     console.log('Expected Output:', JSON.stringify(normalizedExpectedOutput));
     console.log('Are Equal:', normalizedActualOutput === normalizedExpectedOutput);
-    
+
     const isCorrect = normalizedActualOutput === normalizedExpectedOutput;
 
     if (isCorrect) {
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         error: '出力が正しくありません'
       }, { status: 200 });
     }
-    
+
   } catch (error) {
     console.error('Submit API Error:', error);
     return NextResponse.json({

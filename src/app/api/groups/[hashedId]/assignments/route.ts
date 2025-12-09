@@ -43,6 +43,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
 
+    // Verify membership for GET
+    const membership = await prisma.groups_User.findFirst({
+      where: { group_id: group.id, user_id: userId as any },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ success: false, message: 'グループのメンバーではありません。' }, { status: 403 });
+    }
+
     let assignments;
     let total;
 

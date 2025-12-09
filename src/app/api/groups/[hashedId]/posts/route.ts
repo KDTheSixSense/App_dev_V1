@@ -110,6 +110,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
 
+    // Verify membership for POST
+    const membership = await prisma.groups_User.findFirst({
+      where: { group_id: group.id, user_id: userId as any },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ success: false, message: 'グループのメンバーではありません。投稿できません。' }, { status: 403 });
+    }
+
     const newPost = await prisma.post.create({
       data: {
         content,
