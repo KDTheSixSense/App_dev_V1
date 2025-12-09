@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation'; // ★ 追加
 import Link from 'next/link';
 import type { AssignmentComment } from '../../admin/types/AdminTypes';
-import DOMPurify from 'dompurify';
+import { sanitize } from '@/lib/sanitizer';
 import toast from 'react-hot-toast';
 
 // page.tsxから型定義を移動またはインポート
@@ -160,7 +160,7 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
                     </div>
                     <div style={{ fontSize: '14px', color: '#5f6368', marginBottom: '16px' }}>期限: {kadai.dueDate ? new Date(kadai.dueDate).toLocaleString('ja-JP') : '未設定'}</div>
 
-                    {kadai.description && <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(kadai.description) }} style={{ lineHeight: '1.6' }} />}
+                    {kadai.description && <div dangerouslySetInnerHTML={{ __html: sanitize(kadai.description) }} style={{ lineHeight: '1.6' }} />}
                     {(kadai.programmingProblemId || kadai.selectProblemId) && (
                         <div style={{ marginTop: '24px' }}>
                             {kadai.selectProblemId ? (

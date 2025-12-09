@@ -8,13 +8,13 @@ import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 interface SessionData {
-  user?: { id: number | string; email: string; username?: string | null };
+  user?: { id: string; email: string; username?: string | null };
 }
 
 // 課題一覧を取得 (GET)
 export async function GET(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+  const userId = session.user?.id ? session.user.id : null;
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '20', 10);
+    const limit = Math.min(rawLimit, 100);
     const withSubmissions = searchParams.get('withSubmissions') === 'true';
     const skip = (page - 1) * limit;
 
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest) {
           where: { groupid: group.id },
           include: {
             // ログインユーザー自身の提出状況のみを取得
-            Submissions: { where: { userid: userId ?? -1 } },
+            Submissions: { where: { userid: userId ?? -1 as any } },
           },
           orderBy: { created_at: 'desc' },
           skip,
@@ -124,22 +125,18 @@ export async function POST(req: NextRequest) {
   if (!sessionUserId) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
-  
-  const userId = Number(sessionUserId);
+
+  const userId = sessionUserId;
 
   try {
     const urlParts = req.url.split('/');
-    const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
+    const hashedId = urlParts[urlParts.length - 2];
     const body = await req.json();
     const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
 
     if (!title || !dueDate) {
       return NextResponse.json({ success: false, message: 'タイトルと期日は必須です。' }, { status: 400 });
     }
-    // 課題がなくても投稿できるようにする場合は、以下のチェックをコメントアウト
-    // if (!programmingProblemId && !selectProblemId) {
-    //   return NextResponse.json({ success: false, message: '課題となる問題が指定されていません。' }, { status: 400 });
-    // }
 
     if (typeof hashedId !== 'string') {
       return NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });
@@ -154,7 +151,7 @@ export async function POST(req: NextRequest) {
     const membership = await prisma.groups_User.findFirst({
       where: {
         group_id: group.id,
-        user_id: userId,
+        user_id: userId as any,
         admin_flg: true,
       },
     });

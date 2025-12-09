@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 type Submission = {
   status: string;
   user: {
-    id: number;
+    id: string;
     username?: string;
     icon?: string | null;
   };
@@ -41,8 +41,8 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
-  
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+
   const [isContentVisible, setIsContentVisible] = useState(isSelected);
   const [animationStyle, setAnimationStyle] = useState({ animation: '' });
 
@@ -65,7 +65,7 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
   const notSubmitted = assignment.Submissions.filter(sub => sub.status === '未提出');
   const returned = assignment.Submissions.filter(sub => sub.status === '差し戻し');
 
-  const handleCheckboxChange = (userId: number) => {
+  const handleCheckboxChange = (userId: string) => {
     setSelectedUserIds(prev =>
       prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
     );
@@ -186,25 +186,25 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
             {/* 提出済みカラム */}
             <div style={{ padding: '16px', borderRight: '1px solid #e0e0e0' }}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <h4 style={{ margin: '0', fontSize: '14px', color: '#38a169' }}>
                   提出済み ({submitted.length}人)
                 </h4>
                 {submitted.length > 0 && (
                   <button
                     onClick={(e) => {
-                        e.stopPropagation();
-                        handleReturnSelectedSubmissions();
+                      e.stopPropagation();
+                      handleReturnSelectedSubmissions();
                     }}
                     disabled={selectedUserIds.length === 0}
                     style={{
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        color: '#fff',
-                        backgroundColor: selectedUserIds.length > 0 ? '#dd6b20' : '#d1d5db',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: selectedUserIds.length > 0 ? 'pointer' : 'not-allowed',
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      color: '#fff',
+                      backgroundColor: selectedUserIds.length > 0 ? '#dd6b20' : '#d1d5db',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: selectedUserIds.length > 0 ? 'pointer' : 'not-allowed',
                     }}
                   >
                     選択したものを差し戻す ({selectedUserIds.length})
@@ -213,31 +213,31 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {submitted.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e0e0e0' }}>
-                        <input
-                            type="checkbox"
-                            checked={selectedUserIds.length === submitted.length && submitted.length > 0}
-                            onChange={handleSelectAll}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        <span style={{ fontSize: '12px', fontWeight: 'bold' }}>すべて選択</span>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e0e0e0' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedUserIds.length === submitted.length && submitted.length > 0}
+                      onChange={handleSelectAll}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>すべて選択</span>
+                  </div>
                 )}
                 {submitted.map(sub => (
                   <div key={sub.user.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input
                         type="checkbox"
                         checked={selectedUserIds.includes(sub.user.id)}
                         onChange={() => handleCheckboxChange(sub.user.id)}
                         onClick={(e) => e.stopPropagation()}
-                        style={{cursor: 'pointer'}}
+                        style={{ cursor: 'pointer' }}
                       />
                       <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#c6f6d5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#276749', overflow: 'hidden' }}>
                         {sub.user.icon ? (
-                            <img src={sub.user.icon} alt={sub.user.username || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={sub.user.icon} alt={sub.user.username || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                            sub.user.username?.charAt(0)
+                          sub.user.username?.charAt(0)
                         )}
                       </div>
                       <span style={{ fontSize: '14px' }}>
@@ -249,7 +249,7 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
                     </div>
                   </div>
                 ))}
-                {submitted.length === 0 && <span style={{fontSize: '12px', color: '#718096'}}>まだ誰も提出していません。</span>}
+                {submitted.length === 0 && <span style={{ fontSize: '12px', color: '#718096' }}>まだ誰も提出していません。</span>}
               </div>
             </div>
 
@@ -262,16 +262,16 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
                 {notSubmitted.map(sub => (
                   <div key={sub.user.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#fed7d7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#9b2c2c', overflow: 'hidden' }}>
-                        {sub.user.icon ? (
-                            <img src={sub.user.icon} alt={sub.user.username || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                            sub.user.username?.charAt(0)
-                        )}
+                      {sub.user.icon ? (
+                        <img src={sub.user.icon} alt={sub.user.username || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        sub.user.username?.charAt(0)
+                      )}
                     </div>
                     <span style={{ fontSize: '14px' }}>{sub.user.username}</span>
                   </div>
                 ))}
-                {notSubmitted.length === 0 && <span style={{fontSize: '12px', color: '#718096'}}>全員が提出済みです！</span>}
+                {notSubmitted.length === 0 && <span style={{ fontSize: '12px', color: '#718096' }}>全員が提出済みです！</span>}
               </div>
             </div>
           </div>
@@ -284,15 +284,15 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
                 <div key={sub.user.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#feebc8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: '#9c4221', overflow: 'hidden' }}>
                     {sub.user.icon ? (
-                        <img src={sub.user.icon} alt={sub.user.username || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={sub.user.icon} alt={sub.user.username || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                        sub.user.username?.charAt(0)
+                      sub.user.username?.charAt(0)
                     )}
                   </div>
                   <span style={{ fontSize: '14px' }}>{sub.user.username}</span>
                 </div>
               ))}
-              {returned.length === 0 && <span style={{fontSize: '12px', color: '#718096'}}>差し戻し済みの提出はありません。</span>}
+              {returned.length === 0 && <span style={{ fontSize: '12px', color: '#718096' }}>差し戻し済みの提出はありません。</span>}
             </div>
           </div>
         </div>

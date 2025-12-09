@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Lightbulb, Edit3, Check, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { updatePetName } from '@/lib/actions'; // 👈 後で作成するサーバーアクション
-import DOMPurify from 'dompurify';
+
 
 // Props に adviceText を追加
 interface PetStatusViewProps {
@@ -56,7 +56,7 @@ export default function PetStatusView({ initialHunger, maxHunger, adviceText, pe
     }
 
     // XSS対策: 入力値をサニタイズ
-    const sanitizedName = DOMPurify.sanitize(trimmedName);
+    const sanitizedName = trimmedName;
 
     // サニタイズ後に空になった場合もキャンセル (すべてタグだった場合など)
     if (sanitizedName === '') {

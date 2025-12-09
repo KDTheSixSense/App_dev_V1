@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
-import { headers } from "next/headers";
+<<<<<<< HEAD
+import { PageViewLogger } from "@/components/features/audit/PageViewLogger";
+=======
+import { PageViewLogger } from "@/components/features/audit/PageViewLogger";
+>>>>>>> main
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +34,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const nonce = (await headers()).get("x-nonce") || "";
+
   return (
     <html
       lang="en"
@@ -43,6 +47,7 @@ export default async function RootLayout({
     >
         {children}
         <Toaster position="bottom-right" toastOptions={{ style: { zIndex: 99999 } }} />
+        <PageViewLogger />
       </body></html>
   );
 }

@@ -1,5 +1,3 @@
-//app/(main)/event/event_detail/[eventId]/problem/[problemId]/ProblemSolverClient.tsx
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -8,8 +6,9 @@ import { Play, Send, CheckCircle, ChevronDown, FileText, Code, GripVertical } fr
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import dynamic from 'next/dynamic';
 import { recordStudyTimeAction } from '@/lib/actions';
-import type { Problem as SerializableProblem } from '@/lib/problem-types';
-import DOMPurify from 'dompurify';
+import TestCaseResultModal, { TestCaseResult } from '@/components/TestCaseResultModal';
+import type { Problem as SerializableProblem } from '@/lib/types';
+import { sanitize } from '@/lib/sanitizer';
 
 const DynamicAceEditor = dynamic(
     () => import('@/components/AceEditorWrapper'),
@@ -86,7 +85,7 @@ const ProblemDescriptionPanel: React.FC<{
                 </button>
             </div>
             <div className="p-6 space-y-6 overflow-y-auto">
-                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((descriptionText ?? '説明がありません。').replace(/\n/g, '<br />')) }} />
+                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitize((descriptionText ?? '説明がありません。').replace(/\n/g, '<br />')) }} />
                 <div>
                     <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
                     {problem.sampleCases?.map((sc, index) => (
@@ -256,6 +255,9 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     const storageKey = `event-problem-code-${eventId}-${problem.id}`;
     const hasRecordedTime = useRef(false);
     const [annotations, setAnnotations] = useState<AceAnnotation[]>([]);
+    const [testCaseResults, setTestCaseResults] = useState<TestCaseResult[]>([]);
+    const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+    const [modalSuccess, setModalSuccess] = useState(false);
 
     const languages = [
         { value: 'python', label: 'Python' },
@@ -300,7 +302,6 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
 
         // ユーザーのタイピングが終わるのを待つ（デバウンス）
         const handler = setTimeout(async () => {
-            console.log(`[Lint] Running server-side lint for ${selectedLanguage}...`);
             try {
                 const res = await fetch('/api/lint_code', {
                     method: 'POST',
@@ -311,7 +312,6 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
                 if (res.ok) {
                     const data = await res.json();
                     if (data.annotations) {
-                        console.log("[Lint] Annotations received:", data.annotations);
                         setAnnotations(data.annotations); // 取得したアノテーションをセット
                     } else {
                         setAnnotations([]); // エラーがなくてもクリア
@@ -342,7 +342,6 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
 
             // 3秒以上の滞在のみを記録
             if (timeSpentMs > 3000) {
-                console.log(`Recording ${timeSpentMs}ms for event problem ${problem.id}`);
                 // サーバーアクション (0 XP, timeSpentMs) を呼び出す
                 recordStudyTimeAction(timeSpentMs);
                 hasRecordedTime.current = true; // 記録済みフラグを立てる
@@ -421,86 +420,55 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         setExecutionResult('採点中...');
         setSubmitResult(null);
 
-        // --- Start: New Submission Logic ---
         try {
-            // まずコードを実行して出力を得る
-            const executeRes = await fetch('/api/execute_code', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    language: selectedLanguage,
-                    source_code: userCode,
-                    // イベント問題の採点は、常に最初のサンプルケースで行う
-                    input: problem?.sampleCases?.[0]?.input || ''
-                }),
-            });
-
-            if (!executeRes.ok) {
-                throw new Error('コードの実行に失敗しました。');
-            }
-
-            const executeData = await executeRes.json();
-            const output = (executeData.program_output?.stdout || '').trim();
-            const expectedOutput = (problem?.sampleCases?.[0]?.expectedOutput || '').trim();
-
-            const isCorrect = output === expectedOutput;
-
-            // イベント提出APIに送信
+            // イベント提出APIに送信 (サーバーサイドで実行・検証)
             const submissionRes = await fetch('/api/event-submissions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     eventIssueId: eventIssueId,
                     codeLog: userCode,
-                    status: isCorrect,
-                    startedAt: problemStartTime,
+                    language: selectedLanguage, // 言語を追加
                 }),
             });
 
-            const submissionData = await submissionRes.json();
-
             if (!submissionRes.ok) {
-                throw new Error(submissionData.error || '提出処理に失敗しました。');
+                const errorData = await submissionRes.json();
+                throw new Error(errorData.error || '提出に失敗しました。');
             }
 
-            // 結果表示
-            // サーバーからのメッセージがあればそれを優先表示する
-            if (submissionData.message) {
-                setSubmitResult({
-                    status: submissionData.status,
-                    message: submissionData.message,
-                    score: submissionData.score
-                });
-            } else if (isCorrect) {
+            const submissionData = await submissionRes.json();
+            setExecutionResult('');
+
+            if (submissionData.testCaseResults) {
+                const results = submissionData.testCaseResults.map((r: any) => ({
+                    ...r,
+                    actualOutput: (r.actualOutput !== undefined && r.actualOutput !== '') ? r.actualOutput : '(Empty Output)'
+                }));
+                // alert(`Submission Received! Cases: ${results.length}`); // Enabled for user debug
+                setTestCaseResults(results);
+                setModalSuccess(submissionData.success);
+                setIsResultModalOpen(true);
+            }
+
+            if (submissionData.success) {
                 setSubmitResult({
                     status: true,
-                    message: `正解です！ ${submissionData.score}点を獲得しました！`,
-                    score: submissionData.score
+                    message: submissionData.message,
                 });
             } else {
                 setSubmitResult({
                     status: false,
-                    message: '不正解です。出力が異なります。',
-                    yourOutput: output,
-                    expected: expectedOutput,
-                    score: 0
+                    message: submissionData.message,
                 });
             }
-
-            // 正解した場合に「イベント詳細に戻る」ボタンを表示
-            if (submissionData.status === true) {
-                setIsAnswered(true);
-            }
-
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error submitting code:', error);
-            const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました。';
-            setSubmitResult({ status: false, message: `提出処理中にエラーが発生しました: ${errorMessage}` });
+            setSubmitResult({ status: false, message: error.message || '提出処理中にエラーが発生しました。' });
+            setExecutionResult('');
         } finally {
             setIsSubmitting(false);
-            setExecutionResult('');
         }
-        // --- End: New Submission Logic ---
     };
 
 
@@ -513,6 +481,12 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
 
     return (
         <div className="h-screen bg-gray-100 p-4 flex flex-col">
+            <TestCaseResultModal
+                isOpen={isResultModalOpen}
+                onClose={() => setIsResultModalOpen(false)}
+                success={modalSuccess}
+                results={testCaseResults}
+            />
             {/* ヘッダー部分を削除し、ボタンをProblemDescriptionPanel内に移動 */}
             {/* このブロックは不要になったため削除 */}
             <div className="flex-grow min-h-0">

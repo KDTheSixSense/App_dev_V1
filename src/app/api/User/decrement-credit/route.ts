@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     if (!session.user) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    const userId = Number(session.user.id);
+    const userId = session.user.id;
 
     // 現在のユーザー情報を取得
     const user = await prisma.user.findUnique({

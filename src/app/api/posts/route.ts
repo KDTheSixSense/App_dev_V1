@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'; // シングルトンインスタンスをインポート
 import { Prisma } from '@prisma/client';
+import { getAppSession } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -14,8 +15,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: '投稿内容とグループIDは必須です' }, { status: 400 });
     }
 
-    // TODO: 実際の認証情報からユーザーIDを取得する
-    const authorId = 1; // 仮のユーザーID
+    // 認証チェック
+    const session = await getAppSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: '認証されていません' }, { status: 401 });
+    }
+    const authorId = session.user.id;
 
     const newPost = await prisma.post.create({
       data: {

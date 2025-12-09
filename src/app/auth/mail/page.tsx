@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from "next/navigation";  // App Router用
-import DOMPurify from 'dompurify';
+
 
 // フォームのデータ型を定義
 type Inputs = {
@@ -35,16 +35,14 @@ export default function PasswordResetPage() {
     const onSubmit = async (data: Inputs) => {
         setLoading(true);
         setSuccessMessage('');
-        setApiError('');
-
         try {
             const res = await fetch('/api/auth/mail', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: DOMPurify.sanitize(data.email) }),
+                body: JSON.stringify({ email: data.email }),
             });
 
-            const text = await res.text(); // ← text() で取得してから判定
+            const text = await res.text();
             const result = text ? JSON.parse(text) : {};
 
             if (!res.ok) {
@@ -80,7 +78,7 @@ export default function PasswordResetPage() {
                 <header className="absolute top-0 left-0 w-full flex justify-center py-6">
                     <a href="/" className="relative h-20 w-60">
                         <img
-                            src="/images/Infopia_logo.png"
+                            src="/images/infopia_logo.png"
                             alt="Infopia Logo"
                             className="absolute inset-0 w-full h-full object-contain"
                         />

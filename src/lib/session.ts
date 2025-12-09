@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 
 export interface SessionData {
   user?: {
-    id: number;
+    id: string;
     email: string;
   };
 }
@@ -16,8 +16,11 @@ export const sessionOptions: SessionOptions = {
   cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
     httpOnly: true,
-    // 本番環境（実環境/k8s）向けに常にSecure属性を付与します。
-    secure: true,
+<<<<<<< HEAD
+    secure: process.env.NODE_ENV === 'production', // 本番環境のみSecure属性を有効化
+=======
+    secure: process.env.NODE_ENV === 'production', // 本番環境のみSecure属性を有効化
+>>>>>>> main
     sameSite: 'lax',
   },
   // ブラウザを閉じたときにセッションを無効化するため、ttl（サーバー側の有効期限）や
@@ -33,9 +36,10 @@ declare module 'iron-session' {
 interface IronSessionData {
     // 既存のログイン済みユーザー情報
     user?: {
-      id: number;
+      id: string;
       email: string;
       username: string | null;
+      isAdmin: boolean;
       lastlogin?: Date | null;
       openid?: string | null;
     };

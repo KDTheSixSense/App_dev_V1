@@ -8,10 +8,11 @@ import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVer
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import DOMPurify from 'dompurify';
+import { sanitize } from '@/lib/sanitizer';
 
 import type { Problem as SerializableProblem } from '@/lib/problem-types';
 import { recordStudyTimeAction } from '@/lib/actions';
+import TestCaseResultModal, { TestCaseResult } from '@/components/TestCaseResultModal';
 
 // Header.tsx からヘルパー関数と定数をコピー
 const MAX_HUNGER = 200; // 満腹度の最大値
@@ -122,7 +123,7 @@ const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ p
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
             <div className="p-4 border-b flex-shrink-0"><h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>問{problem.id}: {titleText}</span></h2></div>
             <div className="p-6 space-y-6 overflow-y-auto">
-                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((descriptionText ?? '説明がありません。').replace(/\n/g, '<br />')) }} />
+                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitize((descriptionText ?? '説明がありません。').replace(/\n/g, '<br />')) }} />
                 <div>
                     <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
                     {problem.sampleCases?.map((sc, index) => (
@@ -485,6 +486,10 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         };
     }, [userCode, selectedLanguage, problem]); // コード、言語、または問題が変わるたびに実行
 
+    const [testCaseResults, setTestCaseResults] = useState<TestCaseResult[]>([]);
+    const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+    const [modalSuccess, setModalSuccess] = useState(false);
+
     // --- 4. 時間を記録する共通関数を追加 ---
     /**
      * 学習時間を計算し、サーバーに送信する (1回だけ実行)
@@ -540,42 +545,61 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
 
     const handleSubmit = async () => {
         if (!userCode.trim()) { alert('コードを入力してから提出してください。'); return; }
+        if (!assignmentInfo.assignmentId) {
+            alert('課題IDが見つかりません。');
+            return;
+        }
+
         setIsSubmitting(true);
         recordStudyTime();
-        setExecutionResult('提出中...');
+        setExecutionResult('採点中...');
+        setSubmitResult(null);
+
         try {
-            const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: problem?.sampleCases?.[0]?.input || '' }), });
-            const data = await response.json();
-            const output = (data.program_output?.stdout || '').trim();
-            const expectedOutput = (problem?.sampleCases?.[0]?.expectedOutput || '').trim();
-            setExecutionResult(''); // 提出処理が終わったので「提出中...」の表示をクリア
-            if (expectedOutput === '') { setSubmitResult({ success: false, message: '問題に正解（期待する出力）が設定されていません。' }); return; }
-            if (output === expectedOutput) {
+            // グループ課題提出APIに送信 (サーバーサイドで実行・検証)
+            const submissionRes = await fetch('/api/submissions', { // エンドポイントを修正
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    assignmentId: Number(assignmentInfo.assignmentId),
+                    description: userCode, // ユーザーのコード
+                    status: '提出済み', // statusを明示的に指定
+                    language: selectedLanguage, // 言語を追加
+                }),
+            });
+
+            if (!submissionRes.ok) {
+                const errorData = await submissionRes.json();
+                throw new Error(errorData.error || '提出情報の更新に失敗しました');
+            }
+
+            const data = await submissionRes.json();
+            setExecutionResult(''); // 提出処理が終わったのでクリア
+
+            // 詳細なテストケース結果があればセットしてモーダルを表示
+            if (data.testCaseResults) {
+                setTestCaseResults(data.testCaseResults);
+                setModalSuccess(data.success);
+                setIsResultModalOpen(true);
+            }
+
+            if (data.success) {
                 setSubmitResult({ success: true, message: '正解です！おめでとうございます！' });
                 setIsAnswered(true);
-                // 正解した場合、提出APIを呼び出す
-                if (assignmentInfo.assignmentId) {
-                    try {
-                        await fetch('/api/submissions', { // エンドポイントを修正
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                assignmentId: Number(assignmentInfo.assignmentId),
-                                description: userCode, // ユーザーのコードをdescriptionとして送信
-                                status: '提出済み', // statusを明示的に指定
-                            }),
-                        });
-                        // 提出成功のアラートメッセージを設定し、ポップアップを表示
-                        setAlertMessage('課題を提出しました。');
-                        setShowAlert(true);
-                    } catch (submissionError) {
-                        console.error('提出状況の更新に失敗しました:', submissionError);
-                    }
-                }
+                // 提出成功のアラートメッセージを設定し、ポップアップを表示
+                setAlertMessage('課題を提出しました。');
+                setShowAlert(true);
+            } else {
+                setSubmitResult({ success: false, message: '不正解です。' });
             }
-            else { setSubmitResult({ success: false, message: '不正解です。出力が異なります。', yourOutput: output, expected: expectedOutput }); }
-        } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '提出処理中にエラーが発生しました。' }); setExecutionResult(''); }
-        finally { setIsSubmitting(false); }
+
+        } catch (error: any) {
+            console.error('Error submitting code:', error);
+            setSubmitResult({ success: false, message: error.message || '提出処理中にエラーが発生しました。' });
+            setExecutionResult('');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleUserMessage = (message: string) => {
@@ -612,6 +636,12 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
 
     return (
         <div className="h-screen bg-gray-100 p-4 overflow-hidden">
+            <TestCaseResultModal
+                isOpen={isResultModalOpen}
+                onClose={() => setIsResultModalOpen(false)}
+                success={modalSuccess}
+                results={testCaseResults}
+            />
             {showAlert && <CustomAlertModal message={alertMessage} onClose={() => setShowAlert(false)} />}
 
             {/* 既存の水平パネルグループ */}

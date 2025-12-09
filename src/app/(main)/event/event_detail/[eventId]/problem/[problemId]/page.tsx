@@ -1,13 +1,14 @@
-"use client";
-//app/(main)/event/event_detail/[eventId]/problem/[problemId]/page.tsx
 
 import React from 'react';
-import { notFound, useSearchParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import ProblemSolverClient from './ProblemSolverClient';
-import type { Problem as SerializableProblem } from '@/lib/problem-types';
+import type { Problem as SerializableProblem } from '@/lib/types';
 
-export default async function ProblemSolverPage({ params }: any) {  
+export const dynamic = 'force-dynamic';
+
+export default async function ProblemSolverPage(props: { params: Promise<{ eventId: string; problemId: string }> }) {
+  const params = await props.params;
   const eventId = parseInt(params.eventId, 10);
   const problemId = parseInt(params.problemId, 10);
 

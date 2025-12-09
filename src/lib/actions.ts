@@ -13,6 +13,7 @@ import { nanoid } from 'nanoid';
 import { sessionOptions, SessionData as ImportedSessionData } from '@/lib/session';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import { TitleType } from '@prisma/client';
+import { logAudit, AuditAction } from '@/lib/audit';
 import { getMissionDate } from './utils';
 import { getNowJST, getAppToday, isSameAppDay, getDaysDiff } from './dateUtils';
 
@@ -34,19 +35,28 @@ const MAX_HUNGER = 200; //満腹度の最大値を一括管理
  * 新しいユーザーアカウントと、そのペットを作成するAction (改良版)
  * @param data - ユーザー名、メールアドレス、パスワード、生年月日
  */
+import { z } from 'zod';
+
+const registerSchema = z.object({
+  username: z.string().min(1, 'ユーザー名は必須です'),
+  email: z.string().email('有効なメールアドレスを入力してください'),
+  password: z.string().min(8, 'パスワードは8文字以上である必要があります'),
+  birth: z.string().optional(),
+  isAgreedToTerms: z.boolean().refine(val => val === true, '利用規約への同意が必要です'),
+  isAgreedToPrivacyPolicy: z.boolean().refine(val => val === true, 'プライバシーポリシーへの同意が必要です'),
+});
+
 export async function registerUserAction(data: {
   username: string, email: string, password: string, birth?: string, isAgreedToTerms: boolean,
   isAgreedToPrivacyPolicy: boolean
 }) {
-  const { username, email, password, birth, isAgreedToTerms, isAgreedToPrivacyPolicy } = data;
-
-  if (!username || !email || !password) {
-    return { error: '必須項目が不足しています。' };
+  // --- Input Validation with Zod ---
+  const validationResult = registerSchema.safeParse(data);
+  if (!validationResult.success) {
+    return { error: validationResult.error.issues[0].message };
   }
 
-  if (!isAgreedToTerms || !isAgreedToPrivacyPolicy) {
-    return { error: '利用規約とプライバシーポリシーへの同意が必要です。' };
-  }
+  const { username, email, password, birth, isAgreedToTerms, isAgreedToPrivacyPolicy } = validationResult.data;
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -97,8 +107,8 @@ export async function changePasswordAction(currentPassword: string, newPassword:
   if (!userSession?.id) {
     return { success: false, error: '認証セッションが無効です。' };
   }
-  const userId = Number(userSession.id);
-  if (isNaN(userId)) {
+  const userId = userSession.id;
+  if (!userId) {
     return { success: false, error: 'ユーザーIDが無効です。' };
   }
   if (!currentPassword || !newPassword) {
@@ -218,8 +228,8 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     throw new Error('認証されていません。ログインしてください。');
   }
 
-  const userId = Number(user.id);
-  if (isNaN(userId)) {
+  const userId = user.id;
+  if (!userId) {
     throw new Error('セッション内のユーザーIDが無効です。');
   }
 
@@ -457,7 +467,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
 // * @param user_id - XPを加算するユーザーのID
 // * @param subject_id - 科目のID
 // * @param difficulty_id - 難易度のID
-export async function addXp(user_id: number, subject_id: number, difficulty_id: number) {
+export async function addXp(user_id: string, subject_id: number, difficulty_id: number) {
   const nowJST = getNowJST();
 
   const difficulty = await prisma.difficulty.findUnique({
@@ -472,7 +482,7 @@ export async function addXp(user_id: number, subject_id: number, difficulty_id: 
 
   updateDailyMissionProgress(3, xpAmount); // デイリーミッションの「XPを獲得する」進捗を更新
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const updatedProgress = await tx.userSubjectProgress.upsert({
       where: { user_id_subject_id: { user_id, subject_id } },
       create: { user_id, subject_id, xp: xpAmount, level: 1 },
@@ -574,8 +584,8 @@ export async function updateDailyMissionProgress(
     console.error('[updateDailyMissionProgress] Error: User not authenticated.');
     return { success: false, error: '認証されていません。' };
   }
-  const userId = Number(user.id);
-  if (isNaN(userId)) {
+  const userId = user.id;
+  if (!userId) {
     console.error('[updateDailyMissionProgress] Error: Invalid user ID in session.');
     return { success: false, error: 'セッション情報が無効です。' };
   }
@@ -586,7 +596,7 @@ export async function updateDailyMissionProgress(
   try {
     // --- 3. トランザクション開始 ---
     // 進捗更新 -> 達成確認 -> 完了フラグ更新 & XP付与 をアトミックに行う
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 
       // --- 3a. 現在の進捗とマスターデータを取得 (ロック) ---
       // findUniqueOrThrow を使い、レコードがない場合はエラーにする
@@ -692,7 +702,7 @@ export async function updateDailyMissionProgress(
  * @param xpAmount - 付与するXPの量
  * @returns 獲得した称号（あれば）
  */
-export async function grantXpToUser(userId: number, xpAmount: number) {
+export async function grantXpToUser(userId: string, xpAmount: number) {
   'use server';
 
   // 付与するXPが0以下なら何もしない
@@ -701,7 +711,7 @@ export async function grantXpToUser(userId: number, xpAmount: number) {
   }
 
   // 複数のDB操作を安全に行うためトランザクションを使用
-  const { unlockedTitle } = await prisma.$transaction(async (tx) => {
+  const { unlockedTitle } = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 
     // 1. ユーザーの総XPを加算
     let user = await tx.user.update({
@@ -759,7 +769,7 @@ export async function grantXpToUser(userId: number, xpAmount: number) {
  * デイリーミッションの進捗を確実に作成するサーバーアクション
  * @param userId - 進捗を作成するユーザーのID
  */
-export async function ensureDailyMissionProgress(userId: number) {
+export async function ensureDailyMissionProgress(userId: string) {
   'use server';
 
   // 0. ユーザーの存在を最初に確認
@@ -830,7 +840,7 @@ export async function ensureDailyMissionProgress(userId: number) {
     }
 
     // 5. 新しい進捗エントリのデータを準備
-    const newProgressData = missionMasters.map((master) => ({
+    const newProgressData = missionMasters.map((master: any) => ({
       userId: userId,
       missionId: master.id,
       date: missionDate,
@@ -860,7 +870,7 @@ export async function ensureDailyMissionProgress(userId: number) {
   }
 }
 
-export async function updateUserLoginStats(userId: number) {
+export async function updateUserLoginStats(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
@@ -1002,7 +1012,7 @@ export async function getNextProgrammingProblemId(currentId: number): Promise<st
 export async function createGroupAction(data: { groupName: string, body: string }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) return { error: 'ログインしていません。' };
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   const { groupName, body } = data;
 
@@ -1027,6 +1037,13 @@ export async function createGroupAction(data: { groupName: string, body: string 
       admin_flg: true, // 作成者は自動的に管理者
     },
   });
+
+  try {
+    await logAudit(userId, AuditAction.CREATE_GROUP, { groupId: newGroup.id, groupName: newGroup.groupname });
+  } catch (e) {
+    // ignore
+  }
+
   revalidatePath('/groups');
   return { success: true, groupName: newGroup.groupname, inviteCode: newGroup.invite_code };
 }
@@ -1034,7 +1051,7 @@ export async function createGroupAction(data: { groupName: string, body: string 
 export async function joinGroupAction(inviteCode: string) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) return { error: 'ログインしていません。' };
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   if (!inviteCode || inviteCode.trim() === '') {
     return { error: '招待コードを入力してください。' };
@@ -1069,16 +1086,19 @@ export async function joinGroupAction(inviteCode: string) {
     },
   });
 
+  try {
+    await logAudit(userId, AuditAction.JOIN_GROUP, { groupId: group.id, groupName: group.groupname });
+  } catch (e) {
+    // ignore
+  }
+
   revalidatePath('/groups');
   return { success: true, groupName: group.groupname };
 }
 
 export async function getGroupsAction() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
-
-  // --- ▼▼▼ デバッグログ1: セッションから取得したユーザーIDを確認 ---
-  console.log('[DEBUG] getGroupsAction: userId from session is:', userId);
+  const userId = session.user?.id || null;
 
   if (!userId) {
     return { error: 'ログインしていません。' };
@@ -1115,7 +1135,6 @@ export async function getGroupsAction() {
         },
       },
     });
-    console.log('[DEBUG] getGroupsAction: Raw groups from DB:', JSON.stringify(groups, null, 2));
     return { success: true, data: groups, currentUserId: userId };
   } catch (error) {
     console.error("Failed to fetch groups:", error);
@@ -1139,8 +1158,8 @@ export async function deleteProblemAction(formData: FormData) {
     throw new Error('認証が必要です。');
   }
 
-  const userId = Number(user.id);
-  if (isNaN(userId)) {
+  const userId = user.id;
+  if (!userId) {
     throw new Error('セッションのユーザーIDが無効です。');
   }
 
@@ -1203,8 +1222,8 @@ export async function getMineProblems() {
       return { error: '認証が必要です。ログインしてください。' };
     }
 
-    const userId = Number(user.id);
-    if (isNaN(userId)) {
+    const userId = user.id;
+    if (!userId) {
       return { error: 'ユーザー情報が無効です。' };
     }
 
@@ -1235,7 +1254,7 @@ export async function feedPetAction(difficultyId: number) {
   if (!session.user?.id) {
     return { error: 'ログインしていません。' };
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   try {
     // 2. 難易度IDを元に、回復する満腹度(feed)を取得
@@ -1306,8 +1325,8 @@ export async function getMineSelectProblems() {
       return { error: '認証が必要です。ログインしてください。' };
     }
 
-    const userId = Number(user.id);
-    if (isNaN(userId)) {
+    const userId = user.id;
+    if (!userId) {
       return { error: 'ユーザー情報が無効です。' };
     }
 
@@ -1342,7 +1361,7 @@ export async function deleteSelectProblemAction(formData: FormData) {
   if (!user?.id) {
     throw new Error('認証が必要です。');
   }
-  const userId = Number(user.id);
+  const userId = user.id;
 
   const problemIdStr = formData.get('problemId');
   if (typeof problemIdStr !== 'string') {
@@ -1397,7 +1416,7 @@ export async function getSelectProblemByIdAction(problemId: number) {
     }
 
     // ログインユーザーが作成者であることを確認 (セキュリティのため)
-    if (problem.createdBy !== Number(session.user.id)) {
+    if (problem.createdBy !== session.user.id) {
       return { error: 'この問題の編集権限がありません。' };
     }
 
@@ -1437,7 +1456,7 @@ export async function updateSelectProblemAction(formData: FormData) {
 
     // 更新対象の問題の所有者か再度確認
     const existingProblem = await prisma.selectProblem.findUnique({ where: { id: problemId } });
-    if (!existingProblem || existingProblem.createdBy !== Number(user.id)) {
+    if (!existingProblem || existingProblem.createdBy !== user.id) {
       return { error: 'この問題を更新する権限がありません。' };
     }
 
@@ -1487,7 +1506,7 @@ export async function createEventAction(data: CreateEventFormData) {
   if (!session.user?.id) {
     return { error: 'ログインしていません。' };
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   const { title, description, startTime, endTime, publicTime, selectedProblemIds } = data;
 
@@ -1503,7 +1522,7 @@ export async function createEventAction(data: CreateEventFormData) {
     const inviteCode = nanoid(10); // 10桁のランダムな招待コードを生成
 
     // 3. データベースへの書き込み（トランザクション）
-    const newEvent = await prisma.$transaction(async (tx) => {
+    const newEvent = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // a. イベント本体を作成
       const event = await tx.create_event.create({
         data: {
@@ -1576,7 +1595,7 @@ export async function saveEventDraftAction(data: EventFormData) {
   if (!session.user?.id) {
     return { error: 'ログインしていません。' };
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   const { title, description, startTime, endTime, publicTime, selectedProblemIds } = data;
 
@@ -1589,7 +1608,7 @@ export async function saveEventDraftAction(data: EventFormData) {
     const inviteCode = nanoid(10); // 下書きでも招待コードはユニークに発行
 
     // 3. データベースへの書き込み（トランザクション）
-    const newDraftEvent = await prisma.$transaction(async (tx) => {
+    const newDraftEvent = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // a. イベント本体を作成
       const event = await tx.create_event.create({
         data: {
@@ -1650,12 +1669,12 @@ export async function getMyDraftEventsAction() {
   if (!session.user?.id) {
     return { error: 'ログインしていません。' };
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   try {
     const drafts = await prisma.create_event.findMany({
       where: {
-        creatorId: userId,
+        creatorId: userId as any,
         publicStatus: false, // 
       },
       select: {
@@ -1699,7 +1718,7 @@ export async function getDraftEventDetailsAction(eventId: number) {
   if (!session.user?.id) {
     return { error: 'ログインしていません。' };
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   try {
     const event = await prisma.create_event.findFirst({
@@ -1743,7 +1762,7 @@ export async function getDraftEventDetailsAction(eventId: number) {
  * 日々の活動を集計・更新するヘルパー関数
  */
 async function upsertDailyActivity(
-  userId: number,
+  userId: string,
   xpAmount: number,
   timeSpentMs: number
 ) {
@@ -1803,8 +1822,8 @@ export async function recordStudyTimeAction(timeSpentMs: number) {
     // throw new Error('Authentication required.'); // エラーを投げるとクライアント側でcatchが必要
   }
 
-  const userId = Number(user.id);
-  if (isNaN(userId)) {
+  const userId = user.id;
+  if (!userId) {
     console.error('[recordStudyTimeAction] Invalid user ID in session.');
     return { error: 'Invalid user session.' };
     // throw new Error('Invalid user session.');
@@ -1841,10 +1860,10 @@ export async function toggleEventStatusAction(eventId: number, start: boolean) {
   if (!session.user?.id) {
     return { error: 'ログインしていません。' };
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   const event = await prisma.create_event.findUnique({ where: { id: eventId } });
-  if (!event || event.creatorId !== userId) {
+  if (!event || event.creatorId !== userId as any) {
     return { error: 'このイベントを操作する権限がありません。' };
   }
 
@@ -1882,7 +1901,7 @@ export async function deleteEventAction(eventId: number) {
   if (!session.user?.id) {
     return { error: 'ログインしていません。' };
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   // 削除対象のイベントを取得し、作成者であることを確認
   const event = await prisma.create_event.findUnique({
@@ -1917,7 +1936,7 @@ export async function updatePetName(newName: string) {
   if (!user?.id) {
     return { error: '認証されていません。' };
   }
-  const userId = Number(user.id);
+  const userId = user.id;
 
   // 2. バリデーション
   const trimmedName = newName.trim();
@@ -1956,8 +1975,8 @@ export async function updateLoginStreakAction() {
     return { error: '認証が必要です。' };
   }
 
-  const userId = Number(user.id);
-  if (isNaN(userId)) {
+  const userId = user.id;
+  if (!userId) {
     return { error: 'ユーザーIDが無効です。' };
   }
 

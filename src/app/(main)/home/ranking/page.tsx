@@ -17,8 +17,13 @@ export default async function RankingPage() {
   // 科目別ランキングのデータを準備 (Raw Queryを使用)
   const getSubjects = prisma.subject.findMany(); // 科目リストは引き続き必要
 
-  const getRawRankings = prisma.$queryRaw<Array<{
-    id: number;
+<<<<<<< HEAD
+  const rawRankings: Array<{
+    id: string;
+=======
+  const rawRankings: Array<{
+    id: string;
+>>>>>>> main
     name: string;
     iconUrl: string | null;
     score: number;

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   if (!session.user?.id) {
     return NextResponse.json({ error: '認証されていません。' }, { status: 401 });
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   try {
     const body = await request.json();
@@ -33,6 +33,11 @@ export async function POST(request: NextRequest) {
 
     if (!event) {
       return NextResponse.json({ error: '無効な招待コードです。' }, { status: 404 });
+    }
+
+    // イベント終了チェック
+    if (event.endTime && new Date(event.endTime) < new Date()) {
+      return NextResponse.json({ error: 'このイベントは既に終了しています。' }, { status: 400 });
     }
 
     // 2. 既に参加済みか確認

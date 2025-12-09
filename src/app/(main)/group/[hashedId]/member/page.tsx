@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { GroupLayout } from '../../GroupLayout';
 import type { AssignmentComment } from '../admin/types/AdminTypes';
 import { AssignmentDetailView } from './components/AssignmentDetailView';
-import DOMPurify from 'dompurify';
+import { sanitize } from '@/lib/sanitizer';
 
 export const dynamic = 'force-dynamic';
 
@@ -467,7 +467,7 @@ const MemberGroupPage: React.FC = () => {
                                             </div>
 
                                         </div>
-                                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
+                                        <div dangerouslySetInnerHTML={{ __html: sanitize(post.content) }} />
                                     </div>
 
                                 )) : <p>お知らせはありません。</p>}

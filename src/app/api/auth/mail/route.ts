@@ -22,12 +22,23 @@ export async function POST(req: Request) {
           resetPasswordTokenExpiry: expires,
         },
       });
-      
+
       // 環境変数からベースURLを取得
       // const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-      const resetUrl = `https://infopia.nqg1t0.com/reset-password/${rawToken}`;
-      console.log(`[開発用] リセットURL: ${resetUrl}`);
+<<<<<<< HEAD
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+      const resetUrl = `${baseUrl}/reset-password/${rawToken}`;
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[開発用] リセットURL: ${resetUrl}`);
+      }=======
+      const resetUrl = `${baseUrl}/reset-password/${rawToken}`;
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[開発用] リセットURL: ${resetUrl}`);
+      }
+>>>>>>> main
 
       // --- Nodemailer (Gmail) メール送信ロジック ---
       const transporter = nodemailer.createTransport({
@@ -50,12 +61,12 @@ export async function POST(req: Request) {
       };
 
       await transporter.sendMail(mailOptions);
-      
+
       console.log(`Gmail経由でメール送信成功 (to: ${email})`);
     }
-    
-    return NextResponse.json({ 
-      message: 'パスワード再設定用のリクエストを受け付けました。' 
+
+    return NextResponse.json({
+      message: 'パスワード再設定用のリクエストを受け付けました。'
     });
 
   } catch (error) {

@@ -2,6 +2,7 @@ import sys
 import json
 import io
 import traceback
+import copy
 
 # デバッグ用: 標準エラー出力のエンコーディングを強制
 sys.stderr.reconfigure(encoding='utf-8')
@@ -32,8 +33,12 @@ def main():
                 local_vars = {}
                 for k, v in frame.f_locals.items():
                     try:
-                        if isinstance(v, (int, float, str, bool, list, dict, tuple, set, type(None))):
-                            local_vars[k] = v
+                        if isinstance(v, (int, float, str, bool, type(None))):
+                             local_vars[k] = v
+                        elif isinstance(v, (list, dict, set, tuple)):
+                             # Use deepcopy to capture the current state of mutable objects
+                             # This prevents future mutations (like sort) from affecting past trace steps
+                             local_vars[k] = copy.deepcopy(v)
                         else:
                             local_vars[k] = str(v)
                     except:

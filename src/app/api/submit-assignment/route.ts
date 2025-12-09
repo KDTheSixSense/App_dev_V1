@@ -5,7 +5,7 @@ import { sessionOptions } from '@/lib/session';
 import { submitAssignment } from '@/lib/actions/assignmentActions';
 
 interface CustomSession {
-  user?: { id?: number | string; email: string };
+  user?: { id?: string; email: string };
 }
 
 export async function POST(request: NextRequest) {
@@ -15,13 +15,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const userId = Number(session.user.id);
+    const userId = session.user.id;
     const assignmentId = request.nextUrl.searchParams.get('assignmentId');
 
     if (!assignmentId) {
       return NextResponse.json({ message: 'assignmentId is required' }, { status: 400 });
     }
-    
+
     const formData = await request.formData();
 
     const result = await submitAssignment(userId, assignmentId, formData);

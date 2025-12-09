@@ -18,9 +18,46 @@ export async function GET(
 ) {
   const params = await context.params;
   try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
+
+    // Verify group membership
+    const groupMember = await prisma.groups_User.findFirst({
+      where: {
+        group: { hashedId: params.hashedId },
+        user_id: userId
+      },
+    });
+
+    if (!groupMember) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const assignmentId = parseInt(params.assignmentId);
     if (isNaN(assignmentId)) {
       return NextResponse.json({ error: 'Invalid assignment ID' }, { status: 400 });
+    }
+
+    const assignment = await prisma.assignment.findUnique({
+      where: {
+        id: assignmentId,
+      },
+      include: {
+        group: {
+          select: { hashedId: true }
+        }
+      }
+    });
+
+    if (!assignment) {
+      return NextResponse.json({ error: `Assignment ${assignmentId} not found` }, { status: 404 });
+    }
+
+    if (assignment.group?.hashedId !== params.hashedId) {
+      return NextResponse.json({ error: `Assignment found but belongs to different group` }, { status: 404 });
     }
 
     const comments = await prisma.assignmentComment.findMany({
@@ -55,7 +92,7 @@ export async function POST(
   if (!session?.user?.id) {
     return NextResponse.json({ error: '認証されていません。' }, { status: 401 });
   }
-  const authorId = Number(session.user.id);
+  const authorId = session.user.id;
 
   try {
     const assignmentId = parseInt(params.assignmentId);
@@ -69,7 +106,7 @@ export async function POST(
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return NextResponse.json({ error: 'Comment content is required' }, { status: 400 });
     }
-    
+
     // ユーザーがグループのメンバーであるかを確認
     const groupMember = await prisma.groups_User.findFirst({
       where: { group: { hashedId: params.hashedId }, user_id: authorId },
@@ -77,6 +114,20 @@ export async function POST(
 
     if (!groupMember) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Explicitly check assignment existence and group match for POST too
+    const assignment = await prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      include: { group: { select: { hashedId: true } } }
+    });
+
+    if (!assignment) {
+      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 });
+    }
+
+    if (assignment.group?.hashedId !== params.hashedId) {
+      return NextResponse.json({ error: 'Assignment group mismatch' }, { status: 404 });
     }
 
     const newComment = await prisma.assignmentComment.create({

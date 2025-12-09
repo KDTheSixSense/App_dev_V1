@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const UPLOAD_DIR = path.join(process.cwd(), 'public/uploads');
 
 export async function submitAssignment(
-  userId: number,
+  userId: string,
   assignmentId: string,
   formData: FormData
 ): Promise<{ success: true; message: string } | { success: false; message: string; status: number }> {
@@ -18,8 +18,17 @@ export async function submitAssignment(
       return { success: false, message: 'ファイルがアップロードされていません。', status: 400 };
     }
 
+    const ALLOWED_EXTENSIONS = ['.pdf', '.zip', '.rar', '.7z', '.txt', '.md', '.c', '.cpp', '.h', '.hpp', '.py', '.java', '.js', '.ts', '.rb', '.go', '.rs', '.png', '.jpg', '.jpeg'];
+    const ext = path.extname(file.name).toLowerCase();
+
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return { success: false, message: '許可されていないファイル形式です。(pdf, zip, txt, ソースコード, 画像のみ)', status: 400 };
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
-    const newFilename = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+    // Sanitize filename: remove bad chars, stick to alphanumeric + _ -
+    const safeBasename = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const newFilename = `${Date.now()}-${safeBasename}${ext}`;
     const savePath = path.join(UPLOAD_DIR, newFilename);
     await fs.writeFile(savePath, buffer);
 

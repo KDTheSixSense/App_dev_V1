@@ -5,7 +5,7 @@ import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 interface SessionData {
-  user?: { id: number; email: string };
+  user?: { id: string; email: string };
 }
 
 // お知らせ一覧を取得 (GET)
@@ -23,7 +23,8 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = req.nextUrl;
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '20', 10);
+    const limit = Math.min(rawLimit, 50); // Hard cap at 50 to prevent DoS
     const skip = (page - 1) * limit;
 
     const group = await prisma.groups.findUnique({
@@ -33,6 +34,15 @@ export async function GET(req: NextRequest) {
 
     if (!group) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
+    }
+
+    // Verify membership
+    const membership = await prisma.groups_User.findFirst({
+      where: { group_id: group.id, user_id: session.user.id },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ success: false, message: 'グループのメンバーではありません' }, { status: 403 });
     }
 
     const [posts, total] = await Promise.all([
@@ -75,15 +85,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
-  
+
   if (!sessionUserId) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
-  const userId = Number(sessionUserId);
+  const userId = sessionUserId;
 
   try {
     const urlParts = req.url.split('/');
-    const hashedId = urlParts[urlParts.length - 2]; 
+    const hashedId = urlParts[urlParts.length - 2];
     const body = await req.json();
     const { content } = body;
 
@@ -104,11 +114,11 @@ export async function POST(req: NextRequest) {
       data: {
         content,
         groupId: group.id,
-        authorId: userId,
+        authorId: userId as any,
       },
       include: {
         author: {
-          select: { 
+          select: {
             username: true,
             icon: true // ★ ここも追加しておくと、投稿直後にアイコンが表示されます
           }

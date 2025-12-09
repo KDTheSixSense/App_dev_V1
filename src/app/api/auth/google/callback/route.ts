@@ -4,7 +4,7 @@ import { getIronSession, IronSessionData } from 'iron-session';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { sessionOptions } from '@/lib/session';
-import { updateUserLoginStats } from '@/lib/actions'; 
+import { updateUserLoginStats } from '@/lib/actions';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -54,7 +54,10 @@ export async function GET(req: NextRequest) {
 
     if (existingUser) {
       // 5a. 既存ユーザー: ログイン処理を実行
-      
+<<<<<<< HEAD
+      =======
+
+>>>>>>> main
       // アイコンが更新されている可能性があるので、DBを更新
       await prisma.user.update({
         where: { id: existingUser.id },
@@ -66,6 +69,7 @@ export async function GET(req: NextRequest) {
         id: existingUser.id,
         email: existingUser.email,
         username: existingUser.username,
+        isAdmin: existingUser.isAdmin,
         lastlogin: existingUser.lastlogin,
       };
       await session.save();
@@ -73,7 +77,7 @@ export async function GET(req: NextRequest) {
       // ログイン統計を更新
       await updateUserLoginStats(existingUser.id);
 
-      console.log(`Google Callback: 既存ユーザー ${email} (ID: ${existingUser.id}) でログインしました。`);
+      // console.log(`Google Callback: 既存ユーザー ${email} (ID: ${existingUser.id}) でログインしました。`);
 
       // ホーム画面にリダイレクト
       return NextResponse.redirect(`https://infopia.nqg1t0.com/home`);
@@ -86,8 +90,8 @@ export async function GET(req: NextRequest) {
       };
       await session.save();
 
-      console.log(`Google Callback: 新規ユーザー ${email} を確認待ちセッションに保存しました。`);
-      
+      // console.log(`Google Callback: 新規ユーザー ${email} を確認待ちセッションに保存しました。`);
+
       // 新規登録確認ページにリダイレクト
       return NextResponse.redirect(`https://infopia.nqg1t0.com/auth/google/confirm`);
     }

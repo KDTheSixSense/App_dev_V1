@@ -20,8 +20,9 @@ export async function PATCH(
     return NextResponse.json({ error: '認証されていません。' }, { status: 401 });
   }
 
-  const eventId = parseInt(params.eventId, 10);
-  
+  const resolvedParams = await params;
+  const eventId = parseInt(resolvedParams.eventId, 10);
+
   if (isNaN(eventId)) {
     return NextResponse.json({ error: '無効なID形式です。' }, { status: 400 });
   }
@@ -35,7 +36,7 @@ export async function PATCH(
     }
 
     // セッションのユーザーIDとリクエストのユーザーIDが一致するか確認（セキュリティ対策）
-    if (Number(session.user.id) !== userId) {
+    if (session.user.id !== userId) {
       return NextResponse.json({ error: '操作を行う権限がありません。' }, { status: 403 });
     }
 

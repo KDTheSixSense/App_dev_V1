@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log(`Google Create-User: ユーザー ${email} (ID: ${user.id}) を作成しました。`);
+    // console.log(`Google Create-User: ユーザー ${email} (ID: ${user.id}) を作成しました。`);
 
     // 4. 一時セッションを削除し、本番のログインセッションを作成
     session.googleSignupProfile = undefined;
@@ -62,6 +62,7 @@ export async function POST(req: Request) {
       id: user.id,
       email: user.email,
       username: user.username,
+      isAdmin: user.isAdmin,
       lastlogin: user.lastlogin,
     };
     await session.save();

@@ -6,8 +6,9 @@ CREATE TYPE "DailyMissionType" AS ENUM ('Answer_the_Question', 'Feed_Them', 'Gai
 
 -- CreateTable
 CREATE TABLE "User" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "isAdmin" BOOLEAN NOT NULL DEFAULT false,
     "password" TEXT,
     "hash" TEXT,
     "username" TEXT,
@@ -33,7 +34,7 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "LoginHistory" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "loggedInAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "LoginHistory_pkey" PRIMARY KEY ("id")
@@ -46,7 +47,7 @@ CREATE TABLE "Post" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "groupId" INTEGER NOT NULL,
-    "authorId" INTEGER NOT NULL,
+    "authorId" TEXT NOT NULL,
 
     CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
 );
@@ -54,7 +55,7 @@ CREATE TABLE "Post" (
 -- CreateTable
 CREATE TABLE "UserAnswer" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "answer" TEXT NOT NULL,
     "isCorrect" BOOLEAN NOT NULL,
     "answeredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -88,7 +89,7 @@ CREATE TABLE "Language" (
 CREATE TABLE "Answer_Algorithm" (
     "id" SERIAL NOT NULL,
     "questionId" INTEGER NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "symbol" TEXT NOT NULL,
     "isCorrect" BOOLEAN NOT NULL,
     "text" TEXT,
@@ -190,7 +191,7 @@ CREATE TABLE "SelectProblem" (
     "correctAnswer" TEXT NOT NULL,
     "difficultyId" INTEGER NOT NULL,
     "subjectId" INTEGER NOT NULL,
-    "createdBy" INTEGER,
+    "createdBy" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -213,7 +214,7 @@ CREATE TABLE "ProgrammingProblem" (
     "allowTestCaseView" BOOLEAN NOT NULL DEFAULT false,
     "isDraft" BOOLEAN NOT NULL DEFAULT true,
     "isPublished" BOOLEAN NOT NULL DEFAULT false,
-    "createdBy" INTEGER,
+    "createdBy" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "eventDifficultyId" INTEGER,
@@ -271,7 +272,7 @@ CREATE TABLE "Genre" (
 -- CreateTable
 CREATE TABLE "Answerd_Genre_Table" (
     "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
     "Answer_IT" INTEGER NOT NULL,
     "Answer_Basic_A" INTEGER NOT NULL,
     "Answer_Basic_B" INTEGER NOT NULL,
@@ -322,7 +323,7 @@ CREATE TABLE "Answers" (
 CREATE TABLE "UserSubjectProgress" (
     "level" INTEGER NOT NULL DEFAULT 1,
     "xp" INTEGER NOT NULL DEFAULT 0,
-    "user_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
     "subject_id" INTEGER NOT NULL,
 
     CONSTRAINT "UserSubjectProgress_pkey" PRIMARY KEY ("user_id","subject_id")
@@ -351,7 +352,7 @@ CREATE TABLE "Groups" (
 
 -- CreateTable
 CREATE TABLE "Groups_User" (
-    "user_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
     "group_id" INTEGER NOT NULL,
     "admin_flg" BOOLEAN NOT NULL,
 
@@ -379,7 +380,7 @@ CREATE TABLE "Assignment" (
     "due_date" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "authorId" INTEGER,
+    "authorId" TEXT,
     "programmingProblemId" INTEGER,
     "selectProblemId" INTEGER,
 
@@ -390,7 +391,7 @@ CREATE TABLE "Assignment" (
 CREATE TABLE "Submissions" (
     "id" SERIAL NOT NULL,
     "assignment_id" INTEGER NOT NULL,
-    "userid" INTEGER NOT NULL,
+    "userid" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "status" TEXT NOT NULL,
     "codingid" INTEGER NOT NULL,
@@ -405,7 +406,7 @@ CREATE TABLE "Submissions" (
 -- CreateTable
 CREATE TABLE "Status_Kohaku" (
     "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
     "name" TEXT NOT NULL DEFAULT 'コハク',
     "status" TEXT NOT NULL,
     "hungerlevel" INTEGER NOT NULL DEFAULT 1000,
@@ -437,7 +438,7 @@ CREATE TABLE "Title" (
 
 -- CreateTable
 CREATE TABLE "UserUnlockedTitle" (
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "titleId" INTEGER NOT NULL,
     "unlockedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -456,7 +457,7 @@ CREATE TABLE "Create_event" (
     "publicTime" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "creatorId" INTEGER NOT NULL,
+    "creatorId" TEXT NOT NULL,
     "isStarted" BOOLEAN NOT NULL DEFAULT false,
     "hasBeenStarted" BOOLEAN NOT NULL DEFAULT false,
 
@@ -468,7 +469,7 @@ CREATE TABLE "Event_Participants" (
     "id" SERIAL NOT NULL,
     "isAdmin" BOOLEAN NOT NULL DEFAULT false,
     "eventId" INTEGER NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "hasAccepted" BOOLEAN NOT NULL DEFAULT false,
     "event_getpoint" INTEGER NOT NULL DEFAULT 0,
 
@@ -492,7 +493,7 @@ CREATE TABLE "Event_Submission" (
     "codeLog" TEXT NOT NULL,
     "startedAt" TIMESTAMP(3) NOT NULL,
     "submittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "eventIssueId" INTEGER NOT NULL,
 
     CONSTRAINT "Event_Submission_pkey" PRIMARY KEY ("id")
@@ -512,7 +513,7 @@ CREATE TABLE "DailyMissionMaster" (
 
 -- CreateTable
 CREATE TABLE "UserDailyMissionProgress" (
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "missionId" INTEGER NOT NULL,
     "date" DATE NOT NULL,
     "progress" INTEGER NOT NULL DEFAULT 0,
@@ -524,7 +525,7 @@ CREATE TABLE "UserDailyMissionProgress" (
 -- CreateTable
 CREATE TABLE "DailyActivitySummary" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "date" DATE NOT NULL,
     "totalXpGained" INTEGER NOT NULL DEFAULT 0,
     "totalTimeSpentMs" BIGINT NOT NULL DEFAULT 0,
@@ -553,9 +554,26 @@ CREATE TABLE "AssignmentComment" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "assignmentId" INTEGER NOT NULL,
-    "authorId" INTEGER NOT NULL,
+    "authorId" TEXT NOT NULL,
 
     CONSTRAINT "AssignmentComment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AuditLog" (
+    "id" SERIAL NOT NULL,
+    "userId" TEXT,
+    "action" TEXT NOT NULL,
+    "details" TEXT,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "path" TEXT,
+    "method" TEXT,
+    "duration" INTEGER,
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -653,6 +671,15 @@ CREATE UNIQUE INDEX "EventDifficulty_difficultyName_key" ON "EventDifficulty"("d
 
 -- CreateIndex
 CREATE INDEX "AssignmentComment_assignmentId_idx" ON "AssignmentComment"("assignmentId");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_userId_idx" ON "AuditLog"("userId");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_action_idx" ON "AuditLog"("action");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_selectedTitleId_fkey" FOREIGN KEY ("selectedTitleId") REFERENCES "Title"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -836,3 +863,6 @@ ALTER TABLE "AssignmentComment" ADD CONSTRAINT "AssignmentComment_assignmentId_f
 
 -- AddForeignKey
 ALTER TABLE "AssignmentComment" ADD CONSTRAINT "AssignmentComment_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

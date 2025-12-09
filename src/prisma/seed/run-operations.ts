@@ -5,11 +5,11 @@ import { PrismaClient } from '@prisma/client';
 // ロジックを切り出して、それをseedとactionの両方から使うのが望ましいです。
 // ここでは、簡単のため、元のロジックを参考に一部を再実装します。
 
-async function addXpForSeed(prisma: PrismaClient, user_id: number, subject_id: number, difficulty_id: number) {
+async function addXpForSeed(prisma: PrismaClient, user_id: string, subject_id: number, difficulty_id: number) {
   const difficulty = await prisma.difficulty.findUnique({ where: { id: difficulty_id } });
   if (!difficulty) return;
   const xpAmount = difficulty.xp;
-  
+
   await prisma.user.update({
     where: { id: user_id },
     data: { xp: { increment: xpAmount } },
@@ -26,11 +26,11 @@ export async function runOperations(prisma: PrismaClient) {
 
   const alice = await prisma.user.findUnique({ where: { email: 'alice@example.com' } });
   const godUser = await prisma.user.findUnique({ where: { email: 'GodOfGod@example.com' } });
-  
+
   if (alice) {
     // console.log("🧪 Testing addXp function for Alice...");
     // await addXpForSeed(prisma, alice.id, 1, 1);
-    
+
     // for (let i = 0; i < 40; i++) {
     //   await addXpForSeed(prisma, alice.id, 2, 8); // Basic Info A
     //   await addXpForSeed(prisma, alice.id, 3, 8); // Basic Info B
@@ -45,7 +45,7 @@ export async function runOperations(prisma: PrismaClient) {
     await prisma.userSubjectProgress.createMany({ data: progressData, skipDuplicates: true });
     console.log(`✅ God Mode progress created.`);
   }
-  
+
   console.log('🌱 Seeding assignments and submissions...');
 
   // 1. 既存の課題と配布状況をクリアして初期化
@@ -64,7 +64,7 @@ export async function runOperations(prisma: PrismaClient) {
 
     // --- 課題データを作成 ---
     assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-10-30T23:59:59Z') });
-    
+
     if (problemFizzBuzz) {
       assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '[アルゴリズム] FizzBuzz問題', description: '添付の問題を解き、プログラミングの基本的なループと条件分岐の理解を深めましょう。', due_date: new Date('2025-11-20T23:59:59Z'), programmingProblemId: problemFizzBuzz.id });
     }
@@ -87,7 +87,7 @@ export async function runOperations(prisma: PrismaClient) {
     const allNonAdminMembers = await prisma.groups_User.findMany({
       where: { admin_flg: false },
     });
-    
+
     const submissionsToCreate = [];
     for (const assignment of allAssignments) {
       const membersInGroup = allNonAdminMembers.filter(
@@ -120,11 +120,11 @@ export async function runOperations(prisma: PrismaClient) {
     const aPlusBAssignment = await prisma.assignment.findFirst({
       where: { title: '[ウォーミングアップ] 簡単な足し算' },
     });
-  
+
     const bob = await prisma.user.findUnique({ where: { email: 'bob@example.com' } });
     const charlie = await prisma.user.findUnique({ where: { email: 'charlie@example.com' } });
     const diana = await prisma.user.findUnique({ where: { email: 'diana@example.com' } });
-  
+
     // BobとCharlieがPythonの課題を提出したことにする
     if (pythonAssignment && bob && charlie) {
       await prisma.submissions.updateMany({
@@ -140,7 +140,7 @@ export async function runOperations(prisma: PrismaClient) {
       });
       console.log(`✅ Created 2 dummy submissions for "${pythonAssignment.title}".`);
     }
-  
+
     // Dianaが足し算の課題を提出したことにする
     if (aPlusBAssignment && diana) {
       await prisma.submissions.updateMany({
@@ -208,7 +208,7 @@ async function seedDailyActivities(prisma: PrismaClient) {
   const kobeTaro = await prisma.user.findUnique({ where: { email: 'kobe_taro@example.com' } });
 
   // null でないユーザー（＝DBに存在するユーザー）のみを対象にする
-  const users = [alice, bob, kobeTaro].filter(u => u !== null) as { id: number }[];
+  const users = [alice, bob, kobeTaro].filter(u => u !== null) as { id: string }[];
 
   if (users.length === 0) {
     console.warn('⚠️ No users found to seed activity data for. Skipping.');

@@ -5,7 +5,7 @@ import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 interface SessionData {
-    user?: { id: number; email: string };
+    user?: { id: string; email: string };
 }
 
 // お知らせを更新 (PUT)
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest) {
         const member = await prisma.groups_User.findFirst({
             where: {
                 group_id: post.groupId,
-                user_id: sessionUserId,
+                user_id: sessionUserId as any,
                 admin_flg: true
             }
         });
@@ -99,7 +99,7 @@ export async function DELETE(req: NextRequest) {
         const member = await prisma.groups_User.findFirst({
             where: {
                 group_id: post.groupId,
-                user_id: sessionUserId,
+                user_id: sessionUserId as any,
                 admin_flg: true
             }
         });

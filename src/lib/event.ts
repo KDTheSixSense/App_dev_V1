@@ -17,7 +17,7 @@ export interface Event {
   };
 }
 
-export const getEvents = async (userId: number): Promise<Event[]> => {
+export const getEvents = async (userId: string): Promise<Event[]> => {
   try {
     console.log(`Fetching events for user ${userId} from the database...`);
     // Prisma Clientを使って、指定されたユーザーが参加または作成したイベントを取得します
@@ -47,7 +47,7 @@ export const getEvents = async (userId: number): Promise<Event[]> => {
         },
       },
     });
-    return events;
+    return events as any;
   } catch (error) {
     console.error(`Failed to fetch events for user ${userId}:`, error);
     return []; // エラーが発生した場合は空の配列を返す

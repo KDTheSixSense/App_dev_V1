@@ -5,7 +5,7 @@ import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 interface SessionData {
-  user?: { id: number | string; email: string };
+  user?: { id: string; email: string };
 }
 
 export async function POST(req: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         throw new Error('グループが見つかりません');
       }
 
-      const userId = Number(sessionUserId);
+      const userId = sessionUserId;
       const membership = await tx.groups_User.findFirst({
         where: {
           group_id: group.id,
@@ -83,12 +83,12 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('4択問題課題作成APIエラー:', error instanceof Error ? error.message : error);
     if (error instanceof Error) {
-        if (error.message === 'グループが見つかりません') {
-            return NextResponse.json({ success: false, message: error.message }, { status: 404 });
-        }
-        if (error.message === 'この操作を行う権限がありません') {
-            return NextResponse.json({ success: false, message: error.message }, { status: 403 });
-        }
+      if (error.message === 'グループが見つかりません') {
+        return NextResponse.json({ success: false, message: error.message }, { status: 404 });
+      }
+      if (error.message === 'この操作を行う権限がありません') {
+        return NextResponse.json({ success: false, message: error.message }, { status: 403 });
+      }
     }
     return NextResponse.json(
       { success: false, message: 'サーバーエラーが発生しました' },

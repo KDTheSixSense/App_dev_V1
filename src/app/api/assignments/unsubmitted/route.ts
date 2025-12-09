@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 // JWTペイロードの型定義
 interface JwtPayload {
-  id: number;
+  id: string;
 }
 
 export async function GET() {
@@ -21,13 +21,13 @@ export async function GET() {
     if (!token) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    
+
     // JWTを検証してユーザーIDを取得
     const decoded = verify(token, process.env.JWT_SECRET!) as JwtPayload;
     const userId = decoded.id;
 
     if (!userId) {
-        return NextResponse.json({ error: '無効なユーザーです' }, { status: 401 });
+      return NextResponse.json({ error: '無効なユーザーです' }, { status: 401 });
     }
 
     // 2. Prismaで未提出の課題を検索
@@ -81,7 +81,7 @@ export async function GET() {
     console.error('未提出課題の取得に失敗しました:', error);
     // JWTの期限切れなどのエラーをハンドリング
     if (error instanceof Error && error.name === 'JsonWebTokenError') {
-         return NextResponse.json({ error: '認証トークンが無効です' }, { status: 401 });
+      return NextResponse.json({ error: '認証トークンが無効です' }, { status: 401 });
     }
     return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
   }

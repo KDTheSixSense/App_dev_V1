@@ -108,12 +108,14 @@ export async function POST(req: NextRequest) {
     await logAudit(user.id, AuditAction.LOGIN, { status: 'success' });
 
     // 専用関数を呼び出してセッションを取得します
+    // Session is updated with isAdmin flag
     const session = await getAppSession();
 
     session.user = {
       id: user.id,
       email: user.email,
       username: user.username,
+      isAdmin: (user as any).isAdmin, // Cast to any to avoid IDE cache issues
     };
     await session.save();
 

@@ -103,78 +103,26 @@ function getJavaClassName(code: string): string {
     return match ? match[1] : 'Main';
 }
 
-async function lintPython(code: string): Promise<Annotation[]> {
-
-    // 1. `pyflakes` を実行し、複数のエラーをリストアップする
-    const { stdout, stderr, tempFile } = await runLintProcess(
-        'python3',           // コマンド
-        ['-m', 'pyflakes'],  // 引数で '-m pyflakes' を指定
-        code,
-        '.py'
-    );
-    await cleanupTempFile(tempFile);
-
-    const output = sanitizeOutput(stdout + stderr);
-    const annotations: Annotation[] = [];
-
-    if (!output || output.trim() === '') {
-        // pyflakes がエラーを検知しなかった場合はエラーなし
-        return [];
-    }
-
-    // 2. pyflakes の出力形式を解析する正規表現
-    // 例: <stdin>:4: invalid syntax
-    // 例: <stdin>:13: invalid syntax
-    const regex = /^(.*?):(\d+):(?:\d+:)? (.*)$/gm;
-    let match;
-
-    while ((match = regex.exec(output)) !== null) {
-        // match[2] = 行番号 (1-based)
-        // match[3] = エラーメッセージ (例: "invalid syntax")
-
-        const row = parseInt(match[2], 10) - 1; // 0-basedに変換
-        let text = match[3];
-
-        // "invalid syntax" の場合は、より分かりやすいメッセージに補足する
-        if (text.includes('invalid syntax')) {
-            text = '構文エラー (コロン ":" やインデントなどを確認してください)';
-        }
-
-        annotations.push({
-            row: row,
-            column: 0, // pyflakesは正確な列番号を返さないため、行頭(0)に設定
-            text: text,
-            type: 'error',
-        });
-    }
-
-    // 3. ast.parse の補助関数呼び出しを「削除」します
-    // await lintPythonWithAst(code, annotations); // ← この行を削除またはコメントアウト
-
-    return annotations;
-}
-
 /**
  * 補助関数: ast.parse を実行し、既存のエラー情報をリッチにする
- * 【lintPythonから呼び出されなくなったため、この関数は削除してもOKです】
  */
 async function lintPythonWithAst(code: string, annotations: Annotation[]): Promise<void> {
     const pythonValidatorScript = `
-        import ast
-        import sys
-        import json
-        try:
-            file_path = sys.argv[1]
-            with open(file_path, 'r', encoding='utf-8') as f:
-                source = f.read()
-            ast.parse(source)
-        except SyntaxError as e:
-            # 構文エラーの時だけJSONを返す
-            error_data = {'row': e.lineno, 'column': e.offset, 'text': e.msg, 'type': 'error'}
-            print(json.dumps(error_data))
-        except Exception:
-            pass # 構文エラー以外は pyflakes に任せる
-            `;
+import ast
+import sys
+import json
+try:
+    file_path = sys.argv[1]
+    with open(file_path, 'r', encoding='utf-8') as f:
+        source = f.read()
+    ast.parse(source)
+except SyntaxError as e:
+    # 構文エラーの時だけJSONを返す
+    error_data = {'row': e.lineno, 'column': e.offset, 'text': e.msg, 'type': 'error'}
+    print(json.dumps(error_data))
+except Exception:
+    pass # 構文エラー以外は無視
+`;
 
     const { stdout, tempFile } = await runLintProcess(
         'python3',
@@ -216,6 +164,61 @@ async function lintPythonWithAst(code: string, annotations: Annotation[]): Promi
     } catch (e) {
         console.error('Failed to parse AST fallback output:', e);
     }
+}
+
+async function lintPython(code: string): Promise<Annotation[]> {
+
+    // 1. `pyflakes` を実行し、複数のエラーをリストアップする
+    const { stdout, stderr, tempFile } = await runLintProcess(
+        'python3',           // コマンド
+        ['-m', 'pyflakes'],  // 引数で '-m pyflakes' を指定
+        code,
+        '.py'
+    );
+    await cleanupTempFile(tempFile);
+
+    const output = sanitizeOutput(stdout + stderr);
+    const annotations: Annotation[] = [];
+
+    // pyflakesがインストールされていない、または実行に失敗した場合のフォールバック
+    if (output.includes('No module named pyflakes') || output.includes('not found')) {
+        // ast.parse によるチェックを実行
+        await lintPythonWithAst(code, annotations);
+        return annotations;
+    }
+
+    if (!output || output.trim() === '') {
+        // pyflakes がエラーを検知しなかった場合はエラーなし
+        return [];
+    }
+
+    // 2. pyflakes の出力形式を解析する正規表現
+    // 例: <stdin>:4: invalid syntax
+    // 例: <stdin>:13: invalid syntax
+    const regex = /^(.*?):(\d+):(?:\d+:)? (.*)$/gm;
+    let match;
+
+    while ((match = regex.exec(output)) !== null) {
+        // match[2] = 行番号 (1-based)
+        // match[3] = エラーメッセージ (例: "invalid syntax")
+
+        const row = parseInt(match[2], 10) - 1; // 0-basedに変換
+        let text = match[3];
+
+        // "invalid syntax" の場合は、より分かりやすいメッセージに補足する
+        if (text.includes('invalid syntax')) {
+            text = '構文エラー (コロン ":" やインデントなどを確認してください)';
+        }
+
+        annotations.push({
+            row: row,
+            column: 0, // pyflakesは正確な列番号を返さないため、行頭(0)に設定
+            text: text,
+            type: 'error',
+        });
+    }
+
+    return annotations;
 }
 
 /**
@@ -532,9 +535,9 @@ async function lintPhp(code: string): Promise<Annotation[]> {
 async function lintCode(code: string, language: string): Promise<Annotation[]> {
     switch (language) {
         case 'python':
+        case 'python3':
             return await lintPython(code);
 
-        // 
         case 'javascript':
         case 'typescript':
             return await lintTypeScriptOrJavaScript(code, language);
@@ -560,8 +563,20 @@ async function lintCode(code: string, language: string): Promise<Annotation[]> {
 }
 
 
+import { getAppSession } from '@/lib/auth';
+
 export async function POST(req: NextRequest) {
     try {
+        const session = await getAppSession();
+        if (!session.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Rate Limiting Check
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+        if (!checkRateLimit(ip)) {
+            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
+        }
 
 
         const body = await req.json();

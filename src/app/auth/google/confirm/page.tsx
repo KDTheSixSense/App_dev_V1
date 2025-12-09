@@ -4,7 +4,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image'; 
+import Image from 'next/image';
 
 type ProfileData = {
   email: string;
@@ -50,8 +50,8 @@ export default function ConfirmGoogleSignup() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/auth/google/create-user', { 
-        method: 'POST', 
+      const res = await fetch('/api/auth/google/create-user', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           isAgreedToTerms,
@@ -75,31 +75,41 @@ export default function ConfirmGoogleSignup() {
 
   // 3. 画面の表示
   return (
-    <div 
+    <div
       className="relative min-h-screen w-full overflow-hidden text-white selection:bg-cyan-500 selection:text-slate-900 
                  bg-center bg-cover bg-no-repeat bg-fixed"
-      style={{ backgroundImage: "url('/images/Infopia_Login_Ragister_Background.png')" }} 
+      style={{ backgroundImage: "url('/images/Infopia_Login_Ragister_Background.png')" }}
     >
-      
+
       {/* --- 背景の装飾 (オーバーレイ) --- */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-slate-950/60" /> 
+        <div className="absolute inset-0 bg-slate-950/60" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent opacity-70"></div>
       </div>
 
       {/* --- コンテンツラッパー --- */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
+
         {/* --- ヘッダーロゴ (中央配置) --- */}
         <header className="relative flex h-40 items-center justify-center py-6">
           <Link href="/" className="relative h-full w-full max-w-lg">
-             <Image 
-               src="/images/infopia_logo.png"
-               alt="Infopia Logo"
-               fill
-               priority 
-               className="object-contain" 
-             />
+<<<<<<< HEAD
+            <Image
+              src="/images/Infopia_logo.png"
+              alt="Infopia Logo"
+              fill
+              priority
+              className="object-contain"
+            />
+=======
+            <Image
+              src="/images/Infopia_logo.png"
+              alt="Infopia Logo"
+              fill
+              priority
+              className="object-contain"
+            />
+>>>>>>> main
           </Link>
         </header>
 
@@ -132,7 +142,7 @@ export default function ConfirmGoogleSignup() {
                       className="rounded-full mb-4 border-2 border-white/20"
                     />
                   )} */}
-                  
+
                   <p className="text-xl font-bold text-white">{profile.name}</p>
                   <p className="text-sm text-slate-400">{profile.email}</p>
                 </div>
@@ -157,7 +167,7 @@ export default function ConfirmGoogleSignup() {
                       className="mt-1 h-4 w-4 rounded border-gray-500 bg-slate-800 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-900"
                     />
                     <label htmlFor="google-terms" className="text-sm text-slate-300 cursor-pointer select-none">
-                      <Link href="/terms" target="_blank" className="text-cyan-400 hover:underline">利用規約</Link>
+                      <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">利用規約</Link>
                       に同意します
                     </label>
                   </div>
@@ -170,7 +180,7 @@ export default function ConfirmGoogleSignup() {
                       className="mt-1 h-4 w-4 rounded border-gray-500 bg-slate-800 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-900"
                     />
                     <label htmlFor="google-privacy" className="text-sm text-slate-300 cursor-pointer select-none">
-                      <Link href="/privacypolicy" target="_blank" className="text-cyan-400 hover:underline">プライバシーポリシー</Link>
+                      <Link href="/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">プライバシーポリシー</Link>
                       に同意します
                     </label>
                   </div>
@@ -182,14 +192,14 @@ export default function ConfirmGoogleSignup() {
                     onClick={handleConfirm}
                     disabled={loading || !canSubmit}
                     className={`group w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 font-bold text-white shadow-lg shadow-cyan-500/25 transition-all 
-                      ${(loading || !canSubmit) 
-                        ? 'opacity-50 cursor-not-allowed grayscale' 
+                      ${(loading || !canSubmit)
+                        ? 'opacity-50 cursor-not-allowed grayscale'
                         : 'hover:scale-105 hover:shadow-cyan-500/50'
                       }`}
                   >
                     {loading ? '登録中...' : '登録する'}
                   </button>
-                  
+
                   <Link href="/auth/login" passHref className="w-full">
                     <button
                       disabled={loading}

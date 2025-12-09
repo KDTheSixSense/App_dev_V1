@@ -1,6 +1,6 @@
 // ランキングリストで使用するユーザーの型
 export type UserForRanking = {
-  id: number;
+  id: string;
   rank: number;
   name: string;
   iconUrl: string;

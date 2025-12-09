@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-// import { getIronSession } from 'iron-session';
-// import { sessionOptions } from '@/lib/session';
-// import { cookies } from 'next/headers';
+import { getIronSession } from 'iron-session';
+import { sessionOptions } from '@/lib/session';
+import { cookies } from 'next/headers';
 
 interface SessionData {
-  user?: { id: number; email: string };
+  user?: { id: string; email: string };
 }
 
 // 課題と提出状況一覧を取得 (GET)
@@ -13,10 +13,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ hashedId: string }> }
 ) {
-  // const session = await getIronSession<SessionData>(cookies(), sessionOptions);
-  // if (!session.user?.id) {
-  //   return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
-  // }
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
+  }
+  const userId = session.user.id;
 
   const { hashedId } = await params;
 
@@ -30,17 +31,29 @@ export async function GET(
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
 
-    // 課題とその課題に対する提出状況を全て取得
+    // Check membership and admin status
+    const membership = await prisma.groups_User.findFirst({
+      where: { group_id: group.id, user_id: userId },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ success: false, message: 'グループのメンバーではありません' }, { status: 403 });
+    }
+
+    const isAdmin = membership.admin_flg;
+
+    // 課題そのものは全員見れるが、提出物(Submissions)の閲覧権限を制御
     const assignmentsWithSubmissions = await prisma.assignment.findMany({
       where: { groupid: group.id },
       orderBy: { created_at: 'desc' },
       include: {
-        // 各課題に紐づく提出状況を全て取得
         Submissions: {
-          select: { // `include`から`select`に変更して、含めるフィールドを明示的に指定
+          // Adminなら全員分、Studentなら自分自身の提出のみを取得
+          where: isAdmin ? undefined : { userid: userId },
+          select: {
             status: true,
             submitted_at: true,
-            file_path: true, // 👈 ファイルパスを取得する
+            file_path: true,
             user: {
               select: {
                 id: true,

@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 // import { useRouter, useSearchParams } from 'next/navigation'; // ★ 標準のWeb APIに変更
 // import { FcGoogle } from "react-icons/fc"; // ★ SVGアイコンに変更
 // import Image from 'next/image'; // ★ 標準の<img>タグに変更
-import DOMPurify from 'dompurify';
+
 
 // ★ GoogleアイコンのSVGコンポーネント
 const GoogleIcon = ({ className = "" }) => (
@@ -71,8 +71,8 @@ const Login = () => {
         headers: { 'Content-Type': 'application/json' },
         //JSオブジェクトをJSON文字列変換
         body: JSON.stringify({
-          email: DOMPurify.sanitize(data.email),
-          password: DOMPurify.sanitize(data.password),
+          email: data.email,
+          password: data.password,
         }),
       });
       //レスポンスが成功ではない
@@ -130,7 +130,7 @@ const Login = () => {
           <a href="/" className="relative h-full w-full max-w-lg">
             {/* ★ <img>タグに変更 (Next/Imageのfillとobject-containのスタイルを再現) */}
             <img
-              src="/images/Infopia_logo.png"
+              src="/images/infopia_logo.png"
               alt="Infopia Logo"
               className="absolute inset-0 w-full h-full object-contain"
               loading="eager" // priorityの代わりにeagerを使用

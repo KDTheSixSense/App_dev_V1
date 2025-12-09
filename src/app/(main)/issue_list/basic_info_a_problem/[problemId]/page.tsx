@@ -9,7 +9,7 @@ import ProblemClient from './ProblemClient';
 import type { SerializableProblem } from '@/lib/data';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react'; // lucide-reactのインポートを追加
- 
+
 // --- 修正点 1: 型定義を修正 ---
 // params は Promise ではなく、プロパティ名はファイル名に合わせて 'problemid' (小文字) にします。
 type BasicInfoAProblemDetailPageProps = {
@@ -19,9 +19,10 @@ type BasicInfoAProblemDetailPageProps = {
 
 // --- 修正点 2: props の型から Promise を削除 ---
 const BasicInfoAProblemDetailPage = async ({ params, searchParams }: any) => {
-  
-  // --- 修正点 3: 'await params' を削除し、'params.problemid' (小文字) から直接IDを取得 ---
-  const problemIdStr = params.problemId;
+
+  // --- 修正点 3: 'await params' を使用してパラメータを取得 ---
+  const resolvedParams = await params;
+  const problemIdStr = resolvedParams.problemId;
   const problemIdNum = parseInt(problemIdStr, 10);
   // const resolvedSearchParams = searchParams; // searchParams も await は不要です
 
@@ -46,17 +47,17 @@ const BasicInfoAProblemDetailPage = async ({ params, searchParams }: any) => {
   if (session?.user?.id) {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: Number(session.user.id) },
+        where: { id: session.user.id },
         select: { aiAdviceCredits: true }
       });
       if (user) {
         userCredits = user.aiAdviceCredits;
       }
     } catch (error) {
-       console.error("[Page] Error fetching user credits:", error);
+      console.error("[Page] Error fetching user credits:", error);
     }
   } else {
-     console.log("[Page] No user session found, credits will be 0.");
+    console.log("[Page] No user session found, credits will be 0.");
   }
 
   return (
