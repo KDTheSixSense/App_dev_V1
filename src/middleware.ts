@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getIronSession, IronSessionData } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
+import { detectSqlInjection } from '@/lib/waf';
+import { generateCsp } from '@/lib/csp';
 
 // --- Configuration ---
 
@@ -89,7 +91,16 @@ function applyDeviceIdCookie(res: NextResponse, deviceId: string) {
 
 // --- Middleware ---
 
+// --- Middleware ---
+
 export async function middleware(req: NextRequest) {
+    // 0. Security: WAF (SQL Injection)
+    // Run this FIRST to block malicious requests before any processing
+    const wafResponse = detectSqlInjection(req);
+    if (wafResponse) {
+        return wafResponse;
+    }
+
     let response = NextResponse.next();
     const { pathname } = req.nextUrl;
 
@@ -206,24 +217,7 @@ export async function middleware(req: NextRequest) {
 
     // CSP Header Construction
     const isDev = process.env.NODE_ENV !== 'production';
-    // Allow 'unsafe-eval' in dev for hot reloading
-    const scriptSrc = isDev
-        ? "'self' 'unsafe-eval' 'unsafe-inline' blob:"
-        : `'self' 'nonce-${nonce}' blob:`;
-
-    const cspHeader = `
-    default-src 'self';
-    script-src ${scriptSrc};
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https://lh3.googleusercontent.com; 
-    font-src 'self';
-    connect-src 'self' https://raw.githubusercontent.com blob: data:; 
-    worker-src 'self' blob: data: 'unsafe-inline' 'unsafe-eval';
-    frame-ancestors 'none';
-    form-action 'self';
-    base-uri 'self';
-    upgrade-insecure-requests;
-  `.replace(/\s{2,}/g, ' ').trim();
+    const cspHeader = generateCsp({ nonce, isDev, pathname });
 
     response.headers.set('Content-Security-Policy', cspHeader);
     response.headers.set('x-nonce', nonce); // For use in layout
@@ -241,6 +235,16 @@ export async function middleware(req: NextRequest) {
         response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     }
+
+    // 0. Security: SQL Injection & Path Traversal Prevention in Query Params
+    const url = req.nextUrl;
+    // Common SQL Injection Patterns:
+    // - "--" (Comment)
+    // - "; " (Statement separator)
+    // - "' AND" or '" AND' (Boolean injection)
+    // - "' OR" or '" OR'
+    // - "UNION SELECT"
+
 
     return response;
 }
