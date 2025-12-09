@@ -49,52 +49,85 @@ interface RateLimitState {
     violationCount: number;
 }
 
-const ipMap = new Map<string, RateLimitState>();
+// deviceId または ip をキーにするため string 型で汎用的に扱う
+const limitMap = new Map<string, RateLimitState>();
 const WINDOW_MS = 10 * 1000; // 10 seconds
 const LIMIT = 50; // Increased limit slightly for standard usage (5 requests/sec average)
 const CLEANUP_INTERVAL = 100;
+const DEVICE_ID_COOKIE_NAME = 'd_id'; // Device ID Cookie Name
 let requestCounter = 0;
 
 function getBlockDuration(violationCount: number): number {
-    if (violationCount <= 1) return 60 * 1000; // 1 min
-    if (violationCount === 2) return 5 * 60 * 1000; // 5 min
-    return 20 * 60 * 1000; // 20 min max
+    // 違反回数の2乗分（分）待機: 1回目=1分, 2回目=4分, 3回目=9分...
+    const minutes = Math.pow(violationCount, 2);
+    // 最大24時間に制限
+    const maxMinutes = 24 * 60;
+    return Math.min(minutes, maxMinutes) * 60 * 1000;
 }
 
-function cleanupIpMap() {
+function cleanupLimitMap() {
     const now = Date.now();
-    for (const [ip, state] of ipMap.entries()) {
+    for (const [key, state] of limitMap.entries()) {
         if (state.blockedUntil > now) continue;
         if (now - state.startTime > WINDOW_MS && state.blockedUntil === 0) {
-            ipMap.delete(ip);
+            limitMap.delete(key);
         }
     }
+}
+
+// Helper to set cookie if needed
+function applyDeviceIdCookie(res: NextResponse, deviceId: string) {
+    res.cookies.set(DEVICE_ID_COOKIE_NAME, deviceId, {
+        path: '/',
+        httpOnly: true, // JavaScriptからアクセス不可（セキュリティ向上）
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+    });
+    return res;
 }
 
 // --- Middleware ---
 
 export async function middleware(req: NextRequest) {
-    const response = NextResponse.next();
+    let response = NextResponse.next();
     const { pathname } = req.nextUrl;
 
     // 1. Global Rate Limiting
     const ip = ((req as any).ip || req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown') as string;
+
+    // Device ID Check
+    let deviceId = req.cookies.get(DEVICE_ID_COOKIE_NAME)?.value;
+    let limitKey = deviceId;
+    let shouldSetCookie = false;
+
+    if (!deviceId) {
+        // Cookieがない場合はIPをキーにするが、次回用にIDを発行する
+        limitKey = ip;
+        deviceId = crypto.randomUUID();
+        shouldSetCookie = true;
+    }
+
     const now = Date.now();
 
     requestCounter++;
-    if (requestCounter % CLEANUP_INTERVAL === 0) cleanupIpMap();
+    if (requestCounter % CLEANUP_INTERVAL === 0) cleanupLimitMap();
 
-    let state = ipMap.get(ip);
+    // limitKey (IP or DeviceID) で状態管理
+    let state = limitMap.get(limitKey!); // limitKey is always string
     if (!state) {
         state = { count: 0, startTime: now, blockedUntil: 0, violationCount: 0 };
-        ipMap.set(ip, state);
+        limitMap.set(limitKey!, state);
     }
 
     if (state.blockedUntil > now) {
-        return new NextResponse(
-            JSON.stringify({ error: 'Too Many Requests. You are blocked.' }),
+        const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
+        const res = new NextResponse(
+            JSON.stringify({ error: `沢山のアクセスを検知しました。 あなたのアカウントをブロックしました。解除まで約${remainingSeconds}秒。` }),
             { status: 429, headers: { 'Content-Type': 'application/json' } }
         );
+        if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
+        return res;
     }
 
     if (now - state.startTime > WINDOW_MS) {
@@ -108,11 +141,18 @@ export async function middleware(req: NextRequest) {
     if (state.count > LIMIT) {
         state.violationCount++;
         state.blockedUntil = now + getBlockDuration(state.violationCount);
-        console.warn(`[Middleware] IP ${ip} blocked for ${state.blockedUntil - now}ms`);
-        return new NextResponse(
-            JSON.stringify({ error: 'Too Many Requests' }),
+        console.warn(`[Middleware] Key ${limitKey} blocked for ${state.blockedUntil - now}ms`);
+        const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
+        const res = new NextResponse(
+            JSON.stringify({ error: `沢山のアクセスを検知しました。 あなたのアカウントをブロックしました。解除まで約${remainingSeconds}秒。` }),
             { status: 429, headers: { 'Content-Type': 'application/json' } }
         );
+        if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
+        return res;
+    }
+
+    if (shouldSetCookie) {
+        applyDeviceIdCookie(response, deviceId!);
     }
 
 
@@ -133,21 +173,29 @@ export async function middleware(req: NextRequest) {
         if (!session.user) {
             // APIリクエストの場合はJSONでエラー、ページの場合はリダイレクト
             if (pathname.startsWith('/api')) {
-                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+                const res = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+                if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
+                return res;
             } else {
                 const url = req.nextUrl.clone();
                 url.pathname = '/auth/login';
                 url.searchParams.set('returnTo', pathname); // Optional: redirect back after login
-                return NextResponse.redirect(url);
+                const res = NextResponse.redirect(url);
+                if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
+                return res;
             }
         }
 
         if (isAdminPath && !session.user.isAdmin) {
             // 管理者権限がない場合
             if (pathname.startsWith('/api')) {
-                return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+                const res = NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+                if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
+                return res;
             } else {
-                return NextResponse.redirect(new URL('/home', req.url));
+                const res = NextResponse.redirect(new URL('/home', req.url));
+                if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
+                return res;
             }
         }
     }
