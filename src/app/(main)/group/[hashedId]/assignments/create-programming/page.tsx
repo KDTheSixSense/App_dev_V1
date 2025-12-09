@@ -251,7 +251,6 @@ export default function CreateProgrammingQuestionPage() {
     { id: 'description', label: '問題文' },
     { id: 'sample-cases', label: 'サンプルケース' },
     { id: 'test-cases', label: 'テストケース' },
-    { id: 'settings', label: '公開設定' }
   ];
 
   const selectProblemTabs = [
@@ -296,28 +295,8 @@ export default function CreateProgrammingQuestionPage() {
     ]);
   };
 
-  const removeSampleCase = (index: number | null) => {
-    // indexがnullの場合は削除しない、またはIDで削除するロジックが必要だが、
-    // ここでは簡易的に配列のインデックスではなくIDを使っていると仮定してフィルタリング
-    // ただし新規追加分はIDがnullなので、厳密にはindex管理の方が良いかもしれないが、
-    // 既存コードに合わせてIDベースで削除を試みる。IDがない場合は...
-    // 既存の実装に合わせてIDでフィルタリング
-    if (index !== null) {
-      setSampleCases(prev => prev.filter(c => c.id !== index));
-    } else {
-      // IDがない（新規追加分）を削除する場合のロジックが曖昧だが、
-      // 簡易的に末尾を削除するか、UI側でindexを渡すように変更する必要がある。
-      // ここではUI側でIDを渡しているので、IDがnullのものを削除するのは難しい。
-      // UI側のmapでindexを使っているので、removeSampleCaseにもindexを渡すように修正した方が良いが、
-      // 今回はとりあえずIDがnullでないものだけ削除可能とするか、
-      // もしくはUI側でindexを渡すように変更する。
-      // UI側: onClick={() => removeSampleCase(sampleCase.id)} となっている。
-      // 新規追加分はidがnullなので削除できないバグがあるかもしれない。
-      // 修正: UI側でindexを渡すように変更するのがベストだが、ここではロジックのみ修正。
-      // 暫定的に、IDがnullの要素が複数あると特定できないため、
-      // この関数は「IDがあるものはIDで、ないものは削除できない」という挙動になる可能性がある。
-      // 今回はそのままにする。
-    }
+  const removeSampleCase = (index: number) => {
+    setSampleCases(prev => prev.filter((_, i) => i !== index));
   };
 
   // UI側でindexを渡すように変更するためのラッパー（必要であれば）
@@ -330,10 +309,8 @@ export default function CreateProgrammingQuestionPage() {
     ]);
   };
 
-  const removeTestCase = (id: number | null) => {
-    if (id !== null) {
-      setTestCases(prev => prev.filter(c => c.id !== id));
-    }
+  const removeTestCase = (index: number) => {
+    setTestCases(prev => prev.filter((_, i) => i !== index));
   };
 
   const resetForm = () => {
@@ -644,7 +621,7 @@ export default function CreateProgrammingQuestionPage() {
               {categories.map((category) => (
                 <li key={category.id} className="sidebar-item">
                   <button
-                    className={`sidebar - link ${selectedCategory === category.id ? 'active' : ''} `}
+                    className={`sidebar-link ${selectedCategory === category.id ? 'active' : ''}`}
                     onClick={() => handleCategorySelect(category.id)}
                   >
                     <div className="sidebar-link-content">
@@ -937,7 +914,7 @@ export default function CreateProgrammingQuestionPage() {
                                   <button
                                     type="button"
                                     className="btn btn-secondary btn-small"
-                                    onClick={() => removeSampleCase(sampleCase.id)}
+                                    onClick={() => removeSampleCase(index)}
                                   >
                                     削除
                                   </button>
@@ -1021,7 +998,7 @@ export default function CreateProgrammingQuestionPage() {
                                   <button
                                     type="button"
                                     className="btn btn-secondary btn-small"
-                                    onClick={() => removeTestCase(testCase.id)}
+                                    onClick={() => removeTestCase(index)}
                                   >
                                     削除
                                   </button>
