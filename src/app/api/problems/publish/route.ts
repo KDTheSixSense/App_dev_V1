@@ -77,10 +77,10 @@ export async function POST(request: Request) {
     // その他のエラーを処理
     if (error instanceof Error) {
       console.error('Generic Error:', error.message);
-      console.error('Stack Trace:', error.stack);
+      console.error('Generic Error:', error instanceof Error ? error.message : String(error));
       return NextResponse.json({
-        message: '問題の公開に失敗しました',
-        error: error.message
+        message: '問題の作成に失敗しました。',
+        error: 'Internal Server Error'
       }, { status: 500 });
     }
 

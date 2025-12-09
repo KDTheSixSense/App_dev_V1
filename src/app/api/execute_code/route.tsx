@@ -116,6 +116,7 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('Backend execution error:', error);
-    return NextResponse.json({ error: `Internal server error: ${error.message}` }, { status: 500 });
+    console.error(`Internal server error: ${error instanceof Error ? error.message : String(error)}`);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

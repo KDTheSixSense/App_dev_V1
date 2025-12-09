@@ -98,7 +98,8 @@ export async function POST(request: Request, context: { params: Promise<{ proble
 
       } catch (error: any) {
             console.error('ファイルのアップロード中にエラーが発生しました:', error);
-            return NextResponse.json({ message: 'ファイルのアップロードに失敗しました', error: error.message }, { status: 500 });
+            // 本番環境では詳細を隠蔽
+            return NextResponse.json({ message: 'ファイルのアップロードに失敗しました', error: 'Internal Server Error' }, { status: 500 });
       } finally {
             await prisma.$disconnect();
       }

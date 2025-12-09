@@ -31,7 +31,7 @@ export async function GET(request: Request, context: { params: Promise<{ problem
         return NextResponse.json(problem, { status: 200 });
     } catch (error: any) {
         console.error('問題の取得中にエラーが発生しました:', error);
-        return NextResponse.json({ message: '問題の取得に失敗しました', error: error.message }, { status: 500 });
+        return NextResponse.json({ message: '問題の取得に失敗しました', error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
@@ -127,7 +127,7 @@ export async function PUT(request: Request, context: { params: Promise<{ problem
         return NextResponse.json({ message: '問題が正常に更新されました！', problem: updatedProblem }, { status: 200 });
 
     } catch (error: any) {
-        console.error('問題の更新中にエラーが発生しました:', error);
-        return NextResponse.json({ message: '問題の更新に失敗しました', error: error.message }, { status: 500 });
+        console.error('更新エラー:', error);
+        return NextResponse.json({ message: '問題の更新に失敗しました', error: 'Internal Server Error' }, { status: 500 });
     }
 }
