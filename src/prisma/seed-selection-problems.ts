@@ -88,7 +88,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
  */
 async function seedSelectProblemsFromExcel(prisma: PrismaClient) {
   console.log('🌱 Seeding Selection Problems from Excel file...');
-  const excelFileName = 'PBL3_4択問題ベースシート .xlsx';
+  const excelFileName = 'PBL3_4択問題ベースシート.xlsx';
   const sheetName = '4択問題統合用シート';
   const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'selects_problems', 'data', excelFileName);
   const TARGET_DIFFICULTY_ID = 11;
