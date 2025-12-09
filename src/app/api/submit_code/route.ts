@@ -16,6 +16,10 @@ const submitCodeSchema = z.object({
   problemId: z.string().or(z.number()),
 });
 
+function spawn_process(command: string, args: string[], options: any) {
+  return spawn(command, args, options);
+}
+
 /**
  * コードをローカル環境で実行する関数 (多言語対応・コンパイルエラー許容版)
  */
@@ -126,7 +130,7 @@ async function executeLocally(language: string, sourceCode: string, input: strin
 
     // 5. プロセスを起動して実行
     return await new Promise((resolve) => {
-      const child = spawn(runCmd, runArgs, { cwd: tempDir });
+      const child = spawn_process(runCmd, runArgs, { cwd: tempDir });
 
       let stdout = '';
       let stderr = '';

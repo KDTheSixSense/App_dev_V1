@@ -14,9 +14,7 @@ const prisma = new PrismaClient();
  */
 function parseAnswerOptionsText(text: string): string[] | null {
   if (!text || typeof text !== 'string') { return null; }
-  const cleanedText = text.replace(/[
-]+/g, ' ').replace(/[　
-	 ]+/g, ' ').trim();
+  const cleanedText = text.replace(/[\r\n]+/g, ' ').replace(/[　\t ]+/g, ' ').trim();
   const markersJP = ['ア：', 'イ：', 'ウ：', 'エ：'];
   const markersEnFull = ['A：', 'B：', 'C：', 'D：'];
   const markersEnHalf = ['A:', 'B:', 'C:', 'D:'];

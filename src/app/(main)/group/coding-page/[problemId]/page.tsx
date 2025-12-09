@@ -1,5 +1,4 @@
-// /workspaces/my-next-app/src/app/(main)/group/coding-page/[problemId]/page.tsx
-
+"use client";
 import React from 'react';
 import { notFound, useSearchParams } from 'next/navigation';
 import { prisma } from '@/lib/prisma';

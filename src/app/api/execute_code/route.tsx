@@ -54,6 +54,11 @@ function containsForbiddenKeywords(code: string, language: string): boolean {
 }
 
 
+function spawn_process(command: string, args: string[], options: any) {
+  return spawn(command, args, options);
+}
+
+
 /**
  * ローカル環境でコードを実行する関数
  * submit_codeのロジックをベースに、コンパイル結果と実行結果を分けて返すように拡張
@@ -171,7 +176,7 @@ async function executeLocally(language: string, sourceCode: string, input: strin
 
     // 4. プログラムの実行
     await new Promise<void>((resolve) => {
-      const child = spawn(runCmd, runArgs, { cwd: tempDir });
+      const child = spawn_process(runCmd, runArgs, { cwd: tempDir });
 
       // 入力を渡す
       if (input) {

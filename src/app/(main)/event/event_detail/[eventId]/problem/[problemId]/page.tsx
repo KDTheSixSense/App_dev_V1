@@ -1,5 +1,5 @@
-//app/(main)/event/event_detail/[eventId]/problem/[problemId]/page.ts
-
+"use client";
+//app/(main)/event/event_detail/[eventId]/problem/[problemId]/page.tsx
 
 import React from 'react';
 import { notFound, useSearchParams } from 'next/navigation';
