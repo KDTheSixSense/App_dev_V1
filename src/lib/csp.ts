@@ -11,6 +11,7 @@ export function generateCsp({ nonce, isDev, pathname }: CspOptions): string {
     const imgSrc = "'self' blob: data: https://lh3.googleusercontent.com"; // Profile images
     const fontSrc = "'self'";
     const connectSrc = "'self' https://raw.githubusercontent.com blob: data:"; // External APIs
+    const frameSrc = "'self' https://www.youtube.com"; // YouTube embedding
 
     // Script Logic
     // Default to strict nonce-based policy
@@ -33,6 +34,7 @@ export function generateCsp({ nonce, isDev, pathname }: CspOptions): string {
     img-src ${imgSrc};
     font-src ${fontSrc};
     connect-src ${connectSrc};
+    frame-src ${frameSrc};
     // Workers might need eval depending on libraries (Blockly uses workers?)
     worker-src 'self' blob: data: 'unsafe-inline' 'unsafe-eval';
     frame-ancestors 'none';
