@@ -1661,22 +1661,6 @@ const linkedListAppendLogic: {
     }
 };
 
-// ★重要: traceLogicを動的に切り替えるためのラッパー
-// problem-logics.ts の `idToLogicMap` に登録するオブジェクトを調整します
-
-const linkedListAppendLogicWrapper = {
-    // 静的ステップと動的ステップを組み合わせる
-    traceLogic: [
-        ...linkedListAppendLogic.traceLogic.slice(0, 12), // 0~11行目は静的
-        (vars: VariablesState) => { // 12行目 (Line 13) は動的             
-             const variant = vars._variant as string || 'ア'; // _variantがあれば使う
-             const stepFunc = linkedListAppendStepLogics[variant] || linkedListAppendStepLogics['default'];
-             return stepFunc(vars);
-        },
-        ...linkedListAppendLogic.traceLogic.slice(13)
-    ],
-    calculateNextLine: linkedListAppendLogic.calculateNextLine
-};
 
 // =================================================================================
 // --- 問24: スパースマトリックス変換のロジック ---
@@ -2010,57 +1994,57 @@ const callStackLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine
     calculateNextLine(currentLine: number, vars: VariablesState): number {
         // --- Step 1: 初期化 ---
         // トレースの最初のステップで、コールスタックと出力を初期化
-
         if (!vars.initialized) {
             vars.output = [];
             // callStackに最初のフレームとしてproc2を積む
+            // pc: 0 は proc2の最初の処理(proc3呼び出し)を指す
             vars.callStack = [{ func: 'proc2', pc: 0 }];
             vars.initialized = true;
-            return 4; // proc2の定義行 (Line 5) へ移動
+            
+            // ★修正: 5行目 (index 4) から開始する
+            return 4; 
         }
 
+        // スタックを取得
         const stack = vars.callStack as { func: string, pc: number }[];
 
         // --- Step 2: トレース終了判定 ---
+        // スタックが空になったらトレース終了
         if (stack.length === 0) {
-            return 1; // スタックが空になったらトレース終了
+            return 99; // 99は終了コード
         }
 
         // --- Step 3: 現在の実行フレームを取得 ---
         let currentFrame = stack[stack.length - 1];
         let nextLine = -1;
 
-        if (vars.initialized && vars.output.length === 4) {
-                vars.initialized = false;
-                vars.callStack = [];
-                vars.output = [];
-                nextLine = 0; // 初期化後、次の行へ進む
-                return 1; // 初期化後、次の行へ進む
-        }
+        // ★修正: ここにあった「出力が4つになったらリセット」するブロックを削除
+        // これが無限ループの原因でした。
 
         // --- Step 4: 現在のフレームに基づいて処理を実行し、次の行を決定 ---
         switch (currentFrame.func) {
             case 'proc2':
                 switch (currentFrame.pc) {
                     case 0: // Line 6: proc3() を呼び出し
-                        currentFrame.pc++; // proc2の次の実行位置を更新
+                        currentFrame.pc++; // 次に戻ってきたら次はpc=1から
                         stack.push({ func: 'proc3', pc: 0 }); // proc3をスタックに積む
-                        nextLine = 9; // proc3の定義(Line 10)へジャンプ
+                        nextLine = 9; // proc3の定義(Line 10: Index 9)へジャンプ
                         break;
                     case 1: // Line 7: "B" を出力
                         vars.output.push("B");
                         currentFrame.pc++;
-                        nextLine = 7; // 次の行(Line 8)へ
+                        nextLine = 6; // 現在の行(Line 7: Index 6)をハイライト（出力実行）
                         break;
                     case 2: // Line 8: proc1() を呼び出し
                         currentFrame.pc++;
                         stack.push({ func: 'proc1', pc: 0 });
-                        nextLine = 0; // proc1の定義(Line 1)へジャンプ
+                        nextLine = 0; // proc1の定義(Line 1: Index 0)へジャンプ
                         break;
                     default: // proc2の終わり
                         stack.pop(); // proc2をスタックから降ろす
-                        // 呼び出し元はないので、次のループで終了判定に引っかかる
-                        nextLine = 8;
+                        // スタックが空になったら次のループで終了判定(Step 2)にかかる
+                        // ここではとりあえず安全な行(例えばLine 9の空行)を返しておく
+                        nextLine = 8; 
                         break;
                 }
                 break;
@@ -2070,17 +2054,19 @@ const callStackLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine
                     case 0: // Line 2: "A" を出力
                         vars.output.push("A");
                         currentFrame.pc++;
-                        nextLine = 2; // 次の行(Line 3)へ
+                        nextLine = 1; // 現在の行(Line 2: Index 1)をハイライト
                         break;
                     case 1: // Line 3: proc3() を呼び出し
                         currentFrame.pc++;
                         stack.push({ func: 'proc3', pc: 0 });
-                        nextLine = 9; // proc3の定義(Line 10)へジャンプ
+                        nextLine = 9; // proc3の定義(Line 10: Index 9)へジャンプ
                         break;
                     default: // proc1の終わり
                         stack.pop(); // proc1をスタックから降ろす
-                        // 呼び出し元(proc2)に戻る。次のループでproc2のpcから再開。
-                        nextLine = 7; // 見た目上、proc1を呼び出した8行目の手前に戻る
+                        // 呼び出し元(proc2)に戻る。
+                        // proc2のpcはすでにインクリメントされているので、
+                        // 戻り先として「proc1を呼び出した行の次」あたりを示す
+                        nextLine = 7; // Line 8 (Index 7) 付近に戻る
                         break;
                 }
                 break;
@@ -2090,18 +2076,26 @@ const callStackLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine
                     case 0: // Line 11: "C" を出力
                         vars.output.push("C");
                         currentFrame.pc++;
-                        nextLine = 10; // 次の行(見えないがproc3の終わり)へ
+                        nextLine = 10; // 現在の行(Line 11: Index 10)をハイライト
                         break;
                     default: // proc3の終わり
                         stack.pop(); // proc3をスタックから降ろす
                         // 呼び出し元に戻る。
-                        const callerFrame = stack[stack.length-1];
-                        if(callerFrame.func === 'proc2') nextLine = 5;
-                        if(callerFrame.func === 'proc1') nextLine = 2;
+                        if (stack.length > 0) {
+                            const callerFrame = stack[stack.length - 1];
+                            // 呼び出し元の「関数呼び出し行」に戻して、処理が戻ったことを視覚的に示す
+                            if (callerFrame.func === 'proc2') nextLine = 5; // Line 6 (Index 5)
+                            if (callerFrame.func === 'proc1') nextLine = 2; // Line 3 (Index 2)
+                        } else {
+                            nextLine = 99;
+                        }
                         break;
                 }
                 break;
         }
+
+        // 次の行が未設定(エラー)の場合は強制終了
+        if (nextLine === -1) return 99;
 
         return nextLine;
     },
@@ -2687,9 +2681,7 @@ const maxOfThreeLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLin
     },
 };
 
-// =================================================================================
-// --- 問34: 2進数から10進数への変換ロジック ---
-// =================================================================================
+
 // =================================================================================
 // --- 問34: 2進数変換ロジック (選択肢対応版) ---
 // =================================================================================
@@ -4433,7 +4425,9 @@ const logic_53: LogicDef = {
   }
 }
 
-// ID: 54 (Game Score - prev check)
+// =================================================================================
+// --- 問54 : スコア計算ロジック (選択肢対応版) ---
+// =================================================================================
 const logic_54: LogicDef = {
   traceLogic: [
     /* 0: header */ (vars) => vars,
@@ -4445,31 +4439,58 @@ const logic_54: LogicDef = {
     },
     /* 4: curr <- num */ (vars) => {
         const i = vars.i as number;
-        const char = (vars.mark as string[])[i - 1]; // 0-based index
-        // "_" なら数値としては 0 扱い、それ以外は数値変換
+        // iは1から始まるが、JS配列は0から始まる
+        const char = (vars.mark as string[])[i - 1]; 
+        // "_" のときは curr は 0 とする
         const val = (char === "_") ? 0 : parseInt(char);
         return {...vars, curr: isNaN(val) ? 0 : val};
     },
     /* 5: score add */ (vars) => ({...vars, score: (vars.score as number) + (vars.curr as number)}),
     /* 6: if "_" */ (vars) => vars,
-    /* 7: [a] bonus */ (vars) => {
-        // 正解ロジック: score += num(mark[i-1])
-        // iは現在位置(1-based)。mark[i-1]は「1つ前」の要素。
-        // JS配列(0-based)だと、現在の要素は index = i-1。
-        // 1つ前の要素は index = i-2 となる。
-        const i = vars.i as number;
-        if (i >= 2) {
-            const prevChar = (vars.mark as string[])[i - 2];
-            const prevVal = parseInt(prevChar);
-            return {...vars, score: (vars.score as number) + (isNaN(prevVal) ? 0 : prevVal)};
+    
+    /* 7: [a] bonus calculation */ (vars) => {
+        const i = vars.i as number; // 現在のインデックス (1-based)
+        const mark = vars.mark as string[];
+        const variant = vars._variant as string || 'イ'; // デフォルトは正解
+        let addVal = 0;
+
+        // 文字列を数値に変換するヘルパー (範囲外や "_" は 0)
+        const getNum = (idx0: number): number => {
+            if (idx0 < 0 || idx0 >= mark.length) return 0;
+            const c = mark[idx0];
+            return c === "_" ? 0 : (parseInt(c) || 0);
+        };
+
+        if (variant === 'ア') {
+            // score <- score + curr
+            // curr は直前のステップで 0 ("_"のため) になっているので加算されない
+            addVal = vars.curr as number;
+        } 
+        else if (variant === 'イ') { // 正解
+            // score <- score + num(mark[i-1])  <-- 1つ前の要素
+            // 1-based表記で i-1 なので、0-based配列では (i-1) - 1 = i-2
+            addVal = getNum(i - 2);
+        } 
+        else if (variant === 'ウ') {
+            // score <- score + num(mark[i+1])  <-- 1つ後の要素
+            // 1-based表記で i+1 なので、0-based配列では (i-1) + 1 = i
+            addVal = getNum(i);
+        } 
+        else if (variant === 'エ') {
+            // score <- score + num(mark[i])    <-- 現在の要素
+            // 1-based表記で i なので、0-based配列では i-1
+            // 現在は "_" なので 0 になる
+            addVal = getNum(i - 1);
         }
-        return vars;
+
+        return {...vars, score: (vars.score as number) + addVal};
     },
+
     /* 8: endif */ (vars) => vars,
     /* 9: endfor */ (vars) => ({...vars, i: (vars.i as number) + 1}),
     /* 10: return */ (vars) => vars
   ],
-  calculateNextLine: (line, vars) => {
+  calculateNextLine: (line, vars, variant) => {
     if (!vars.mark) return line; // データ未選択時は待機
 
     switch(line) {
@@ -4478,7 +4499,8 @@ const logic_54: LogicDef = {
       
       case 6: // if (mark[i] == "_")
         const currentMark = (vars.mark as string[])[(vars.i as number) - 1];
-        return (currentMark === "_") ? 7 : 8; // 真なら7(ボーナス)、偽なら8(endif)
+        // "_" なら Line 7(ボーナス処理)へ、そうでなければ Line 8(endif)へ
+        return (currentMark === "_") ? 7 : 8;
       
       case 7: // bonus done
         return 8;
@@ -4498,20 +4520,39 @@ const logic_54: LogicDef = {
   }
 }
 
-// ID: 55 (String Replace)
+// =================================================================================
+// --- 問55: 文字列置換ロジック ---
+// =================================================================================
 const logic_55: LogicDef = {
   traceLogic: [
     /* 0: header */ (vars) => vars,
     /* 1: init */   (vars) => ({ ...vars, res: "", i: 1 }),
     /* 2: while */  (vars) => vars,
-    /* 3: if match */ (vars) => vars,
-    /* 4: res add rep */ (vars) => ({ ...vars, res: (vars.res as string) + (vars.replacement as string) }),
+    /* 3: if match */ (vars) => vars, // 判定はcalculateNextLineで行う
+    
+    /* 4: res add [b] */ (vars) => {
+        const variant = vars._variant as string || 'ア';
+        const target = vars.target as string;
+        const replacement = vars.replacement as string;
+        
+        let addStr = "";
+        
+        // 選択肢 b のロジック
+        if (variant === 'ア' || variant === 'エ') {
+            addStr = replacement; // b: replacement (正解またはエ)
+        } else if (variant === 'イ' || variant === 'ウ') {
+            addStr = target;      // b: target (間違い)
+        }
+
+        return { ...vars, res: (vars.res as string) + addStr }; 
+    },
+    
     /* 5: i skip */ (vars) => ({ ...vars, i: (vars.i as number) + (vars.target as string).length }),
     /* 6: else */   (vars) => vars,
     /* 7: res add char */ (vars) => {
         const str = vars.str as string;
         const i = vars.i as number;
-        // mid(str, i, 1) は str の i 文字目を取得
+        // mid(str, i, 1)
         const char = str.charAt(i - 1);
         return { ...vars, res: (vars.res as string) + char };
     },
@@ -4520,22 +4561,44 @@ const logic_55: LogicDef = {
     /* 10: endwhile */ (vars) => vars,
     /* 11: return */ (vars) => vars
   ],
-  calculateNextLine: (line, vars) => {
+
+  calculateNextLine: (line, vars, variant) => {
     if (!vars.str) return line; // データ未選択時は待機
     
     const str = vars.str as string;
     const target = vars.target as string;
+    const replacement = vars.replacement as string;
     const i = vars.i as number;
+    const selectedVariant = variant || (vars._variant as string) || 'ア'; // デフォルト正解
 
     switch(line) {
       case 2: // while (i <= str.length)
         return i <= str.length ? 3 : 11;
 
-      case 3: // if match(str, i, target)
-        // i番目からの部分文字列がtargetと一致するか判定
-        // (JSのsubstringは0-based, iは1-based)
-        const sub = str.substring(i - 1, i - 1 + target.length);
-        return sub === target ? 4 : 6; // 一致なら4(if内), 不一致なら6(else)
+      case 3: // if [a]
+        let condition = false;
+        
+        // --- 選択肢ごとの条件判定 ---
+        if (selectedVariant === 'エ') {
+            // エ: str[i] == target (1文字比較 vs 文字列全体)
+            // str[i] は1文字。targetが2文字以上なら通常は一致しない。
+            // targetが1文字なら一致する可能性がある。
+            const charAtI = str.charAt(i - 1);
+            condition = (charAtI === target);
+        } 
+        else if (selectedVariant === 'ウ') {
+            // ウ: match(str, i, replacement)
+            // replacement と一致するか判定
+            const sub = str.substring(i - 1, i - 1 + replacement.length);
+            condition = (sub === replacement);
+        }
+        else {
+            // ア, イ: match(str, i, target) (正解ロジック)
+            const sub = str.substring(i - 1, i - 1 + target.length);
+            condition = (sub === target);
+        }
+
+        return condition ? 4 : 6; // 一致なら4(if内), 不一致なら6(else)
 
       case 4: return 5;
       case 5: return 9; // -> endif
@@ -4574,32 +4637,73 @@ const logic_56: LogicDef = {
     }
 };
 
-// ID: 57 (Linear Search)
+// ------------------------------------------------------------------------------
+// --- 問: 57 : 配列内探索 (選択肢対応版) ---
+// ------------------------------------------------------------------------------
 const logic_57: LogicDef = {
-    traceLogic: [
-        (vars) => vars,
-        (vars) => ({ ...vars, i: null }),
-        (vars) => { if (vars.i === null) return { ...vars, i: 1 }; return vars; },
-        (vars) => vars, // if
-        (vars) => vars, // return i
-        (vars) => vars, // endif
-        (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
-        (vars) => vars // return -1
-    ],
-    calculateNextLine: (line, vars) => {
-        if (!vars.array) return line;
-        const arr = vars.array as number[];
-        const i = vars.i as number;
-        switch(line) {
-            case 2: return i <= arr.length ? 3 : 7;
-            case 3: return arr[i-1] === vars.target ? 4 : 5;
-            case 4: return 99;
-            case 5: return 6;
-            case 6: return 2;
-            case 7: return 99;
-            default: return line + 1;
+  traceLogic: [
+    /* 0: header */ (vars) => vars,
+    /* 1: decl i */ (vars) => ({ ...vars, i: null }),
+    /* 2: for */    (vars) => { 
+        // ループ変数の初期化または更新は calculateNextLine のフロー制御後に行われる
+        // 初回のみここで初期化
+        if (vars.i === null) return { ...vars, i: 1 }; 
+        return vars; 
+    },
+    /* 3: if */     (vars) => vars,
+    /* 4: return i */ (vars) => vars,
+    /* 5: endif */  (vars) => vars,
+    /* 6: endfor */ (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
+    /* 7: return -1 */ (vars) => vars
+  ],
+
+  calculateNextLine: (line, vars, variant) => {
+    if (!vars.array) return line;
+    
+    const arr = vars.array as number[];
+    const i = vars.i as number;
+    const target = vars.target as number;
+    const selectedVariant = variant || (vars._variant as string) || 'ア'; // デフォルト正解
+
+    switch(line) {
+      case 2: // for (i ...)
+        // i が配列長以下ならループ継続(3へ)、そうでなければ終了(7へ)
+        // ※iがnull(初回)の場合は1とみなす処理はtraceLogicで行うが、
+        //  ここでの判定のために一時的に1として扱う
+        const currentI = (i === null) ? 1 : i;
+        return currentI <= arr.length ? 3 : 7;
+
+      case 3: // if ([ a ])
+        const val = arr[i - 1]; // 0-based access
+        let condition = false;
+
+        // 選択肢ごとの条件判定
+        switch (selectedVariant) {
+            case 'ア': condition = (val === target); break; // == (正解)
+            case 'イ': condition = (val !== target); break; // !=
+            case 'ウ': condition = (val > target); break;   // >
+            case 'エ': condition = (val < target); break;   // <
         }
+
+        // Trueなら return i (Line 4) へ、Falseなら endif (Line 5) へ
+        return condition ? 4 : 5;
+
+      case 4: // return i
+        return 99; // 終了
+
+      case 5: // endif
+        return 6; // -> endfor
+
+      case 6: // endfor
+        return 2; // -> loop check
+
+      case 7: // return -1
+        return 99; // 終了
+
+      default: 
+        return line + 1;
     }
+  }
 };
 
 // ID: 58 (Sum)
@@ -4622,35 +4726,85 @@ const logic_58: LogicDef = {
     }
 };
 
-// ID: 59 (Reverse Array)
+//------------------------------------------------------------------------------
+// --- 問59: 配列反転 ---
+//------------------------------------------------------------------------------
 const logic_59: LogicDef = {
-    traceLogic: [
-        (vars) => vars,
-        (vars) => ({ ...vars, left: 1 }),
-        (vars) => ({ ...vars, right: (vars.data as number[]).length }),
-        (vars) => ({ ...vars, temp: null }),
-        (vars) => vars, // while
-        (vars) => ({ ...vars, temp: (vars.data as number[])[(vars.left as number)-1] }),
-        (vars) => {
-            const d = [...vars.data as number[]];
-            d[(vars.left as number)-1] = d[(vars.right as number)-1];
+  traceLogic: [
+    /* 0: header */ (vars) => vars,
+    /* 1: left init */ (vars) => ({ ...vars, left: 1 }),
+    /* 2: right init */ (vars) => ({ ...vars, right: (vars.data as number[]).length }),
+    /* 3: temp init */ (vars) => ({ ...vars, temp: null }),
+    
+    /* 4: while */ (vars) => vars,
+    
+    /* 5: temp = data[left] */ (vars) => ({ ...vars, temp: (vars.data as number[])[(vars.left as number)-1] }),
+    
+    /* 6: data[left] = data[right] */ (vars) => {
+        const d = [...vars.data as number[]];
+        d[(vars.left as number)-1] = d[(vars.right as number)-1];
+        return { ...vars, data: d };
+    },
+    
+    /* 7: [a] logic variant */ (vars) => { 
+        const variant = vars._variant as string || 'ア';
+        const d = [...vars.data as number[]];
+        const leftIdx = (vars.left as number) - 1;
+        const rightIdx = (vars.right as number) - 1;
+        const temp = vars.temp as number;
+
+        if (variant === 'ア') { // 正解
+            // data[right] ← temp
+            d[rightIdx] = temp;
             return { ...vars, data: d };
-        },
-        (vars) => { // [a]
-            const d = [...vars.data as number[]];
-            d[(vars.right as number)-1] = vars.temp;
+        } 
+        else if (variant === 'イ') {
+            // data[right] ← data[left]
+            // ※直前の行で data[left] には元の data[right] の値が入っているため、
+            //   結果的に data[right] の値は変わらない（コピーされるだけ）
+            d[rightIdx] = d[leftIdx];
             return { ...vars, data: d };
-        },
-        (vars) => ({ ...vars, left: (vars.left as number) + 1 }),
-        (vars) => ({ ...vars, right: (vars.right as number) - 1 }),
-        (vars) => vars
-    ],
-    calculateNextLine: (line, vars) => {
-        if (!vars.data) return line;
-        if (line === 4) return (vars.left as number) < (vars.right as number) ? 5 : 11; // while ended -> end of func
-        if (line === 10) return 4;
-        return line + 1;
+        } 
+        else if (variant === 'ウ') {
+            // data[left] ← temp
+            // data[left] を元の値(temp)に戻してしまう（スワップキャンセル）
+            d[leftIdx] = temp;
+            return { ...vars, data: d };
+        } 
+        else if (variant === 'エ') {
+            // temp ← data[right]
+            // 配列は変わらず、temp変数だけが書き換わる
+            return { ...vars, temp: d[rightIdx] };
+        }
+        
+        return vars;
+    },
+    
+    /* 8: left++ */ (vars) => ({ ...vars, left: (vars.left as number) + 1 }),
+    /* 9: right-- */ (vars) => ({ ...vars, right: (vars.right as number) - 1 }),
+    /* 10: endwhile */ (vars) => vars
+  ],
+
+  calculateNextLine: (line, vars) => {
+    if (!vars.data) return line;
+    
+    switch(line) {
+        case 4: // while (left < right)
+            return (vars.left as number) < (vars.right as number) ? 5 : 11; // -> body or end
+        
+        case 9: // right-- done
+            return 10; // -> endwhile line
+            
+        case 10: // endwhile
+            return 4; // -> loop check
+            
+        case 11: // finish (programLinesの範囲外へ)
+            return 99;
+            
+        default: 
+            return line + 1;
     }
+  }
 };
 
 // ID: 60 (Count Char)
@@ -4682,221 +4836,956 @@ const logic_60: LogicDef = {
     }
 };
 
-// ID: 61 (IsPrime)
+//------------------------------------------------------------------------------
+// --- 問61: 素数判定 ---
+//------------------------------------------------------------------------------
 const logic_61: LogicDef = {
-    traceLogic: [
-        (vars) => vars,
-        (vars) => vars, // if n < 2
-        (vars) => ({ ...vars, i: null }),
-        (vars) => { if (vars.i === null) return { ...vars, i: 2 }; return vars; },
-        (vars) => vars, // if n % i == 0
-        (vars) => vars, // return false
-        (vars) => vars, // endif
-        (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
-        (vars) => vars // return true
-    ],
-    calculateNextLine: (line, vars) => {
-        if (vars.n === null) return line;
-        const n = vars.n as number;
-        if (line === 1) return n < 2 ? 99 : 2; // 99: end (return false logic in trace omitted)
-        if (line === 3) return (vars.i as number) < n ? 4 : 8;
-        if (line === 4) return n % (vars.i as number) === 0 ? 5 : 6;
-        if (line === 5) return 99;
-        if (line === 7) return 3;
-        if (line === 8) return 99;
+  traceLogic: [
+    /* 0: header */ (vars) => vars,
+    /* 1: if n < 2 */ (vars) => vars, // 判定はcalculateNextLineで
+    /* 2: decl i */ (vars) => ({ ...vars, i: null }),
+    /* 3: for */ (vars) => { 
+        if (vars.i === null) return { ...vars, i: 2 }; 
+        return vars; 
+    },
+    /* 4: if [a] */ (vars) => vars, // 判定はcalculateNextLineで
+    /* 5: return false */ (vars) => vars,
+    /* 6: endif */ (vars) => vars,
+    /* 7: endfor */ (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
+    /* 8: return true */ (vars) => vars
+  ],
+
+  calculateNextLine: (line, vars, variant) => {
+    if (vars.n === null) return line;
+    
+    const n = vars.n as number;
+    const selectedVariant = variant || (vars._variant as string) || 'ア'; // デフォルト正解
+
+    switch(line) {
+      case 1: // if (n < 2)
+        // n < 2 なら return false (終了:99) へ、そうでなければ i宣言 (2) へ
+        // (厳密なreturn falseの行番号がないため終了コードへ)
+        return n < 2 ? 99 : 2; 
+
+      case 3: // for (i ...)
+        // i が n - 1 以下ならループ継続、そうでなければ終了
+        const currentI = (vars.i === null) ? 2 : (vars.i as number);
+        return currentI < n ? 4 : 8; // -> if [a] or return true
+
+      case 4: // if ([ a ])
+        const iVal = vars.i as number;
+        let condition = false;
+
+        switch (selectedVariant) {
+            case 'ア': // n % i == 0 (正解)
+                condition = (n % iVal === 0);
+                break;
+            case 'イ': // n % i != 0
+                condition = (n % iVal !== 0);
+                break;
+            case 'ウ': // n / i == 0 (商が0 = n < i)
+                // ループ条件 i < n なので、通常これは常にFalseになる
+                condition = (Math.floor(n / iVal) === 0);
+                break;
+            case 'エ': // n < i
+                // ループ条件 i < n なので、常にFalseになる
+                condition = (n < iVal);
+                break;
+        }
+
+        // Trueなら return false (5) へ、Falseなら endif (6) へ
+        return condition ? 5 : 6;
+
+      case 5: // return false
+        return 99; // 終了
+
+      case 6: // endif
+        return 7; // -> endfor
+
+      case 7: // endfor
+        return 3; // -> loop check
+
+      case 8: // return true
+        return 99; // 終了
+
+      default: 
         return line + 1;
     }
+  }
 };
 
-// ID: 62 (Fibonacci - Recursive simulation simplified)
+// =================================================================================
+// --- 【完全修正版】問62: フィボナッチ数列 (再帰シミュレーション) ---
+// =================================================================================
 const logic_62: LogicDef = {
     traceLogic: [
+        /* 0: header fib(n) */
         (vars) => vars,
-        (vars) => vars, // if
-        (vars) => ({...vars, ret: vars.n}),
-        (vars) => vars, // else
+
+        /* 1: if (n <= 1) */
+        (vars) => vars,
+
+        /* 2: return n (ベースケース) */
         (vars) => {
-            // 簡易的に結果を計算して表示
-            const fib = (n: number): number => n <= 1 ? n : fib(n-1) + fib(n-2);
-            return { ...vars, ret: fib(vars.n as number) };
+            // 戻り値をセットし、戻りモード(isReturning)をONにする
+            return { 
+                ...vars, 
+                ret: vars.n, 
+                isReturning: true 
+            };
         },
+
+        /* 3: else */
+        (vars) => vars,
+
+        /* 4: return fib(n - 1) + fib(n - 2) (再帰ケース) */
+        (vars) => {
+            const stack = [...(vars.callStack as any[] || [])];
+            
+            // --- A. 呼び出しモード (isReturning = false) ---
+            if (!vars.isReturning) {
+                // スタックに現在の状態を保存して、左の子(n-1)へ
+                stack.push({ 
+                    n: vars.n, 
+                    phase: 'left', 
+                    val1: 0 
+                });
+                
+                return { 
+                    ...vars, 
+                    callStack: stack, 
+                    n: (vars.n as number) - 1 
+                };
+            }
+
+            // --- B. 戻りモード (isReturning = true) ---
+            const top = stack[stack.length - 1]; // 現在の親フレーム
+            
+            // 1. 左側 (n-1) から戻ってきた場合
+            if (top.phase === 'left') {
+                // 右側 (n-2) へ移行する準備
+                const newStack = [...stack];
+                newStack[newStack.length - 1] = {
+                    ...top,
+                    phase: 'right', // フェーズ更新
+                    val1: vars.ret  // 左の結果を保存
+                };
+
+                return {
+                    ...vars,
+                    callStack: newStack,
+                    n: top.n - 2,      // 引数を n-2 に更新
+                    isReturning: false // 再び呼び出しモード(False)にして Line 0 へ
+                };
+            }
+            
+            // 2. 右側 (n-2) から戻ってきた場合
+            else if (top.phase === 'right') {
+                // 計算完了: 左(val1) + 右(ret)
+                const sum = (top.val1 as number) + (vars.ret as number);
+                
+                // このフレームは完了したので破棄
+                const newStack = [...stack];
+                newStack.pop();
+
+                // 親がいれば n を親の値に戻す（表示用）
+                const parentN = newStack.length > 0 ? newStack[newStack.length - 1].n : vars.n;
+
+                return {
+                    ...vars,
+                    callStack: newStack,
+                    ret: sum,         // 合計を戻り値に
+                    n: parentN,       // n を復元
+                    isReturning: true // まだ戻りモード(True)のまま親へ
+                };
+            }
+
+            return vars;
+        },
+
+        /* 5: endif */
         (vars) => vars
     ],
+
     calculateNextLine: (line, vars) => {
+        // 初期化
         if (vars.n === null) return line;
-        if (line === 1) return (vars.n as number) <= 1 ? 2 : 3;
-        if (line === 2) return 99;
-        if (line === 3) return 4;
-        if (line === 4) return 99;
-        return line + 1;
-    }
-};
-
-// ID: 63 (Selection Sort)
-const logic_63: LogicDef = {
-    traceLogic: [
-        (vars) => vars,
-        (vars) => ({...vars, i: null, j: null, minIndex: null, temp: null}),
-        (vars) => { if(vars.i === null) return {...vars, i: 1}; return vars; }, // for i
-        (vars) => ({...vars, minIndex: vars.i}),
-        (vars) => { if(vars.j === null) return {...vars, j: (vars.i as number) + 1}; return vars; }, // for j
-        (vars) => vars, // if
-        (vars) => ({...vars, minIndex: vars.j}),
-        (vars) => vars, // endif
-        (vars) => ({...vars, j: (vars.j as number) + 1}), // endfor j
-        (vars) => ({...vars, temp: (vars.data as number[])[(vars.i as number)-1]}),
-        (vars) => {
-            const d = [...vars.data as number[]];
-            d[(vars.i as number)-1] = d[(vars.minIndex as number)-1];
-            return {...vars, data: d};
-        },
-        (vars) => {
-            const d = [...vars.data as number[]];
-            d[(vars.minIndex as number)-1] = vars.temp;
-            return {...vars, data: d};
-        },
-        (vars) => ({...vars, i: (vars.i as number) + 1, j: null}) // endfor i
-    ],
-    calculateNextLine: (line, vars) => {
-        if (!vars.data) return line;
-        const n = (vars.data as number[]).length;
-        switch(line) {
-            case 2: return (vars.i as number) < n ? 3 : 99;
-            case 4: return (vars.j as number) <= n ? 5 : 9;
-            case 5: 
-                const d = vars.data as number[];
-                return d[(vars.j as number)-1] < d[(vars.minIndex as number)-1] ? 6 : 7;
-            case 6: return 7;
-            case 7: return 8;
-            case 8: return 4;
-            case 12: return 2;
-            default: return line + 1;
+        if (!vars.callStack) {
+            vars.callStack = [];
+            vars.isReturning = false;
         }
-    }
-};
 
-// ID: 64 (Average)
-const logic_64: LogicDef = {
-    traceLogic: [
-        (vars) => vars,
-        (vars) => ({...vars, result: ((vars.x as number) + (vars.y as number)) / 2 })
-    ],
-    calculateNextLine: (line, vars) => {
-        if (vars.x === null) return line;
-        if (line === 1) return 99;
-        return line + 1;
-    }
-};
+        const n = vars.n as number;
+        const stack = vars.callStack as any[];
 
-// ID: 65 (Stack Op)
-const logic_65: LogicDef = {
-    traceLogic: [
-        (vars) => ({...vars, stack: []}),
-        (vars) => ({...vars, stack: [...vars.stack, 1]}),
-        (vars) => ({...vars, stack: [...vars.stack, 2]}),
-        (vars) => {
-            const s = [...vars.stack];
-            s.pop();
-            return {...vars, stack: s};
-        },
-        (vars) => ({...vars, stack: [...vars.stack, 3]}),
-        (vars) => {
-            const s = [...vars.stack];
-            const ret = s.pop();
-            return {...vars, stack: s, ret};
-        }
-    ],
-    calculateNextLine: (line, vars) => {
-        if (!vars.stack) return line;
-        if (line === 5) return 99;
-        return line + 1;
-    }
-};
+        switch (line) {
+            case 0: return 1; // header -> if
 
-// ID: 66 (Queue Op)
-const logic_66: LogicDef = {
-    traceLogic: [
-        (vars) => ({...vars, queue: []}),
-        (vars) => ({...vars, queue: [...vars.queue, 1]}),
-        (vars) => ({...vars, queue: [...vars.queue, 2]}),
-        (vars) => {
-            const q = [...vars.queue];
-            q.shift();
-            return {...vars, queue: q};
-        },
-        (vars) => ({...vars, queue: [...vars.queue, 3]}),
-        (vars) => {
-            const q = [...vars.queue];
-            const ret = q.shift();
-            return {...vars, queue: q, ret};
-        }
-    ],
-    calculateNextLine: (line, vars) => {
-        if (!vars.queue) return line;
-        if (line === 5) return 99;
-        return line + 1;
-    }
-};
+            case 1: // if (n <= 1)
+                return n <= 1 ? 2 : 3; // True -> return n, False -> else
 
-// ID: 67 (Abs)
-const logic_67: LogicDef = {
-    traceLogic: [
-        (vars) => vars,
-        (vars) => vars,
-        (vars) => ({...vars, ret: -(vars.n as number)}),
-        (vars) => vars,
-        (vars) => ({...vars, ret: vars.n}),
-        (vars) => vars
-    ],
-    calculateNextLine: (line, vars) => {
-        if (vars.n === null) return line;
-        if (line === 1) return (vars.n as number) < 0 ? 2 : 3;
-        if (line === 2) return 99;
-        if (line === 3) return 4;
-        if (line === 4) return 99;
-        return line + 1;
-    }
-};
+            case 2: // return n (ベースケース終了)
+                if (stack.length === 0) return 99; 
+                return 4; // 親の Line 4 へ戻る
 
-// ID: 68 (Run-Length Encoding)
-const logic_68: LogicDef = {
-    traceLogic: [
-        (vars) => vars,
-        (vars) => ({ ...vars, res: "" }),
-        (vars) => ({ ...vars, i: 1, count: 0 }),
-        (vars) => ({ ...vars, c: null }),
-        (vars) => vars, // outer while
-        (vars) => ({ ...vars, c: (vars.s as string)[(vars.i as number)-1] }),
-        (vars) => ({ ...vars, count: 1 }),
-        (vars) => vars, // inner while
-        (vars) => ({ ...vars, count: (vars.count as number) + 1 }),
-        (vars) => vars, // end inner while
-        (vars) => ({ ...vars, res: (vars.res as string) + (vars.c as string) + (vars.count as number).toString() }),
-        (vars) => ({ ...vars, i: (vars.i as number) + (vars.count as number) }),
-        (vars) => vars, // end outer while
-        (vars) => vars  // return
-    ],
-    calculateNextLine: (line, vars) => {
-        if (!vars.s) return line;
-        const s = vars.s as string;
-        const i = vars.i as number;
+            case 3: return 4; // else -> return fib...
 
-        switch(line) {
-            case 4: // outer while (i <= length)
-                return i <= s.length ? 5 : 13;
-            case 7: // inner while (next char == c)
-                const nextIdx = i + (vars.count as number);
-                if (nextIdx <= s.length && s[nextIdx-1] === vars.c) {
-                    return 8;
+            case 4: // return fib(n-1) + fib(n-2)
+                if (vars.isReturning) {
+                    if (stack.length === 0) return 99; // 全部終わったら終了
+
+                    const top = stack[stack.length - 1];
+                    if (top.phase === 'left') {
+                        // ★修正ポイント: 左から戻ってきた場合
+                        // traceLogicで「右へ行く準備(n更新)」が行われるので、
+                        // 次の行は Line 0 (関数頭) を指定する。
+                        return 0; 
+                    } else {
+                        // 右から戻ってきた場合
+                        // traceLogicで「合算してpop」が行われ、さらに親へ戻る(isReturning=trueまま)。
+                        // なので、次はまた Line 4 (親の戻り処理) を実行させる。
+                        return 4;
+                    }
+                } else {
+                    // 新規呼び出し (左の子へ) -> Line 0
+                    return 0;
                 }
-                return 10; // -> after inner loop
-            case 8: return 7; // loop back inner
-            case 9: return 10; // (endwhile line is 9) -> 10
-            case 12: return 4; // loop back outer
-            case 13: return 99;
+
             default: return line + 1;
         }
     }
+};
+
+// =================================================================================
+// --- 問63: 選択ソート (選択肢対応版) ---
+// =================================================================================
+const logic_63: LogicDef = {
+  traceLogic: [
+    /* 0: header */ (vars) => vars,
+    /* 1: decl */   (vars) => ({...vars, i: null, j: null, minIndex: null, temp: null}),
+    /* 2: for i */  (vars) => { 
+        if(vars.i === null) return {...vars, i: 1}; 
+        return vars; 
+    },
+    /* 3: minIndex=i */ (vars) => ({...vars, minIndex: vars.i}),
+    /* 4: for j */  (vars) => { 
+        if(vars.j === null) return {...vars, j: (vars.i as number) + 1}; 
+        return vars; 
+    },
+    /* 5: if [a] */ (vars) => vars,
+    /* 6: minIndex=j */ (vars) => ({...vars, minIndex: vars.j}),
+    /* 7: endif */  (vars) => vars,
+    /* 8: endfor j */ (vars) => ({...vars, j: (vars.j as number) + 1}),
+    
+    /* 9: temp=data[i] */ (vars) => ({...vars, temp: (vars.data as number[])[(vars.i as number)-1]}),
+    
+    /* 10: data[i]=data[min] */ (vars) => {
+        const d = [...vars.data as number[]];
+        d[(vars.i as number)-1] = d[(vars.minIndex as number)-1];
+        return {...vars, data: d};
+    },
+    
+    /* 11: data[min]=temp */ (vars) => {
+        const d = [...vars.data as number[]];
+        d[(vars.minIndex as number)-1] = vars.temp;
+        return {...vars, data: d};
+    },
+    
+    /* 12: endfor i */ (vars) => ({...vars, i: (vars.i as number) + 1, j: null})
+  ],
+
+  calculateNextLine: (line, vars, variant) => {
+    if (!vars.data) return line;
+    
+    const n = (vars.data as number[]).length;
+    const selectedVariant = variant || (vars._variant as string) || 'ア'; // デフォルト正解
+
+    switch(line) {
+      case 2: // for i check
+        return (vars.i as number) < n ? 3 : 99;
+
+      case 4: // for j check
+        return (vars.j as number) <= n ? 5 : 9;
+
+      case 5: // if [a]
+        const d = vars.data as number[];
+        const jVal = d[(vars.j as number)-1];
+        const minVal = d[(vars.minIndex as number)-1];
+        
+        let condition = false;
+        
+        switch (selectedVariant) {
+            case 'ア': condition = (jVal < minVal); break; // 正解
+            case 'イ': condition = (jVal > minVal); break; // 降順ソートになる
+            case 'ウ': condition = (jVal === minVal); break; 
+            case 'エ': condition = (jVal !== minVal); break;
+        }
+
+        return condition ? 6 : 7; // True: update minIndex, False: endif
+
+      case 6: return 7;
+      case 7: return 8;
+      case 8: return 4; // j loop back
+
+      case 9: return 10;
+      case 10: return 11;
+      case 11: return 12;
+      
+      case 12: return 2; // i loop back
+
+      default: return line + 1;
+    }
+  }
+};
+
+// =================================================================================
+// --- 問64: 平均値計算 (選択肢対応版) ---
+// =================================================================================
+const logic_64: LogicDef = {
+  traceLogic: [
+    /* 0: header */ (vars) => vars,
+    /* 1: sum init */ (vars) => ({ ...vars, sum: 0 }),
+    
+    /* 2: maxVal init */ 
+    (vars) => {
+        if (!vars.data) return vars;
+        return { ...vars, maxVal: (vars.data as number[])[0] };
+    },
+    
+    /* 3: minVal init */ 
+    (vars) => {
+        if (!vars.data) return vars;
+        return { ...vars, minVal: (vars.data as number[])[0] };
+    },
+    
+    /* 4: decl i */ (vars) => ({ ...vars, i: null }),
+    
+    /* 5: for (i...) */ 
+    (vars) => {
+       if (vars.i === null) return { ...vars, i: 1 };
+       return vars;
+    },
+    
+    /* 6: sum += data[i] */ 
+    (vars) => {
+        const i = vars.i as number;
+        const val = (vars.data as number[])[i - 1];
+        return { ...vars, sum: (vars.sum as number) + val };
+    },
+    
+    /* 7: if (data[i] > maxVal) */ (vars) => vars,
+    
+    /* 8: maxVal update */ 
+    (vars) => {
+        const i = vars.i as number;
+        const val = (vars.data as number[])[i - 1];
+        return { ...vars, maxVal: val };
+    },
+    
+    /* 9: elseif (data[i] < minVal) */ (vars) => vars,
+    
+    /* 10: minVal update */ 
+    (vars) => {
+        const i = vars.i as number;
+        const val = (vars.data as number[])[i - 1];
+        return { ...vars, minVal: val };
+    },
+    
+    /* 11: endif */ (vars) => vars,
+    
+    /* 12: endfor */ (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
+    
+    /* 13: return [a] calculation */ 
+    (vars) => {
+        const sum = vars.sum as number;
+        const maxVal = vars.maxVal as number;
+        const minVal = vars.minVal as number;
+        const n = (vars.data as number[]).length;
+        const variant = vars._variant as string || 'ア'; // デフォルト正解
+
+        let result = 0;
+        
+        switch (variant) {
+            case 'ア': // (sum - max - min) / (n - 2)  (正解)
+                if (n > 2) result = (sum - maxVal - minVal) / (n - 2);
+                break;
+            case 'イ': // (sum - max - min) / n
+                if (n > 0) result = (sum - maxVal - minVal) / n;
+                break;
+            case 'ウ': // (sum - max) / (n - 1)
+                if (n > 1) result = (sum - maxVal) / (n - 1);
+                break;
+            case 'エ': // sum / n
+                if (n > 0) result = sum / n;
+                break;
+        }
+        
+        return { ...vars, ret: result };
+    }
+  ],
+
+  calculateNextLine: (line, vars, variant) => {
+    if (!vars.data) return line;
+    
+    const data = vars.data as number[];
+    const n = data.length;
+    const i = vars.i as number;
+
+    switch (line) {
+        case 5: // for loop check
+            // iがnull(初回)なら1として扱う
+            const currentI = (i === null) ? 1 : i;
+            return currentI <= n ? 6 : 13; // -> body or return
+
+        case 7: // if (data[i] > maxVal)
+            const val = data[i - 1];
+            const maxVal = vars.maxVal as number;
+            return (val > maxVal) ? 8 : 9; // -> update max or elseif
+
+        case 8: // max updated
+            return 11; // -> endif
+
+        case 9: // elseif (data[i] < minVal)
+            const val2 = data[i - 1];
+            const minVal = vars.minVal as number;
+            return (val2 < minVal) ? 10 : 11; // -> update min or endif
+
+        case 10: // min updated
+            return 11; // -> endif
+
+        case 11: // endif
+            return 12; // -> endfor
+
+        case 12: // endfor (i++)
+            return 5; // -> loop check
+
+        case 13: // return
+            return 99;
+
+        default:
+            return line + 1;
+    }
+  }
+};
+
+// =================================================================================
+// --- 【完全修正版】問65: 逆ポーランド記法 (RPN) ロジック ---
+// =================================================================================
+const logic_65: LogicDef = {
+  traceLogic: [
+    /* 0: header */ (vars) => vars,
+    /* 1: stack init */ (vars) => ({ ...vars, stack: [], val1: null, val2: null, res: null }),
+    /* 2: decl */   (vars) => ({ ...vars, i: null }),
+    
+    /* 3: for (i...) */ 
+    (vars) => {
+       if (vars.i === null) return { ...vars, i: 1 };
+       return vars;
+    },
+    
+    /* 4: if (isNumber) */ (vars) => vars,
+    
+    /* 5: push(num) */ 
+    (vars) => {
+        const tokens = vars.tokens as string[];
+        const i = vars.i as number;
+        const val = parseInt(tokens[i - 1]);
+        const stack = [...(vars.stack as number[])];
+        stack.push(val);
+        return { ...vars, stack };
+    },
+    
+    /* 6: else */ (vars) => vars,
+    
+    /* 7: val2 = pop() */ 
+    (vars) => {
+        const stack = [...(vars.stack as number[])];
+        const val2 = stack.pop();
+        return { ...vars, stack, val2 };
+    },
+    
+    /* 8: val1 = pop() */ 
+    (vars) => {
+        const stack = [...(vars.stack as number[])];
+        const val1 = stack.pop();
+        return { ...vars, stack, val1 };
+    },
+    
+    /* 9: if (+) */ 
+    // ★ここにご質問のコードが入ります
+    (vars) => {
+        const tokens = vars.tokens as string[];
+        const i = vars.i as number;
+        if (tokens[i-1] === "+") {
+            return { ...vars, res: (vars.val1 as number) + (vars.val2 as number) };
+        }
+        return vars;
+    },
+    
+    /* 10: elseif (-) [a] */ 
+    (vars) => {
+        const variant = vars._variant as string || 'ア';
+        const val1 = vars.val1 as number;
+        const val2 = vars.val2 as number;
+        let res = 0;
+
+        if (variant === 'ア') res = val1 - val2; // 正解
+        else if (variant === 'イ') res = val2 - val1;
+        else if (variant === 'ウ') res = val1 + val2; // 間違い(+)
+        else if (variant === 'エ') res = Math.floor(val2 / val1); // 間違い(/)
+
+        return { ...vars, res };
+    },
+    
+    /* 11: elseif (*) */ (vars) => {
+        // "*" の場合もここで計算するようにしておくと安全です
+        const tokens = vars.tokens as string[];
+        const i = vars.i as number;
+        if (tokens[i-1] === "*") {
+             return { ...vars, res: (vars.val1 as number) * (vars.val2 as number) };
+        }
+        return vars;
+    },
+    
+    /* 12: endif */ (vars) => vars,
+    
+    /* 13: push(res) */ 
+    (vars) => {
+        const stack = [...(vars.stack as number[])];
+        // 計算結果があればプッシュ
+        if (vars.res !== null) {
+            stack.push(vars.res as number);
+        }
+        return { ...vars, stack };
+    },
+    
+    /* 14: endif (outer) */ (vars) => vars,
+    
+    /* 15: endfor */ 
+    (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
+    
+    /* 16: return pop() */ 
+    (vars) => {
+        const stack = [...(vars.stack as number[])];
+        const ret = stack.pop();
+        return { ...vars, stack, ret };
+    }
+  ],
+
+  calculateNextLine: (line, vars, variant) => {
+    if (!vars.tokens) return line;
+    
+    const tokens = vars.tokens as string[];
+    const i = vars.i as number; // 1-based
+
+    switch (line) {
+        case 3: // for check
+            // iがnull(初回)なら1とみなす
+            const currentI = (i === null) ? 1 : i;
+            return currentI <= tokens.length ? 4 : 16; // -> Body or Return
+
+        case 4: // if (isNumber)
+            const token = tokens[i - 1];
+            const isNum = !isNaN(parseInt(token));
+            return isNum ? 5 : 6; // -> push or else
+
+        case 5: // push done
+            return 14; // -> endif(outer)
+
+        case 6: return 7; // else -> pop val2
+        case 7: return 8; // pop val2 -> pop val1
+        case 8: return 9; // pop val1 -> if (+)
+
+        case 9: // if (+)
+            const op = tokens[i - 1];
+            if (op === "+") {
+                // "+" ならここで計算(TraceLogic[9])して push(Line 13) へ
+                return 13; 
+            }
+            return 10; // -> elseif (-)
+
+        case 10: // elseif (-) [a]
+            const op2 = tokens[i - 1];
+            if (op2 === "-") {
+                // "-" ならここで計算(TraceLogic[10])して push(Line 13) へ
+                return 13; 
+            }
+            return 11; // -> elseif (*)
+
+        case 11: // elseif (*)
+             const op3 = tokens[i - 1];
+             if (op3 === "*") {
+                 // "*" ならここで計算(TraceLogic[11])して push(Line 13) へ
+                 return 13;
+             }
+             return 12; // -> endif
+
+        case 12: return 13; // endif -> push
+        
+        case 13: return 14; // push -> endif(outer)
+        
+        case 14: return 15; // endif -> endfor
+        
+        case 15: return 3; // endfor -> loop check
+
+        case 16: return 99; // return
+
+        default: return line + 1;
+    }
+  }
+};
+
+// ================================================================================
+// --- 【完全修正版】問66: 循環バッファ (リングバッファ) ロジック ---
+// ================================================================================
+const logic_66: LogicDef = {
+  traceLogic: [
+    /* 0: Class Def */ (vars) => vars,
+    /* 1: buffer init */ (vars) => ({ ...vars, buffer: [0, 0, 0, 0] }),
+    /* 2: vars init */ (vars) => ({ ...vars, head: 0, tail: 0, count: 0 }),
+    /* 3: size init */ (vars) => ({ ...vars, size: 4 }),
+    /* 4: blank */ (vars) => vars,
+    
+    /* 5: enqueue def */ (vars) => vars,
+    
+    /* 6: if full */ 
+    (vars) => {
+        // 呼び出しパラメータ(val)のセットなどは calculateNextLine 側で制御している想定だが、
+        // ここでは簡易的に、現在の状態をチェックするだけ
+        return vars;
+    },
+    
+    /* 7: buffer[tail] = val */ 
+    (vars) => {
+        const buffer = [...(vars.buffer as number[])];
+        const tail = vars.tail as number;
+        // 範囲チェック
+        if (tail >= 0 && tail < buffer.length) {
+            buffer[tail] = vars.val as number;
+        }
+        return { ...vars, buffer };
+    },
+    
+    /* 8: tail update [a] */ 
+    (vars) => {
+        const variant = vars._variant as string || 'ア';
+        const tail = vars.tail as number;
+        const size = vars.size as number;
+        let newTail = tail;
+
+        if (variant === 'ア') { // (tail + 1) % size (正解)
+            newTail = (tail + 1) % size;
+        } 
+        else if (variant === 'イ') { // tail + 1 (範囲外へ)
+            newTail = tail + 1;
+        } 
+        else if (variant === 'ウ') { // (tail - 1) % size (逆戻り?)
+            newTail = (tail - 1) % size; 
+            if (newTail < 0) newTail = 0; // JSの%は負になることがあるので簡易補正
+        } 
+        else if (variant === 'エ') { // tail % size + 1 (1ズレて範囲外へ)
+            newTail = (tail % size) + 1;
+        }
+
+        return { ...vars, tail: newTail };
+    },
+    
+    /* 9: count++ */ (vars) => ({ ...vars, count: (vars.count as number) + 1 }),
+    /* 10: return true */ (vars) => vars,
+    /* 11: blank */ (vars) => vars,
+    
+    /* 12: dequeue def */ (vars) => vars,
+    
+    /* 13: if empty */ (vars) => vars,
+    
+    /* 14: ret = buffer[head] */ 
+    (vars) => {
+        const buffer = vars.buffer as number[];
+        const head = vars.head as number;
+        return { ...vars, ret: buffer[head] };
+    },
+    
+    /* 15: head update */ 
+    (vars) => ({ ...vars, head: ((vars.head as number) + 1) % (vars.size as number) }),
+    
+    /* 16: count-- */ 
+    (vars) => ({ ...vars, count: (vars.count as number) - 1 }),
+    
+    /* 17: return ret */ (vars) => vars,
+  ],
+
+  // シナリオ: 
+  // 1. enq(10) -> OK
+  // 2. enq(20) -> OK
+  // 3. enq(30) -> OK
+  // 4. deq() -> 10 (head=1, tail=3, count=2)
+  // 5. enq(40) -> OK (tail=3 -> 0) ※ここでア以外は破綻する
+  // 6. enq(50) -> OK (tail=0 -> 1)
+  calculateNextLine: (line, vars, variant) => {
+    // 状態管理用の隠し変数を初期化
+    if (vars._step === undefined) {
+        vars._step = 0; // シナリオのステップ数
+        // Line 1 (buffer init) から開始
+        return 1;
+    }
+
+    const step = vars._step as number;
+    const count = vars.count as number;
+    const size = vars.size as number;
+
+    switch (line) {
+        // --- 初期化 ---
+        case 1: return 2;
+        case 2: return 3;
+        case 3: 
+            // シナリオ開始: enq(10)
+            vars.val = 10;
+            return 6; // -> enqueue start
+
+        // --- enqueue 内部 ---
+        case 6: // if (count == size)
+            if (count === size) return 10; // 満杯ならreturn (本当はfalseだが簡略化)
+            return 7;
+        
+        case 7: return 8; // buffer set -> tail update
+        case 8: return 9; // tail update -> count update
+        case 9: return 10; // count update -> return true
+
+        case 10: // return true (enqueue end)
+            // シナリオ分岐
+            vars._step = step + 1;
+            if (step === 0) { // enq(10) done -> enq(20)
+                vars.val = 20; return 6;
+            }
+            if (step === 1) { // enq(20) done -> enq(30)
+                vars.val = 30; return 6;
+            }
+            if (step === 2) { // enq(30) done -> deq()
+                return 13; // -> dequeue start
+            }
+            if (step === 3) { // enq(40) done -> enq(50) (tail wrap check)
+                vars.val = 50; return 6;
+            }
+            if (step === 4) { // enq(50) done -> finish
+                return 99;
+            }
+            return 99;
+
+        // --- dequeue 内部 ---
+        case 13: // if (count == 0)
+            if (count === 0) return 17; // 空なら終了
+            return 14;
+        
+        case 14: return 15;
+        case 15: return 16;
+        case 16: return 17;
+
+        case 17: // return ret (dequeue end)
+            // シナリオ分岐
+            // deq() done -> enq(40)
+            vars._step = step + 1; // step 3へ
+            vars.val = 40;
+            return 6; // -> enqueue start
+
+        default: return 99;
+    }
+  }
+};
+
+// ================================================================================
+// --- 問67: 最も近い値を見つける (選択肢対応版) ---
+// ================================================================================
+const logic_67: LogicDef = {
+  traceLogic: [
+    /* 0: header */ (vars) => vars,
+    
+    /* 1: nearest init */ 
+    (vars) => {
+        if (!vars.data) return vars;
+        return { ...vars, nearest: (vars.data as number[])[0] };
+    },
+    
+    /* 2: minDiff init */ (vars) => ({ ...vars, minDiff: 9999 }),
+    /* 3: decl */ (vars) => ({ ...vars, i: null, diff: null }),
+    
+    /* 4: for (i...) */ 
+    (vars) => {
+       if (vars.i === null) return { ...vars, i: 1 };
+       return vars;
+    },
+    
+    /* 5: diff = data[i] - target */ 
+    (vars) => {
+        const i = vars.i as number;
+        const data = vars.data as number[];
+        const target = vars.target as number;
+        // i-1 (0-based)
+        const val = data[i - 1];
+        return { ...vars, diff: val - target };
+    },
+    
+    /* 6: if (diff < 0) */ (vars) => vars,
+    
+    /* 7: [a] logic */ 
+    (vars) => {
+        const variant = vars._variant as string || 'ウ'; // デフォルト正解
+        const diff = vars.diff as number;
+        const target = vars.target as number;
+        const i = vars.i as number;
+        const data = vars.data as number[];
+        
+        let newDiff = diff;
+
+        if (variant === 'ア') newDiff = 0;
+        else if (variant === 'イ') newDiff = diff + target;
+        else if (variant === 'ウ') newDiff = -diff; // 正解
+        else if (variant === 'エ') newDiff = data[i - 1];
+
+        return { ...vars, diff: newDiff };
+    },
+    
+    /* 8: endif */ (vars) => vars,
+    
+    /* 9: if (diff < minDiff) */ (vars) => vars,
+    
+    /* 10: minDiff update */ 
+    (vars) => ({ ...vars, minDiff: vars.diff }),
+    
+    /* 11: nearest update */ 
+    (vars) => {
+        const i = vars.i as number;
+        const data = vars.data as number[];
+        return { ...vars, nearest: data[i - 1] };
+    },
+    
+    /* 12: endif */ (vars) => vars,
+    
+    /* 13: endfor */ (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
+    /* 14: return */ (vars) => vars
+  ],
+
+  calculateNextLine: (line, vars, variant) => {
+    if (!vars.data) return line;
+    
+    const data = vars.data as number[];
+    const i = vars.i as number;
+
+    switch (line) {
+        case 4: // for check
+            const currentI = (i === null) ? 1 : i;
+            return currentI <= data.length ? 5 : 14; // -> Body or Return
+
+        case 6: // if (diff < 0)
+            // 負なら補正ロジック(Line 7)へ、正ならスキップ(Line 8)へ
+            return (vars.diff as number) < 0 ? 7 : 8;
+
+        case 7: // [a] done
+            return 8; // -> endif
+
+        case 8: // endif -> next if
+            return 9;
+
+        case 9: // if (diff < minDiff)
+            return (vars.diff as number) < (vars.minDiff as number) ? 10 : 12;
+
+        case 10: return 11;
+        case 11: return 12;
+
+        case 12: return 13; // endif -> endfor
+        case 13: return 4; // loop back
+
+        case 14: return 99;
+
+        default: return line + 1;
+    }
+  }
+};
+
+// ================================================================================
+// --- 問68: 文字列圧縮 (選択肢対応版) ---
+// ================================================================================
+const logic_68: LogicDef = {
+  traceLogic: [
+    /* 0: header */ (vars) => vars,
+    /* 1: init res */ (vars) => ({ ...vars, res: "" }),
+    /* 2: init i */ (vars) => ({ ...vars, i: 1, count: null }),
+    /* 3: decl c */ (vars) => ({ ...vars, c: null }),
+    
+    /* 4: while outer */ (vars) => vars,
+    
+    /* 5: c = s[i] */ (vars) => ({ ...vars, c: (vars.s as string)[(vars.i as number)-1] }),
+    /* 6: count = 1 */ (vars) => ({ ...vars, count: 1 }),
+    
+    /* 7: while inner */ (vars) => vars,
+    /* 8: count++ */ (vars) => ({ ...vars, count: (vars.count as number) + 1 }),
+    /* 9: endwhile inner */ (vars) => vars,
+    
+    /* 10: if [a] */ (vars) => vars, // 判定は calculateNextLine で
+    
+    /* 11: res += c + count */ 
+    (vars) => ({ ...vars, res: (vars.res as string) + (vars.c as string) + (vars.count as number).toString() }),
+    
+    /* 12: else */ (vars) => vars,
+    
+    /* 13: res += c */ 
+    (vars) => ({ ...vars, res: (vars.res as string) + (vars.c as string) }),
+    
+    /* 14: endif */ (vars) => vars,
+    
+    /* 15: i += count */ (vars) => ({ ...vars, i: (vars.i as number) + (vars.count as number) }),
+    
+    /* 16: endwhile outer */ (vars) => vars,
+    /* 17: return */ (vars) => vars
+  ],
+
+  calculateNextLine: (line, vars, variant) => {
+    if (!vars.s) return line;
+    
+    const s = vars.s as string;
+    const i = vars.i as number;
+    const count = vars.count as number;
+    const c = vars.c as string;
+    const selectedVariant = variant || (vars._variant as string) || 'ア';
+
+    switch (line) {
+        case 4: // while (i <= s.length)
+            return (i <= s.length) ? 5 : 17; // -> Body or Return
+
+        case 7: // while (s[i+count] == c)
+            const nextIdx = i + count;
+            // 範囲内かつ文字が一致すればループ継続
+            if (nextIdx <= s.length && s[nextIdx - 1] === c) {
+                return 8; // -> count++
+            }
+            return 9; // -> endwhile inner
+
+        case 8: return 7; // loop back inner
+        case 9: return 10; // endwhile -> if [a]
+
+        case 10: // if [a]
+            let condition = false;
+            switch (selectedVariant) {
+                case 'ア': condition = (count > 1); break;  // 正解
+                case 'イ': condition = (count >= 1); break; // 常にTrue(最低1なので)
+                case 'ウ': condition = (count === 1); break; 
+                case 'エ': condition = (count < 1); break;  // 常にFalse
+            }
+            // True -> Line 11, False -> Line 12(else) -> Line 13
+            return condition ? 11 : 13;
+
+        case 11: return 14; // then block -> endif
+        case 12: return 13; // else -> else block
+        case 13: return 14; // else block -> endif
+
+        case 14: return 15; // endif -> i update
+        case 15: return 16; // i update -> endwhile outer
+        case 16: return 4;  // loop back outer
+
+        case 17: return 99; // return
+
+        default: return line + 1;
+    }
+  }
 };
 
 // =================================================================================

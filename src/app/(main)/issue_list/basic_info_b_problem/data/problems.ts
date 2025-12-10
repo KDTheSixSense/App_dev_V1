@@ -3437,7 +3437,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       logicType: 'PSEUDO_CODE',
       title: { ja: "基本情報科目B応用 ボーナス計算結果", en: "Basic Subject B Applied Q1" },
       description: { 
-        ja: "次の記述中の□に入れる正しい答えを、回答群の中から選べ。関数calcScoreは、ゲームの成績が格納された文字型の配列markを受け取り、それをもとに計算した合計得点を返す関数である。", 
+        ja: "次の記述中の[ a ]に入れる正しい答えを、回答群の中から選べ。\n\n関数calcScoreは、ゲームの成績が格納された文字型の配列markを受け取り、それをもとに計算した合計得点を返す関数である。\nここで、配列の要素が数字の場合はその数値を加算する。要素が \"_\" (アンダースコア) の場合はボーナスとなり、直前の回の得点（一つ前の要素の数値）を加算するルールとなっている。\nnum(文字型)は、数字文字列を整数に変換する関数である。", 
         en: "" 
       },
       programLines: {
@@ -3466,7 +3466,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
         en: []
       },
       correctAnswer: 'score ← score + num(mark[i-1])',
-      explanationText: { ja: "ボーナス計算のロジックです。特定のマークの場合、前の値を加算します。", en: "" },
+      explanationText: { ja: "ボーナス(\"_\")の場合は、直前の得点(`mark[i-1]`)を加算する仕様です。\n\n・ア: `curr` は現在の値(0)なので点数は増えません。\n・イ: 正しいです。一つ前の要素の数値を加算します。\n・ウ: 一つ後の要素を参照してしまいます。\n・エ: 現在の要素(`_`)を参照するため、0となり点数は増えません。", en: "" },
       initialVariables: { 
         mark: null, 
         score: null, 
@@ -3474,6 +3474,12 @@ initialVariables: { n: null, current_n: null, result: 1 },
         curr: null 
       },
       traceOptions: {
+        logicVariants: [
+          { id: 'ア', label: 'ア: score + curr' },
+          { id: 'イ', label: 'イ: score + num(mark[i-1])' }, // 正解
+          { id: 'ウ', label: 'ウ: score + num(mark[i+1])' },
+          { id: 'エ', label: 'エ: score + num(mark[i])' },
+        ],
         presets_array: [
           // 5 + "_" (直前の5を加算) + 2 = 12点
           { label: 'mark = {"5", "_", "2"}', value: { mark: ["5", "_", "2"] } },
@@ -3483,7 +3489,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
   
     // --- 基本情報科目B応用 問2 (ID: 55) ---
@@ -3522,7 +3528,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
         en: []
       },
       correctAnswer: 'a: match(str, i, target), b: replacement',
-      explanationText: { ja: "一致した場合に置換文字列を追加します。", en: "" },
+      explanationText: { ja: "一致した場合に置換文字列を追加します。\n\n・ア: 正解です。`match`でターゲットを探し、`replacement`に置き換えます。\n・イ: ターゲットをターゲットに置き換える（何もしないのと同じ）処理になります。\n・ウ: 検索対象が間違っています。\n・エ: 1文字しか比較しておらず、文字列全体の比較になりません。", en: "" },
       initialVariables: {
         str: null,
         target: null,
@@ -3532,20 +3538,26 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       // プリセットを追加
       traceOptions: {
+        logicVariants: [
+          { id: 'ア', label: 'ア: a: match(target), b: replacement' }, // 正解
+          { id: 'イ', label: 'イ: a: match(target), b: target' },
+          { id: 'ウ', label: 'ウ: a: match(replacement), b: target' },
+          { id: 'エ', label: 'エ: a: str[i] == target, b: replacement' },
+        ],
         presets_array: [
           {
             label: 'str="hello world", target="world", replacement="Japan"',
             value: { str: "hello world", target: "world", replacement: "Japan" }
           },
           {
-            label: 'str="banana", target="na", rep="ki"',
-            value: { str: "banana", target: "na", replacement: "ki" }
+            label: 'str="kirakira", target="ki", rep="hi"',
+            value: { str: "kirakira", target: "ki", replacement: "hi" }
           }
         ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
   
     // =================================================================================
@@ -3587,7 +3599,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
 
     // --- 問57 (ID: 57) ---
@@ -3595,7 +3607,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       id: '57',
       logicType: 'PSEUDO_CODE',
       title: { ja: "基本情報科目B応用 線形探索", en: "Basic Subject B Applied Q4" },
-      description: { ja: "次のプログラムは、配列arrayの中にある値targetが存在するか線形探索する。存在すればその添字を、存在しなければ-1を返す。(a)に入れるべき式はどれか。", en: "" },
+      description: { ja: "次のプログラムは、配列arrayの中にある値targetが存在するか線形探索する。存在すればその添字を、存在しなければ-1を返す。[  a  ]に入れるべき式はどれか。", en: "" },
       programLines: {
         ja: [
           '整数型: search(整数型の配列: array, 整数型: target)',
@@ -3622,11 +3634,30 @@ initialVariables: { n: null, current_n: null, result: 1 },
       explanationText: { ja: "配列の要素 `array[i]` が探している値 `target` と等しいかどうかを判定します。", en: "" },
       initialVariables: { array: null, target: null, i: null },
       traceOptions: {
-        presets_array: [{ label: 'array={1,3,5,7}, target=5', value: { array: [1, 3, 5, 7], target: 5 } }]
+        logicVariants: [
+          { id: 'ア', label: 'ア: array[i] == target' }, // 正解
+          { id: 'イ', label: 'イ: array[i] != target' },
+          { id: 'ウ', label: 'ウ: array[i] > target' },
+          { id: 'エ', label: 'エ: array[i] < target' },
+        ],
+        presets_array: [
+          { 
+            label: 'array：{1,3,5,7}, t=5', 
+            value: { array: [1, 3, 5, 7], target: 5 } 
+          },
+          { 
+            label: 'array：{1,3,5,7}, t=4', 
+            value: { array: [1, 3, 5, 7], target: 4 } 
+          },
+          { 
+            label: 'array：{10,20,30}, t=10', 
+            value: { array: [10, 20, 30], target: 10 } 
+          }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
 
     // --- 問58 (ID: 58) ---
@@ -3664,7 +3695,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
 
     // --- 問59 (ID: 59) ---
@@ -3702,11 +3733,20 @@ initialVariables: { n: null, current_n: null, result: 1 },
       explanationText: { ja: "値の交換（スワップ）処理です。`temp` に退避させておいた `data[left]` の元の値を、`data[right]` に代入する必要があります。", en: "" },
       initialVariables: { data: null, left: null, right: null, temp: null },
       traceOptions: {
-        presets_array: [{ label: 'data={1,2,3,4,5}', value: { data: [1, 2, 3, 4, 5] } }]
+        logicVariants: [
+          { id: 'ア', label: 'ア: data[right] ← temp' }, // 正解
+          { id: 'イ', label: 'イ: data[right] ← data[left]' },
+          { id: 'ウ', label: 'ウ: data[left] ← temp' },
+          { id: 'エ', label: 'エ: temp ← data[right]' },
+        ],
+        presets_array: [
+          { label: 'data={1,2,3,4,5}', value: { data: [1, 2, 3, 4, 5] } },
+          { label: 'data={1,2,3,4,5,6,7,8,9}', value: { data: [1,2,3,4,5,6,7,8,9] } }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
 
     // --- 問60 (ID: 60) ---
@@ -3746,7 +3786,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
 
     // --- 問61 (ID: 61) ---
@@ -3782,11 +3822,20 @@ initialVariables: { n: null, current_n: null, result: 1 },
       explanationText: { ja: "割り切れる（余りが0になる）場合、その数は素数ではありません。", en: "" },
       initialVariables: { n: null, i: null },
       traceOptions: {
-        presets_array: [{ label: 'n=7', value: { n: 7 } }, { label: 'n=10', value: { n: 10 } }]
+        logicVariants: [
+          { id: 'ア', label: 'ア: n % i == 0' }, // 正解
+          { id: 'イ', label: 'イ: n % i != 0' },
+          { id: 'ウ', label: 'ウ: n / i == 0' },
+          { id: 'エ', label: 'エ: n < i' },
+        ],
+        presets_array: [
+          { label: 'n=7 (素数)', value: { n: 7 } }, 
+          { label: 'n=10 (非素数)', value: { n: 10 } }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
 
     // --- 問62 (ID: 62) ---
@@ -3819,11 +3868,15 @@ initialVariables: { n: null, current_n: null, result: 1 },
       explanationText: { ja: "fib(0)=0, fib(1)=1, fib(2)=1, fib(3)=2, fib(4)=3, fib(5)=5 となります。", en: "" },
       initialVariables: { n: null, ret: null },
       traceOptions: {
-        presets_array: [{ label: 'n=5', value: { n: 5 } }]
+        presets_array: [
+          { label: 'n=3', value: { n: 3 } },
+          { label: 'n=5', value: { n: 5 } },
+          { label: 'n=7', value: { n: 7 } }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
 
     // --- 問63 (ID: 63) ---
@@ -3863,40 +3916,88 @@ initialVariables: { n: null, current_n: null, result: 1 },
       explanationText: { ja: "最小値を探して `minIndex` を更新するため、現在の最小値候補よりも小さい値が見つかった場合に更新します。", en: "" },
       initialVariables: { data: null, i: null, j: null, minIndex: null, temp: null },
       traceOptions: {
-        presets_array: [{ label: 'data={3,1,4,2}', value: { data: [3, 1, 4, 2] } }]
+        logicVariants: [
+          { id: 'ア', label: 'ア: data[j] < data[minIndex]' }, // 正解
+          { id: 'イ', label: 'イ: data[j] > data[minIndex]' },
+          { id: 'ウ', label: 'ウ: data[j] == data[minIndex]' },
+          { id: 'エ', label: 'エ: data[j] != data[minIndex]' },
+        ],
+        presets_array: [
+          { label: 'data={3,1,4,2}', value: { data: [3, 1, 4, 2] } },
+          { label: 'data={5,4,3,2,1}', value: { data: [5, 4, 3, 2, 1] } }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
-      difficultyId: 8
+      difficultyId: 7
     },
 
     // --- 問64 (ID: 64) ---
     {
       id: '64',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 平均値", en: "Basic Subject B Applied Q11" },
-      description: { ja: "次のプログラムは、2つの整数x, yの平均値を計算する。average(10, 20)の戻り値はいくつか。", en: "" },
+      title: { ja: "基本情報科目B応用 最大・最小を除く平均", en: "Basic Subject B Applied Q11" },
+      description: { 
+        ja: "次のプログラムは、整数型の配列 data の要素から、最大値と最小値を1つずつ除いた残りの要素の平均値を計算する。配列の要素数は3以上とする。[  a  ]に入れるべき式はどれか。", 
+        en: "" 
+      },
       programLines: {
         ja: [
-          '実数型: average(整数型: x, 整数型: y)',
-          '  return (x + y) / 2'
+          '実数型: calcTrimmedMean(整数型の配列: data)',
+          '  整数型: sum ← 0',
+          '  整数型: maxVal ← data[1]',
+          '  整数型: minVal ← data[1]',
+          '  整数型: i',
+          '  for (i を 1 から dataの要素数 まで 1 ずつ増やす)',
+          '    sum ← sum + data[i]',
+          '    if (data[i] > maxVal)',
+          '      maxVal ← data[i]',
+          '    elseif (data[i] < minVal)',
+          '      minVal ← data[i]',
+          '    endif',
+          '  endfor',
+          '  return [   a   ]'
         ],
         en: []
       },
       answerOptions: {
         ja: [
-          { label: 'ア', value: '10' },
-          { label: 'イ', value: '15' },
-          { label: 'ウ', value: '20' },
-          { label: 'エ', value: '25' }
+          { label: 'ア', value: '(sum - maxVal - minVal) / (dataの要素数 - 2)' },
+          { label: 'イ', value: '(sum - maxVal - minVal) / dataの要素数' },
+          { label: 'ウ', value: '(sum - maxVal) / (dataの要素数 - 1)' },
+          { label: 'エ', value: 'sum / dataの要素数' }
         ],
         en: []
       },
-      correctAnswer: '15',
-      explanationText: { ja: "(10 + 20) / 2 = 15 です。", en: "" },
-      initialVariables: { x: null, y: null },
+      correctAnswer: '(sum - maxVal - minVal) / (dataの要素数 - 2)',
+      explanationText: { ja: "最大値と最小値を除外するため、合計値 `sum` から `maxVal` と `minVal` を引きます。また、要素数も2つ減るため、分母は `dataの要素数 - 2` となります。\n例えば `{10, 20, 50}` の場合、合計80から最大50と最小10を引き、残り20を (3-2)=1 で割ります。", en: "" },
+      initialVariables: { 
+        data: null, 
+        sum: null, 
+        maxVal: null, 
+        minVal: null, 
+        i: null,
+        ret: null
+      },
+      // プリセットを追加
       traceOptions: {
-        presets_array: [{ label: 'x=10, y=20', value: { x: 10, y: 20 } }]
+        // ★追加: ロジック選択肢
+        logicVariants: [
+          { id: 'ア', label: 'ア: (sum - max - min) / (n - 2)' }, // 正解
+          { id: 'イ', label: 'イ: (sum - max - min) / n' },
+          { id: 'ウ', label: 'ウ: (sum - max) / (n - 1)' },
+          { id: 'エ', label: 'エ: sum / n' },
+        ],
+        presets_array: [
+          { 
+            label: '{10, 20, 30, 40, 100}', 
+            value: { data: [10, 20, 30, 40, 100] } 
+          },
+          { 
+            label: '{100, 0, 50}', 
+            value: { data: [100, 0, 50] } 
+          }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
@@ -3907,33 +4008,71 @@ initialVariables: { n: null, current_n: null, result: 1 },
     {
       id: '65',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 関数の引数による取引", en: "Basic Subject B Applied Q12" },
-      description: { ja: "次のプログラムは、スタックに対する操作を行う。push(1), push(2), pop(), push(3)を実行した後、pop()で取り出される値は何か。", en: "" },
+      title: { ja: "基本情報科目B応用 逆ポーランド記法", en: "Basic Subject B Applied Q12" },
+      description: { 
+        ja: "次のプログラムは、逆ポーランド記法で表現された配列 tokens を計算する。引数として {\"10\", \"2\", \"-\", \"3\", \"*\"} を与えたとき、[ a ] に入れるべき適切な処理はどれか。\nここで、push(v)はスタックに値を積み、pop()はスタックから値を取り出す操作である。", 
+        en: "" 
+      },
       programLines: {
         ja: [
-          'スタック操作',
-          'push(1)',
-          'push(2)',
-          'pop() // 取り出された値は破棄',
-          'push(3)',
-          'return pop()'
+          '整数型: calcRPN(文字列型の配列: tokens)',
+          '  スタック: stack',
+          '  整数型: i, val1, val2, res',
+          '  for (i を 1 から tokensの要素数 まで 1 ずつ増やす)',
+          '    if (tokens[i] が 数値である)',
+          '      stack.push(数値変換(tokens[i]))',
+          '    else',
+          '      val2 ← stack.pop()',
+          '      val1 ← stack.pop()',
+          '      if (tokens[i] == "+") res ← val1 + val2',
+          '      elseif (tokens[i] == "-") [   a   ]',
+          '      elseif (tokens[i] == "*") res ← val1 * val2',
+          '      endif',
+          '      stack.push(res)',
+          '    endif',
+          '  endfor',
+          '  return stack.pop()'
         ],
         en: []
       },
       answerOptions: {
         ja: [
-          { label: 'ア', value: '1' },
-          { label: 'イ', value: '2' },
-          { label: 'ウ', value: '3' },
-          { label: 'エ', value: 'エラー' }
+          { label: 'ア', value: 'res ← val1 - val2' },
+          { label: 'イ', value: 'res ← val2 - val1' },
+          { label: 'ウ', value: 'res ← val1 + val2' },
+          { label: 'エ', value: 'res ← val2 / val1' }
         ],
         en: []
       },
-      correctAnswer: '3',
-      explanationText: { ja: "Stack: [1] -> [1, 2] -> [1] -> [1, 3] -> 3を取り出す。", en: "" },
-      initialVariables: { stack: [], ret: null },
+      correctAnswer: 'res ← val1 - val2',
+      explanationText: { ja: "スタックでは「後に入れたものが先に出る(LIFO)」ため、演算子の直前に取り出した `val2` が右側の演算項、その前に取り出した `val1` が左側の演算項になります。\n式 `10 - 2` を計算する場合、スタックには `[10, 2]` の順で積まれているため、最初に `2` (val2) が、次に `10` (val1) が取り出されます。\nしたがって、正しい計算式は `val1 - val2` です。", en: "" },
+      initialVariables: { 
+        tokens: null, 
+        stack: [], 
+        i: null, 
+        val1: null, 
+        val2: null,
+        res: null,
+        ret: null // 最終的な戻り値
+      },
       traceOptions: {
-        presets_array: [{ label: '実行', value: { stack: [] } }]
+        // ★追加: ロジック選択肢
+        logicVariants: [
+          { id: 'ア', label: 'ア: res ← val1 - val2' }, // 正解 (24)
+          { id: 'イ', label: 'イ: res ← val2 - val1' }, // 間違い (-24)
+          { id: 'ウ', label: 'ウ: res ← val1 + val2' }, // 間違い (演算子無視 36)
+          { id: 'エ', label: 'エ: res ← val2 / val1' }, // 間違い (0)
+        ],
+        presets_array: [
+          { 
+            label: '{"10", "2", "-", "3", "*"}', // (10-2)*3 = 24
+            value: { tokens: ["10", "2", "-", "3", "*"] } 
+          },
+          { 
+            label: '{"5", "3", "+", "2", "*"}', // (5+3)*2 = 16
+            value: { tokens: ["5", "3", "+", "2", "*"] } 
+          }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
@@ -3944,33 +4083,67 @@ initialVariables: { n: null, current_n: null, result: 1 },
     {
       id: '66',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 キュー操作", en: "Basic Subject B Applied Q13" },
-      description: { ja: "次のプログラムは、キューに対する操作を行う。enqueue(1), enqueue(2), dequeue(), enqueue(3)を実行した後、dequeue()で取り出される値は何か。", en: "" },
+      title: { ja: "基本情報科目B応用 リングバッファ(循環キュー)", en: "Basic Subject B Applied Q13" },
+      description: { 
+        ja: "次のプログラムは、要素数4の配列 buffer を用いてキュー（リングバッファ）を操作する。配列の添字は0から始まるとする。[ a ] に入れるべき適切な式はどれか。\nここで、enqueueはキューに値を追加し、dequeueは値を取り出す操作である。変数の役割は以下の通り。\n・head: データの先頭を示す添字\n・tail: 次にデータを格納する場所を示す添字\n・count: 現在格納されているデータ数", 
+        en: "" 
+      },
       programLines: {
         ja: [
-          'キュー操作',
-          'enqueue(1)',
-          'enqueue(2)',
-          'dequeue() // 取り出された値は破棄',
-          'enqueue(3)',
-          'return dequeue()'
+          'クラス CircularQueue:',
+          '  整数型の配列: buffer ← {0, 0, 0, 0} // 要素数4',
+          '  整数型: head ← 0, tail ← 0, count ← 0',
+          '  整数型: size ← 4',
+          '  ',
+          '  論理型: enqueue(整数型: val)',
+          '    if (count == size) return false // 満杯',
+          '    buffer[tail] ← val',
+          '    tail ← [   a   ]',
+          '    count ← count + 1',
+          '    return true',
+          '  ',
+          '  整数型: dequeue()',
+          '    if (count == 0) return -1 // 空',
+          '    整数型: ret ← buffer[head]',
+          '    head ← (head + 1) % size',
+          '    count ← count - 1',
+          '    return ret'
         ],
         en: []
       },
       answerOptions: {
         ja: [
-          { label: 'ア', value: '1' },
-          { label: 'イ', value: '2' },
-          { label: 'ウ', value: '3' },
-          { label: 'エ', value: 'エラー' }
+          { label: 'ア', value: '(tail + 1) % size' },
+          { label: 'イ', value: 'tail + 1' },
+          { label: 'ウ', value: '(tail - 1) % size' },
+          { label: 'エ', value: 'tail % size + 1' }
         ],
         en: []
       },
-      correctAnswer: '2',
-      explanationText: { ja: "Queue: [1] -> [1, 2] -> [2] -> [2, 3] -> 2を取り出す。", en: "" },
-      initialVariables: { queue: [], ret: null },
+      correctAnswer: '(tail + 1) % size',
+      explanationText: { ja: "リングバッファでは、配列の末尾までデータが入った後、次は配列の先頭（添字0）に戻ってデータを格納します。\nこれを実現するために、添字を `size` で割った余りを使用します。\n`(tail + 1) % size` とすることで、tailが3の次は `(3+1)%4 = 0` となり、正しく循環します。\n\n・イ: `tail + 1` だけだと、添字が4以上になり範囲外エラーになります。\n・エ: `3 % 4 + 1 = 4` となり、やはり範囲外になります。", en: "" },
+      initialVariables: { 
+        buffer: [0, 0, 0, 0], 
+        head: 0, 
+        tail: 0, 
+        count: 0, 
+        size: 4,
+        val: null,
+        ret: null
+      },
       traceOptions: {
-        presets_array: [{ label: '実行', value: { queue: [] } }]
+        logicVariants: [
+          { id: 'ア', label: 'ア: (tail + 1) % size' }, // 正解
+          { id: 'イ', label: 'イ: tail + 1' },
+          { id: 'ウ', label: 'ウ: (tail - 1) % size' },
+          { id: 'エ', label: 'エ: tail % size + 1' },
+        ],
+        presets_array: [
+          { 
+            label: '実行フロー: enq(10)→enq(20)→enq(30)→deq()→enq(40)→enq(50)', 
+            value: { buffer: [0,0,0,0], head:0, tail:0, count:0 } 
+          }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
@@ -3981,44 +4154,83 @@ initialVariables: { n: null, current_n: null, result: 1 },
     {
       id: '67',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 整数nの絶対値", en: "Basic Subject B Applied Q14" },
-      description: { ja: "次のプログラムは、整数nの絶対値を返す。abs(-10)の戻り値はいくつか。", en: "" },
+      title: { ja: "基本情報科目B応用 近似値の探索", en: "Basic Subject B Applied Q14" },
+      description: { 
+        ja: "次のプログラムは、配列 data の中から、target に最も近い値を探して返す（最も近い値が複数ある場合は、配列の前の方にあるものを優先する）。[ a ] に入れるべき式はどれか。", 
+        en: "" 
+      },
       programLines: {
         ja: [
-          '整数型: abs(整数型: n)',
-          '  if (n < 0)',
-          '    return -n',
-          '  else',
-          '    return n',
-          '  endif'
+          '整数型: findNearest(整数型の配列: data, 整数型: target)',
+          '  整数型: nearest ← data[1]',
+          '  整数型: minDiff ← 9999 // 十分大きな値',
+          '  整数型: i, diff',
+          '  for (i を 1 から dataの要素数 まで 1 ずつ増やす)',
+          '    diff ← data[i] - target',
+          '    if (diff < 0)',
+          '      [   a   ]',
+          '    endif',
+          '    if (diff < minDiff)',
+          '      minDiff ← diff',
+          '      nearest ← data[i]',
+          '    endif',
+          '  endfor',
+          '  return nearest'
         ],
         en: []
       },
       answerOptions: {
         ja: [
-          { label: 'ア', value: '-10' },
-          { label: 'イ', value: '0' },
-          { label: 'ウ', value: '10' },
-          { label: 'エ', value: 'エラー' }
+          { label: 'ア', value: 'diff ← 0' },
+          { label: 'イ', value: 'diff ← diff + target' },
+          { label: 'ウ', value: 'diff ← -diff' },
+          { label: 'エ', value: 'diff ← data[i]' }
         ],
         en: []
       },
-      correctAnswer: '10',
-      explanationText: { ja: "-10 < 0 なので -(-10) = 10 を返します。", en: "" },
-      initialVariables: { n: null },
+      correctAnswer: 'diff ← -diff',
+      explanationText: { ja: "差の「大きさ（距離）」を比較するため、`diff` が負の値の場合、符号を反転させて正の値（絶対値）にする必要があります。\n例: `3 - 5 = -2` の場合、距離は `2` なので `-(-2)` とします。\n\n・ア: 差を0にしてしまうと、すべて「距離0（一致）」と誤判定されます。\n・イ: 値の意味が変わってしまいます。\n・ウ: 正解です。負の値を正の値に変換します。\n・エ: 差ではなく元の値を代入しており、誤りです。", en: "" },
+      initialVariables: { 
+        data: null, 
+        target: null, 
+        nearest: null, 
+        minDiff: null, 
+        i: null, 
+        diff: null 
+      },
       traceOptions: {
-        presets_array: [{ label: 'n=-10', value: { n: -10 } }, { label: 'n=5', value: { n: 5 } }]
+        // ★追加: ロジック選択肢
+        logicVariants: [
+          { id: 'ア', label: 'ア: diff ← 0' },
+          { id: 'イ', label: 'イ: diff ← diff + target' },
+          { id: 'ウ', label: 'ウ: diff ← -diff' }, // 正解
+          { id: 'エ', label: 'エ: diff ← data[i]' },
+        ],
+        presets_array: [
+          { 
+            label: 'data={1, 8, 12}, target=6 (正解:8)', 
+            value: { data: [1, 8, 12], target: 6 } 
+          },
+          { 
+            label: 'data={10, 20, 30}, target=28 (正解:30)', 
+            value: { data: [10, 20, 30], target: 28 } 
+          }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
       difficultyId: 8
     },
+
     // --- 問68 (ID: 68) ---
     {
       id: '68',
       logicType: 'PSEUDO_CODE',
-      title: { ja: "基本情報科目B応用 文字列の連長圧縮(ラングレス圧縮)", en: "Basic Subject B Applied Q15" },
-      description: { ja: "次のプログラムは、文字列を連長圧縮（ランレングス圧縮）する。連続する文字を「文字＋個数」の形式に変換する。encode(\"AAABBC\")の戻り値はいくつか。", en: "" },
+      title: { ja: "基本情報科目B応用 ランレングス圧縮 (1の省略)", en: "Basic Subject B Applied Q15" },
+      description: { 
+        ja: "次のプログラムは、文字列をランレングス圧縮する。ただし、連続する個数が1個の場合は数字を付与せず、2個以上の場合は「文字＋個数」の形式に変換する。\n例えば、\"AAABBC\" は \"A3B2C\" となる。[ a ] に入れるべき条件式はどれか。", 
+        en: "" 
+      },
       programLines: {
         ja: [
           '文字列型: encode(文字列型: s)',
@@ -4031,7 +4243,11 @@ initialVariables: { n: null, current_n: null, result: 1 },
           '    while (i + count <= sの文字数 and s[i + count] == c)',
           '      count ← count + 1',
           '    endwhile',
-          '    res ← res + c + 文字列(count)',
+          '    if ( [   a   ] )',
+          '      res ← res + c + 文字列(count)',
+          '    else',
+          '      res ← res + c',
+          '    endif',
           '    i ← i + count',
           '  endwhile',
           '  return res'
@@ -4040,23 +4256,33 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       answerOptions: {
         ja: [
-          { label: 'ア', value: '"A3B2C1"' },
-          { label: 'イ', value: '"3A2B1C"' },
-          { label: 'ウ', value: '"AAABBC"' },
-          { label: 'エ', value: '"A3B2C"' }
+          { label: 'ア', value: 'count > 1' },
+          { label: 'イ', value: 'count >= 1' },
+          { label: 'ウ', value: 'count == 1' },
+          { label: 'エ', value: 'count < 1' }
         ],
         en: []
       },
-      correctAnswer: '"A3B2C1"',
-      explanationText: { ja: "Aが3回、Bが2回、Cが1回続くので \"A3B2C1\" となります。", en: "" },
+      correctAnswer: 'count > 1',
+      explanationText: { ja: "個数が2個以上の場合に数字を付与し、1個の場合は文字だけを追加します。\n\n・ア: 正解です。`count` が 1 より大きい（2以上）の場合に `res + c + count` を実行します。\n・イ: `count` が 1 の場合も数字が付いてしまい、\"A3B2C1\" となってしまいます。\n・ウ: 逆の条件になってしまいます。", en: "" },
       initialVariables: { s: null, res: "", i: null, count: null, c: null },
       traceOptions: {
-        presets_array: [{ label: 's="AAABBC"', value: { s: "AAABBC" } }]
+        // ★追加: ロジック選択肢
+        logicVariants: [
+          { id: 'ア', label: 'ア: count > 1' }, // 正解 (A3B2C)
+          { id: 'イ', label: 'イ: count >= 1' }, // (A3B2C1)
+          { id: 'ウ', label: 'ウ: count == 1' }, // (A3B2C1? 挙動が逆になる)
+          { id: 'エ', label: 'エ: count < 1' },  // (常に文字のみ AABC)
+        ],
+        presets_array: [
+          { label: 's="AAABBC"', value: { s: "AAABBC" } },
+          { label: 's="ABBCCC"', value: { s: "ABBCCC" } }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
       difficultyId: 8
-    }
+    },
 ];
 
 /**
