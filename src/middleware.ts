@@ -2,8 +2,178 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getIronSession, IronSessionData } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
-import { detectSqlInjection } from '@/lib/waf';
+
 import { generateCsp } from '@/lib/csp';
+// Note: This logic is inlined here to ensure compatibility with the Next.js Edge Runtime which has strict
+// limitations on imports. Externalizing this to a library file caused 500 errors in this specific environment.
+
+// Comprehensive SQL Injection Patterns
+const SQL_INJECTION_REGEX = new RegExp(
+    [
+        /(--)/.source,                              // Standard SQL comment
+        /(\/\*)/.source,                            // Inline comment start
+        /(#\s)/.source,                             // MySQL comment
+        /(\bUNION\s+SELECT\b)/.source,              // Union Select
+        /(\b(AND|OR)\s+[\w'"]+\s*[=<>!])/.source,   // Boolean Blind (e.g., " AND 1=1")
+        /(\b(AND|OR)\s+\d+\s*=\s*\d+)/.source,      // Boolean Blind Numeric (e.g., " AND 1=1")
+        /(pg_sleep)/.source,                        // PostgreSQL Time-based
+        /(WAITFOR\s+DELAY)/.source,                 // SQL Server Time-based
+        /(SLEEP\()/.source,                         // MySQL Time-based
+        /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)\b.*\bFROM\b)/.source, // Broad SQL keywords
+        /(\b(EXEC|EXECUTE)\s*\(+)/.source,          // Execution of raw commands
+        /(;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|EXEC|SHUTDOWN|DECLARE))\b/.source, // Stacked queries (strict)
+        /('\s*\))/.source,                          // Common closing parenthesis for string injections
+        /(DBMS_PIPE)/.source,                       // Oracle specific
+    ].join('|'),
+    'i' // Case insensitive
+);
+
+// Path Traversal Patterns
+const TRAVERSAL_REGEX = new RegExp(
+    [
+        /(\.\.\/)/.source,           // ../
+        /(\.\.%2f)/.source,          // ..%2f (URL encoded)
+        /(\.\.\\)/.source,           // ..\ (Windows)
+        /(\.\.%5c)/.source,          // ..%5c (URL encoded Windows)
+        /(\/etc\/passwd)/.source,    // Common target
+        /(\/windows\/system\.ini)/.source, // Common Windows target
+    ].join('|'),
+    'i'
+);
+
+// XSS Patterns (Basic)
+const XSS_REGEX = new RegExp(
+    [
+        /(<script)/.source,
+        /(javascript:)/.source,
+        /(onerror=)/.source,
+        /(onload=)/.source,
+        /(onclick=)/.source,
+        /(alert\()/.source,
+    ].join('|'),
+    'i'
+);
+
+function detectThreatType(input: string): string | null {
+    if (!input || typeof input !== 'string') return null;
+
+    if (SQL_INJECTION_REGEX.test(input)) return 'SQL Injection';
+    if (TRAVERSAL_REGEX.test(input)) return 'Path Traversal';
+    if (XSS_REGEX.test(input)) return 'XSS';
+
+    return null;
+}
+
+function createBlockResponse(reason: string): NextResponse {
+    return new NextResponse(
+        JSON.stringify({
+            error: 'Security Alert: Malicious request detected.',
+            reason: reason,
+            code: 'WAF_BLOCK'
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+}
+
+function checkObjectForThreats(obj: any): string | null {
+    if (typeof obj === 'string') {
+        return detectThreatType(obj);
+    }
+    if (typeof obj === 'object' && obj !== null) {
+        for (const key of Object.keys(obj)) {
+            const keyThreat = detectThreatType(key);
+            if (keyThreat) return keyThreat;
+
+            // Recursive check
+            const valueThreat = checkObjectForThreats(obj[key]);
+            if (valueThreat) return valueThreat;
+        }
+    }
+    return null;
+}
+
+async function detectSecurityThreats(req: NextRequest): Promise<NextResponse | null> {
+    const url = req.nextUrl;
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+
+    // 0. Check Raw Query String (for payloads hidden from searchParams, e.g. _rsc)
+    const rawSearch = url.search; // Includes ? and all params
+    if (rawSearch) {
+        // Check raw (for signatures like ..%2f)
+        let threat = detectThreatType(rawSearch);
+        if (threat) {
+            console.warn(`[WAF] Blocked ${threat} attempt in Raw Query (Raw): ${rawSearch} from IP: ${ip}`);
+            return createBlockResponse(threat);
+        }
+
+        // Check decoded (for signatures like <script>)
+        try {
+            const decodedSearch = decodeURIComponent(rawSearch);
+            threat = detectThreatType(decodedSearch);
+            if (threat) {
+                console.warn(`[WAF] Blocked ${threat} attempt in Raw Query (Decoded): ${decodedSearch} from IP: ${ip}`);
+                return createBlockResponse(threat);
+            }
+        } catch (e) {
+            // Decoding failed, ignore or block? Safest to ignore and rely on raw check or loose decoding.
+        }
+    }
+
+    // 1. Check Search Params (Query String) - Keep for granular reporting/parsing
+    for (const [key, value] of url.searchParams.entries()) {
+        const threat = detectThreatType(value) || detectThreatType(key);
+        if (threat) {
+            console.warn(`[WAF] Blocked ${threat} attempt in Query: ${key}=${value} from IP: ${ip}`);
+            return createBlockResponse(threat);
+        }
+    }
+
+    // 2. Check Headers (Specific headers)
+    const headersToCheck = ['referer', 'user-agent'];
+    for (const headerName of headersToCheck) {
+        const headerValue = req.headers.get(headerName);
+        if (headerValue) {
+            const threat = detectThreatType(headerValue);
+            if (threat) {
+                console.warn(`[WAF] Blocked ${threat} attempt in Header: ${headerName}=${headerValue} from IP: ${ip}`);
+                return createBlockResponse(threat);
+            }
+        }
+    }
+
+    // 3. Check Cookies
+    for (const cookie of req.cookies.getAll()) {
+        const threat = detectThreatType(cookie.value) || detectThreatType(cookie.name);
+        if (threat) {
+            console.warn(`[WAF] Blocked ${threat} attempt in Cookie: ${cookie.name}=${cookie.value} from IP: ${ip}`);
+            return createBlockResponse(threat);
+        }
+    }
+
+    // 4. Check Request Body (JSON only)
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+        const contentType = req.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            try {
+                // Clone the request to read body without consuming it for the actual handler
+                const bodyText = await req.clone().text();
+                const body = JSON.parse(bodyText);
+
+                const threat = checkObjectForThreats(body);
+                if (threat) {
+                    console.warn(`[WAF] Blocked ${threat} attempt in Body from IP: ${ip}`);
+                    return createBlockResponse(threat);
+                }
+            } catch (e) {
+                // Ignore JSON parse errors
+            }
+        }
+    }
+
+    return null; // No threat detected
+}
+
+// End of Inlined WAF Logic
 
 // --- Configuration ---
 
@@ -91,15 +261,10 @@ function applyDeviceIdCookie(res: NextResponse, deviceId: string) {
 
 // --- Middleware ---
 
-// --- Middleware ---
-
 export async function middleware(req: NextRequest) {
-    // Debug: Ensure middleware is running
-    // console.log(`[Middleware] Processing ${req.method} ${req.nextUrl.pathname}`);
-
     // 0. Security: WAF (SQL Injection)
     // Run this FIRST to block malicious requests before any processing
-    const wafResponse = await detectSqlInjection(req);
+    const wafResponse = await detectSecurityThreats(req);
     if (wafResponse) {
         return wafResponse;
     }
@@ -202,7 +367,7 @@ export async function middleware(req: NextRequest) {
             } else {
                 const url = req.nextUrl.clone();
                 url.pathname = '/auth/login';
-                url.searchParams.set('returnTo', pathname); // Optional: redirect back after login
+                url.searchParams.set('returnTo', pathname);
                 const res = NextResponse.redirect(url);
                 if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
                 return res;
@@ -258,6 +423,7 @@ export async function middleware(req: NextRequest) {
     // - "UNION SELECT"
 
     response.headers.set('X-Debug-WAF', 'Active');
+    response.headers.set('X-WAF-Version', '2.0');
 
     return response;
 }

@@ -5,6 +5,7 @@ import { logAudit, AuditAction } from '@/lib/audit';
 import { getAppSession } from '@/lib/auth';
 import { executeCode } from '@/lib/sandbox';
 // Duplicate from lib/waf.ts due to build system export resolution issues
+// Comprehensive SQL Injection Patterns
 const SQL_INJECTION_REGEX = new RegExp(
   [
     /(--)/.source,                              // Standard SQL comment
@@ -18,15 +19,41 @@ const SQL_INJECTION_REGEX = new RegExp(
     /(SLEEP\()/.source,                         // MySQL Time-based
     /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)\b.*\bFROM\b)/.source, // Broad SQL keywords
     /(\b(EXEC|EXECUTE)\s*\(+)/.source,          // Execution of raw commands
-    /(;\s*)/.source,                            // Statement separator (cautious with this one)
+    /(;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|EXEC|SHUTDOWN|DECLARE))\b/.source, // Stacked queries (strict)
     /('\s*\))/.source,                          // Common closing parenthesis for string injections
   ].join('|'),
   'i' // Case insensitive
 );
 
-function containsSqlInjection(input: string): boolean {
+// Path Traversal Patterns
+const TRAVERSAL_REGEX = new RegExp(
+  [
+    /(\.\.\/)/.source,           // ../
+    /(\.\.%2f)/.source,          // ..%2f (URL encoded)
+    /(\.\.\\)/.source,           // ..\ (Windows)
+    /(\.\.%5c)/.source,          // ..%5c (URL encoded Windows)
+    /(\/etc\/passwd)/.source,    // Common target
+    /(\/windows\/system\.ini)/.source, // Common Windows target
+  ].join('|'),
+  'i'
+);
+
+// XSS Patterns (Basic)
+const XSS_REGEX = new RegExp(
+  [
+    /(<script)/.source,
+    /(javascript:)/.source,
+    /(onerror=)/.source,
+    /(onload=)/.source,
+    /(onclick=)/.source,
+    /(alert\()/.source,
+  ].join('|'),
+  'i'
+);
+
+function containsSecurityThreats(input: string): boolean {
   if (!input || typeof input !== 'string') return false;
-  return SQL_INJECTION_REGEX.test(input);
+  return SQL_INJECTION_REGEX.test(input) || TRAVERSAL_REGEX.test(input) || XSS_REGEX.test(input);
 }
 
 // --- Rate Limiting Setup ---
@@ -83,13 +110,13 @@ export async function POST(request: Request) {
 
     const { language, source_code, input } = validationResult.data;
 
-    // Security Check: WAF for Input (SQL Injection)
-    if (input && containsSqlInjection(input)) {
+    // Security Check: WAF for Input (SQL Injection, XSS, Path Traversal)
+    if (input && containsSecurityThreats(input)) {
       await logAudit(
         session.user.id,
         AuditAction.EXECUTE_CODE,
         {
-          message: 'Blocked SQL Injection in input',
+          message: 'Blocked Security Threat in input',
           input_snippet: input.substring(0, 50)
         }
       );
