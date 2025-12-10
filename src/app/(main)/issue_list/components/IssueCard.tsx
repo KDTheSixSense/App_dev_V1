@@ -1,27 +1,37 @@
+import Image from 'next/image';
 import React from 'react';
 
-interface IssueCardProps { // QuestionCardProps から IssueCardProps に変更
+interface IssueCardProps {
   title: string;
   description: string;
-  onClick?: () => void; // クリックハンドラを追加
-  isSelected?: boolean; // 選択状態を示すプロップを追加 (オプション)
+  image: string;
+  onClick: () => void;
+  isPriority?: boolean;
 }
 
-const IssueCard: React.FC<IssueCardProps> = ({ title, description, onClick, isSelected }) => {
+const IssueCard: React.FC<IssueCardProps> = ({ title, description, image, onClick, isPriority = false }) => {
   return (
-    <button
-      className={`
-        bg-gray-50 border rounded-lg p-6 shadow-sm
-        hover:bg-gray-100 hover:shadow-md transition-all duration-200
-        flex flex-col items-start text-left focus:outline-none focus:ring-2
-        ${isSelected ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-50' : 'border-gray-200 focus:ring-blue-400'}
-      `}
-      onClick={onClick}
-    >
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
-      {/* <p className="text-sm text-gray-600 whitespace-pre-line">{description}</p> */}
-    </button>
+    // カード全体を相対位置の基準とし、角を丸くし、はみ出した内容を隠す
+    <div onClick={onClick} className="relative h-full w-full rounded-lg shadow-lg cursor-pointer overflow-hidden group">
+      {/* 背景画像：Next.jsのImageコンポーネントを使用し、カード全体を覆う */}
+      <Image
+        src={image}
+        alt={`${title}のイメージ画像`}
+        fill // `layout="fill"`の新しい書き方
+        priority={isPriority} // LCP(Largest Contentful Paint)を条件付きで最適化
+        className="absolute z-0 object-cover transition-transform duration-500 ease-in-out group-hover:scale-110" // `objectFit`の代わりに`object-cover`を使用
+      />
+      {/* 半透明のオーバーレイ：テキストの可読性を上げるため */}
+      {/*<div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-50 transition-all duration-300 z-10"></div>*/}
+      
+      {/* テキストコンテンツ：オーバーレイの上に配置 */}
+      <div className="h-full flex flex-col justify-center items-center p-6 text-center text-white pb-10">
+        <h3 className="text-3xl font-extrabold drop-shadow-md">{title}</h3>
+        <div className="w-20 h-1 bg-white my-4 rounded-full"></div> {/* 区切り線 */}
+        <p className="mt-2 text-base whitespace-pre-line font-medium drop-shadow-sm">{description}</p>
+      </div>
+    </div>
   );
 };
 
-export default IssueCard; // QuestionCard から IssueCard に変更
+export default IssueCard;

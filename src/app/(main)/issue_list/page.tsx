@@ -17,7 +17,15 @@ import { useRouter } from 'next/navigation'; // Next.jsのページ遷移（ナ�
 // --- 自作コンポーネント ---
 // 画面を構成する各UIパーツをインポートします。
 import IssueCard from './components/IssueCard';     // 各問題カテゴリを表示するカードコンポーネント
-import AdviceSection from './components/AdviceSection'; // 右側に表示されるアドバイスセクションのコンポーネント
+
+// --- カルーセルライブラリ ---
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
+
+// Swiperのスタイルをインポートします
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 /**
  * @constant questionCategories
@@ -27,13 +35,16 @@ import AdviceSection from './components/AdviceSection'; // 右側に表示され
  * 新しいカテゴリを追加する場合は、この配列に新しいオブジェクトを追加するだけで済みます。
  */
 const questionCategories = [
-  { title: '基本情報 科目A', description: 'Title\nDescription', path: '/issue_list/basic_info_a_problem/problems' },
-  { title: '基本情報 科目B', description: 'Title\nDescription', path: '/issue_list/basic_info_b_problem/problems' }, // 科目Bは最初の問題(ID:1)に直接遷移
-  { title: '応用情報 午前', description: 'Title\nDescription', path: '/issue_list/applied_info_morning_problem/problems' },
-//{ title: '応用情報 午後', description: 'Title\nDescription', path: '/issue_list/applied_info_afternoon_problem/problems' },
-  { title: 'プログラミング', description: 'Title\nDescription', path: '/issue_list/programming_problem/problems' },
-  { title: '4択問題', description: 'Title\nDescription', path: '/issue_list/selects_problems' },
-  { title: '作成した問題', description: 'Title\nDescription', path: '/issue_list/mine_issue_list/problems' },
+  { title: '基本情報 科目A', description: '基本情報技術者試験の午前問題です。\nIT単語の知識について学習しましょう。', path: '/issue_list/basic_info_a_problem/problems', image: '/images/issue_list/basic_info_a_problems1.png' },
+  { title: '基本情報 科目B', description: '基本情報技術者試験の午後問題です。\n実践的なアルゴリズムとプログラミング能力を試します。', path: '/issue_list/basic_info_b_problem/problems', image: '/images/issue_list/basic_info_b_problem.png' },
+  { title: '応用情報 午前', description: '応用情報技術者試験の午前問題です。\nより応用的な知識と技術に関する\n幅広い分野からの出題です。', path: '/issue_list/applied_info_morning_problem/problems', image: '/images/issue_list/applied-info_morning_problem.png' },
+  // { 
+  //   title: '応用情報 午後', description: 'Title\nDescription', 
+  //   path: '/issue_list/applied_info_afternoon_problem/problems', image: '/images/placeholder.jpg' 
+  // },
+  { title: 'プログラミング', description: '様々な言語を活用できる\n実践的なコーディング問題です。', path: '/issue_list/programming_problem/problems', image: '/images/issue_list/programming_problem.png' },
+  { title: '4択問題', description: '様々なジャンルの4択問題を\n手軽に解くことができます。', path: '/issue_list/selects_problems', image: '/images/issue_list/selects_problems.png' },
+  { title: '作成した問題', description: 'あなたが作成したオリジナルの\n問題に挑戦できます。', path: '/issue_list/mine_issue_list/problems', image: '/images/issue_list/mine_issue_list.png' },
 ];
 
 /**
@@ -67,39 +78,45 @@ const QuestionsPage: React.FC = () => {
   // 画面の構造をJSX（HTMLに似た記法）で記述します。
   return (
     // ページ全体のコンテナ。背景色や最小の高さなどを設定。
-    <div className="min-h-screen flex flex-col items-center py-10">
+    <div className="h-screen flex flex-col bg-gray-50">
       
       {/* メインコンテンツエリア */}
-      <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8">
+      <div className="w-full p-4 flex-1 flex flex-col justify-center">
         
         {/* 左側の出題項目（9つのカード）エリア */}
-        <div className="flex-1 bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-md">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-md overflow-hidden flex flex-col h-[85vh]">
 
           
-          {/* カードをグリッドレイアウトで表示。画面サイズに応じて列数が変わるレスポンシブ対応。 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            {/* `questionCategories` 配列の要素を一つずつ取り出し、IssueCardコンポーネントとして画面に表示します。 */}
+          {/* カードをカルーセルで表示。画面サイズに応じて表示数が変わるレスポンシブ対応。 */}
+          <Swiper
+            // ナビゲーション（矢印）やページネーション（ドット）などのモジュールを有効化
+            modules={[Navigation, Pagination]}
+            // スライド間の余白
+            spaceBetween={30}
+            // デフォルトで表示するスライド数
+            slidesPerView={1}
+            // ナビゲーション（左右の矢印）を表示
+            navigation
+            // ページネーション（下部のドット）を表示し、クリックで移動可能に
+            pagination={{ clickable: true }}
+            // ループモードを有効にする
+            loop={true}
+            className="w-full px-12 h-full" // Swiperコンテナの幅と高さを親要素に合わせる
+          >
             {questionCategories.map((category, index) => (
-              <IssueCard
-                // Reactがリスト内の各要素を効率的に管理するために必要な、一意の `key` を設定します。
-                key={index}
-                // カードに表示するタイトルを渡します。
-                title={category.title}
-                // カードに表示する説明文を渡します。
-                description={category.description}
-                // カードがクリックされたときに `handleCardClick` 関数を実行するように設定します。
-                // その際、そのカテゴリに対応する `path` を引数として渡します。
-                onClick={() => handleCardClick(category.path)}
-              />
+              // 各カードをSwiperSlideでラップします
+              <SwiperSlide key={index} className="h-full">
+                <IssueCard
+                  title={category.title}
+                  description={category.description}
+                  image={category.image}
+                  isPriority={index === 0}
+                  onClick={() => handleCardClick(category.path)}
+                />
+              </SwiperSlide>
             ))}
-          </div>
+          </Swiper>
         </div>
-
-        {/* 右側のコハクとアドバイスエリア */}
-        {/* <div className="w-full lg:w-96">
-          <AdviceSection />
-        </div> */}
       </div>
 
     </div>
