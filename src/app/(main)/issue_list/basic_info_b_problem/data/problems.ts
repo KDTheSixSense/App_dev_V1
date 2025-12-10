@@ -809,23 +809,14 @@ initialVariables: { n: null, current_n: null, result: 1 },
     // =================================================================================
     {
         id: '15',
-        logicType: 'MINIMAX',
+        logicType: 'STATIC_QA',
         title: { ja: "サンプル問題 [科目B] 三目並べのプログラム", en: "Sample Problem [Subject B] Q15" },
         description: {
             ja: "次の記述中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n三目並べにおいて自分が勝利する可能性が最も高い手を決定する。次の手順で，ゲームの状態遷移を木構造として表現し，根以外の各節の評価値を求める。その結果，根の子の中で最も評価値が高い手を，最も勝利する可能性が高い手とする。自分が選択した手を〇で表し，相手が選択した手を×で表す。\n\n〔手順〕\n(1) 現在の盤面の状態を根とし，勝敗がつくか，引き分けとなるまでの考えられる全ての手を木構造で表現する。\n(2) 葉の状態を次のように評価する。\n    ① 自分が勝ちの場合は10\n    ② 自分が負けの場合は－10\n    ③ 引き分けの場合は0\n(3) 葉以外の節の評価値は，その節の全ての子の評価値を基に決定する。\n    ① 自分の手番の節である場合，子の評価値で最大の評価値を節の評価値とする。\n    ② 相手の手番の節である場合，子の評価値で最小の評価値を節の評価値とする。\n\nゲームが図の最上部にある根の状態のとき，自分が選択できる手は三つある。そのうちAが指す子の評価値は a であり，Bが指す子の評価値は b である。",
             en: "Select the correct combination for a and b. In Tic-Tac-Toe, determine the move with the highest probability of winning. Represent the game's state transitions as a tree and find the evaluation value for each node other than the root. The move with the highest evaluation value among the children of the root is considered the best move. Your moves are O, opponent's are X. [Procedures] (1) ... (2) Leaf nodes are evaluated: win=10, lose=-10, draw=0. (3) Non-leaf nodes: For your turn, take the max of children's values. For the opponent's turn, take the min. When the game is at the root state, what are the evaluation values for the children pointed to by A (value a) and B (value b)?"
         },
         programLines: { // この問題にはプログラムがないため、手順を記載
-            ja: [
-                '【評価手順のトレース】',
-                '1. Aが指す子の評価値を計算する',
-                '  - さらにその子(孫)の評価値を確認 (0 と 10)',
-                '  - 「相手の手番」なので、最小値を選択 → 0',
-                '2. Bが指す子の評価値を計算する',
-                '  - さらにその子(孫)の評価値を確認 (-10 と 0)',
-                '  - 「相手の手番」なので、最小値を選択 → -10',
-                '3. 計算完了'
-            ],
+            ja: [],
             en: []
         },
         answerOptions: {
@@ -902,10 +893,37 @@ initialVariables: { n: null, current_n: null, result: 1 },
             en: "The code point is between 800(16) and FFFF(16)... To get the lower 6 bits of a binary number, we need to divide by 2^6 = 64. Thus 'ク' is the correct answer."
         },
         initialVariables: {
-            codePoint: 64, // "あ" のコードポイント 3042(16)
+            codePoint: null, // "あ" のコードポイント 3042(16)
             utf8Bytes: null,
             cp: null,
             i: null
+        },
+        traceOptions: {
+            logicVariants: [
+                { id: 'ア', label: 'ア: ((4-i) × 2)' },
+                { id: 'イ', label: 'イ: (2の (4-i)乗)' },
+                { id: 'ウ', label: 'ウ: (2の i乗)' },
+                { id: 'エ', label: 'エ: (i × 2)' },
+                { id: 'オ', label: 'オ: 2' },
+                { id: 'カ', label: 'カ: 6' },
+                { id: 'キ', label: 'キ: 16' },
+                { id: 'ク', label: 'ク: 64' },
+                { id: 'ケ', label: 'ケ: 256' },
+            ],
+            presets_array: [
+                { 
+                    label: '例: "あ" (U+3042 = 12354)', 
+                    value: { codePoint: 12354 } // 0x3042
+                },
+                { 
+                    label: '例: "日" (U+65E5 = 26085)', 
+                    value: { codePoint: 26085 } // 0x65E5
+                },
+                { 
+                    label: '境界値: U+0800 (2048)', 
+                    value: { codePoint: 2048 } 
+                }
+            ]
         },
         traceLogic: [],
         calculateNextLine: undefined,
@@ -1111,9 +1129,22 @@ initialVariables: { n: null, current_n: null, result: 1 },
         },
         initialVariables: { num: null, ret: null },
         traceOptions: {
-            presets: [2, 4, 9, 11]
-        },
-        traceLogic: [],
+            logicVariants: [
+                { id: 'ア', label: 'ア: (num >= 4) and (num < 9)' },
+                { id: 'イ', label: 'イ: (num == 4) or (num == 9)' },
+                { id: 'ウ', label: 'ウ: (num > 4) and (num <= 9)' },
+                { id: 'エ', label: 'エ: num >= 4' },
+                { id: 'オ', label: 'オ: num > 4' },
+                { id: 'カ', label: 'カ: num <= 9' },
+                { id: 'キ', label: 'キ: num < 9' },
+            ],
+            presets_array: [
+                { label: 'num=2', value: { num: 2 } },
+                { label: 'num=4 ', value: { num: 4 } },
+                { label: 'num=9 ', value: { num: 9 } },
+                { label: 'num=10 ', value: { num: 10 } },
+            ]
+        },        traceLogic: [],
         calculateNextLine: undefined,
         difficultyId: 7
     },
@@ -1384,26 +1415,49 @@ initialVariables: { n: null, current_n: null, result: 1 },
             en: "The desired proportion can be calculated by dividing 'the number of times c2 appears after c1' by 'the number of times c1 appears, excluding at the end of a word'.\n\n1. [Numerator] Number of times c2 appears after c1:\nThis is equal to the total number of occurrences of the string `s1 + s2` (e.g., `\"nf\"`). In the program, this is represented by `words.freq(s1 + s2)`.\n\n2. [Denominator] Number of times c1 appears, excluding at the end of a word:\nThis can be found by subtracting the number of times c1 appears at the end of a word from the total number of occurrences of c1.\n- Total occurrences of c1: `words.freq(s1)`\n- Occurrences of c1 at the end of a word: `words.freqE(s1)`\nTherefore, the denominator is `words.freq(s1) - words.freqE(s1)`.\n\nThus, the expression in option 'C', which combines these, is the correct choice."
         },
         initialVariables: {
+            words: ["importance", "inflation", "information", "innovation"],
             c1: null,
             c2: null,
             s1: null,
             s2: null,
-            freq_s1_s2: null,
+            freq_s1_s2: null, 
             freq_s1: null,
             freqE_s1: null,
-            denominator: null,
-            result: null,
-        },
-        traceOptions: {
+            freq_s2: null,
+            freqE_s2: null,
+            denominator: null, // 分母
+            numerator: null,   // 分子
+            result: null        },
+            traceOptions: {
+            logicVariants: [
+                { id: 'ア', label: 'ア: (freq(s1) - freqE(s1)) ÷ freq(s1 + s2)' },
+                { id: 'イ', label: 'イ: (freq(s2) - freqE(s2)) ÷ freq(s1 + s2)' },
+                { id: 'ウ', label: 'ウ: freq(s1 + s2) ÷ (freq(s1) - freqE(s1))' }, // 正解
+                { id: 'エ', label: 'エ: freq(s1 + s2) ÷ (freq(s2) - freqE(s2))' },
+            ],
             presets_array: [
-                { label: 'Case1: c1="n", c2="f"', value: { c1: 'n', c2: 'f' } },
-                { label: 'Case2: c1="t", c2="i"', value: { c1: 't', c2: 'i' } },
+                { 
+                    // 問題文の例: importance, inflation, information, innovation
+                    // n(末尾以外)は5回、そのうち次はfが2回 -> 2/5 = 0.4
+                    label: 'c1="n", c2="f"', 
+                    value: { c1: 'n', c2: 'f' } 
+                },
+                { 
+                    // i(末尾以外)は4回、次はnが4回 -> 4/4 = 1.0
+                    label: 'c1="i", c2="n"', 
+                    value: { c1: 'i', c2: 'n' } 
+                },
+                { 
+                    // t(末尾以外)は4回、次はiが3回 -> 3/4 = 0.75
+                    label: 'c1="t", c2="i"', 
+                    value: { c1: 't', c2: 'i' } 
+                },
             ]
-        },
-        traceLogic: [],
+        },        traceLogic: [],
         calculateNextLine: undefined,
         difficultyId: 7
     },
+
     // =================================================================================
     // --- 問26: 情報セキュリティ（責任分界点） ---
     // =================================================================================
@@ -1534,7 +1588,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
             en: "A prime number is a natural number greater than 1 that has no positive divisors other than 1 and itself. This program uses the 'trial division' algorithm to determine if a number is prime.\n\n[Regarding a]\nSince the function is intended to find all prime numbers up to `maxNum`, it is appropriate for the outer loop to iterate from 2 to `maxNum`. Using `maxNum + 1` would exceed the specified range.\n\n[Regarding b]\nThe inner loop determines whether the current number `i` is prime. If `i` is divisible by `j`, then `i` is not a prime number. Being divisible means 'the remainder is 0'. Therefore, the condition for the `if` statement is 'the remainder of `i ÷ j` is equal to `0`'. When this condition is true, `divideFlag` is set to `false`, preventing `i` from being added to `pnList` later.\n\nTherefore, the correct combination is 'A'."
         },
         initialVariables: {
-            num: null, //
+            maxNum: null, //
             pnList: null,
             i: null,
             j: null,
@@ -1542,7 +1596,26 @@ initialVariables: { n: null, current_n: null, result: 1 },
             sqrt_i: null, // 平方根の整数部分をトレースするための補助変数
         },
         traceOptions: {
-            presets: [10, 30],
+            logicVariants: [
+                { id: 'ア', label: 'ア: a: num, b: i % j == 0' },
+                { id: 'イ', label: 'イ: a: num, b: i / j != 1' },
+                { id: 'ウ', label: 'ウ: a: num + 1, b: i % j == 0' },
+                { id: 'エ', label: 'エ: a: num + 1, b: i / j != 1' },
+            ],
+            presets_array: [
+                { 
+                  label: 'num = 7 ', 
+                  value: { num: 7 } 
+                },
+                { 
+                  label: 'num = 10', 
+                  value: { num: 10 } 
+                },
+                {
+                  label: 'num = 25',
+                  value: { num: 25 },
+                }
+            ]
         },
         traceLogic: [],
         calculateNextLine: undefined,
@@ -1638,35 +1711,34 @@ initialVariables: { n: null, current_n: null, result: 1 },
         },
         programLines: {
             ja: [
-                ' 1: ○sort(整数型: first, 整数型: last)',
-                ' 2:   整数型: pivot, i, j',
-                ' 3:   pivot ← data[(first + last) ÷ 2の商]',
-                ' 4:   i ← first',
-                ' 5:   j ← last',
-                ' 6: ',
-                ' 7:   while (true)',
-                ' 8:     while (data[i] < pivot)',
-                ' 9:       i ← i + 1',
-                '10:     endwhile',
-                '11:     while (pivot < data[j])',
-                '12:       j ← j - 1',
-                '13:     endwhile',
-                '14:     if (i ≧ j)',
-                '15:       繰返し処理を終了する',
-                '16:     endif',
-                '17:     data[i]とdata[j]の値を入れ替える',
-                '18:     i ← i + 1',
-                '19:     j ← j - 1',
-                '20:   endwhile',
-                '21: ',
-                '22:   dataの全要素の値を要素番号の順に空白区切りで出力する /*** α ***/',
-                '23: ',
-                '24:   if (first < i - 1)',
-                '25:     sort(first, i - 1)',
-                '26:   endif',
-                '27:   if (j + 1 < last)',
-                '28:     sort(j + 1, last)',
-                '29:   endif',
+                ' 1: 大域: 整数型の配列: data ← {2, 1, 3, 5, 4}',
+                ' 2: ',
+                ' 3: ○sort(整数型: first, 整数型: last)',
+                ' 4:    整数型: pivot, i, j',
+                ' 5:    pivot ← data[(first + last) ÷ 2 の商]',
+                ' 6:    i ← first',
+                ' 7:    j ← last',
+                ' 8:    while (true)',
+                ' 9:      while (data[i] < pivot)',
+                '10:        i ← i + 1',
+                '11:      endwhile',
+                '12:      while (pivot < data[j])',
+                '13:        j ← j - 1',
+                '14:      endwhile',
+                '15:      if (i ≧ j)',
+                '16:        繰返し処理を終了する',
+                '17:      endif',
+                '18:      data[i]とdata[j]の値を入れ替える',
+                '19:      i ← i + 1',
+                '20:      j ← j - 1',
+                '21:    endwhile',
+                '22:    dataの全要素の値を要素番号の順に空白区切りで出力する /*** α ***/',
+                '23:    if (first < i - 1)',
+                '24:      sort(first, i - 1)',
+                '25:    endif',
+                '26:    if (j + 1 < last)',
+                '27:      sort(j + 1, last)',
+                '28:    endif',
             ],
             en: [
                 ' 1: ○procedure sort(integer: first, integer: last)',
@@ -1720,117 +1792,97 @@ initialVariables: { n: null, current_n: null, result: 1 },
             en: "This program implements the quicksort algorithm. Let's trace the execution when `sort(1, 5)` is first called.\n1. The `data` array is `{2, 1, 3, 5, 4}`.\n2. The `pivot` is set to `data[floor((1+5)/2)]`, which is `data[3]`, so `pivot = 3`.\n3. `i` is initialized to `1`, `j` to `5`.\n4. In the first `while(data[i] < pivot)` loop, `i` is incremented until `data[i]` is not less than `3`. This happens when `i` reaches `3`.\n5. In the next `while(pivot < data[j])` loop, `j` is decremented until `data[j]` is not greater than `3`. This happens when `j` reaches `3`.\n6. At this point, `i=3` and `j=3`, so the condition `if(i >= j)` becomes true.\n7. The `while(true)` loop terminates. Note that the swap operation was never executed.\n8. The line `/*** α ***/` is reached, and the elements of the `data` array are printed. Since the array has not been modified, the output is the initial sequence: `2 1 3 5 4`.\nTherefore, 'D' is the correct answer."
         },
         initialVariables: {
-            data: null,
-            callStack: [],
-            pivot: null,
-            i: null,
-            j: null,
-            output: null,
-        },
-        // presets_array を追加
-        traceOptions: {
-            presets_array: [
-              { label: 'ア: data:{1, 2, 3, 4, 5}', value: { data: [1, 2, 3, 4, 5] } },
-              { label: 'イ: data:{1, 2, 3, 5, 4}', value: { data: [1, 2, 3, 5, 4] } },
-              { label: 'ウ: data:{2, 1, 3, 4, 5}', value: { data: [2, 1, 3, 4, 5] } },
-              { label: 'エ: data:{2, 1, 3, 5, 4}', value: { data: [2, 1, 3, 5, 4] } },
-            ]
-        },
+            data: [2, 1, 3, 5, 4],
+            first: 1,
+            last: 5,
+            pivot: null,
+            i: null,
+            j: null,
+            output: [],     // 出力ログ
+            callStack: [],  // 再帰呼び出しの履歴保存用
+            returnLine: null // 関数から戻る先の行番号
+        },
+        traceOptions: {
+            presets_array: [
+                { 
+                    label: '実行 (first=1, last=5)', 
+                    value: { first: 1, last: 5 } 
+                },
+            ]
+        },
         traceLogic: [],
         calculateNextLine: undefined,
         difficultyId: 8
     },
     // =================================================================================
-    // --- 問30: 単方向リストへの要素追加 --- 動かない
+    // --- 問30: ハッシュオープンアドレス法 (画像準拠) ---
     // =================================================================================
     {
         id: '30',
-        logicType: 'LINKED_LIST_APPEND',
-        title: { ja: "令和5年 科目B 単方向リストへの要素追加", en: "Subject B Sample Problem Q30" },
+        logicType: 'HASH_OPEN_ADDRESSING',
+        title: { ja: "サンプル問題 [科目B] ハッシュ法によるデータ格納", en: "Sample Problem [Subject B] Q30" },
         description: {
-            ja: "次の記述中の [  ?  ] に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 add は，引数で指定された正の整数 value を大域の整数型の配列 hashArray に格納する。格納できた場合は true を返し，格納できなかった場合は false を返す。ここで，整数 value を hashArray のどの要素に格納すべきかを，関数 calcHash1 及び calcHash2 を利用して決める。 　手続 test は，関数 add を呼び出して，hashArray に正の整数を格納する。\n手続 test の処理が終了した直後の hashArray の内容は， [  ?  ] である。",
-            en: "Select the correct combination for a and b from the answer choices. The procedure 'append' adds a character given as an argument to a singly linked list..."
+            ja: "次の記述中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 add は，引数で指定された正の整数 value を大域の整数型の配列 hashArray に格納する。格納できた場合は true を返し，格納できなかった場合は false を返す。\nここで，整数 value を hashArray のどの要素に格納すべきかを，関数 calcHash1 及び calcHash2 を利用して決める。\n手続 test は，関数 add を呼び出して，hashArray に正の整数を格納する。手続 test の処理が終了した直後の hashArray の内容は，[  ?  ]である。",
+            en: "..."
         },
         programLines: {
             ja: [
-                ' 1: 大域: 整数型の配列： hashArray',
+                ' 1: 大域: 整数型の配列: hashArray',
                 ' 2: ',
-                ' 3: 〇論理型：add(整数型: value)',
-                ' 4:   整数型：i ← calcHash1(value)',
-                ' 5:   if (hashArray[i] = －1)',
-                ' 6:     hashArray[i] ← value',
-                ' 7:     return true',
-                ' 8:   else',
-                ' 9:     i ← calcHash2(value)',
-                '10:     if (hashArray[i] = －1)',
-                '11:       hashArray[i] ← value',
-                '12:       return true',
-                '13:     endif',
-                '14:   endif',
-                '15:   return false',
+                ' 3: ○論理型: add(整数型: value)',
+                ' 4:    整数型: i ← calcHash1(value)',
+                ' 5:    if (hashArray[i] = -1)',
+                ' 6:      hashArray[i] ← value',
+                ' 7:      return true',
+                ' 8:    else',
+                ' 9:      i ← calcHash2(value)',
+                '10:      if (hashArray[i] = -1)',
+                '11:        hashArray[i] ← value',
+                '12:        return true',
+                '13:      endif',
+                '14:    endif',
+                '15:    return false',
                 '16: ',
-                '17: 〇整数型：calcHash1(整数型: value)',
-                '18:   return (value mod hashArrayの要素数) ＋ 1',
+                '17: ○整数型: calcHash1(整数型: value)',
+                '18:    return (value mod hashArrayの要素数) + 1',
                 '19: ',
-                '20: 〇整数型：calcHash2(整数型: value)',
-                '21:   return ((value ＋ 3) mod hashArrayの要素数) ＋ 1',
+                '20: ○整数型: calcHash2(整数型: value)',
+                '21:    return ((value + 3) mod hashArrayの要素数) + 1',
                 '22: ',
-                '23: 〇test()',
-                '24:   hashArray ← {5個の －1}',
-                '25:   add(3)',
-                '26:   add(18)',
-                '27:   add(11)',
+                '23: ○test()',
+                '24:    hashArray ← {5個の -1}',
+                '25:    add(3)',
+                '26:    add(18)',
+                '27:    add(11)',
             ],
-            en: [ /* ... */ ]
+            en: []
         },
         answerOptions: {
             ja: [
-                { label: 'ア', value: '{－1, 3, －1, 18, 11}' },
-                { label: 'イ', value: '{－1, 11, －1, 3, －1}' },
-                { label: 'ウ', value: '{－1, 11, －1, 18, －1}' },
-                { label: 'エ', value: '{－1, 18, －1, 3, 11}' },
-                { label: 'オ', value: '{－1, 18, 11, 3, －1}' },
+                { label: 'ア', value: '{-1, 3, -1, 18, 11}' },
+                { label: 'イ', value: '{-1, 11, -1, 3, -1}' },
+                { label: 'ウ', value: '{-1, 11, -1, 18, -1}' },
+                { label: 'エ', value: '{-1, 18, -1, 3, 11}' }, // 正解
+                { label: 'オ', value: '{-1, 18, 11, 3, -1}' },
             ],
-            en: [ /* ... */ ]
+            en: []
         },
-        correctAnswer: '{－1, 18, －1, 3, 11}',
-        explanationText: {
-            ja: "【aについて】\nこのif文は、リストが空かどうかを判断し、処理を分岐させるためのものです。問題文に「リストが空のときは，listHead は未定義である」とあるため、`listHead`が「未定義」かどうかで判定するのが適切です。`listHead`が未定義の場合、新しく作成した要素`curr`をリストの先頭`listHead`に設定します。\n\n【bについて】\nelse節は、リストに1つ以上の要素が既に存在する場合の処理です。`while`ループでリストの末尾の要素までたどり、ループを抜けた時点で変数`prev`が末尾の要素を指しています。この末尾要素の`next`参照（`prev.next`）に、新しく追加する要素`curr`を設定することで、リストの末尾に新しい要素を連結できます。\n\nしたがって、正しい組み合わせは「ア」です。",
-            en: "Regarding 'a': This if statement checks if the list is empty..."
-        },
+        correctAnswer: '{-1, 18, -1, 3, 11}',
+        explanationText: { ja: "...", en: "..." },
+        
         initialVariables: {
-        initialized: false,
-        listData: null,
-        listHead: null,
-        qVal: null,
-        prev: null,
-        curr: null,
+            hashArray: null,
+            value: null,
+            i: null,
+            tempRet: null,
+            callStack: [],
+            targetLine: null, // ジャンプ先の一時保持用
         },
-        // 2: traceOptions の 'value' が実際のデータをセットするように変更
         traceOptions: {
             presets_array: [
                 { 
-                    label: 'Case1: 空のリストに "A" を追加', 
-                    value: { 
-                        listData: [], 
-                        listHead: null,
-                        qVal: 'A',
-                        prev: null,
-                        curr: null,
-                        initialized: false 
-                    } 
-                },
-                { 
-                    label: 'Case2: 既存リストに "D" を追加', 
-                    value: { 
-                        // 既存のリストデータ (A->B->C)
-                        listData: [{val: 'A', next: 1}, {val: 'B', next: 2}, {val: 'C', next: null}], 
-                        listHead: 0,
-                        qVal: 'D',
-                        prev: null,
-                        curr: null,
-                        initialized: false 
-                    } 
+                    label: 'テスト実行 (開始)', 
+                    value: { hashArray: null } // 固定値は入れない
                 },
             ]
         },
@@ -2042,10 +2094,20 @@ initialVariables: { n: null, current_n: null, result: 1 },
             result: null,
         },
         traceOptions: {
+            logicVariants: [
+                { id: 'ア', label: 'ア: x > y' },
+                { id: 'イ', label: 'イ: x > y and x > z' },
+                { id: 'ウ', label: 'ウ: x > y and y > z' },
+                { id: 'エ', label: 'エ: x > z' },
+                { id: 'オ', label: 'オ: x > z and z > y' },
+                { id: 'カ', label: 'カ: z > y' },
+            ],
             presets_array: [
-                { label: 'x=10, y=5, z=1', value: { x: 10, y: 5, z: 1 } },
-                { label: 'x=5, y=10, z=1', value: { x: 5, y: 10, z: 1 } },
-                { label: 'x=1, y=5, z=10', value: { x: 1, y: 5, z: 10 } },
+                { label: 'x=10, y=5, z=1 ', value: { x: 10, y: 5, z: 1 } },
+                { label: 'x=5, y=10, z=1 ', value: { x: 5, y: 10, z: 1 } },
+                { label: 'x=1, y=5, z=10 ', value: { x: 1, y: 5, z: 10 } },
+                // 誤答確認用: x > y だが z が最大の場合
+                { label: 'x=5, y=1, z=10 ', value: { x: 5, y: 1, z: 10 } },
             ]
         },
         traceLogic: [],
@@ -2112,9 +2174,16 @@ initialVariables: { n: null, current_n: null, result: 1 },
             result: 0,
         },
         traceOptions: {
+            logicVariants: [
+                { id: 'ア', label: 'ア: result + int(binary[length-i+1])' },
+                { id: 'イ', label: 'イ: result + int(binary[i])' },
+                { id: 'ウ', label: 'ウ: result * 2 + int(binary[length-i+1])' },
+                { id: 'エ', label: 'エ: result * 2 + int(binary[i])' }, // 正解
+            ],
             presets_array: [
-                { label: 'binary = "10010"', value: { binary: "10010" } },
-                { label: 'binary = "1101"', value: { binary: "1101" } },
+                { label: 'binary = "10010" (18)', value: { binary: "10010" } },
+                { label: 'binary = "1101" (13)', value: { binary: "1101" } },
+                { label: 'binary = "111" (7)', value: { binary: "111" } },
             ]
         },
         traceLogic: [],
@@ -2191,12 +2260,28 @@ initialVariables: { n: null, current_n: null, result: 1 },
             v: null,
         },
         traceOptions: {
+            logicVariants: [
+                { id: 'ア', label: 'ア: adjMatrix[u, u] ← 1' },
+                { id: 'イ', label: 'イ: adjMatrix[u, u] ← 1, adjMatrix[v, v] ← 1' },
+                { id: 'ウ', label: 'ウ: adjMatrix[u, v] ← 1' },
+                { id: 'エ', label: 'エ: adjMatrix[u, v] ← 1, adjMatrix[v, u] ← 1' }, // 正解
+                { id: 'オ', label: 'オ: adjMatrix[v, u] ← 1' },
+                { id: 'カ', label: 'カ: adjMatrix[v, v] ← 1' },
+            ],
             presets_array: [
                 { 
-                    label: 'グラフデータをセット', 
+                    label: '図1の例 (5頂点, 5辺)', 
                     value: { 
+                        // 問題文の例: {1,3}, {1,4}, {3,4}, {2,4}, {4,5}
                         edgeList: [[1, 3], [1, 4], [3, 4], [2, 4], [4, 5]], 
                         nodeNum: 5 
+                    } 
+                },
+                { 
+                    label: '単純な例 (3頂点, 2辺)', 
+                    value: { 
+                        edgeList: [[1, 2], [2, 3]], 
+                        nodeNum: 3 
                     } 
                 },
             ]
@@ -2323,30 +2408,25 @@ initialVariables: { n: null, current_n: null, result: 1 },
                 '15:   for (orderにordersの要素を順に代入する)',
                 '16:     if (orderのいずれかの要素の値がitemの値と等しい)',
                 '17:       itemCountの値を1増やす',
-                '18:       for (iを1からotherItemsの要素数まで1ずつ増やす)',
-                '19:         if (orderのいずれかの要素の値がotherItems[i]の値と等しい)',
-                '20:           [   a   ] の値を1増やす',
-                '21:         endif',
-                '22:       endfor',
-                '23:     else',
-                '24:       for (iを1からotherItemsの要素数まで1ずつ増やす)',
-                '25:         if (orderのいずれかの要素の値がotherItems[i]の値と等しい)',
-                '26:           [   b   ] の値を1増やす',
-                '27:         endif',
-                '28:       endfor',
-                '29:     endif',
-                '30:   endfor',
-                '31: ',
-                '32:   for (iを1からotherItemsの要素数まで1ずつ増やす)',
-                '33:     valueL ← (arrayM[i] × [   c   ]) ÷ (itemCount × arrayK[i])',
-                '34:     /* 実数として計算する */',
-                '35:     if (valueLがmaxLより大きい)',
-                '36:       maxL ← valueL',
-                '37:       relatedItem ← otherItems[i]',
-                '38:     endif',
-                '39:   endfor',
-                '40: ',
-                '41:   relatedItemの値とmaxLの値をこの順にコンマ区切りで出力する',
+                '18:     endif',
+                '19:     for (iを1からotherItemsの要素数まで1ずつ増やす)',
+                '20:       if (orderのいずれかの要素の値がotherItems[i]の値と等しい)',
+                '21:         if (orderのいずれかの要素の値がitemの値と等しい)',
+                '22:           [   a   ] の値を1増やす',
+                '23:         endif',
+                '24:         [   b   ] の値を1増やす',
+                '25:       endif',
+                '26:     endfor',
+                '27:   endfor',
+                '28:   for (iを1からotherItemsの要素数まで1ずつ増やす)',
+                '29:     valueL ← (arrayM[i] × [   c   ]) ÷ (itemCount × arrayK[i])',
+                '30:     /* 実数として計算する */',
+                '31:     if (valueLがmaxLより大きい)',
+                '32:       maxL ← valueL',
+                '33:       relatedItem ← otherItems[i]',
+                '34:     endif',
+                '35:   endfor',
+                '36:   relatedItemの値とmaxLの値をこの順にコンマ区切りで出力する',
             ],
             en: [/* ... */]
         },
@@ -2368,17 +2448,38 @@ initialVariables: { n: null, current_n: null, result: 1 },
         },
         initialVariables: {
             orders: [["A", "B", "D"], ["A", "D"], ["A"], ["A", "B", "E"], ["B"], ["C", "E"]],
-            item: "A",
+            item: null,
             allItems: null,
             otherItems: null,
-            itemCount: null,
+            itemCount: 0,
             arrayK: null,
             arrayM: null,
             i: null,
-            order_idx: null, // `for (order in orders)`のカウンタ用
+            order_idx: null,
             valueL: null,
             maxL: null,
             relatedItem: null,
+            output: [],
+        },
+        traceOptions: {
+            logicVariants: [
+                { id: 'ア', label: 'ア: a=K[i], b=M[i], c=All数' },
+                { id: 'イ', label: 'イ: a=K[i], b=M[i], c=Order数' },
+                { id: 'ウ', label: 'ウ: a=K[i], b=M[i], c=Other数' },
+                { id: 'エ', label: 'エ: a=M[i], b=K[i], c=All数' },
+                { id: 'オ', label: 'オ: a=M[i], b=K[i], c=Order数' }, // 正解
+                { id: 'カ', label: 'カ: a=M[i], b=K[i], c=Other数' },
+            ],
+            presets_array: [
+                { 
+                    label: 'item="A" (正解なら relatedItem="B", L=1.0)', 
+                    value: { item: "A" } 
+                },
+                { 
+                    label: 'item="B" (正解なら relatedItem="A", L=1.0)', 
+                    value: { item: "B" } 
+                },
+            ]
         },
         traceLogic: [],
         calculateNextLine: undefined,
@@ -2622,17 +2723,17 @@ initialVariables: { n: null, current_n: null, result: 1 },
           loop2_active: false // 2つ目のループに入ったかどうかのフラグ
       },
       traceOptions: {
-        presets_array: [
-           { 
-             label: 'x={"A","B"}, y={"C"}', 
-             value: { x: ["A", "B"], y: ["C"] } 
-           },
-           { 
-             label: 'x={"1","2"}, y={"3","4"}', 
-             value: { x: ["1", "2"], y: ["3", "4"] } 
-           }
-        ]
-      },
+            logicVariants: [
+                { id: 'ア', label: 'ア: a: z[k]<-x[k], b: z[len_x+k]<-y[k] (正解)' },
+                { id: 'イ', label: 'イ: a: z[k]<-x[k], b: z[len_y+k]<-y[k] (誤り)' },
+                { id: 'ウ', label: 'ウ: a: z[k]<-y[k], b: z[len_x+k]<-x[k] (誤り)' },
+                { id: 'エ', label: 'エ: a: z[k]<-y[k], b: z[len_y+k]<-x[k] (誤り)' },
+            ],
+            presets_array: [
+                { label: 'x={"A","B"}, y={"C"}', value: { x: ["A", "B"], y: ["C"] } },
+                { label: 'x={"1","2"}, y={"3","4"}', value: { x: ["1", "2"], y: ["3", "4"] } },
+            ]
+        },
       traceLogic: [],
       calculateNextLine: undefined,
       difficultyId: 7
@@ -2678,6 +2779,24 @@ initialVariables: { n: null, current_n: null, result: 1 },
         en: "" 
       },
       initialVariables: { array: [10, 20, 30, 40, 50, 60], left: 1, right: 6, tmp: null },
+      traceOptions: {
+          logicVariants: [
+              { id: 'ア', label: 'ア: array[left] ' },
+              { id: 'イ', label: 'イ: array[left + 1] ' },
+              { id: 'ウ', label: 'ウ: array[left - 1] ' },
+              { id: 'エ', label: 'エ: array[tmp - left]' },
+          ],
+          presets_array: [
+              { 
+                  label: '初期データ: {10, 20, 30, 40, 50, 60}', 
+                  value: { array: [10, 20, 30, 40, 50, 60] } 
+              },
+              { 
+                  label: '短いデータ: {1, 2, 3}', 
+                  value: { array: [1, 2, 3] } 
+              },
+          ]
+      },
       traceLogic: [],
       calculateNextLine: undefined,
       difficultyId: 7
@@ -2787,16 +2906,19 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       // 例: {10, 30, 40, 20, 50} の4番目の要素(20)を適切な位置に挿入するケース
       traceOptions: {
-        presets_array: [
-          { 
-            label: 'nums={10, 30, 40, 20, 50}, pos=4', 
-            value: { 
-              nums: [10, 30, 40, 20, 50], 
-              pos: 4 
-            } 
-          }
-        ]
-      },
+            logicVariants: [
+                { id: 'ア', label: 'ア: nums[j] = temp' },
+                { id: 'イ', label: 'イ: nums[j] ≠ temp' },
+                { id: 'ウ', label: 'ウ: nums[j] < temp' },
+                { id: 'エ', label: 'エ: nums[j] > temp' },
+            ],
+            presets_array: [
+                { 
+                    label: 'nums={10, 30, 40, 20, 50}, pos=4', 
+                    value: { nums: [10, 30, 40, 20, 50], pos: 4 } 
+                }
+            ]
+        },
       traceLogic: [],
       calculateNextLine: undefined,
       difficultyId: 7
@@ -2847,7 +2969,9 @@ initialVariables: { n: null, current_n: null, result: 1 },
       difficultyId: 7
     },
   
-    // --- 基本情報科目B基礎 問9 (ID: 47) ---
+// =================================================================================
+    // --- 問47: 数字文字列を数値変換 ---
+    // =================================================================================
     {
       id: '47',
       logicType: 'PSEUDO_CODE',
@@ -2880,7 +3004,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
         ],
         en: []
       },
-      correctAnswer: 'str[i] ≠ “$”　val ← val × 10 ＋ tmp',
+      correctAnswer: 'a：str[i] ≠ “$” \nb：val ← val × 10 ＋ tmp',
       explanationText: { 
         ja: "文字列を整数に変換する処理です。\n(a) ループ条件: 終端文字 `$` が出るまで続けるため、`str[i] ≠ “$”` です。\n(b) 変換処理: 新しい桁を読み込むたびに、これまでの値を10倍して新しい値を加えます。 `val ← val × 10 ＋ tmp` です。\n\n例: \"12\" -> 1 -> 1*10+2 = 12", 
         en: "" 
@@ -2893,15 +3017,15 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       // プリセットを追加（重要: 終端文字 $ を含める）
       traceOptions: {
+        logicVariants: [
+          { id: 'ア', label: 'ア: a: = "$", b: val + tmp' },
+          { id: 'イ', label: 'イ: a: = "$", b: val * 10 + tmp' },
+          { id: 'ウ', label: 'ウ: a: ≠ "$", b: val * 10 + tmp' },
+          { id: 'エ', label: 'エ: a: ≠ "$", b: val + tmp * 10' }, // 問題文の選択肢エは val + tmp*10 なのでそれに合わせる
+        ],
         presets_array: [
-          { 
-            label: 'str = "12$"', 
-            value: { str: ["1", "2", "$"] } 
-          },
-          { 
-            label: 'str = "345$"', 
-            value: { str: ["3", "4", "5", "$"] } 
-          }
+          { label: 'str = "12$"', value: { str: ["1", "2", "$"] } },
+          { label: 'str = "345$"', value: { str: ["3", "4", "5", "$"] } }
         ]
       },
       traceLogic: [],
@@ -2909,7 +3033,9 @@ initialVariables: { n: null, current_n: null, result: 1 },
       difficultyId: 7
     },
   
-    // --- 基本情報科目B基礎 問10 (ID: 48) ---
+    // =================================================================================
+    // --- 問48: 10進数から2進数変換 ---
+    // =================================================================================
     {
       id: '48',
       logicType: 'PSEUDO_CODE',
@@ -2934,14 +3060,14 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       answerOptions: {
         ja: [
-          { label: 'ア', value: 'j ← j ÷ 2 の商 / bin[k] ← j ÷ 2 の余り' },
-          { label: 'イ', value: 'j ← j ÷ 2 の余り / bin[k] ← j ÷ 2 の商' },
-          { label: 'ウ', value: 'bin[k] ← j ÷ 2 の商 / j ← j ÷ 2 の余り' },
-          { label: 'エ', value: 'bin[k] ← j ÷ 2 の余り / j ← j ÷ 2 の商' }
+          { label: 'ア', value: 'a：j ← j ÷ 2 の商 , b：bin[k] ← j ÷ 2 の余り' },
+          { label: 'イ', value: 'a：j ← j ÷ 2 の余り , b：bin[k] ← j ÷ 2 の商' },
+          { label: 'ウ', value: 'a：bin[k] ← j ÷ 2 の商 , b：j ← j ÷ 2 の余り' },
+          { label: 'エ', value: 'a：bin[k] ← j ÷ 2 の余り , b：j ← j ÷ 2 の商' }
         ],
         en: []
       },
-      correctAnswer: 'bin[k] ← j ÷ 2 の余り / j ← j ÷ 2 の商',
+      correctAnswer: 'a：bin[k] ← j ÷ 2 の余り , b：j ← j ÷ 2 の商',
       explanationText: { 
         ja: "10進数を2進数に変換するには、2で割った余りを下の桁から順に格納し、商を次の計算に用います。\nループは `k` を 6 から 1 に減らしているので、下の桁（bin[6]）から格納しています。\n\n1. `bin[k] ← j ÷ 2 の余り` (現在の桁を決定)\n2. `j ← j ÷ 2 の商` (次の桁のために値を更新)\n\nこの順序で行われている「エ」が正解です。", 
         en: "" 
@@ -2954,12 +3080,18 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       // 例: 13 (001101), 45 (101101) など
       traceOptions: {
-        presets_array: [
-          { label: 'n = 13', value: { n: 13 } },
-          { label: 'n = 45', value: { n: 45 } },
-          { label: 'n = 63', value: { n: 63 } }
-        ]
-      },
+            logicVariants: [
+                { id: 'ア', label: 'ア: a: j<-商, b: bin[k]<-余り' },
+                { id: 'イ', label: 'イ: a: j<-余り, b: bin[k]<-商' },
+                { id: 'ウ', label: 'ウ: a: bin[k]<-商, b: j<-余り' },
+                { id: 'エ', label: 'エ: a: bin[k]<-余り, b: j<-商 (正解)' },
+            ],
+            presets_array: [
+                { label: 'n = 13 (001101)', value: { n: 13 } },
+                { label: 'n = 45 (101101)', value: { n: 45 } },
+                { label: 'n = 63 (111111)', value: { n: 63 } }
+            ]
+        },
       traceLogic: [],
       calculateNextLine: undefined,
       difficultyId: 7
@@ -2971,7 +3103,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       logicType: 'PSEUDO_CODE',
       title: { ja: "基本情報科目B基礎 8ビットで論理和演算", en: "Basic Subject B Foundation Q11" },
       description: { 
-        ja: "手続きbitORは8ビット型の引数aとbを受け取り、aとbの論理和演算の結果を出力する。", 
+        ja: "次のプログラムbitORは8ビット型の引数xとyを受け取り、xとyの論理和演算の結果を出力する。[  a  ]と[  b  ]に入れる正しい答えの組み合わせを、解答群の中から選べ。", 
         en: "" 
       },
       programLines: {
@@ -2980,26 +3112,26 @@ initialVariables: { n: null, current_n: null, result: 1 },
           '　8ビット型: result, flag ← 128',
           '　result ← x ⋁ y',
           '　for (i を 1 から 8 まで 1 ずつ増やす)',
-          '　　if ((result ⋀ flag) が (a) と等しい)',
+          '　　if ((result ⋀ flag) が [   a   ]と等しい)',
           '　　　0を出力',
           '　　else',
           '　　　1を出力',
           '　　endif',
-          '　　(b)',
+          '　　[   b   ]',
           '　endfor'
         ],
         en: []
       },
       answerOptions: {
         ja: [
-          { label: 'ア', value: '00000000 / mask ← mask << 1' },
-          { label: 'イ', value: '00000000 / mask ← mask >> 1' },
-          { label: 'ウ', value: '00000001 / mask ← mask << 1' },
-          { label: 'エ', value: '00000001 / mask ← mask >> 1' }
+          { label: 'ア', value: 'a：00000000 , b：flag ← flag << 1' },
+          { label: 'イ', value: 'a：00000000 , b：flag ← flag >> 1' },
+          { label: 'ウ', value: 'a：00000001 , b：flag ← flag << 1' },
+          { label: 'エ', value: 'a：00000001 , b：flag ← flag >> 1' }
         ],
         en: []
       },
-      correctAnswer: '00000000 / mask ← mask >> 1',
+      correctAnswer: 'a：00000000 , b：flag ← flag >> 1',
       explanationText: { 
         ja: "最上位ビットから順に判定して出力するロジックです。\n初期値 `flag = 128` (10000000) です。\n(a) `result ⋀ flag` が 0 であれば、そのビットは 0 です。したがって `00000000` と比較します。\n(b) 次のビットを検査するために、フラグを右に1ビットシフトします。 `mask ← mask >> 1` (ここでは変数名がmaskになっていますがflagのことです)。", 
         en: "" 
@@ -3014,15 +3146,31 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       // プリセットを追加
       traceOptions: {
-        presets_array: [
-          // 170(10101010) OR 85(01010101) = 255(11111111)
-          { label: 'x=170, y=85', value: { x: 170, y: 85 } },
-          // 15(00001111) OR 240(11110000) = 255(11111111)
-          { label: 'x=15, y=240', value: { x: 15, y: 240 } },
-          // 128(10000000) OR 1(00000001) = 129(10000001)
-          { label: 'x=128, y=1', value: { x: 128, y: 1 } }
-        ]
-      },
+            logicVariants: [
+                { id: 'ア', label: 'ア: a: 0, b: << 1' },
+                { id: 'イ', label: 'イ: a: 0, b: >> 1 ' },
+                { id: 'ウ', label: 'ウ: a: 1, b: << 1' },
+                { id: 'エ', label: 'エ: a: 1, b: >> 1' },
+            ],            
+            presets_array: [
+                { 
+                    label: 'x=170(10101010), y=85(01010101)', 
+                    value: { x: 170, y: 85 } 
+                },
+                { 
+                    label: 'x=128(10000000), y=1(00000001)', 
+                    value: { x: 128, y: 1 } 
+                },
+                { 
+                    label: 'x=240(11110000), y=15(00001111)', 
+                    value: { x: 240, y: 15 } 
+                },
+                { 
+                    label: 'x=100(01100100), y=76(01001100)', 
+                    value: { x: 100, y: 76 } 
+                }
+            ]
+        },
       traceLogic: [],
       calculateNextLine: undefined,
       difficultyId: 7
@@ -3034,7 +3182,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       logicType: 'PSEUDO_CODE',
       title: { ja: "基本情報科目B基礎 再帰関数", en: "Basic Subject B Foundation Q12" },
       description: { 
-        ja: "関数Gに G(4) を渡した場合、戻り値は □ である。", 
+        ja: "以下のプログラム関数Gは再帰型のプログラムである。\n関数Gに G(4) を渡した場合、戻り値はいくつであるか。", 
         en: "" 
       },
       programLines: {
@@ -3070,9 +3218,9 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       traceOptions: {
         presets_array: [
-          { label: 'x = 4', value: { x: 4 } },
           { label: 'x = 3', value: { x: 3 } },
-          { label: 'x = 5', value: { x: 5 } }
+          { label: 'x = 4', value: { x: 4 } },
+          { label: 'x = 7', value: { x: 7 } }
         ]
       },
       traceLogic: [],
@@ -3086,7 +3234,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       logicType: 'PSEUDO_CODE',
       title: { ja: "基本情報科目B基礎 再帰関数の内部処理数値可視化", en: "Basic Subject B Foundation Q13" },
       description: { 
-        ja: "再帰的に定義された手続 display(3) を実行したとき、画面に表示される数字は？", 
+        ja: "再帰的に定義された関数displayがある、 display(3) を実行したとき、画面に表示される数字はいくつであるか。", 
         en: "" 
       },
       programLines: {
@@ -3123,7 +3271,9 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       traceOptions: {
         presets_array: [
-          { label: 'x = 3', value: { x: 3 } }
+          { label: 'x = 3', value: { x: 3 } },
+          { label: 'x = 5', value: { x: 5 } },
+          { label: 'x = 7', value: { x: 7 } }
         ]
       },
       traceLogic: [],
@@ -3137,7 +3287,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       logicType: 'PSEUDO_CODE',
       title: { ja: "基本情報科目B基礎 8ビットの論理積演算", en: "Basic Subject B Foundation Q14" },
       description: { 
-        ja: "手続きbitANDは8ビット型の引数pとqを受け取り、pとqの論理積演算の結果を出力する。", 
+        ja: "プログラムbitANDは8ビット型の引数pとqを受け取り、pとqの論理積演算の結果を出力する。[  a  ]と[  b  ]に入れる正しい答えの組合せを、解答群の中から選べ。", 
         en: "" 
       },
       programLines: {
@@ -3146,26 +3296,26 @@ initialVariables: { n: null, current_n: null, result: 1 },
           '  8ビット型: result, mask ← 128',
           '  result ← p ∧ q',
           '  for (i を 1 から 8 まで 1 ずつ増やす)',
-          '    if ((result ⋀ mask) が (A) と等しい)',
+          '    if ((result ⋀ mask) が [   a   ] と等しい)',
           '      0を出力',
           '    else',
           '      1を出力',
           '    endif',
-          '    (B)',
+          '    [   b   ]',
           '  endfor'
         ],
         en: []
       },
       answerOptions: {
         ja: [
-          { label: 'ア', value: '00000000 / mask ← mask << 1' },
-          { label: 'イ', value: '00000000 / mask ← mask >> 1' },
-          { label: 'ウ', value: '00000001 / mask ← mask << 1' },
-          { label: 'エ', value: '00000001 / mask ← mask >> 1' }
+          { label: 'ア', value: 'a：00000000 , b：mask ← mask << 1' },
+          { label: 'イ', value: 'a：00000000 , b：mask ← mask >> 1' },
+          { label: 'ウ', value: 'a：00000001 , b：mask ← mask << 1' },
+          { label: 'エ', value: 'a：00000001 , b：mask ← mask >> 1' }
         ],
         en: []
       },
-      correctAnswer: '00000000 / mask ← mask >> 1',
+      correctAnswer: 'a：00000000 , b：mask ← mask >> 1',
       explanationText: { 
         ja: "最上位ビットから順に判定して出力するロジックです。\n初期値 `mask = 128` (10000000) です。\n(A) `result ⋀ mask` が 0 であれば、そのビットは 0 です。したがって `00000000` と比較します。\n(B) 次のビットを検査するために、マスクを右に1ビットシフトします。 `mask ← mask >> 1`。", 
         en: "" 
@@ -3181,13 +3331,19 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       // プリセットを追加
       traceOptions: {
+        logicVariants: [
+          { id: 'ア', label: 'ア: a:0, b: << 1' },
+          { id: 'イ', label: 'イ: a:0, b: >> 1' },
+          { id: 'ウ', label: 'ウ: a:1, b: << 1' },
+          { id: 'エ', label: 'エ: a:1, b: >> 1' },
+        ],
         presets_array: [
-          // 10(00001010) AND 12(00001100) = 8(00001000)
-          { label: 'p=10, q=12', value: { p: 10, q: 12 } },
-          // 255(11111111) AND 15(00001111) = 15(00001111)
-          { label: 'p=255, q=15', value: { p: 255, q: 15 } },
-          // 170(10101010) AND 85(01010101) = 0(00000000)
-          { label: 'p=170, q=85', value: { p: 170, q: 85 } }
+          // 既存: 10(00001010) AND 12(00001100) = 8(00001000)
+          { label: 'p=10(00001010), q=12(00001100)', value: { p: 10, q: 12 } },
+          // 既存: 255(11111111) AND 15(00001111) = 15(00001111)
+          { label: 'p=255(11111111), q=(00001111)', value: { p: 255, q: 15 } },
+          // 既存: 170(10101010) AND 85(01010101) = 0(00000000)
+          { label: 'p=170(10101010), q=85(01010101)', value: { p: 170, q: 85 } }
         ]
       },
       traceLogic: [],
@@ -3201,7 +3357,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       logicType: 'PSEUDO_CODE',
       title: { ja: "基本情報科目B基礎 挿入ソート", en: "Basic Subject B Foundation Q15" },
       description: { 
-        ja: "手続insertStepは、昇順に並んでいるdata[1]～data[index-1]の中に、data[index]を正しい位置に挿入する処理を行う。", 
+        ja: "手続insertStepは、昇順に並んでいるdata[1]～data[index-1]の中に、data[index]を正しい位置に挿入する処理を行う。[  ?  ]に入れる正しい答えを、回答群の中から選びなさい。", 
         en: "" 
       },
       programLines: {
@@ -3210,7 +3366,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
           '  整数型: k, val',
           '  val ← data[index]',
           '  k ← index - 1',
-          '  while (data[k] □ val)',
+          '  while (data[k] [  ?  ] val)',
           '    data[k + 1] ← data[k]',
           '    k ← k - 1',
           '  endwhile',
@@ -3241,6 +3397,12 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       // プリセットを追加
       traceOptions: {
+        logicVariants: [
+          { id: 'ア', label: 'ア: ＝' },
+          { id: 'イ', label: 'イ: ≠' },
+          { id: 'ウ', label: 'ウ: ＜' },
+          { id: 'エ', label: 'エ: ＞' }, // 正解
+        ],
         presets_array: [
           // [10, 30, 40, 20, 50] の 4番目(20) を適切な位置(2番目)に挿入する
           { 

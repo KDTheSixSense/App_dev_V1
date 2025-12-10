@@ -363,11 +363,17 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
   // リセット時の処理（修正）
   const handleResetTrace = () => {
+    const cleanVariables = JSON.parse(JSON.stringify(problem.initialVariables));
+
     setVariables({
       ...problem.initialVariables,
-      problemId: problem.id
+      problemId: problem.id,
+      initialized: false
     });
-    setCurrentTraceLine(0);
+
+    const initialLine = problem.id === '28' ? 4 : 0;
+
+    setCurrentTraceLine(initialLine);
     setTraceHistory([]); // 履歴もクリア
     setIsPresetSelected(false);
     setSelectedLogicVariant(null);
@@ -390,8 +396,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   };
 
   const handleSetData = (dataToSet: Record<string, any>, label: string = "") => {
+    const cleanVariables = JSON.parse(JSON.stringify(problem.initialVariables));
+
     setVariables((prev) => ({
-      ...problem.initialVariables, // まず初期状態に戻す
+      ...cleanVariables, // まず初期状態に戻す
       ...dataToSet,                // 選択されたデータを上書き
 
       // ★重要: 現在選択中のロジック(variant)を維持してセットする
