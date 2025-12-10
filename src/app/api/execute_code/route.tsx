@@ -4,7 +4,30 @@ import { executeCodeSchema } from '@/lib/validations';
 import { logAudit, AuditAction } from '@/lib/audit';
 import { getAppSession } from '@/lib/auth';
 import { executeCode } from '@/lib/sandbox';
+// Duplicate from lib/waf.ts due to build system export resolution issues
+const SQL_INJECTION_REGEX = new RegExp(
+  [
+    /(--)/.source,                              // Standard SQL comment
+    /(\/\*)/.source,                            // Inline comment start
+    /(#\s)/.source,                             // MySQL comment
+    /(\bUNION\s+SELECT\b)/.source,              // Union Select
+    /(\b(AND|OR)\s+[\w']+\s*[=<>!])/.source,    // Boolean Blind (e.g., " AND 1=1")
+    /(\b(AND|OR)\s+\d+\s*=\s*\d+)/.source,      // Boolean Blind Numeric (e.g., " AND 1=1")
+    /(pg_sleep)/.source,                        // PostgreSQL Time-based
+    /(WAITFOR\s+DELAY)/.source,                 // SQL Server Time-based
+    /(SLEEP\()/.source,                         // MySQL Time-based
+    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)\b.*\bFROM\b)/.source, // Broad SQL keywords
+    /(\b(EXEC|EXECUTE)\s*\(+)/.source,          // Execution of raw commands
+    /(;\s*)/.source,                            // Statement separator (cautious with this one)
+    /('\s*\))/.source,                          // Common closing parenthesis for string injections
+  ].join('|'),
+  'i' // Case insensitive
+);
 
+function containsSqlInjection(input: string): boolean {
+  if (!input || typeof input !== 'string') return false;
+  return SQL_INJECTION_REGEX.test(input);
+}
 
 // --- Rate Limiting Setup ---
 const rateLimit = new LRUCache<string, number>({
@@ -59,6 +82,22 @@ export async function POST(request: Request) {
     }
 
     const { language, source_code, input } = validationResult.data;
+
+    // Security Check: WAF for Input (SQL Injection)
+    if (input && containsSqlInjection(input)) {
+      await logAudit(
+        session.user.id,
+        AuditAction.EXECUTE_CODE,
+        {
+          message: 'Blocked SQL Injection in input',
+          input_snippet: input.substring(0, 50)
+        }
+      );
+      return NextResponse.json({
+        error: 'Security Alert: Malicious input detected.',
+        code: 'WAF_SQLI_BLOCK'
+      }, { status: 400 });
+    }
 
     // Security Check: Forbidden Keywords
     if (containsForbiddenKeywords(source_code, language)) {
@@ -117,6 +156,6 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Backend execution error:', error);
     console.error(`Internal server error: ${error instanceof Error ? error.message : String(error)}`);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }

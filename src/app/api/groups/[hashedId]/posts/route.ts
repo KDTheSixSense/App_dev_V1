@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { groupParamsSchema, paginationSchema } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
@@ -17,14 +18,26 @@ export async function GET(req: NextRequest) {
 
   try {
     const urlParts = req.url.split('/');
-    // URLの構造によってはインデックスが異なる場合がありますが、
-    // 通常は .../groups/[hashedId]/posts なので後ろから2番目です
-    const hashedId = urlParts[urlParts.length - 2];
+    const rawHashedId = urlParts[urlParts.length - 2];
+
+    // Validate hashedId
+    const groupValidation = groupParamsSchema.safeParse({ hashedId: rawHashedId });
+    if (!groupValidation.success) {
+      return NextResponse.json({ success: false, message: '無効なグループID形式です' }, { status: 400 });
+    }
+    const hashedId = groupValidation.data.hashedId;
 
     const { searchParams } = req.nextUrl;
-    const page = parseInt(searchParams.get('page') || '1', 10);
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
     const rawLimit = parseInt(searchParams.get('limit') || '20', 10);
-    const limit = Math.min(rawLimit, 50); // Hard cap at 50 to prevent DoS
+
+    // Validate Pagination
+    const pageValidation = paginationSchema.safeParse({ page: rawPage, limit: rawLimit });
+    if (!pageValidation.success) {
+      return NextResponse.json({ success: false, message: '無効なページネーションパラメータです' }, { status: 400 });
+    }
+    const { page, limit } = pageValidation.data;
+
     const skip = (page - 1) * limit;
 
     const group = await prisma.groups.findUnique({
@@ -93,7 +106,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const urlParts = req.url.split('/');
-    const hashedId = urlParts[urlParts.length - 2];
+    const rawHashedId = urlParts[urlParts.length - 2];
+
+    const groupValidation = groupParamsSchema.safeParse({ hashedId: rawHashedId });
+    if (!groupValidation.success) {
+      return NextResponse.json({ success: false, message: '無効なグループID形式です' }, { status: 400 });
+    }
+    const hashedId = groupValidation.data.hashedId;
     const body = await req.json();
     const { content } = body;
 

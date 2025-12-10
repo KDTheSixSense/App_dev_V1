@@ -34,3 +34,13 @@ export const executeCodeSchema = z.object({
     ]),
     input: z.string().optional(),
 });
+
+export const paginationSchema = z.object({
+    page: z.number().int().min(1).optional().default(1),
+    limit: z.number().int().min(1).max(100).optional().default(20),
+});
+
+// route params validation
+export const groupParamsSchema = z.object({
+    hashedId: z.string().min(1, 'Group ID is required').max(50).regex(/^[a-zA-Z0-9_-]+$/, 'Invalid Group ID format'),
+});

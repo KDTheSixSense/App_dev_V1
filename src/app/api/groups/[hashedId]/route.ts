@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { groupParamsSchema } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
@@ -24,13 +25,11 @@ export async function GET(
   }
 
   try {
-    const { hashedId } = await params; // await params explicitly
+    const { hashedId } = await params;
 
-    if (!hashedId) {
-      return NextResponse.json(
-        { message: 'IDが指定されていません' },
-        { status: 400 }
-      );
+    const validation = groupParamsSchema.safeParse({ hashedId });
+    if (!validation.success) {
+      return NextResponse.json({ message: '無効なID形式です' }, { status: 400 });
     }
 
     const group = await prisma.groups.findUnique({

@@ -94,9 +94,12 @@ function applyDeviceIdCookie(res: NextResponse, deviceId: string) {
 // --- Middleware ---
 
 export async function middleware(req: NextRequest) {
+    // Debug: Ensure middleware is running
+    // console.log(`[Middleware] Processing ${req.method} ${req.nextUrl.pathname}`);
+
     // 0. Security: WAF (SQL Injection)
     // Run this FIRST to block malicious requests before any processing
-    const wafResponse = detectSqlInjection(req);
+    const wafResponse = await detectSqlInjection(req);
     if (wafResponse) {
         return wafResponse;
     }
@@ -132,6 +135,11 @@ export async function middleware(req: NextRequest) {
     }
 
     if (state.blockedUntil > now) {
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[Middleware] Rate limit exceeded but skipped in dev mode for ${limitKey}`);
+            return NextResponse.next();
+        }
+
         const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
         const res = new NextResponse(
             JSON.stringify({ error: `沢山のアクセスを検知しました。 あなたのアカウントをブロックしました。解除まで約${remainingSeconds}秒。` }),
@@ -150,16 +158,20 @@ export async function middleware(req: NextRequest) {
     }
 
     if (state.count > LIMIT) {
-        state.violationCount++;
-        state.blockedUntil = now + getBlockDuration(state.violationCount);
-        console.warn(`[Middleware] Key ${limitKey} blocked for ${state.blockedUntil - now}ms`);
-        const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
-        const res = new NextResponse(
-            JSON.stringify({ error: `沢山のアクセスを検知しました。 あなたのアカウントをブロックしました。解除まで約${remainingSeconds}秒。` }),
-            { status: 429, headers: { 'Content-Type': 'application/json' } }
-        );
-        if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
-        return res;
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[Middleware] Rate limit count exceeded but skipped in dev mode for ${limitKey}`);
+        } else {
+            state.violationCount++;
+            state.blockedUntil = now + getBlockDuration(state.violationCount);
+            console.warn(`[Middleware] Key ${limitKey} blocked for ${state.blockedUntil - now}ms`);
+            const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
+            const res = new NextResponse(
+                JSON.stringify({ error: `沢山のアクセスを検知しました。 あなたのアカウントをブロックしました。解除まで約${remainingSeconds}秒。` }),
+                { status: 429, headers: { 'Content-Type': 'application/json' } }
+            );
+            if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
+            return res;
+        }
     }
 
     if (shouldSetCookie) {
@@ -245,6 +257,7 @@ export async function middleware(req: NextRequest) {
     // - "' OR" or '" OR'
     // - "UNION SELECT"
 
+    response.headers.set('X-Debug-WAF', 'Active');
 
     return response;
 }
