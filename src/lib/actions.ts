@@ -13,6 +13,7 @@ import { nanoid } from 'nanoid';
 import { sessionOptions, SessionData as ImportedSessionData } from '@/lib/session';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import { TitleType } from '@prisma/client';
+import { logAudit, AuditAction } from '@/lib/audit';
 import { getMissionDate } from './utils';
 import { getNowJST, getAppToday, isSameAppDay, getDaysDiff } from './dateUtils';
 
@@ -36,11 +37,11 @@ const MAX_HUNGER = 200; //満腹度の最大値を一括管理
  */
 import { z } from 'zod';
 
-const registerSchema = z.object({
+import { registerSchema as baseRegisterSchema } from '@/lib/validations';
+
+const registerSchema = baseRegisterSchema.extend({
   username: z.string().min(1, 'ユーザー名は必須です'),
-  email: z.string().email('有効なメールアドレスを入力してください'),
-  password: z.string().min(8, 'パスワードは8文字以上である必要があります'),
-  birth: z.string().optional(),
+  // email, password, birth are inherited from baseRegisterSchema with strict checks
   isAgreedToTerms: z.boolean().refine(val => val === true, '利用規約への同意が必要です'),
   isAgreedToPrivacyPolicy: z.boolean().refine(val => val === true, 'プライバシーポリシーへの同意が必要です'),
 });
@@ -1036,6 +1037,13 @@ export async function createGroupAction(data: { groupName: string, body: string 
       admin_flg: true, // 作成者は自動的に管理者
     },
   });
+
+  try {
+    await logAudit(userId, AuditAction.CREATE_GROUP, { groupId: newGroup.id, groupName: newGroup.groupname });
+  } catch (e) {
+    // ignore
+  }
+
   revalidatePath('/groups');
   return { success: true, groupName: newGroup.groupname, inviteCode: newGroup.invite_code };
 }
@@ -1078,6 +1086,12 @@ export async function joinGroupAction(inviteCode: string) {
     },
   });
 
+  try {
+    await logAudit(userId, AuditAction.JOIN_GROUP, { groupId: group.id, groupName: group.groupname });
+  } catch (e) {
+    // ignore
+  }
+
   revalidatePath('/groups');
   return { success: true, groupName: group.groupname };
 }
@@ -1085,9 +1099,6 @@ export async function joinGroupAction(inviteCode: string) {
 export async function getGroupsAction() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id || null;
-
-  // --- ▼▼▼ デバッグログ1: セッションから取得したユーザーIDを確認 ---
-  console.log('[DEBUG] getGroupsAction: userId from session is:', userId);
 
   if (!userId) {
     return { error: 'ログインしていません。' };
@@ -1124,7 +1135,6 @@ export async function getGroupsAction() {
         },
       },
     });
-    console.log('[DEBUG] getGroupsAction: Raw groups from DB:', JSON.stringify(groups, null, 2));
     return { success: true, data: groups, currentUserId: userId };
   } catch (error) {
     console.error("Failed to fetch groups:", error);

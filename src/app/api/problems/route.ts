@@ -5,78 +5,6 @@ import { getAppSession } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
-// グローバルオブジェクトにPrismaClientの型を拡張
-declare global {
-  // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
-}
-
-/**
- * 問題一覧を取得するAPI (GET)
- */
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const category = searchParams.get('category')
-    const isPublic = searchParams.get('isPublic')
-    const isDraft = searchParams.get('isDraft')
-
-    const skip = (page - 1) * limit
-
-    const where: any = {}
-    if (category) where.category = category
-    if (isPublic !== null) where.isPublic = isPublic === 'true'
-    if (isDraft !== null) where.isDraft = isDraft === 'true'
-
-    const [problems, total] = await Promise.all([
-      prisma.programmingProblem.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          sampleCases: {
-            orderBy: { order: 'asc' }
-          },
-          testCases: {
-            orderBy: { order: 'asc' }
-          },
-          files: true,
-          creator: {
-            select: {
-              id: true,
-              username: true,
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.programmingProblem.count({ where })
-    ])
-
-    return NextResponse.json({
-      problems,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    })
-  } catch (error) {
-    console.error('Error fetching problems:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch problems' },
-      { status: 500 }
-    )
-  }
-}
-
-
-/**
- * 新しい問題を作成するAPI (POST)
- */
 export async function POST(request: NextRequest) {
   try {
     // --- 手順1: セッションを取得し、認証を行う ---
@@ -112,7 +40,7 @@ export async function POST(request: NextRequest) {
       timeLimit: timeLimitNum,
       category: body.category,
       topic: body.topic,
-      tags: body.tags,
+      tags: JSON.stringify(body.tags || []),
       description: body.description,
       codeTemplate: body.codeTemplate,
       isPublic: Boolean(body.isPublic),
@@ -167,5 +95,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `データベースエラー: ${error.code}` }, { status: 400 });
     }
     return NextResponse.json({ error: 'サーバー内部で問題の作成に失敗しました' }, { status: 500 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get('limit');
+    const isDraftParam = searchParams.get('isDraft');
+
+    let whereClause: Prisma.ProgrammingProblemWhereInput = {};
+
+    if (isDraftParam !== null) {
+      whereClause.isDraft = isDraftParam === 'true';
+    }
+
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+
+    const problems = await prisma.programmingProblem.findMany({
+      where: whereClause,
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        creator: {
+          select: {
+            username: true,
+          }
+        }
+      }
+    });
+
+    return NextResponse.json({ success: true, problems });
+  } catch (error) {
+    return NextResponse.json({ error: '問題の取得に失敗しました' }, { status: 500 });
   }
 }

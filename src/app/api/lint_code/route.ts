@@ -549,7 +549,7 @@ async function lintCode(code: string, language: string): Promise<Annotation[]> {
         case 'python':
         case 'python3':
             return await lintPython(code);
- 
+
         case 'javascript':
         case 'typescript':
             return await lintTypeScriptOrJavaScript(code, language);
@@ -575,8 +575,15 @@ async function lintCode(code: string, language: string): Promise<Annotation[]> {
 }
 
 
+import { getAppSession } from '@/lib/auth';
+
 export async function POST(req: NextRequest) {
     try {
+        const session = await getAppSession();
+        if (!session.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         // Rate Limiting Check
         const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
         if (!checkRateLimit(ip)) {

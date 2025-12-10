@@ -2,10 +2,7 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { exec, spawn } from 'child_process';
-import { promisify } from 'util';
 
-const execPromise = promisify(exec);
 import { executeCodeSchema } from '../validations';
 
 /**
@@ -713,6 +710,7 @@ export async function runPythonTraceAction(code: string) {
   }
 
   // 2. Keyword Blocking (Client-side pre-check)
+  // Note: This is a basic filter. The real security is provided by the Sandbox container.
   const forbiddenKeywords = [
     'import os', 'from os', 'import sys', 'from sys', 'import subprocess', 'from subprocess',
     'import shutil', 'from shutil', 'import pathlib', 'from pathlib',

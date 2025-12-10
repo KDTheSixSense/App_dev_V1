@@ -29,11 +29,26 @@ export default async function HomePage({
   const userId = session.user?.id ? session.user.id : null;
   const assignmentCount = await getUnsubmittedAssignmentCount();
 
-  // ログインユーザーの全情報を取得
+  // ログインユーザーの全情報を取得 (セキュリティ対策: password/hashを除外)
   const user = userId ? await prisma.user.findUnique({
     where: { id: userId },
-    include: { selectedTitle: true }, // selectedTitleも含めて取得  
-  }) : null;
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      level: true,
+      xp: true,
+      icon: true,
+      class: true,
+      year: true,
+      birth: true,
+      lastlogin: true,
+      continuouslogin: true,
+      totallogin: true,
+      selectedTitle: true,
+      status_Kohaku: true, // Petコンポーネントで必要
+    }
+  }) as any : null;
 
   return (
     <div className='bg-white select-none'>

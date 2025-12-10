@@ -1,14 +1,60 @@
 import { NextResponse } from 'next/server';
-import { spawn, exec } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
-import { promisify } from 'util';
 import { LRUCache } from 'lru-cache';
 import { executeCodeSchema } from '@/lib/validations';
 import { logAudit, AuditAction } from '@/lib/audit';
+import { getAppSession } from '@/lib/auth';
+import { executeCode } from '@/lib/sandbox';
+// Duplicate from lib/waf.ts due to build system export resolution issues
+// Comprehensive SQL Injection Patterns
+const SQL_INJECTION_REGEX = new RegExp(
+  [
+    /(--)/.source,                              // Standard SQL comment
+    /(\/\*)/.source,                            // Inline comment start
+    /(#\s)/.source,                             // MySQL comment
+    /(\bUNION\s+SELECT\b)/.source,              // Union Select
+    /(\b(AND|OR)\s+[\w']+\s*[=<>!])/.source,    // Boolean Blind (e.g., " AND 1=1")
+    /(\b(AND|OR)\s+\d+\s*=\s*\d+)/.source,      // Boolean Blind Numeric (e.g., " AND 1=1")
+    /(pg_sleep)/.source,                        // PostgreSQL Time-based
+    /(WAITFOR\s+DELAY)/.source,                 // SQL Server Time-based
+    /(SLEEP\()/.source,                         // MySQL Time-based
+    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)\b.*\bFROM\b)/.source, // Broad SQL keywords
+    /(\b(EXEC|EXECUTE)\s*\(+)/.source,          // Execution of raw commands
+    /(;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|EXEC|SHUTDOWN|DECLARE))\b/.source, // Stacked queries (strict)
+    /('\s*\))/.source,                          // Common closing parenthesis for string injections
+  ].join('|'),
+  'i' // Case insensitive
+);
 
-const execPromise = promisify(exec);
+// Path Traversal Patterns
+const TRAVERSAL_REGEX = new RegExp(
+  [
+    /(\.\.\/)/.source,           // ../
+    /(\.\.%2f)/.source,          // ..%2f (URL encoded)
+    /(\.\.\\)/.source,           // ..\ (Windows)
+    /(\.\.%5c)/.source,          // ..%5c (URL encoded Windows)
+    /(\/etc\/passwd)/.source,    // Common target
+    /(\/windows\/system\.ini)/.source, // Common Windows target
+  ].join('|'),
+  'i'
+);
+
+// XSS Patterns (Basic)
+const XSS_REGEX = new RegExp(
+  [
+    /(<script)/.source,
+    /(javascript:)/.source,
+    /(onerror=)/.source,
+    /(onload=)/.source,
+    /(onclick=)/.source,
+    /(alert\()/.source,
+  ].join('|'),
+  'i'
+);
+
+function containsSecurityThreats(input: string): boolean {
+  if (!input || typeof input !== 'string') return false;
+  return SQL_INJECTION_REGEX.test(input) || TRAVERSAL_REGEX.test(input) || XSS_REGEX.test(input);
+}
 
 // --- Rate Limiting Setup ---
 const rateLimit = new LRUCache<string, number>({
@@ -26,16 +72,7 @@ function checkRateLimit(ip: string): boolean {
 }
 
 // --- Output Sanitization ---
-function sanitizeOutput(output: string): string {
-  const tmpDir = os.tmpdir();
-  let sanitized = output.split(tmpDir).join('/sandbox');
-  // ユーザー名なども隠す
-  const username = os.userInfo().username;
-  if (username) {
-    sanitized = sanitized.split(username).join('user');
-  }
-  return sanitized;
-}
+// --- Output Sanitization (Removed unused local function) ---
 
 // --- Basic Keyword Blocking (Defense in Depth) ---
 // Note: This is NOT a complete security solution.
@@ -53,6 +90,11 @@ function containsForbiddenKeywords(code: string, language: string): boolean {
 
 export async function POST(request: Request) {
   try {
+    const session = await getAppSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Rate Limiting Check
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
     if (!checkRateLimit(ip)) {
@@ -67,6 +109,22 @@ export async function POST(request: Request) {
     }
 
     const { language, source_code, input } = validationResult.data;
+
+    // Security Check: WAF for Input (SQL Injection, XSS, Path Traversal)
+    if (input && containsSecurityThreats(input)) {
+      await logAudit(
+        session.user.id,
+        AuditAction.EXECUTE_CODE,
+        {
+          message: 'Blocked Security Threat in input',
+          input_snippet: input.substring(0, 50)
+        }
+      );
+      return NextResponse.json({
+        error: 'Security Alert: Malicious input detected.',
+        code: 'WAF_SQLI_BLOCK'
+      }, { status: 400 });
+    }
 
     // Security Check: Forbidden Keywords
     if (containsForbiddenKeywords(source_code, language)) {
@@ -90,29 +148,21 @@ export async function POST(request: Request) {
     // Sandbox Execution
     // console.log('Executing code via Sandbox Container...');
 
-    // Sandbox service URL (docker-compose service name 'sandbox')
-    // Note: In Docker network, hostname is service name.
-    const sandboxUrl = 'http://sandbox:4000/execute';
 
-    try {
-      const response = await fetch(sandboxUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ language, source_code, input }),
-      });
 
-      if (!response.ok) {
-        throw new Error(`Sandbox service error: ${response.statusText}`);
-      }
+    // Use shared execution logic
+    // Use shared execution logic
+    result = await executeCode(language, source_code, input || '') as any;
 
-      result = await response.json();
-    } catch (sandboxError: any) {
-      console.error('Sandbox connection error:', sandboxError);
-      // Fallback or error reporting
-      throw new Error(`Failed to connect to sandbox: ${sandboxError.message}. Make sure the sandbox container is running.`);
+    if (result.error && result.error.startsWith('Sandbox Error')) {
+      // Network/System error
+      throw new Error(result.error);
     }
+    // Note: If result.error is a compilation/runtime error string, it might be in result.error or stderr.
+    // The original code expected raw JSON. executeCode returns raw JSON (mostly).
+    // But executeCode MIGHT return { error: ... } if fetch failed.
+    // If fetch succeeded, it returns the JSON.
+
 
     // Format Response
     const formattedResult = {
@@ -132,6 +182,7 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('Backend execution error:', error);
-    return NextResponse.json({ error: `Internal server error: ${error.message}` }, { status: 500 });
+    console.error(`Internal server error: ${error instanceof Error ? error.message : String(error)}`);
+    return NextResponse.json({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }

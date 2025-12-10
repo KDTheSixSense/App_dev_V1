@@ -1,6 +1,7 @@
 // /app/api/groups/[hashedId]/assignments/route.ts
 
 import { NextResponse, type NextRequest } from 'next/server';
+import { groupParamsSchema, paginationSchema } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client'; // Prismaの型をインポート
 import { getIronSession } from 'iron-session';
@@ -20,17 +21,28 @@ export async function GET(req: NextRequest) {
   }
 
   const urlParts = req.url.split('/');
-  const hashedId = urlParts[urlParts.length - 2];
+  const rawHashedId = urlParts[urlParts.length - 2];
 
-  if (!hashedId) {
-    return NextResponse.json({ success: false, message: 'Invalid group ID format.' }, { status: 400 });
+  // Validate hashedId
+  const groupValidation = groupParamsSchema.safeParse({ hashedId: rawHashedId });
+  if (!groupValidation.success) {
+    return NextResponse.json({ success: false, message: '無効なグループID形式です' }, { status: 400 });
   }
+  const hashedId = groupValidation.data.hashedId;
 
   try {
     const { searchParams } = req.nextUrl;
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '20', 10);
     const withSubmissions = searchParams.get('withSubmissions') === 'true';
+
+    // Validate Pagination
+    const pageValidation = paginationSchema.safeParse({ page: rawPage, limit: rawLimit });
+    if (!pageValidation.success) {
+      return NextResponse.json({ success: false, message: '無効なページネーションパラメータです' }, { status: 400 });
+    }
+    const { page, limit } = pageValidation.data;
+
     const skip = (page - 1) * limit;
 
     const group = await prisma.groups.findUnique({
@@ -40,6 +52,15 @@ export async function GET(req: NextRequest) {
 
     if (!group) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
+    }
+
+    // Verify membership for GET
+    const membership = await prisma.groups_User.findFirst({
+      where: { group_id: group.id, user_id: userId as any },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ success: false, message: 'グループのメンバーではありません。' }, { status: 403 });
     }
 
     let assignments;
@@ -129,17 +150,20 @@ export async function POST(req: NextRequest) {
 
   try {
     const urlParts = req.url.split('/');
-    const hashedId = urlParts[urlParts.length - 2]; // Assuming hashedId is the second to last part of the URL
+    const rawHashedId = urlParts[urlParts.length - 2];
+
+    // Validate hashedId
+    const groupValidation = groupParamsSchema.safeParse({ hashedId: rawHashedId });
+    if (!groupValidation.success) {
+      return NextResponse.json({ success: false, message: '無効なグループID形式です' }, { status: 400 });
+    }
+    const hashedId = groupValidation.data.hashedId;
     const body = await req.json();
     const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
 
     if (!title || !dueDate) {
       return NextResponse.json({ success: false, message: 'タイトルと期日は必須です。' }, { status: 400 });
     }
-    // 課題がなくても投稿できるようにする場合は、以下のチェックをコメントアウト
-    // if (!programmingProblemId && !selectProblemId) {
-    //   return NextResponse.json({ success: false, message: '課題となる問題が指定されていません。' }, { status: 400 });
-    // }
 
     if (typeof hashedId !== 'string') {
       return NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });

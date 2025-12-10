@@ -37,9 +37,9 @@ export async function GET(req: NextRequest) {
       id: problem.id,
       title: problem.title,
       description: problem.description,
-      explanation: problem.explanation,
+      // explanation: problem.explanation, // セキュリティ対策: クライアントには答えや解説を返さない
       answerOptions: problem.answerOptions,
-      correctAnswer: problem.correctAnswer,
+      // correctAnswer: problem.correctAnswer, // セキュリティ対策: 正解データは隠す
       difficulty: problem.difficulty?.id || problem.difficultyId,
       difficultyId: problem.difficulty?.id || problem.difficultyId,
       subjectId: problem.subjectId,

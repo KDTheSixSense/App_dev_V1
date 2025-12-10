@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { any } from 'zod';
 
 // --- 型定義 ---
 interface Case {
@@ -114,69 +115,105 @@ export default function CreateProgrammingQuestionPage() {
 
     const idFromQuery = searchParams.get('id');
     const typeFromQuery = searchParams.get('type');
-    // typeに応じて初期カテゴリを設定
-    if (typeFromQuery === 'select') {
-      setSelectedCategory('itpassport');
-      setFormData(prev => ({ ...prev, problemType: '選択問題', category: '4択問題' }));
+
+    if (idFromQuery) {
+      setProblemId(Number(idFromQuery));
+      setIsEditMode(true);
+
       const fetchProblemData = async () => {
-        const isSelectProblem = selectedCategory === 'itpassport';
-        const apiUrl = isSelectProblem ? `/api/select-problems/${problemId}` : `/api/problems/${problemId}`;
+        // 編集モードの場合、カテゴリはサーバ等のデータから決定されるが、
+        // ここでは一旦現在のカテゴリ状態やURLヒントを使うか、あるいは
+        // APIから取得後にカテゴリをセットする必要がある。
+        // プログラミング問題と選択問題でエンドポイントが違うため、
+        // どちらか判断する必要があるが、現状は select-problem などのパスで区別してるわけではない。
+        // パラメータ `type` があればそれを信じる、なければ両方試すか...
+        // システムの設計上、IDだけでは区別がつかない場合、`/api/problems/{id}` で404なら `/api/selects_problems/{id}` を試すか、
+        // あるいは `type` パラメータを必須にするか。
+        // 既存のUserフローでは `type` パラメータが編集リンクについているはず。
+
+        // ひとまず typeFromQuery があればそれ優先、なければ Programming と仮定して試行（または逆）
+        // しかし、Select問題の編集時にも `type=select` がついてる前提で動くのが安全。
+
+        let isSelectApi = typeFromQuery === 'select' || selectedCategory === 'itpassport';
+        let apiUrl = isSelectApi ? `/api/selects_problems/${idFromQuery}` : `/api/problems/${idFromQuery}`;
 
         try {
-          const response = await fetch(apiUrl);
-          if (!response.ok) throw new Error(`問題データの読み込みに失敗しました (Status: ${response.status})`);
+          let response = await fetch(apiUrl);
+
+          // もし失敗した場合、もう一方のAPIも試してみる（ID重複がない前提）
+          if (!response.ok && response.status === 404) {
+            isSelectApi = !isSelectApi;
+            apiUrl = isSelectApi ? `/api/selects_problems/${idFromQuery}` : `/api/problems/${idFromQuery}`;
+            response = await fetch(apiUrl);
+          }
+
+          if (!response.ok) throw new Error(`問題データの読み込みに失敗しました`);
           const data = await response.json();
 
-          if (isSelectProblem) {
+          if (isSelectApi || data.category === '4択問題' || data.problemType === '選択問題') {
+            // Select Problem Data Loaded
+            setSelectedCategory('itpassport');
             setFormData({
-              ...formData,
               title: data.title || '',
               description: data.description || '',
               difficulty: data.difficultyId || 1,
               problemType: '選択問題',
               category: '4択問題',
+              timeLimit: 0,
+              topic: '',
+              tags: [],
+              codeTemplate: '',
+              isPublic: false,
+              allowTestCaseView: false
             });
             setExplanation(data.explanation || '');
             if (Array.isArray(data.answerOptions)) {
-              const optionsWithId = (data.answerOptions as string[]).map((text, index) => ({
-                id: String(index + 1),
-                text: text
-              }));
+              // 文字列配列かオブジェクト配列かを確認
+              const opts = data.answerOptions;
+              const optionsWithId = opts.map((item: any, index: number) => {
+                if (typeof item === 'string') return { id: String(index + 1), text: item };
+                return { id: item.id || String(index + 1), text: item.text || '' };
+              });
               setAnswerOptions(optionsWithId);
-              const correctIndex = (data.answerOptions as string[]).indexOf(data.correctAnswer || '');
-              if (correctIndex !== -1) {
-                setCorrectAnswer(String(correctIndex + 1));
+
+              // 正解のセット
+              const correctVal = data.correctAnswer;
+              // correctValがテキストかIDか
+              const correctOpt = optionsWithId.find((o: any) => o.text === correctVal || o.id === correctVal);
+              if (correctOpt) {
+                setCorrectAnswer(correctOpt.id);
               }
             }
           } else {
+            // Programming Problem Data Loaded
+            setSelectedCategory('programming');
             setFormData({
-              ...formData,
               title: data.title || '',
-              description: data.description || '',
-              difficulty: data.difficultyId || 1,
               problemType: data.problemType || 'コーディング問題',
-              topic: data.topic || '基本',
+              difficulty: data.difficultyId || data.difficulty || 4,
+              timeLimit: data.timeLimit || 10,
+              category: data.category || 'プログラミング基礎',
+              topic: data.topic || '標準入力',
               tags: Array.isArray(data.tags) ? data.tags : [],
+              description: data.description || '',
               codeTemplate: data.codeTemplate || '',
               isPublic: data.isPublic || false,
-              allowTestCaseView: data.allowTestCaseView || false,
-              timeLimit: data.timeLimit || 10,
-              category: data.category || 'プログラミング基礎'
+              allowTestCaseView: data.allowTestCaseView || false
             });
             if (Array.isArray(data.sampleCases)) {
               setSampleCases(data.sampleCases.map((c: any) => ({
                 id: c.id,
                 input: c.input,
-                expectedOutput: c.output,
-                description: c.explanation || ''
+                expectedOutput: c.output || c.expectedOutput,
+                description: c.explanation || c.description || ''
               })));
             }
             if (Array.isArray(data.testCases)) {
               setTestCases(data.testCases.map((c: any) => ({
                 id: c.id,
+                name: c.caseName || c.name || '',
                 input: c.input,
-                expectedOutput: c.output,
-                name: c.caseName || '',
+                expectedOutput: c.output || c.expectedOutput,
                 description: c.description || ''
               })));
             }
@@ -188,8 +225,19 @@ export default function CreateProgrammingQuestionPage() {
       };
 
       fetchProblemData();
+    } else {
+      // 新規作成モード
+      setIsEditMode(false);
+      setProblemId(null);
+      if (typeFromQuery === 'select') {
+        setSelectedCategory('itpassport');
+        setFormData(prev => ({ ...prev, problemType: '選択問題', category: '4択問題' }));
+      } else {
+        setSelectedCategory('programming');
+        setFormData(prev => ({ ...prev, problemType: 'コーディング問題', category: 'プログラミング基礎' }));
+      }
     }
-  }, [problemId, selectedCategory, hashedId]);
+  }, [searchParams, hashedId]);
 
   // --- 定数・ヘルパー関数 ---
 
@@ -203,7 +251,6 @@ export default function CreateProgrammingQuestionPage() {
     { id: 'description', label: '問題文' },
     { id: 'sample-cases', label: 'サンプルケース' },
     { id: 'test-cases', label: 'テストケース' },
-    { id: 'settings', label: '公開設定' }
   ];
 
   const selectProblemTabs = [
@@ -248,28 +295,8 @@ export default function CreateProgrammingQuestionPage() {
     ]);
   };
 
-  const removeSampleCase = (index: number | null) => {
-    // indexがnullの場合は削除しない、またはIDで削除するロジックが必要だが、
-    // ここでは簡易的に配列のインデックスではなくIDを使っていると仮定してフィルタリング
-    // ただし新規追加分はIDがnullなので、厳密にはindex管理の方が良いかもしれないが、
-    // 既存コードに合わせてIDベースで削除を試みる。IDがない場合は...
-    // 既存の実装に合わせてIDでフィルタリング
-    if (index !== null) {
-      setSampleCases(prev => prev.filter(c => c.id !== index));
-    } else {
-      // IDがない（新規追加分）を削除する場合のロジックが曖昧だが、
-      // 簡易的に末尾を削除するか、UI側でindexを渡すように変更する必要がある。
-      // ここではUI側でIDを渡しているので、IDがnullのものを削除するのは難しい。
-      // UI側のmapでindexを使っているので、removeSampleCaseにもindexを渡すように修正した方が良いが、
-      // 今回はとりあえずIDがnullでないものだけ削除可能とするか、
-      // もしくはUI側でindexを渡すように変更する。
-      // UI側: onClick={() => removeSampleCase(sampleCase.id)} となっている。
-      // 新規追加分はidがnullなので削除できないバグがあるかもしれない。
-      // 修正: UI側でindexを渡すように変更するのがベストだが、ここではロジックのみ修正。
-      // 暫定的に、IDがnullの要素が複数あると特定できないため、
-      // この関数は「IDがあるものはIDで、ないものは削除できない」という挙動になる可能性がある。
-      // 今回はそのままにする。
-    }
+  const removeSampleCase = (index: number) => {
+    setSampleCases(prev => prev.filter((_, i) => i !== index));
   };
 
   // UI側でindexを渡すように変更するためのラッパー（必要であれば）
@@ -282,10 +309,8 @@ export default function CreateProgrammingQuestionPage() {
     ]);
   };
 
-  const removeTestCase = (id: number | null) => {
-    if (id !== null) {
-      setTestCases(prev => prev.filter(c => c.id !== id));
-    }
+  const removeTestCase = (index: number) => {
+    setTestCases(prev => prev.filter((_, i) => i !== index));
   };
 
   const resetForm = () => {
@@ -323,39 +348,78 @@ export default function CreateProgrammingQuestionPage() {
 
     try {
       const isSelectProblem = selectedCategory === 'itpassport';
-      const endpoint = isSelectProblem ? '/api/select-problems' : '/api/problems';
+      let createdProblemId: number | null = null;
+      let createdProblemTitle: string = '';
 
-      const payload = isSelectProblem ? {
-        title: formData.title,
-        description: formData.description,
-        difficultyId: formData.difficulty,
-        category: formData.category,
-        answerOptions: answerOptions.map(o => o.text),
-        correctAnswer: answerOptions.find(o => o.id === correctAnswer)?.text || '',
-        explanation: explanation,
-        groupId: hashedId // グループIDを含める
-      } : {
-        ...formData,
-        sampleCases,
-        testCases,
-        groupId: hashedId // グループIDを含める
-      };
+      if (isSelectProblem) {
+        // 選択問題の作成 (/api/selects_problems)
+        const payload = {
+          title: formData.title,
+          description: formData.description,
+          difficultyId: formData.difficulty,
+          category: formData.category,
+          answerOptions: answerOptions.map(o => o.text),
+          correctAnswer: answerOptions.find(o => o.id === correctAnswer)?.text || '',
+          explanation: explanation,
+          subjectId: 4, // ひとまず固定(基本情報などを想定)
+        };
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+        const response = await fetch('/api/selects_problems', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '問題の投稿に失敗しました');
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || '選択問題の作成に失敗しました');
+        }
+        const problemData = await response.json();
+        // APIレスポンスの構造: { success: true, problem: { ... }, id: ..., title: ... } または { id: ..., ... }
+        createdProblemId = problemData.id || problemData.problem?.id;
+        createdProblemTitle = problemData.title || problemData.problem?.title;
+
+      } else {
+        // コーディング問題の作成 (/api/problems)
+        const payload = {
+          ...formData,
+          isDraft: false, // 公開設定 (重要)
+          tags: formData.tags,
+          sampleCases: sampleCases.filter(sc => sc.input || sc.expectedOutput),
+          testCases: testCases.filter(tc => tc.input || tc.expectedOutput),
+        };
+
+        const response = await fetch('/api/problems', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'コーディング問題の作成に失敗しました');
+        }
+        const problemData = await response.json();
+        createdProblemId = problemData.id;
+        createdProblemTitle = problemData.title;
       }
 
-      toast.success('問題を投稿しました！');
-      router.push(`/group/${hashedId}`); // グループトップへ戻る
+      if (!createdProblemId) {
+        throw new Error('問題IDの取得に失敗しました');
+      }
+
+      toast.success('問題を作成しました！課題作成画面へ移動します...');
+
+      // 3. 課題作成画面へリダイレクト (Problem Creation -> Assignment Creation Flow)
+      // 作成した問題の情報をパラメータとして渡す
+      const problemParam = encodeURIComponent(JSON.stringify({
+        id: createdProblemId,
+        title: createdProblemTitle,
+        type: isSelectProblem ? 'select' : 'programming'
+      }));
+
+      // グループ管理画面の課題タブへ遷移し、エディターを展開してプレビューを表示
+      router.push(`/group/${hashedId}/admin?tab=課題&expand=true&problem=${problemParam}`);
       router.refresh();
 
     } catch (error) {
@@ -557,7 +621,7 @@ export default function CreateProgrammingQuestionPage() {
               {categories.map((category) => (
                 <li key={category.id} className="sidebar-item">
                   <button
-                    className={`sidebar - link ${selectedCategory === category.id ? 'active' : ''} `}
+                    className={`sidebar-link ${selectedCategory === category.id ? 'active' : ''}`}
                     onClick={() => handleCategorySelect(category.id)}
                   >
                     <div className="sidebar-link-content">
@@ -850,7 +914,7 @@ export default function CreateProgrammingQuestionPage() {
                                   <button
                                     type="button"
                                     className="btn btn-secondary btn-small"
-                                    onClick={() => removeSampleCase(sampleCase.id)}
+                                    onClick={() => removeSampleCase(index)}
                                   >
                                     削除
                                   </button>
@@ -934,7 +998,7 @@ export default function CreateProgrammingQuestionPage() {
                                   <button
                                     type="button"
                                     className="btn btn-secondary btn-small"
-                                    onClick={() => removeTestCase(testCase.id)}
+                                    onClick={() => removeTestCase(index)}
                                   >
                                     削除
                                   </button>

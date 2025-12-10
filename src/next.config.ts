@@ -30,6 +30,49 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
+      // Force text/plain for uploaded code files to prevent execution (XSS)
+      {
+        source: '/uploads/:path*.js',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' }, // Allow viewing in browser as text
+        ],
+      },
+      {
+        source: '/uploads/:path*.ts',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
+      {
+        source: '/uploads/:path*.py',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
+      {
+        source: '/uploads/:path*.java',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
+      {
+        source: '/uploads/:path*.c',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
+      {
+        source: '/uploads/:path*.cpp',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
     ];
   },
   // @ts-ignore: Next.js 16 turbopack config

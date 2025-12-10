@@ -69,16 +69,24 @@ export async function runOperations(prisma: PrismaClient) {
       assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '[アルゴリズム] FizzBuzz問題', description: '添付の問題を解き、プログラミングの基本的なループと条件分岐の理解を深めましょう。', due_date: new Date('2025-11-20T23:59:59Z'), programmingProblemId: problemFizzBuzz.id });
     }
     if (problemPythonVar) {
-      assignmentsToCreate.push({ groupid: kditGroup.id, title: '[Python基礎] 変数宣言の基本', description: '添付の選択問題を解いて、Pythonにおける正しい変数宣言の方法を理解しましょう。', due_date: new Date('2025-10-31T23:59:59Z'), selectProblemId: problemPythonVar.id });
+      // ユーザーが以前アクセスしていたID 9に合わせて、この課題をID 9にする
+      assignmentsToCreate.push({ id: 9, groupid: kditGroup.id, title: '[Python基礎] 変数宣言の基本', description: '添付の選択問題を解いて、Pythonにおける正しい変数宣言の方法を理解しましょう。', due_date: new Date('2025-10-31T23:59:59Z'), selectProblemId: problemPythonVar.id });
     }
     if (problemAplusB) {
-      assignmentsToCreate.push({ groupid: kditGroup.id, title: '[ウォーミングアップ] 簡単な足し算', description: 'プログラミングに慣れるための最初のステップです。添付問題の指示に従い、2つの数値を足し合わせるプログラムを書いてみましょう。', due_date: new Date('2025-11-05T23:59:59Z'), programmingProblemId: problemAplusB.id });
+      assignmentsToCreate.push({ id: 4, groupid: kditGroup.id, title: '[ウォーミングアップ] 簡単な足し算', description: 'プログラミングに慣れるための最初のステップです。添付問題の指示に従い、2つの数値を足し合わせるプログラムを書いてみましょう。', due_date: new Date('2025-11-05T23:59:59Z'), programmingProblemId: problemAplusB.id });
     }
 
-    // 3. 課題を一括作成
-    await prisma.assignment.createMany({
-      data: assignmentsToCreate,
-    });
+    // 3. 課題を個別作成 (エラーハンドリング付き)
+    for (const assignmentData of assignmentsToCreate) {
+      try {
+        console.log(`Creating assignment with ID ${assignmentData.id || 'auto'}...`);
+        await prisma.assignment.create({
+          data: assignmentData,
+        });
+      } catch (e) {
+        console.error(`❌ Failed to create assignment "${assignmentData.title}":`, e);
+      }
+    }
     console.log(`✅ Created ${assignmentsToCreate.length} assignments.`);
 
     // 4. 作成した課題をメンバーに配布 (Submissions作成)
@@ -139,6 +147,32 @@ export async function runOperations(prisma: PrismaClient) {
         },
       });
       console.log(`✅ Created 2 dummy submissions for "${pythonAssignment.title}".`);
+
+      // --- コメントのシーディング (追加) ---
+      console.log('🌱 Seeding assignment comments...');
+      await prisma.assignmentComment.createMany({
+        data: [
+          {
+            assignmentId: pythonAssignment.id,
+            authorId: bob.id,
+            content: '変数の命名規則について質問があります。スネークケース以外は使ってはいけませんか？',
+            createdAt: new Date('2025-10-21T10:00:00Z'),
+          },
+          {
+            assignmentId: pythonAssignment.id,
+            authorId: charlie.id,
+            content: 'Bobさん、基本的にはスネークケースが推奨されていますが、強制ではありませんよ。PEP8を参照すると良いです。',
+            createdAt: new Date('2025-10-21T10:30:00Z'),
+          },
+          {
+            assignmentId: pythonAssignment.id,
+            authorId: bob.id,
+            content: 'なるほど、ありがとうございます！',
+            createdAt: new Date('2025-10-21T10:45:00Z'),
+          }
+        ]
+      });
+      console.log(`✅ Created 3 sample comments for "${pythonAssignment.title}".`);
     }
 
     // Dianaが足し算の課題を提出したことにする

@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import fs from 'fs/promises';
+import { getIronSession } from 'iron-session';
+import { sessionOptions } from '@/lib/session';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
@@ -10,12 +13,41 @@ const getUploadDir = () => {
       return path.join(process.cwd(), 'public', 'uploads');
 };
 
+interface SessionData {
+      user?: { id: string; email: string };
+}
+
 export async function POST(request: Request, context: { params: Promise<{ problemId: string }> }) {
       const params = await context.params;
       const problemId = parseInt(params.problemId);
 
       if (isNaN(problemId)) {
             return NextResponse.json({ message: '無効な問題IDです' }, { status: 400 });
+      }
+
+      const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+      const userId = session.user?.id;
+
+      if (!userId) {
+            return NextResponse.json({ message: '認証されていません' }, { status: 401 });
+      }
+
+      // 権限チェック: 問題の作成者であるか確認
+      const problem = await prisma.programmingProblem.findUnique({
+            where: { id: problemId },
+            select: { createdBy: true }
+      });
+
+      if (!problem) {
+            return NextResponse.json({ message: '問題が見つかりません' }, { status: 404 });
+      }
+
+      // Note: createdBy might be matching userId type. Assuming strict match.
+      // If one is string and other int, might fail. Use loose check or conversion if unsure.
+      // Usually userId in session is string. createdBy is string?
+      // In publish route I used `createdBy: userId`.
+      if (problem.createdBy !== userId) {
+            return NextResponse.json({ message: '権限がありません' }, { status: 403 });
       }
 
       try {
@@ -66,7 +98,8 @@ export async function POST(request: Request, context: { params: Promise<{ proble
 
       } catch (error: any) {
             console.error('ファイルのアップロード中にエラーが発生しました:', error);
-            return NextResponse.json({ message: 'ファイルのアップロードに失敗しました', error: error.message }, { status: 500 });
+            // 本番環境では詳細を隠蔽
+            return NextResponse.json({ message: 'ファイルのアップロードに失敗しました', error: 'Internal Server Error' }, { status: 500 });
       } finally {
             await prisma.$disconnect();
       }

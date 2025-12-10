@@ -33,6 +33,7 @@ declare module 'iron-session' {
       id: string;
       email: string;
       username: string | null;
+      isAdmin: boolean;
       lastlogin?: Date | null;
     };
     // Google新規登録確認用の一時データ

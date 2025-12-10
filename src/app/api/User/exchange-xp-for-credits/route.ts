@@ -21,39 +21,42 @@ export async function POST(req: Request) {
 
     // トランザクションを使って、XPの消費とクレジットの付与を同時に行う
     const result = await prisma.$transaction(async (tx) => {
-      // 1. 現在のユーザー情報を取得してロック
-      const user = await tx.user.findUnique({
+      // 1. (Optional) Optimistic check for better error message
+      const currentUser = await tx.user.findUnique({
         where: { id: userId },
         select: { xp: true },
       });
+      if (!currentUser) throw new Error('ユーザーが見つかりません');
+      if (currentUser.xp < EXCHANGE_COST_XP) throw new Error('XPが不足しています');
 
-      if (!user) {
-        throw new Error('ユーザーが見つかりません');
-      }
+      // 2. Atomic Update using updateMany with condition
+      // "where xp >= cost" ensures we never drop below 0 even in race conditions
+      const result = await tx.user.updateMany({
+        where: {
+          id: userId,
+          xp: { gte: EXCHANGE_COST_XP },
+        },
+        data: {
+          xp: { decrement: EXCHANGE_COST_XP },
+          aiAdviceCredits: { increment: CREDITS_PER_EXCHANGE },
+        },
+      });
 
-      // 2. XPが足りるかチェック
-      if (user.xp < EXCHANGE_COST_XP) {
+      if (result.count === 0) {
+        // Race condition hit: XP was enough at step 1 but changed before step 2
         throw new Error('XPが不足しています');
       }
 
-      // 3. XPを消費し、クレジットを付与
-      const updatedUser = await tx.user.update({
+      // 3. Fetch updated state
+      const updatedUser = await tx.user.findUnique({
         where: { id: userId },
-        data: {
-          xp: {
-            decrement: EXCHANGE_COST_XP,
-          },
-          aiAdviceCredits: {
-            increment: CREDITS_PER_EXCHANGE,
-          },
-        },
         select: {
           xp: true,
           aiAdviceCredits: true,
         },
       });
 
-      return updatedUser;
+      return updatedUser!;
     });
 
     return NextResponse.json({

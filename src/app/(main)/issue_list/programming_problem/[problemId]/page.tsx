@@ -496,7 +496,11 @@ const ProblemSolverPage = () => {
             }
 
             if (data.success) {
-                setSubmitResult({ success: true, message: '正解です！おめでとうございます！' });
+                setSubmitResult({
+                    ...data,
+                    success: true,
+                    message: '正解です！おめでとうございます！'
+                });
                 await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1);
                 window.dispatchEvent(new CustomEvent('petStatusUpdated'));
             }

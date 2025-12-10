@@ -8,6 +8,7 @@ CREATE TYPE "DailyMissionType" AS ENUM ('Answer_the_Question', 'Feed_Them', 'Gai
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "isAdmin" BOOLEAN NOT NULL DEFAULT false,
     "password" TEXT,
     "hash" TEXT,
     "username" TEXT,
@@ -565,6 +566,11 @@ CREATE TABLE "AuditLog" (
     "action" TEXT NOT NULL,
     "details" TEXT,
     "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "path" TEXT,
+    "method" TEXT,
+    "duration" INTEGER,
+    "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
@@ -665,6 +671,15 @@ CREATE UNIQUE INDEX "EventDifficulty_difficultyName_key" ON "EventDifficulty"("d
 
 -- CreateIndex
 CREATE INDEX "AssignmentComment_assignmentId_idx" ON "AssignmentComment"("assignmentId");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_userId_idx" ON "AuditLog"("userId");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_action_idx" ON "AuditLog"("action");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_selectedTitleId_fkey" FOREIGN KEY ("selectedTitleId") REFERENCES "Title"("id") ON DELETE SET NULL ON UPDATE CASCADE;

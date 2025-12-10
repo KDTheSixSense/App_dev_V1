@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import { sessionOptions } from '@/lib/session';
 
 export async function GET(
   req: Request,
@@ -12,6 +15,11 @@ export async function GET(
     const problemIdString = params.problemId;
     // console.log(`[API LOG] Received problemId: "${problemIdString}"`); // 2. パラメータIDを確認
 
+    const session = await getIronSession<{ user?: { id: string } }>(await cookies(), sessionOptions);
+    if (!session.user?.id) {
+      return NextResponse.json({ message: '認証が必要です' }, { status: 401 });
+    }
+
     const id = parseInt(problemIdString, 10);
     if (isNaN(id)) {
       console.error('[API ERROR] ID is not a number.');
@@ -21,6 +29,16 @@ export async function GET(
 
     const problem = await prisma.selectProblem.findUnique({
       where: { id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        answerOptions: true,
+        difficultyId: true,
+        subjectId: true,
+        // correctAnswer: false, // Explicitly exclude
+        // explanation: false,   // Explicitly exclude
+      }
     });
 
     // console.log('[API LOG] Prisma query result:', problem); // 4. DBからの取得結果を確認

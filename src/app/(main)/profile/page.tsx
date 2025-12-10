@@ -89,18 +89,45 @@ export default async function ProfilePage() {
   const userId = session.user.id;
 
   // --- 1. ユーザー、称号、ペット情報を一括取得 ---
+  // セキュリティ対策: password/hashを含めないようにselectを使用
   const userWithDetails = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      level: true,
+      xp: true,
+      icon: true,
+      class: true,
+      year: true,
+      birth: true,
+      lastlogin: true,
+      continuouslogin: true,
+      isAgreedToTerms: true,
+      isAgreedToPrivacyPolicy: true,
       unlockedTitles: { include: { title: true } },
       selectedTitle: true,
-      status_Kohaku: true, // ペットのステータス情報を追加
+      status_Kohaku: true,
+      password: true, // パスワードの有無を確認するために取得 (後で削除)
     },
-  });
+  }) as any; // セキュリティのためフィールドを制限した結果、型定義(User)と不一致になるためキャスト
 
   if (!userWithDetails) {
     redirect("/auth/login");
   }
+
+  // パスワードが存在するかどうか（Googleログイン等の場合はnull/undefined想定）
+  // 空文字の場合も「パスワードなし」とみなす
+  const hasPassword = userWithDetails.password !== null &&
+    userWithDetails.password !== undefined &&
+    userWithDetails.password !== '';
+
+  console.log(`[ProfilePage] UserID: ${userId}, hasPassword: ${hasPassword} (Value: ${userWithDetails.password === null ? 'null' : typeof userWithDetails.password})`);
+
+
+  // クライアントに渡す前にpasswordフィールドを削除（セキュリティ対策）
+  delete userWithDetails.password;
 
   // --- 2. チャート用の統計データを取得・計算 ---
   const sevenDaysAgo = new Date();
@@ -165,7 +192,7 @@ export default async function ProfilePage() {
     ...userWithDetails,
     birth: userWithDetails.birth?.toISOString() ?? null,
     lastlogin: userWithDetails.lastlogin?.toISOString() ?? null,
-    unlockedTitles: userWithDetails.unlockedTitles.map(ut => ({
+    unlockedTitles: userWithDetails.unlockedTitles.map((ut: any) => ({
       ...ut,
       unlockedAt: ut.unlockedAt.toISOString(),
     })),
@@ -178,6 +205,7 @@ export default async function ProfilePage() {
       initialUser={serializedUser}
       initialStats={userStats}
       aiAdvice={aiAdvice}
+      hasPassword={hasPassword}
     />
   );
 }
