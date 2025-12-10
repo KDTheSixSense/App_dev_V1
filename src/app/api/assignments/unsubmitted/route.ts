@@ -2,32 +2,25 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { cookies } from 'next/headers'; // サーバーコンポーネント/Route Handlerでクッキーを取得
-import { verify } from 'jsonwebtoken'; // JWTを検証
+import { cookies } from 'next/headers';
+import { getIronSession } from 'iron-session';
+import { sessionOptions } from '@/lib/session';
 
 const prisma = new PrismaClient();
 
-// JWTペイロードの型定義
-interface JwtPayload {
-  id: number;
+// セッションデータの型定義
+interface SessionData {
+  user?: { id: string; email: string };
 }
 
 export async function GET() {
   try {
-    // 1. Cookieからトークンを取得し、ユーザーIDを復元
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: '認証されていません' }, { status: 401 });
-    }
-    
-    // JWTを検証してユーザーIDを取得
-    const decoded = verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    const userId = decoded.id;
+    // 1. セッションを取得 (iron-session)
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    const userId = session.user?.id;
 
     if (!userId) {
-        return NextResponse.json({ error: '無効なユーザーです' }, { status: 401 });
+      return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
     // 2. Prismaで未提出の課題を検索
@@ -81,7 +74,7 @@ export async function GET() {
     console.error('未提出課題の取得に失敗しました:', error);
     // JWTの期限切れなどのエラーをハンドリング
     if (error instanceof Error && error.name === 'JsonWebTokenError') {
-         return NextResponse.json({ error: '認証トークンが無効です' }, { status: 401 });
+      return NextResponse.json({ error: '認証トークンが無効です' }, { status: 401 });
     }
     return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
   }

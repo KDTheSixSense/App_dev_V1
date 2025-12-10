@@ -1,8 +1,29 @@
 import { z } from 'zod';
 
+// SQL Injection対策: 一般的な攻撃文字列を明示的に禁止するRegex
+const sqlInjectionPattern = /['";\-\-]/;
+
 export const loginSchema = z.object({
-    email: z.string().email('Invalid email address').max(255, 'Email is too long'),
-    password: z.string().min(1, 'Password is required').max(100, 'Password is too long'),
+    email: z.string()
+        .email('Invalid email address')
+        .max(255, 'Email is too long')
+        .refine((val) => !sqlInjectionPattern.test(val), {
+            message: "Invalid characters in email"
+        }),
+    password: z.string().min(8, 'Password must be at least 8 characters').max(100, 'Password is too long'),
+});
+
+export const registerSchema = z.object({
+    email: z.string()
+        .email('Invalid email address')
+        .max(255, 'Email is too long')
+        .refine((val) => !sqlInjectionPattern.test(val), {
+            message: "Invalid characters in email"
+        }),
+    password: z.string().min(8, 'Password must be at least 8 characters').max(100, 'Password is too long'),
+    birth: z.string().refine((val) => !isNaN(Date.parse(val)), {
+        message: "Invalid date format",
+    }).optional().or(z.literal('')),
 });
 
 export const executeCodeSchema = z.object({
@@ -12,4 +33,14 @@ export const executeCodeSchema = z.object({
         'php', 'c', 'cpp', 'java', 'csharp'
     ]),
     input: z.string().optional(),
+});
+
+export const paginationSchema = z.object({
+    page: z.number().int().min(1).optional().default(1),
+    limit: z.number().int().min(1).max(100).optional().default(20),
+});
+
+// route params validation
+export const groupParamsSchema = z.object({
+    hashedId: z.string().min(1, 'Group ID is required').max(50).regex(/^[a-zA-Z0-9_-]+$/, 'Invalid Group ID format'),
 });

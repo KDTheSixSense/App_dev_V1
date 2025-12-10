@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Assignment, AssignmentComment, User } from '../types/AdminTypes';
-import DOMPurify from 'dompurify';
+import { sanitize } from '@/lib/sanitizer';
 
 interface AssignmentDetailProps {
     assignment: Assignment;
@@ -29,6 +29,7 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
     const [newComment, setNewComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false); // isSubmittingCommentからisSubmittingに変更
     const fetchComments = React.useCallback(async () => {
+        if (!assignment?.id || !params.hashedId) return;
         try {
             const res = await fetch(`/api/groups/${params.hashedId}/assignments/${assignment.id}/comments`);
             if (!res.ok) throw new Error('コメントの取得に失敗しました');
@@ -126,7 +127,7 @@ export const AssignmentDetail: React.FC<AssignmentDetailProps> = ({ assignment, 
 
                     <div
                         style={{ fontSize: '14px', color: '#3c4043', marginBottom: '24px', lineHeight: '1.6' }}
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(assignment.description) }}
+                        dangerouslySetInnerHTML={{ __html: sanitize(assignment.description) }}
                     />
 
                     <div style={{ marginTop: '24px' }}>

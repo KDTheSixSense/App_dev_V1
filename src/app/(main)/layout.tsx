@@ -24,17 +24,32 @@ export default async function MainPagesLayout({
   children: React.ReactNode;
 }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+  const userId = session.user?.id ? session.user.id : null;
 
   let userWithPet: UserWithPetStatus | null = null;
   if (userId) {
     await ensureDailyMissionProgress(userId);
     userWithPet = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        level: true,
+        xp: true,
+        icon: true,
+        class: true,
+        year: true,
+        birth: true,
+        lastlogin: true,
+        continuouslogin: true,
         status_Kohaku: true,
-      },
-    });
+        // Layoutで必要な他のフィールドがあれば追加
+        resetPasswordToken: false, // 明示的に除外 (selectを使うとデフォルトで除外されるが念のため意識)
+        hash: false,
+        password: false,
+      }
+    }) as any; // Type mismatch回避のため一時的にanyキャスト (本来は型定義を更新すべき)
   }
 
   return (

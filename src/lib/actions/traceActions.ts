@@ -2,10 +2,7 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { exec, spawn } from 'child_process';
-import { promisify } from 'util';
 
-const execPromise = promisify(exec);
 import { executeCodeSchema } from '../validations';
 
 /**
@@ -486,8 +483,12 @@ for (left を 1 から (arrayの要素数 ÷ 2の商) まで 1 ずつ増やす)
 以上のルールと例を厳守し、ユーザーの指示に対する疑似言語コードのみを、追加の説明やマークダウン(\`\`\`)なしで直接生成してください。`;
 
   try {
-    // ChatGPT APIのエンドポイント
-    const apiUrl = 'https://api.openai.com/v1/chat/completions';
+    // ChatGPT APIのエンドポイント (Base URL対応)
+    const baseUrl = process.env.OPENAI_BASE_URL
+      ? process.env.OPENAI_BASE_URL.replace(/\/$/, "")
+      : 'https://api.openai.com/v1';
+
+    const apiUrl = `${baseUrl}/chat/completions`;
 
     // APIキーを環境変数から取得します。
     // Next.jsの環境変数(.env.localなど)に OPENAI_API_KEY="あなたのAPIキー" を設定してください。
@@ -638,7 +639,11 @@ print(sum_val)
 `;
 
   try {
-    const apiUrl = 'https://api.openai.com/v1/chat/completions';
+    const baseUrl = process.env.OPENAI_BASE_URL
+      ? process.env.OPENAI_BASE_URL.replace(/\/$/, "")
+      : 'https://api.openai.com/v1';
+
+    const apiUrl = `${baseUrl}/chat/completions`;
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
@@ -677,7 +682,7 @@ print(sum_val)
     const generatedText = result.choices?.[0]?.message?.content;
 
     if (!generatedText) {
-      throw new Error("AIからの応答が空でした。");
+      throw new Error("コハクからの応答が空でした。");
     }
 
     // コードブロックが含まれている場合の除去処理
@@ -693,9 +698,10 @@ print(sum_val)
 
 /**
  * ユーザーのPythonコードをサーバー側で実行し、トレース結果を取得する
+ * (Security Update: Execute via Sandbox Service)
  */
 export async function runPythonTraceAction(code: string) {
-  console.log("--- [Debug] runPythonTraceAction Started ---");
+  // console.log("--- [Debug] runPythonTraceAction Started (Sandbox Mode) ---");
 
   // 1. Zod Validation
   const validationResult = executeCodeSchema.safeParse({ source_code: code, language: 'python' });
@@ -703,11 +709,12 @@ export async function runPythonTraceAction(code: string) {
     throw new Error(`Validation Error: ${(validationResult.error as any).errors.map((e: any) => e.message).join(', ')}`);
   }
 
-  // 2. Keyword Blocking
+  // 2. Keyword Blocking (Client-side pre-check)
+  // Note: This is a basic filter. The real security is provided by the Sandbox container.
   const forbiddenKeywords = [
     'import os', 'from os', 'import sys', 'from sys', 'import subprocess', 'from subprocess',
     'import shutil', 'from shutil', 'import pathlib', 'from pathlib',
-    'open(', 'exec(', 'eval(', '__import__', 'input('
+    'open(', 'exec(', 'eval(', '__import__'
   ];
   for (const keyword of forbiddenKeywords) {
     if (code.includes(keyword)) {
@@ -717,111 +724,90 @@ export async function runPythonTraceAction(code: string) {
 
   try {
     const cwd = process.cwd();
-    console.log("[Debug] Current Working Directory:", cwd);
 
-    // パス解決のロジック
+    // Tracerのパス解決
     let scriptRelativePath = 'src/lib/python_tracer.py';
     if (cwd.endsWith('src')) {
       scriptRelativePath = 'lib/python_tracer.py';
     }
-
     const tracerPath = path.join(cwd, scriptRelativePath);
-    console.log("[Debug] Target Tracer Path:", tracerPath);
+    // console.log("[Debug] Reading Tracer Path:", tracerPath);
 
-    // ファイル存在確認
+    // Tracerのコードを読み込む
+    let tracerCode = "";
     try {
-      await fs.access(tracerPath);
-      console.log("[Debug] Tracer file found.");
+      tracerCode = await fs.readFile(tracerPath, 'utf-8');
     } catch (e) {
       console.error("[Debug] Tracer file NOT found at:", tracerPath);
       throw new Error(`Tracer file not found at ${tracerPath}`);
     }
 
-    const pythonCommand = 'python3';
-    console.log(`[Debug] Spawning ${pythonCommand} with ${tracerPath}`);
+    // Sandbox URL (Env var or default)
+    const sandboxUrl = process.env.SANDBOX_URL || 'http://sandbox:4000/execute';
 
-    const child = spawn(pythonCommand, [tracerPath]);
+    // console.log(`[Debug] Sending request to Sandbox: ${sandboxUrl}`);
 
-    let stdoutData = '';
-    let stderrData = '';
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        child.kill();
-        console.error("[Debug] Execution Timed Out");
-        reject(new Error('Execution timed out'));
-      }, 5000);
-
-      // ★修正点: エンコーディングを指定して書き込み、エラーハンドリングを追加
-      try {
-        child.stdin.write(code, 'utf-8');
-        child.stdin.end();
-      } catch (writeErr) {
-        console.error("[Debug] stdin write error:", writeErr);
-        reject(new Error("Failed to write code to Python process."));
-        return;
-      }
-
-      child.stdout.on('data', (data: any) => {
-        stdoutData += data.toString();
-      });
-
-      child.stderr.on('data', (data: any) => {
-        stderrData += data.toString();
-      });
-
-      child.on('close', (code: number) => {
-        clearTimeout(timeout);
-        console.log("[Debug] Process closed with code:", code);
-
-        if (stderrData) {
-          console.log("[Debug] Python stderr:", stderrData);
-        }
-
-        if (code !== 0) {
-          // エラーメッセージをわかりやすく返す
-          if (stderrData.includes("No such file or directory")) {
-            reject(new Error(`Python file not found. Check path: ${tracerPath}`));
-          } else if (stderrData.includes("command not found")) {
-            reject(new Error(`Python command not found. Is python3 installed?`));
-          } else {
-            reject(new Error(`Python runtime error: ${stderrData}`));
-          }
-          return;
-        }
-
-        console.log("[Debug] stdout:", stdoutData);
-
-        try {
-          if (!stdoutData.trim()) {
-            console.error("[Debug] stdout is empty");
-            reject(new Error("Python script produced no output."));
-            return;
-          }
-
-          const lines = stdoutData.trim().split('\n');
-          const lastLine = lines.pop() || '[]';
-          const result = JSON.parse(lastLine);
-
-          console.log("[Debug] Parsed JSON successfully. Items:", result.length);
-          resolve(result);
-
-        } catch (e) {
-          console.error("[Debug] JSON Parse Error:", e);
-          console.error("[Debug] Raw output was:", stdoutData);
-          reject(new Error(`Failed to parse trace result.`));
-        }
-      });
-
-      child.on('error', (err: any) => {
-        clearTimeout(timeout);
-        console.error("[Debug] Spawn Error:", err);
-        reject(new Error(`Failed to start Python process: ${err.message}`));
-      });
+    // Sandboxへリクエスト
+    const response = await fetch(sandboxUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        language: 'python',
+        source_code: tracerCode,
+        input: code
+      }),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Sandbox service error (${response.status}): ${errorText}`);
+    }
+
+    const result = await response.json();
+    // console.log("[Debug] Sandbox Response received.");
+
+    // 結果の解析
+    const programStdout = result.program_output?.stdout || result.stdout || "";
+    const programStderr = result.program_output?.stderr || result.stderr || "";
+    const buildStderr = result.build_result?.stderr || result.build_stderr || "";
+
+    if (buildStderr) {
+      console.error("[Debug] Build Stderr:", buildStderr);
+      throw new Error(`Build Error: ${buildStderr}`);
+    }
+
+    if (!programStdout.trim()) {
+      console.error("[Debug] Empty stdout from sandbox.");
+      console.error("[Debug] Sandbox Result Dump:", JSON.stringify(result, null, 2));
+
+      if (programStderr) {
+        throw new Error(`Runtime Error: ${programStderr}`);
+      }
+      throw new Error("Tracer produced no output.");
+    }
+
+    // JSONパース
+    const jsonMatch = programStdout.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error("[Debug] No JSON found in output:", programStdout);
+      console.error("[Debug] Sandbox Result Dump:", JSON.stringify(result, null, 2));
+      throw new Error("Invalid output format from tracer.");
+    }
+
+    let traceData;
+    try {
+      traceData = JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      console.error("[Debug] JSON Parse Error. Output was:", programStdout);
+      throw new Error("Failed to parse trace results.");
+    }
+
+    return traceData;
+
   } catch (error: any) {
-    console.error("[Debug] Trace Action Error:", error);
-    throw new Error(error.message);
+    console.error("runPythonTraceAction Error:", error);
+    throw error;
   }
 }

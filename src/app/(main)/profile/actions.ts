@@ -17,7 +17,7 @@ export async function updateUserProfileAction(formData: ProfileUpdateData) {
     return { error: "認証されていません。" };
   }
 
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   // 1. バリデーション
   if (formData.username && formData.username.length > 50) {
@@ -73,10 +73,10 @@ export async function getDailyActivityAction(timeframeDays: 7 | 14 | 30) {
     console.error('[getDailyActivityAction] Error: Not authenticated.');
     return { error: '認証されていません。' };
   }
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
   console.log(`[getDailyActivityAction] userId: ${userId}`);
 
-  if (isNaN(userId)) { // userId が NaN でないかチェックを追加
+  if (!userId) {
     console.error('[getDailyActivityAction] Error: Invalid userId.');
     return { error: '無効なユーザーIDです。' };
   }

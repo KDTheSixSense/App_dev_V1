@@ -5,7 +5,7 @@ import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 interface SessionData {
-  user?: { id: number | string; email: string };
+  user?: { id: string; email: string };
 }
 
 export async function GET(req: NextRequest) {
@@ -37,9 +37,9 @@ export async function GET(req: NextRequest) {
       id: problem.id,
       title: problem.title,
       description: problem.description,
-      explanation: problem.explanation,
+      // explanation: problem.explanation, // セキュリティ対策: クライアントには答えや解説を返さない
       answerOptions: problem.answerOptions,
-      correctAnswer: problem.correctAnswer,
+      // correctAnswer: problem.correctAnswer, // セキュリティ対策: 正解データは隠す
       difficulty: problem.difficulty?.id || problem.difficultyId,
       difficultyId: problem.difficulty?.id || problem.difficultyId,
       subjectId: problem.subjectId,
@@ -64,14 +64,11 @@ export async function POST(req: NextRequest) {
     if (!session.user || !session.user.id) {
       return NextResponse.json({ message: '認証が必要です' }, { status: 401 });
     }
-    const userId = parseInt(String(session.user.id), 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ message: '無効なユーザーIDです' }, { status: 400 });
-    }
+    const userId = session.user.id;
 
     const body = await req.json();
     const {
-      title, description, explanation, answerOptions, 
+      title, description, explanation, answerOptions,
       correctAnswer, subjectId, difficultyId,
     } = body;
 
@@ -81,7 +78,7 @@ export async function POST(req: NextRequest) {
 
     const newProblem = await prisma.selectProblem.create({
       data: {
-        title, description, explanation, answerOptions, 
+        title, description, explanation, answerOptions,
         correctAnswer, difficultyId, subjectId, createdBy: userId,
       },
     });

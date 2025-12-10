@@ -4,15 +4,24 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { requestToBodyStream } from 'next/dist/server/body-streams';
 
+import { registerSchema } from '@/lib/validations';
+import { logAudit, AuditAction } from '@/lib/audit';
+
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, birth } = await req.json();
+    const body = await req.json();
 
-    if (!email || !password || !birth) {
-      return NextResponse.json({ message: 'email, password, birthは必須です' }, { status: 400 });
+    const validation = registerSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { message: '入力内容が正しくありません', errors: validation.error.flatten() },
+        { status: 400 }
+      );
     }
 
-    const birthDate = new Date(birth);
+    const { email, password, birth } = validation.data;
+    const birthDate = birth ? new Date(birth) : null;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -28,6 +37,13 @@ export async function POST(req: NextRequest) {
         birth: birthDate,
       },
     });
+
+    // Audit Log
+    try {
+      await logAudit(user.id, AuditAction.REGISTER, { email });
+    } catch (e) {
+      // Ignore audit failure
+    }
 
     return NextResponse.json({
       message: '登録完了',

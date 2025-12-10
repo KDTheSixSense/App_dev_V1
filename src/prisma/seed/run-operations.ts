@@ -5,11 +5,11 @@ import { PrismaClient } from '@prisma/client';
 // ロジックを切り出して、それをseedとactionの両方から使うのが望ましいです。
 // ここでは、簡単のため、元のロジックを参考に一部を再実装します。
 
-async function addXpForSeed(prisma: PrismaClient, user_id: number, subject_id: number, difficulty_id: number) {
+async function addXpForSeed(prisma: PrismaClient, user_id: string, subject_id: number, difficulty_id: number) {
   const difficulty = await prisma.difficulty.findUnique({ where: { id: difficulty_id } });
   if (!difficulty) return;
   const xpAmount = difficulty.xp;
-  
+
   await prisma.user.update({
     where: { id: user_id },
     data: { xp: { increment: xpAmount } },
@@ -26,11 +26,11 @@ export async function runOperations(prisma: PrismaClient) {
 
   const alice = await prisma.user.findUnique({ where: { email: 'alice@example.com' } });
   const godUser = await prisma.user.findUnique({ where: { email: 'GodOfGod@example.com' } });
-  
+
   if (alice) {
     // console.log("🧪 Testing addXp function for Alice...");
     // await addXpForSeed(prisma, alice.id, 1, 1);
-    
+
     // for (let i = 0; i < 40; i++) {
     //   await addXpForSeed(prisma, alice.id, 2, 8); // Basic Info A
     //   await addXpForSeed(prisma, alice.id, 3, 8); // Basic Info B
@@ -45,7 +45,7 @@ export async function runOperations(prisma: PrismaClient) {
     await prisma.userSubjectProgress.createMany({ data: progressData, skipDuplicates: true });
     console.log(`✅ God Mode progress created.`);
   }
-  
+
   console.log('🌱 Seeding assignments and submissions...');
 
   // 1. 既存の課題と配布状況をクリアして初期化
@@ -64,21 +64,29 @@ export async function runOperations(prisma: PrismaClient) {
 
     // --- 課題データを作成 ---
     assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-10-30T23:59:59Z') });
-    
+
     if (problemFizzBuzz) {
       assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '[アルゴリズム] FizzBuzz問題', description: '添付の問題を解き、プログラミングの基本的なループと条件分岐の理解を深めましょう。', due_date: new Date('2025-11-20T23:59:59Z'), programmingProblemId: problemFizzBuzz.id });
     }
     if (problemPythonVar) {
-      assignmentsToCreate.push({ groupid: kditGroup.id, title: '[Python基礎] 変数宣言の基本', description: '添付の選択問題を解いて、Pythonにおける正しい変数宣言の方法を理解しましょう。', due_date: new Date('2025-10-31T23:59:59Z'), selectProblemId: problemPythonVar.id });
+      // ユーザーが以前アクセスしていたID 9に合わせて、この課題をID 9にする
+      assignmentsToCreate.push({ id: 9, groupid: kditGroup.id, title: '[Python基礎] 変数宣言の基本', description: '添付の選択問題を解いて、Pythonにおける正しい変数宣言の方法を理解しましょう。', due_date: new Date('2025-10-31T23:59:59Z'), selectProblemId: problemPythonVar.id });
     }
     if (problemAplusB) {
-      assignmentsToCreate.push({ groupid: kditGroup.id, title: '[ウォーミングアップ] 簡単な足し算', description: 'プログラミングに慣れるための最初のステップです。添付問題の指示に従い、2つの数値を足し合わせるプログラムを書いてみましょう。', due_date: new Date('2025-11-05T23:59:59Z'), programmingProblemId: problemAplusB.id });
+      assignmentsToCreate.push({ id: 4, groupid: kditGroup.id, title: '[ウォーミングアップ] 簡単な足し算', description: 'プログラミングに慣れるための最初のステップです。添付問題の指示に従い、2つの数値を足し合わせるプログラムを書いてみましょう。', due_date: new Date('2025-11-05T23:59:59Z'), programmingProblemId: problemAplusB.id });
     }
 
-    // 3. 課題を一括作成
-    await prisma.assignment.createMany({
-      data: assignmentsToCreate,
-    });
+    // 3. 課題を個別作成 (エラーハンドリング付き)
+    for (const assignmentData of assignmentsToCreate) {
+      try {
+        console.log(`Creating assignment with ID ${assignmentData.id || 'auto'}...`);
+        await prisma.assignment.create({
+          data: assignmentData,
+        });
+      } catch (e) {
+        console.error(`❌ Failed to create assignment "${assignmentData.title}":`, e);
+      }
+    }
     console.log(`✅ Created ${assignmentsToCreate.length} assignments.`);
 
     // 4. 作成した課題をメンバーに配布 (Submissions作成)
@@ -87,7 +95,7 @@ export async function runOperations(prisma: PrismaClient) {
     const allNonAdminMembers = await prisma.groups_User.findMany({
       where: { admin_flg: false },
     });
-    
+
     const submissionsToCreate = [];
     for (const assignment of allAssignments) {
       const membersInGroup = allNonAdminMembers.filter(
@@ -120,11 +128,11 @@ export async function runOperations(prisma: PrismaClient) {
     const aPlusBAssignment = await prisma.assignment.findFirst({
       where: { title: '[ウォーミングアップ] 簡単な足し算' },
     });
-  
+
     const bob = await prisma.user.findUnique({ where: { email: 'bob@example.com' } });
     const charlie = await prisma.user.findUnique({ where: { email: 'charlie@example.com' } });
     const diana = await prisma.user.findUnique({ where: { email: 'diana@example.com' } });
-  
+
     // BobとCharlieがPythonの課題を提出したことにする
     if (pythonAssignment && bob && charlie) {
       await prisma.submissions.updateMany({
@@ -139,8 +147,34 @@ export async function runOperations(prisma: PrismaClient) {
         },
       });
       console.log(`✅ Created 2 dummy submissions for "${pythonAssignment.title}".`);
+
+      // --- コメントのシーディング (追加) ---
+      console.log('🌱 Seeding assignment comments...');
+      await prisma.assignmentComment.createMany({
+        data: [
+          {
+            assignmentId: pythonAssignment.id,
+            authorId: bob.id,
+            content: '変数の命名規則について質問があります。スネークケース以外は使ってはいけませんか？',
+            createdAt: new Date('2025-10-21T10:00:00Z'),
+          },
+          {
+            assignmentId: pythonAssignment.id,
+            authorId: charlie.id,
+            content: 'Bobさん、基本的にはスネークケースが推奨されていますが、強制ではありませんよ。PEP8を参照すると良いです。',
+            createdAt: new Date('2025-10-21T10:30:00Z'),
+          },
+          {
+            assignmentId: pythonAssignment.id,
+            authorId: bob.id,
+            content: 'なるほど、ありがとうございます！',
+            createdAt: new Date('2025-10-21T10:45:00Z'),
+          }
+        ]
+      });
+      console.log(`✅ Created 3 sample comments for "${pythonAssignment.title}".`);
     }
-  
+
     // Dianaが足し算の課題を提出したことにする
     if (aPlusBAssignment && diana) {
       await prisma.submissions.updateMany({
@@ -208,7 +242,7 @@ async function seedDailyActivities(prisma: PrismaClient) {
   const kobeTaro = await prisma.user.findUnique({ where: { email: 'kobe_taro@example.com' } });
 
   // null でないユーザー（＝DBに存在するユーザー）のみを対象にする
-  const users = [alice, bob, kobeTaro].filter(u => u !== null) as { id: number }[];
+  const users = [alice, bob, kobeTaro].filter(u => u !== null) as { id: string }[];
 
   if (users.length === 0) {
     console.warn('⚠️ No users found to seed activity data for. Skipping.');

@@ -34,7 +34,7 @@ export default async function ProblemDetailPage({ params }: ProblemDetailPagePro
 
   if (session?.user?.id) {
     const user = await prisma.user.findUnique({
-      where: { id: Number(session.user.id) },
+      where: { id: session.user.id },
       select: { aiAdviceCredits: true },
     });
     initialCredits = user?.aiAdviceCredits ?? 0;
@@ -45,7 +45,7 @@ export default async function ProblemDetailPage({ params }: ProblemDetailPagePro
   // もしPrismaスキーマを更新してimagePathを追加している、あるいは擬似的に扱う場合はここで調整します。
   // ここでは description から画像パスを抽出するロジックを入れるか、
   // そのままオブジェクトを渡します。
-  
+
   // シリアライズ可能なオブジェクトに変換（Date型対策など）
   const plainProblem = JSON.parse(JSON.stringify(problem));
 
@@ -60,18 +60,18 @@ export default async function ProblemDetailPage({ params }: ProblemDetailPagePro
   // Client Component に imagePath プロパティが存在することを保証するために追加
   // (SelectProblemモデルにimagePathがない場合でも型エラーを防ぐため)
   if (!plainProblem.imagePath) {
-      // 命名規則に基づくデフォルトパス (例: /images/select_problems/select-problem-50.png)
-      // ファイルが存在するかどうかはクライアント側のimgタグで判断（エラーなら非表示）させても良いですが
-      // ここでは seed.ts のロジックに合わせて description から抽出する簡易実装をしておきます。
-      const desc = plainProblem.description || "";
-      const match = desc.match(/\((.*\/images\/.*)\)/); // Markdownリンクの抽出
-      if (match) {
-          plainProblem.imagePath = match[1];
-          // 画像パスを抽出したらdescriptionからは削除して渡すのがUI的には綺麗です
-          plainProblem.description = desc.replace(/!\[.*?\]\(.*?\)/g, "").trim();
-      } 
-      // もしくは、以前のseedのようにファイル名が固定なら強制的に付与
-      // plainProblem.imagePath = `/images/select_problems/select-problem-${id}.png`;
+    // 命名規則に基づくデフォルトパス (例: /images/select_problems/select-problem-50.png)
+    // ファイルが存在するかどうかはクライアント側のimgタグで判断（エラーなら非表示）させても良いですが
+    // ここでは seed.ts のロジックに合わせて description から抽出する簡易実装をしておきます。
+    const desc = plainProblem.description || "";
+    const match = desc.match(/\((.*\/images\/.*)\)/); // Markdownリンクの抽出
+    if (match) {
+      plainProblem.imagePath = match[1];
+      // 画像パスを抽出したらdescriptionからは削除して渡すのがUI的には綺麗です
+      plainProblem.description = desc.replace(/!\[.*?\]\(.*?\)/g, "").trim();
+    }
+    // もしくは、以前のseedのようにファイル名が固定なら強制的に付与
+    // plainProblem.imagePath = `/images/select_problems/select-problem-${id}.png`;
   }
 
   return (

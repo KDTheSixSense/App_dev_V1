@@ -16,7 +16,7 @@ const DailyMissionPage = async () => {
 
   // 1. セッションとユーザーIDを取得
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+  const userId = session.user?.id ? session.user.id : null;
 
   // 2. 未ログインの場合はログインページへリダイレクト
   if (!userId) {
@@ -63,7 +63,7 @@ const DailyMissionPage = async () => {
           <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
             デイリーミッション
           </h1>
-          
+
           {/* DBから取得・変換したデータを MissionList に渡す */}
           <MissionList missions={missionsForClient} />
 

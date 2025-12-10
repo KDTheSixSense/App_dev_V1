@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { groupParamsSchema, paginationSchema } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 interface SessionData {
-  user?: { id: number; email: string };
+  user?: { id: string; email: string };
 }
 
 // お知らせ一覧を取得 (GET)
@@ -17,13 +18,26 @@ export async function GET(req: NextRequest) {
 
   try {
     const urlParts = req.url.split('/');
-    // URLの構造によってはインデックスが異なる場合がありますが、
-    // 通常は .../groups/[hashedId]/posts なので後ろから2番目です
-    const hashedId = urlParts[urlParts.length - 2];
+    const rawHashedId = urlParts[urlParts.length - 2];
+
+    // Validate hashedId
+    const groupValidation = groupParamsSchema.safeParse({ hashedId: rawHashedId });
+    if (!groupValidation.success) {
+      return NextResponse.json({ success: false, message: '無効なグループID形式です' }, { status: 400 });
+    }
+    const hashedId = groupValidation.data.hashedId;
 
     const { searchParams } = req.nextUrl;
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '20', 10);
+
+    // Validate Pagination
+    const pageValidation = paginationSchema.safeParse({ page: rawPage, limit: rawLimit });
+    if (!pageValidation.success) {
+      return NextResponse.json({ success: false, message: '無効なページネーションパラメータです' }, { status: 400 });
+    }
+    const { page, limit } = pageValidation.data;
+
     const skip = (page - 1) * limit;
 
     const group = await prisma.groups.findUnique({
@@ -33,6 +47,15 @@ export async function GET(req: NextRequest) {
 
     if (!group) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
+    }
+
+    // Verify membership
+    const membership = await prisma.groups_User.findFirst({
+      where: { group_id: group.id, user_id: session.user.id },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ success: false, message: 'グループのメンバーではありません' }, { status: 403 });
     }
 
     const [posts, total] = await Promise.all([
@@ -75,15 +98,21 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;
-  
+
   if (!sessionUserId) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
-  const userId = Number(sessionUserId);
+  const userId = sessionUserId;
 
   try {
     const urlParts = req.url.split('/');
-    const hashedId = urlParts[urlParts.length - 2]; 
+    const rawHashedId = urlParts[urlParts.length - 2];
+
+    const groupValidation = groupParamsSchema.safeParse({ hashedId: rawHashedId });
+    if (!groupValidation.success) {
+      return NextResponse.json({ success: false, message: '無効なグループID形式です' }, { status: 400 });
+    }
+    const hashedId = groupValidation.data.hashedId;
     const body = await req.json();
     const { content } = body;
 
@@ -100,15 +129,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
 
+    // Verify membership for POST
+    const membership = await prisma.groups_User.findFirst({
+      where: { group_id: group.id, user_id: userId as any },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ success: false, message: 'グループのメンバーではありません。投稿できません。' }, { status: 403 });
+    }
+
     const newPost = await prisma.post.create({
       data: {
         content,
         groupId: group.id,
-        authorId: userId,
+        authorId: userId as any,
       },
       include: {
         author: {
-          select: { 
+          select: {
             username: true,
             icon: true // ★ ここも追加しておくと、投稿直後にアイコンが表示されます
           }

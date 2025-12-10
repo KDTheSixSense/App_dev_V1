@@ -8,7 +8,7 @@ import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, GripVer
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import DOMPurify from 'dompurify';
+import { sanitize } from '@/lib/sanitizer';
 import toast from 'react-hot-toast';
 
 import type { Problem as SerializableProblem } from '@/lib/types';
@@ -84,7 +84,7 @@ const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ p
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-full">
         <div className="p-4 border-b flex-shrink-0"><h2 className="text-xl font-bold text-gray-900 flex items-center gap-3"><FileText className="h-6 w-6 text-blue-500" /><span>問{problem.id}: {problem.title.ja}</span></h2></div>
         <div className="p-6 space-y-6 overflow-y-auto">
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(problem.description.ja.replace(/\n/g, '<br />')) }} />
+            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(problem.description.ja.replace(/\n/g, '<br />')) }} />
             <div>
                 <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
                 {problem.sampleCases?.map((sc, index) => (
@@ -496,7 +496,11 @@ const ProblemSolverPage = () => {
             }
 
             if (data.success) {
-                setSubmitResult({ success: true, message: '正解です！おめでとうございます！' });
+                setSubmitResult({
+                    ...data,
+                    success: true,
+                    message: '正解です！おめでとうございます！'
+                });
                 await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1);
                 window.dispatchEvent(new CustomEvent('petStatusUpdated'));
             }

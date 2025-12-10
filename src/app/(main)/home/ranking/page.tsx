@@ -25,11 +25,12 @@ export default async function RankingPage() {
   const subjects = await prisma.subject.findMany(); // 科目リストは引き続き必要
 
   const rawRankings: Array<{
-    id: number;
+    id: string;
     name: string;
     iconUrl: string | null;
     score: number;
     subjectId: number;
+    // Safe: No user input is interpolated here. Prisma.sql handles templating if needed.
     rank: bigint; // rankをbigint型に変更
     level: number;
   }> = await prisma.$queryRaw(Prisma.sql`

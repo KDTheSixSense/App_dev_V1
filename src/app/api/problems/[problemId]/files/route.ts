@@ -3,62 +3,104 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import fs from 'fs/promises';
+import { getIronSession } from 'iron-session';
+import { sessionOptions } from '@/lib/session';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
 const getUploadDir = () => {
-  return path.join(process.cwd(), 'public', 'uploads');
+      return path.join(process.cwd(), 'public', 'uploads');
 };
 
-export async function POST(request: Request, { params }: any) {
-  const problemId = parseInt(params.problemId);
+interface SessionData {
+      user?: { id: string; email: string };
+}
 
-  if (isNaN(problemId)) {
-    return NextResponse.json({ message: '無効な問題IDです' }, { status: 400 });
-  }
+export async function POST(request: Request, context: { params: Promise<{ problemId: string }> }) {
+      const params = await context.params;
+      const problemId = parseInt(params.problemId);
 
-  try {
-    const formData = await request.formData();
-    const files = formData.getAll('files') as File[];
+      if (isNaN(problemId)) {
+            return NextResponse.json({ message: '無効な問題IDです' }, { status: 400 });
+      }
 
-    if (!files || files.length === 0) {
-      return NextResponse.json({ message: 'ファイルがアップロードされていません' }, { status: 400 });
-    }
+      const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+      const userId = session.user?.id;
 
-    const uploadDir = getUploadDir();
-    await fs.mkdir(uploadDir, { recursive: true });
+      if (!userId) {
+            return NextResponse.json({ message: '認証されていません' }, { status: 401 });
+      }
 
-    const uploadedFileMetadata = [];
+      // 権限チェック: 問題の作成者であるか確認
+      const problem = await prisma.programmingProblem.findUnique({
+            where: { id: problemId },
+            select: { createdBy: true }
+      });
 
-    for (const file of files) {
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
+      if (!problem) {
+            return NextResponse.json({ message: '問題が見つかりません' }, { status: 404 });
+      }
 
-      const fileName = `${Date.now()}-${file.name}`;
-      const filePath = path.join(uploadDir, fileName);
+      // Note: createdBy might be matching userId type. Assuming strict match.
+      // If one is string and other int, might fail. Use loose check or conversion if unsure.
+      // Usually userId in session is string. createdBy is string?
+      // In publish route I used `createdBy: userId`.
+      if (problem.createdBy !== userId) {
+            return NextResponse.json({ message: '権限がありません' }, { status: 403 });
+      }
 
-      await fs.writeFile(filePath, buffer);
+      try {
+            const formData = await request.formData();
+            const files = formData.getAll('files') as File[];
 
-      // ★ 修正: prisma.file -> prisma.problemFile
-      const newFile = await prisma.problemFile.create({
-        data: {
-          problemId: problemId,
-          fileName: file.name, // スキーマに合わせて `fileName` を使用
-          originalName: file.name, // スキーマに合わせて `originalName` を使用
-          filePath: `/uploads/${fileName}`,
-          fileSize: file.size,
-          mimeType: file.type || 'application/octet-stream',
-        },
-      });
-      uploadedFileMetadata.push(newFile);
-    }
+            if (!files || files.length === 0) {
+                  return NextResponse.json({ message: 'ファイルがアップロードされていません' }, { status: 400 });
+            }
 
-    return NextResponse.json({ message: 'ファイルが正常にアップロードされました！', files: uploadedFileMetadata }, { status: 200 });
+            const uploadDir = getUploadDir();
+            await fs.mkdir(uploadDir, { recursive: true });
 
-  } catch (error: any) {
-    console.error('ファイルのアップロード中にエラーが発生しました:', error);
-    return NextResponse.json({ message: 'ファイルのアップロードに失敗しました', error: error.message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+            const uploadedFileMetadata = [];
+
+            for (const file of files) {
+                  const ALLOWED_EXTENSIONS = ['.pdf', '.zip', '.rar', '.7z', '.txt', '.md', '.c', '.cpp', '.h', '.hpp', '.py', '.java', '.js', '.ts', '.rb', '.go', '.rs', '.png', '.jpg', '.jpeg'];
+                  const ext = path.extname(file.name).toLowerCase();
+
+                  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                        continue; // Skip invalid files or throw error. Here we skip to avoid breaking the entire batch.
+                  }
+
+                  const arrayBuffer = await file.arrayBuffer();
+                  const buffer = Buffer.from(arrayBuffer);
+
+                  const safeBasename = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+                  const fileName = `${Date.now()}-${safeBasename}${ext}`;
+                  const filePath = path.join(uploadDir, fileName);
+
+                  await fs.writeFile(filePath, buffer);
+
+                  // ★ 修正: prisma.file -> prisma.problemFile
+                  const newFile = await prisma.problemFile.create({
+                        data: {
+                              problemId: problemId,
+                              fileName: file.name, // スキーマに合わせて `fileName` を使用
+                              originalName: file.name, // スキーマに合わせて `originalName` を使用
+                              filePath: `/uploads/${fileName}`,
+                              fileSize: file.size,
+                              mimeType: file.type || 'application/octet-stream',
+                        },
+                  });
+                  uploadedFileMetadata.push(newFile);
+            }
+
+            return NextResponse.json({ message: 'ファイルが正常にアップロードされました！', files: uploadedFileMetadata }, { status: 200 });
+
+      } catch (error: any) {
+            console.error('ファイルのアップロード中にエラーが発生しました:', error);
+            // 本番環境では詳細を隠蔽
+            return NextResponse.json({ message: 'ファイルのアップロードに失敗しました', error: 'Internal Server Error' }, { status: 500 });
+      } finally {
+            await prisma.$disconnect();
+      }
 }

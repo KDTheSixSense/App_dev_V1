@@ -1,10 +1,9 @@
-// /workspaces/my-next-app/src/lib/data.ts
 import { problems as localProblems, Problem as AppProblem } from '@/app/(main)/issue_list/basic_info_b_problem/data/problems';
 import { prisma } from './prisma';
-import type { 
+import type {
   Questions as DbStaticProblem,
   Questions_Algorithm as DbAlgoProblem,
-  Basic_Info_A_Question as DbBasicInfoAProblem ,
+  Basic_Info_A_Question as DbBasicInfoAProblem,
   Applied_am_Question as DbAppliedInfoAmProblem
 } from '@prisma/client';
 import { cookies } from 'next/headers';
@@ -87,9 +86,9 @@ function transformAlgoProblem(dbProblem: DbAlgoProblem): SerializableProblem {
     description: { ja: dbProblem.description ?? '', en: dbProblem.description ?? '' },
     explanationText: { ja: dbProblem.explanation ?? '', en: dbProblem.explanation ?? '' },
     programLines: { ja: programLinesArray, en: programLinesArray },
-    answerOptions: { 
-      ja: parseJSON(dbProblem.answerOptions, []), 
-      en: parseJSON(dbProblem.answerOptions, []) 
+    answerOptions: {
+      ja: parseJSON(dbProblem.answerOptions, []),
+      en: parseJSON(dbProblem.answerOptions, [])
     },
     correctAnswer: dbProblem.correctAnswer ?? '',
     initialVariables: dbProblem.initialVariable as AppProblem['initialVariables'] ?? {},
@@ -131,18 +130,17 @@ export async function getProblemForClient(id: number): Promise<SerializableProbl
  * ログイン中のユーザーの、未提出の課題一覧を取得する
  */
 export async function getUnsubmittedAssignments() {
-  
+
   // --- ▼▼▼ 認証ロジックを iron-session を使うように変更しました ▼▼▼ ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  
+
   // セッションにユーザーIDが存在しない場合は、エラーを投げて認証失敗とします
   if (!session.user?.id) {
     throw new Error('認証トークンがありません');
   }
-  
-  // セッションから取得したIDを、データベース検索で使えるように数値に変換します
-  const userId = Number(session.user.id);
-  if (isNaN(userId)) {
+
+  const userId = session.user.id;
+  if (!userId) {
     throw new Error('無効なユーザーIDです');
   }
 
@@ -151,14 +149,14 @@ export async function getUnsubmittedAssignments() {
     where: {
       group: {
         groups_User: {
-          some: { user_id: userId },
+          some: { user_id: userId as any },
         },
       },
       // ユーザーからの提出記録(Submissions)が「存在し」、
       // そのステータスが「未提出」または「差し戻し」である課題に絞り込む
       Submissions: {
         some: {
-          userid: userId,
+          userid: userId as any,
           status: { // statusが"未提出"または"差し戻し"のものを探す
             in: ["未提出", "差し戻し"],
           },
@@ -169,8 +167,8 @@ export async function getUnsubmittedAssignments() {
       id: true,
       title: true,
       due_date: true,
-      programmingProblemId: true, 
-      selectProblemId: true, 
+      programmingProblemId: true,
+      selectProblemId: true,
       group: {
         select: {
           groupname: true,
@@ -178,7 +176,7 @@ export async function getUnsubmittedAssignments() {
         },
       },
       Submissions: { // submissionStatusを取得するためにSubmissionsも選択
-        where: { userid: userId },
+        where: { userid: userId as any },
         select: { status: true },
         take: 1, // ユーザーの最新の提出ステータスを取得（複数ある場合は最初の一つ）
       },
@@ -234,8 +232,8 @@ function transformBasicInfoAProblem(dbProblem: DbBasicInfoAProblem): Serializabl
 
   // DBの correctAnswer (例: 0) から、正解の「テキスト」 (例: "説明A") を取得
   const correctOptionText = dbOptionsArray[dbProblem.correctAnswer]
-                           ? String(dbOptionsArray[dbProblem.correctAnswer])
-                           : ''; // Handle potential index out of bounds
+    ? String(dbOptionsArray[dbProblem.correctAnswer])
+    : ''; // Handle potential index out of bounds
 
   // Only include imagePath if the property actually exists on the DB object.
   // This avoids TypeScript errors when the Prisma model does not define imagePath.
@@ -283,12 +281,12 @@ export async function getBasicInfoAProblem(id: number): Promise<SerializableProb
       console.log(`[getBasicInfoAProblem] Found problem data for ID: ${id}. Transforming...`);
       // ここで transformBasicInfoAProblem がエラーを投げる可能性も考慮
       try {
-          const transformed = transformBasicInfoAProblem(basicInfoAProblem);
-          console.log(`[getBasicInfoAProblem] Transformation successful for ID: ${id}.`);
-          return transformed;
+        const transformed = transformBasicInfoAProblem(basicInfoAProblem);
+        console.log(`[getBasicInfoAProblem] Transformation successful for ID: ${id}.`);
+        return transformed;
       } catch (transformError) {
-          console.error(`[getBasicInfoAProblem] Error during transformation for ID: ${id}`, transformError);
-          return null; // 変換エラー時も null を返す
+        console.error(`[getBasicInfoAProblem] Error during transformation for ID: ${id}`, transformError);
+        return null; // 変換エラー時も null を返す
       }
     } else {
       console.log(`[getBasicInfoAProblem] No problem data found for ID: ${id}. Returning null.`);
@@ -302,85 +300,85 @@ export async function getBasicInfoAProblem(id: number): Promise<SerializableProb
 }
 
 /**
- * DBから取得した応用情報AM問題(Applied_am_Question)をクライアント用の形式に変換します。
- * (transformBasicInfoAProblem をコピーして作成)
- */
+ * DBから取得した応用情報AM問題(Applied_am_Question)をクライアント用の形式に変換します。
+ * (transformBasicInfoAProblem をコピーして作成)
+ */
 function transformAppliedInfoAmProblem(dbProblem: DbAppliedInfoAmProblem): SerializableProblem {
-  const answerLabels = ['ア', 'イ', 'ウ', 'エ'];
+  const answerLabels = ['ア', 'イ', 'ウ', 'エ'];
 
-  const dbOptionsArray = Array.isArray(dbProblem.answerOptions) ? dbProblem.answerOptions : [];
-  const transformedOptions = dbOptionsArray.map((optionText, index) => ({
-    label: answerLabels[index] || '?',
-    value: String(optionText),
-  })).slice(0, 4); 
+  const dbOptionsArray = Array.isArray(dbProblem.answerOptions) ? dbProblem.answerOptions : [];
+  const transformedOptions = dbOptionsArray.map((optionText, index) => ({
+    label: answerLabels[index] || '?',
+    value: String(optionText),
+  })).slice(0, 4);
 
-  const correctOptionText = dbOptionsArray[dbProblem.correctAnswer]
-                           ? String(dbOptionsArray[dbProblem.correctAnswer])
-                           : ''; 
+  const correctOptionText = dbOptionsArray[dbProblem.correctAnswer]
+    ? String(dbOptionsArray[dbProblem.correctAnswer])
+    : '';
 
-  const imagePath = 'imagePath' in dbProblem ? (dbProblem as any).imagePath : undefined;
+  const imagePath = 'imagePath' in dbProblem ? (dbProblem as any).imagePath : undefined;
 
-  return {
-    id: String(dbProblem.id),
-    title: { ja: dbProblem.title || '', en: dbProblem.title || '' },
-    description: { ja: dbProblem.description || '', en: dbProblem.description || '' },
-    explanationText: { ja: dbProblem.explanation || '', en: dbProblem.explanation || '' },
-    programLines: { ja: [], en: [] }, // A問題と同様にプログラムはない
-    answerOptions: {
-      ja: transformedOptions,
-      en: transformedOptions // ひとまず 'ja' と同じ
-    },
-    correctAnswer: correctOptionText,
-    initialVariables: {},
-    logicType: 'STATIC_QA', // 静的な選択問題
-    imagePath: imagePath,
-    sourceYear: dbProblem.sourceYear ?? undefined,
-    sourceNumber: dbProblem.sourceNumber ?? undefined,
-    difficultyId: dbProblem.difficultyId ?? 9, // 9 = 応用資格午前問題
-  };
+  return {
+    id: String(dbProblem.id),
+    title: { ja: dbProblem.title || '', en: dbProblem.title || '' },
+    description: { ja: dbProblem.description || '', en: dbProblem.description || '' },
+    explanationText: { ja: dbProblem.explanation || '', en: dbProblem.explanation || '' },
+    programLines: { ja: [], en: [] }, // A問題と同様にプログラムはない
+    answerOptions: {
+      ja: transformedOptions,
+      en: transformedOptions // ひとまず 'ja' と同じ
+    },
+    correctAnswer: correctOptionText,
+    initialVariables: {},
+    logicType: 'STATIC_QA', // 静的な選択問題
+    imagePath: imagePath,
+    sourceYear: dbProblem.sourceYear ?? undefined,
+    sourceNumber: dbProblem.sourceNumber ?? undefined,
+    difficultyId: dbProblem.difficultyId ?? 9, // 9 = 応用資格午前問題
+  };
 }
 
 /**
- * 【新設】応用情報AM問題用のデータ取得関数
- * (getBasicInfoAProblem をコピーして作成)
- */
+ * 【新設】応用情報AM問題用のデータ取得関数
+ * (getBasicInfoAProblem をコピーして作成)
+ */
 export async function getAppliedInfoAmProblem(id: number): Promise<SerializableProblem | null> {
-  console.log(`[getAppliedInfoAmProblem] Attempting to fetch problem with ID: ${id}`);
-  try {
-    // ★ モデルを Applied_am_Question に変更
-    const appliedAmProblem = await prisma.applied_am_Question.findUnique({
-      where: { id }
-    });
+  console.log(`[getAppliedInfoAmProblem] Attempting to fetch problem with ID: ${id}`);
+  try {
+    // ★ モデルを Applied_am_Question に変更
+    const appliedAmProblem = await prisma.applied_am_Question.findUnique({
+      where: { id }
+    });
 
-    if (appliedAmProblem) {
-      console.log(`[getAppliedInfoAmProblem] Found problem data for ID: ${id}. Transforming...`);
-      // ★ 変換関数を変更
-      const transformed = transformAppliedInfoAmProblem(appliedAmProblem);
-      console.log(`[getAppliedInfoAmProblem] Transformation successful for ID: ${id}.`);
-      return transformed;
-    } else {
-      console.log(`[getAppliedInfoAmProblem] No problem data found for ID: ${id}. Returning null.`);
-      return null;
-    }
+    if (appliedAmProblem) {
+      console.log(`[getAppliedInfoAmProblem] Found problem data for ID: ${id}. Transforming...`);
+      // ★ 変換関数を変更
+      const transformed = transformAppliedInfoAmProblem(appliedAmProblem);
+      console.log(`[getAppliedInfoAmProblem] Transformation successful for ID: ${id}.`);
+      return transformed;
+    } else {
+      console.log(`[getAppliedInfoAmProblem] No problem data found for ID: ${id}. Returning null.`);
+      return null;
+    }
 
-  } catch (error) {
-    console.error(`[getAppliedInfoAmProblem] Database error fetching ID: ${id}:`, error);
-    return null;
-  }
+  } catch (error) {
+    console.error(`[getAppliedInfoAmProblem] Database error fetching ID: ${id}:`, error);
+    return null;
+  }
 }
 
 /**
  * ログイン中のユーザーの、未提出の課題「数」のみを取得する
  */
 export async function getUnsubmittedAssignmentCount(): Promise<number> {
-  
+
   // 1. セッションからユーザーIDを取得
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
     return 0; // ログインしていない
   }
-  const userId = Number(session.user.id);
-  if (isNaN(userId)) {
+  const userId = session.user.id;
+  if (!userId) {
     return 0; // 無効なID
   }
 
@@ -390,12 +388,12 @@ export async function getUnsubmittedAssignmentCount(): Promise<number> {
       where: {
         group: {
           groups_User: {
-            some: { user_id: userId },
+            some: { user_id: userId as any },
           },
         },
         Submissions: {
           some: {
-            userid: userId,
+            userid: userId as any,
             status: "未提出", // "未提出" のステータスを持つもの
           },
         },

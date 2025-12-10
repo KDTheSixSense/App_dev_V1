@@ -1071,9 +1071,8 @@ const TraceClient = () => {
             toast.error(`エラー (行 ${lineIndex + 1}): ${errorMsg}`);
             setIsTraceStarted(false);
 
-            // 自動エラー報告（裏で実行）
             saveErrorLogAction(errorMsg, code, lineIndex, variables).then(() => {
-                console.log("Error log reported automatically.");
+                // Log reported
             });
         }
     }, [isTraceStarted, currentLine, programLines, variables, controlFlowStack, findBlockEnd, callStack, definedFunctions, variableTypes, output]);

@@ -1,6 +1,6 @@
 // 型定義: この関数が受け取るユーザーデータの基本的な形
 type UserWithScore = {
-  id: number;
+  id: string;
   score: number;
   // ...その他のプロパティ
 };

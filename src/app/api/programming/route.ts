@@ -7,7 +7,7 @@ import { sessionOptions } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 interface SessionData {
-  user?: { id: number | string; email: string };
+  user?: { id: string; email: string };
 }
 
 export async function POST(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   if (!sessionUserId) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
-  const userId = Number(sessionUserId);
+  const userId = sessionUserId;
 
   try {
     // const { hashedId } = req.params as { hashedId: string };

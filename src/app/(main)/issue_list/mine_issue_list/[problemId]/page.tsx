@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Play, Send, CheckCircle, ChevronDown, Sparkles, FileText, Code, TextCursorInput, GripVertical } from 'lucide-react';
 // パネルのリサイズ機能を提供するライブラリのコンポーネントをインポートします
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import DOMPurify from 'dompurify';
+import { sanitize } from '@/lib/sanitizer';
 import toast from 'react-hot-toast';
 
 // --- データと型のインポート ---
@@ -28,7 +28,7 @@ const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ p
         <div className="p-6 space-y-6 overflow-y-auto">
 
 
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(problem.description.ja.replace(/\n/g, '<br />')) }} />
+            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(problem.description.ja.replace(/\n/g, '<br />')) }} />
             <div>
                 <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">サンプルケース</h3>
                 {problem.sampleCases?.map((sc, index) => (

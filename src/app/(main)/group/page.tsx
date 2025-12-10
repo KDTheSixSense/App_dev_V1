@@ -25,7 +25,7 @@ interface Group {
 interface Member {
     admin_flg: boolean;
     user: {
-        id: number;
+        id: string;
         username: string | null;
         icon: string | null;
     };
@@ -65,7 +65,7 @@ const ClassroomApp: React.FC = () => {
     // 状態管理
     const [currentView, setCurrentView] = useState<'empty' | 'groups' | 'detail' | 'settings'>('empty');
     const [groups, setGroups] = useState<Group[]>([]);
-    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
     const [activeTab, setActiveTab] = useState<'お知らせ' | '課題' | 'メンバー'>('お知らせ');
     const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
@@ -321,6 +321,7 @@ const ClassroomApp: React.FC = () => {
             if (result.success) {
                 setShowCreateModal(false);
                 setCreateGroupForm({ className: '', description: '' });
+                toast.success('グループの作成に成功しました'); // 成功トーストを追加
                 fetchGroups(); // Server ActionのrevalidatePathが機能するため、これは不要になる場合があります
                 router.refresh(); // ★ 追加: 画面更新
             } else {
@@ -329,7 +330,7 @@ const ClassroomApp: React.FC = () => {
             }
         } catch (error) {
             console.error(error);
-            toast.error(error instanceof Error ? error.message : '不明なエラー');
+            toast.error(`グループの作成に失敗しました(エラーコード: ${error instanceof Error ? error.message : '不明なエラー'})`);
         }
     };
 

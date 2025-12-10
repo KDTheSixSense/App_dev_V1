@@ -8,8 +8,9 @@ datasource db {
 }
 
 model User {
-  id                       Int                   @id @default(autoincrement()) // ID: 整数型、主キー、自動増分
+  id                       String                @id @default(uuid()) // ID: UUID
   email                    String                @unique // メールアドレス: 文字列型、ユニーク
+  isAdmin                  Boolean               @default(false) // 管理者フラグ: デフォルトFalse
   password                 String? // パスワード: 文字列型
   hash                     String? // ハッシュ値: 文字列型、Null許容
   username                 String? // ユーザー名: 文字列型、Null許容
@@ -54,7 +55,7 @@ model User {
 
 model LoginHistory {
   id         Int      @id @default(autoincrement())
-  userId     Int
+  userId     String
   loggedInAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
@@ -71,13 +72,13 @@ model Post {
   groupId Int // どのグループへの投稿か
   group   Groups @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  authorId Int // 誰が投稿したか
+  authorId String // 誰が投稿したか
   author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model UserAnswer {
   id         Int      @id @default(autoincrement())
-  userId     Int
+  userId     String
   answer     String
   isCorrect  Boolean
   answeredAt DateTime @default(now())
@@ -131,7 +132,7 @@ model Language {
 model Answer_Algorithm {
   id         Int     @id @default(autoincrement())
   questionId Int
-  userId     Int
+  userId     String
   symbol     String
   isCorrect  Boolean
   text       String? @db.Text
@@ -276,7 +277,7 @@ model SelectProblem {
   subjectId Int
   subject   Subject @relation(fields: [subjectId], references: [id])
 
-  createdBy Int?
+  createdBy String?
   creator   User? @relation("SelectProblemCreator", fields: [createdBy], references: [id])
 
   assignment Assignment? // 課題との関連 (オプショナル)
@@ -312,7 +313,7 @@ model ProgrammingProblem {
   isPublished       Boolean @default(false) // 公開済みフラグ
 
   // --- 作成者情報 ---
-  createdBy Int? // 作成者ID
+  createdBy String? // 作成者ID
   creator   User? @relation("ProblemCreator", fields: [createdBy], references: [id])
 
   // --- タイムスタンプ ---
@@ -391,7 +392,7 @@ model Genre {
 
 model Answerd_Genre_Table {
   id                Int @id @default(autoincrement())
-  user_id           Int
+  user_id           String
   Answer_IT         Int
   Answer_Basic_A    Int
   Answer_Basic_B    Int
@@ -437,7 +438,7 @@ model UserSubjectProgress {
   xp    Int @default(0) //科目ごとの経験値
 
   // --- リレーションのためのフィールド ---
-  user_id    Int
+  user_id    String
   subject_id Int
 
   // --- リレーション定義 ---
@@ -477,7 +478,7 @@ model Groups {
 }
 
 model Groups_User {
-  user_id   Int
+  user_id   String
   group_id  Int
   admin_flg Boolean
   // --- リレーション定義 ---
@@ -506,7 +507,7 @@ model Assignment {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  authorId    Int? // 課題作成者のID
+  authorId    String? // 課題作成者のID
   author      User?    @relation(fields: [authorId], references: [id])
 
   programmingProblemId Int?                @unique // プログラミング問題との関連付け (オプショナル)
@@ -526,7 +527,7 @@ model Assignment {
 model Submissions {
   id            Int      @id @default(autoincrement())
   assignment_id Int
-  userid        Int
+  userid        String
   description   String
   status        String
   user          User     @relation(fields: [userid], references: [id], onDelete: Cascade)
@@ -544,7 +545,7 @@ model Submissions {
 
 model Status_Kohaku {
   id                  Int       @id @default(autoincrement())
-  user_id             Int       @unique
+  user_id             String       @unique
   name                String    @default("コハク")
   status              String
   hungerlevel         Int       @default(1000) // 満腹度の初期値
@@ -574,7 +575,7 @@ model Title {
 }
 
 model UserUnlockedTitle {
-  userId     Int
+  userId     String
   titleId    Int
   unlockedAt DateTime @default(now())
 
@@ -604,7 +605,7 @@ model Create_event {
   updatedAt    DateTime  @updatedAt
 
   // --- リレーション ---
-  creatorId         Int
+  creatorId         String
   creator           User     @relation("CreatedEvents", fields: [creatorId], references: [id])
   
   participants      Event_Participants[]
@@ -628,7 +629,7 @@ model Event_Participants {
   eventId Int
   event   Create_event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  userId Int
+  userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId], name: "eventId_userId_unique")
@@ -668,7 +669,7 @@ model Event_Submission {
   submittedAt DateTime @default(now())
 
   // --- リレーション ---
-  userId Int
+  userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   eventIssueId Int
@@ -707,7 +708,7 @@ model DailyMissionMaster {
 model UserDailyMissionProgress {
   
   // --- リレーション ---
-  userId     Int
+  userId     String
   user       User     @relation(fields: [userId], references: [id])
   
   missionId  Int
@@ -733,7 +734,7 @@ model UserDailyMissionProgress {
 
 model DailyActivitySummary {
   id                Int      @id @default(autoincrement())
-  userId            Int
+  userId            String
   date              DateTime @db.Date // 重要な点: 時間を含まない「日付」のみを保存
   totalXpGained     Int      @default(0) // その日に獲得した総XP
   totalTimeSpentMs  BigInt   @default(0) // その日に学習した総時間 (ミリ秒)
@@ -771,7 +772,7 @@ model AssignmentComment {
   assignmentId Int
   assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 
-  authorId Int
+  authorId String
   author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([assignmentId])
@@ -779,11 +780,23 @@ model AssignmentComment {
 
 model AuditLog {
   id        Int      @id @default(autoincrement())
-  userId    Int?
-  action    String   // "LOGIN", "EXECUTE_CODE", "POST_CREATE" etc.
-  details   String?  @db.Text // JSON string or details
+  userId    String?
+  action    String   // "LOGIN", "EXECUTE_CODE", "POST_CREATE", "PAGE_VIEW" etc.
+  details   String?  @db.Text // JSON string or details (Legacy / Simple)
+  
+  // New granular fields
   ipAddress String?
+  userAgent String?  // Browser/OS info
+  path      String?  // Requested URL path
+  method    String?  // HTTP Method (GET, POST etc.)
+  duration  Int?     // Duration in ms
+  metadata  Json?    // Structured data for easier querying
+
   createdAt DateTime @default(now())
 
   user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }

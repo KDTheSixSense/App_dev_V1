@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Post } from '../types/AdminTypes';
-import DOMPurify from 'dompurify';
+import { sanitize } from '@/lib/sanitizer';
 
 interface PostListProps {
     posts: Post[];
@@ -239,7 +239,7 @@ export const PostList: React.FC<PostListProps> = ({
                                 marginBottom: '16px',
                                 whiteSpace: 'pre-wrap'
                             }}
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+                            dangerouslySetInnerHTML={{ __html: sanitize(post.content) }}
                         />
                     )}
                 </div>

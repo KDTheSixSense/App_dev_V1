@@ -1,5 +1,10 @@
 version: '3.8'
 
+networks:
+  default:
+  sandbox_net:
+    internal: true
+
 services:
   # アプリケーションコンテナ (Next.js, Prisma)
   app:
@@ -27,6 +32,9 @@ services:
 
       - .env # docker-compose.ymlから見て一つ上の階層の.envファイル
       - ../.env.local
+    networks:
+      - default
+      - sandbox_net
 
   # データベースコンテナ (PostgreSQL)
   db:
@@ -40,9 +48,30 @@ services:
     # これにより、POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DBが自動で設定される
     env_file:
       - .env # docker-compose.ymlから見て一つ上の階層の.envファイル
+    networks:
+      - default
+
+  # サンドボックスコンテナ (Code Execution)
+  sandbox:
+    build:
+      context: ./sandbox
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    networks:
+      - sandbox_net
+    security_opt:
+      - no-new-privileges:true
+    cap_add:
+      - NET_ADMIN
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
 
 # 名前付きボリュームの定義
 volumes:
-  db_data:
-  # node_modules用の名前付きボリュームを定義
+  db_data: # node_modules用の名前付きボリュームを定義
+
   node_modules:

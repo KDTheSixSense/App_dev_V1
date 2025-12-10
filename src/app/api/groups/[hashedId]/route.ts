@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { groupParamsSchema } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
@@ -6,7 +7,7 @@ import { cookies } from 'next/headers';
 
 // セッションデータの型定義
 interface SessionData {
-  user?: { id: number; email: string };
+  user?: { id: string; email: string };
 }
 
 /**
@@ -15,7 +16,7 @@ interface SessionData {
  */
 export async function GET(
   request: NextRequest,
-  { params }: any // Next.js 13+ の標準的な引数の書き方
+  { params }: { params: Promise<{ hashedId: string }> } // params is now a Promise in Next.js 15+
 ) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
@@ -24,13 +25,11 @@ export async function GET(
   }
 
   try {
-    const { hashedId } = params; // Next.js 13+ では context の代わりに params から取得します
+    const { hashedId } = await params;
 
-    if (!hashedId) {
-      return NextResponse.json(
-        { message: 'IDが指定されていません' },
-        { status: 400 }
-      );
+    const validation = groupParamsSchema.safeParse({ hashedId });
+    if (!validation.success) {
+      return NextResponse.json({ message: '無効なID形式です' }, { status: 400 });
     }
 
     const group = await prisma.groups.findUnique({
@@ -61,7 +60,7 @@ export async function GET(
       where: {
         group_id_user_id: {
           group_id: group.id,
-          user_id: Number(session.user!.id),
+          user_id: session.user!.id,
         },
       },
     });

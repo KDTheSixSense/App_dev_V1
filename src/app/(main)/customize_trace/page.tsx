@@ -12,12 +12,6 @@ const TracePage = () => {
       {/* widthを95%にし、最大幅制限を解除してワイドにする */}
       <div className="w-[95%] mx-auto">
         <header className="text-center mb-8">
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-            カスタムトレースツール
-          </h1>
-          <p className="mt-2 text-lg text-gray-600">
-            コードを入力して、ステップごとに実行を追跡しましょう。
-          </p>
           
           {/* トグルボタン (変更なし) */}
           <div className="mt-6 flex justify-center">

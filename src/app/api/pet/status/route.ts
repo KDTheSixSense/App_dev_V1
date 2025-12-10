@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
-import { sessionOptions, SessionData} from '@/lib/session';
+import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 const MAX_HUNGER = 200; // 最大満腹度（ actions.ts と一致させる）
@@ -13,7 +13,7 @@ export async function GET() {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
 
-  const userId = Number(session.user.id);
+  const userId = session.user.id;
 
   try {
     // 2. ユーザー情報と、関連するペット情報を一度に取得
@@ -46,4 +46,5 @@ export async function GET() {
   } catch (error) {
     console.error('API /pet/status error:', error);
     return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
-  }}
+  }
+}

@@ -8,7 +8,7 @@ import PetStatusView from '../profile/Pet/PetStatusview';
 import { updateUserProfileAction } from './actions';
 import { changePasswordAction } from '@/lib/actions';
 import dynamic from 'next/dynamic';
-import DOMPurify from 'dompurify';
+
 import toast from 'react-hot-toast';
 
 const DailyActivityChart = dynamic(
@@ -52,6 +52,7 @@ interface ProfileClientProps {
   initialUser: SerializedUser;
   initialStats: UserStats;
   aiAdvice: string;
+  hasPassword: boolean;
 }
 
 const presetIcons = {
@@ -59,7 +60,7 @@ const presetIcons = {
   female: ['/images/DefaultIcons/female1.jpg', '/images/DefaultIcons/female2.jpg', '/images/DefaultIcons/female3.jpg'],
 };
 
-export default function ProfileClient({ initialUser, initialStats, aiAdvice }: ProfileClientProps) {
+export default function ProfileClient({ initialUser, initialStats, aiAdvice, hasPassword }: ProfileClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -147,7 +148,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
       // L171: ★ 修正点: nullをundefinedに変換する (?? 演算子を使用)
       // formData.icon が null の場合、updateUserProfileAction の icon: string | undefined に合わせるため undefined を渡す
       icon: formData.icon ?? undefined, // 'Alice Smith' や 'null' が入っている可能性を排除する
-      username: formData.username ? DOMPurify.sanitize(formData.username) : undefined, // XSS対策: ユーザー名をサニタイズ
+      username: formData.username ? formData.username : undefined, // XSS対策: Reactがデフォルトでエスケープするため不要
     };
 
     const profileResult = await updateUserProfileAction(dataForAction);
@@ -157,7 +158,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
     }
 
     // 2. パスワード変更が要求されている場合、パスワードも更新
-    if (success && showPasswordChange) {
+    if (success && showPasswordChange && hasPassword) {
       if (passwordData.newPassword !== passwordData.confirmPassword) {
         success = false;
         errorMessage = '新しいパスワードが一致しません。';
@@ -259,7 +260,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice }: P
                 </div>
 
                 {/* パスワード変更 */}
-                {isEditing && (
+                {isEditing && hasPassword && (
                   <div>
                     {!showPasswordChange ? (
                       <button type="button" onClick={() => setShowPasswordChange(true)} className="text-blue-500 hover:underline">パスワードを変更する</button>

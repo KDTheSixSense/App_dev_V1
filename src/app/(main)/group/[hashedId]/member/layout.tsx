@@ -27,19 +27,19 @@ export default async function MemberLayout({
   const { hashedId } = await params;
 
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userId = session.user?.id ? Number(session.user.id) : null;
+  const userId = session.user?.id ? session.user.id : null;
 
   if (!userId) {
     redirect('/auth/login');
   }
 
   const group = await prisma.groups.findUnique({
-      where: { hashedId: hashedId }, // awaitした変数を使用
-      select: { id: true },
+    where: { hashedId: hashedId }, // awaitした変数を使用
+    select: { id: true },
   });
 
   if (!group) {
-      redirect('/group?error=not_found');
+    redirect('/group?error=not_found');
   }
 
   const membership = await prisma.groups_User.findUnique({

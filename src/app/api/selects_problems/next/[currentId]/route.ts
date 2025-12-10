@@ -3,10 +3,11 @@ import { prisma } from '@/lib/prisma'; // 名前付きインポートを使用
 
 export async function GET(
   req: Request,
-  { params }: any
+  { params }: { params: Promise<{ currentId: string }> }
 ) {
   try {
-    const currentId = parseInt(params.currentId, 10);
+    const { currentId: currentIdStr } = await params;
+    const currentId = parseInt(currentIdStr, 10);
     if (isNaN(currentId)) {
       return NextResponse.json({ message: '無効なIDです' }, { status: 400 });
     }
