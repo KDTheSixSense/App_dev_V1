@@ -8,12 +8,11 @@ import { getAppSession } from '@/lib/auth'; // セッション取得用
 
 // ページに渡されるパラメータの型
 interface ProblemDetailPageProps {
-  params: Promise<{ problemId: string }>;
+  params: { problemId: string };
 }
 
 export default async function ProblemDetailPage({ params }: ProblemDetailPageProps) {
-  const resolvedParams = await params;
-  const id = parseInt(resolvedParams.problemId, 10);
+  const id = parseInt(params.problemId, 10);
 
   if (isNaN(id)) {
     notFound();
@@ -34,7 +33,7 @@ export default async function ProblemDetailPage({ params }: ProblemDetailPagePro
 
   if (session?.user?.id) {
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: session.user.id as any },
       select: { aiAdviceCredits: true },
     });
     initialCredits = user?.aiAdviceCredits ?? 0;

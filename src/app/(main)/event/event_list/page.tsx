@@ -33,7 +33,7 @@ const EventListPage = async () => {
           // 自分が参加者であるイベント
           participants: {
             some: {
-              userId: userId,
+              userId: userId as any,
             },
           },
         },

@@ -18,11 +18,9 @@ type BasicInfoAProblemDetailPageProps = {
 };
 
 // --- 修正点 2: props の型から Promise を削除 ---
-const BasicInfoAProblemDetailPage = async ({ params, searchParams }: any) => {
+const BasicInfoAProblemDetailPage = async ({ params, searchParams }: BasicInfoAProblemDetailPageProps) => {
 
-  // --- 修正点 3: 'await params' を使用してパラメータを取得 ---
-  const resolvedParams = await params;
-  const problemIdStr = resolvedParams.problemId;
+  const problemIdStr = params.problemId;
   const problemIdNum = parseInt(problemIdStr, 10);
   // const resolvedSearchParams = searchParams; // searchParams も await は不要です
 
@@ -47,7 +45,7 @@ const BasicInfoAProblemDetailPage = async ({ params, searchParams }: any) => {
   if (session?.user?.id) {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
+        where: { id: session.user.id as any },
         select: { aiAdviceCredits: true }
       });
       if (user) {

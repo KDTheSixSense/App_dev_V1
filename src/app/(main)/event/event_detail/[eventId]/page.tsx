@@ -81,10 +81,10 @@ async function getEventAndUserRole(eventId: number, userId: string | null) {
   }
 
   // 参加者かどうかをチェック
-  const participant = typedEvent.participants.find(p => p.userId === userId);
+  const participant = typedEvent.participants.find(p => String(p.userId) === userId);
 
   // 管理者（作成者またはisAdminフラグを持つ参加者）かどうかを判定
-  if (typedEvent.creatorId === userId || participant?.isAdmin) {
+  if (String(typedEvent.creatorId) === userId || participant?.isAdmin) {
     return { event: typedEvent, role: 'admin' as Role, participant };
   }
 
@@ -95,9 +95,8 @@ async function getEventAndUserRole(eventId: number, userId: string | null) {
   return { event: typedEvent, role: null, participant: null };
 }
 
-export default async function EventDetailPage({ params }: any) {
-  const resolvedParams = await params;
-  const eventId = parseInt(resolvedParams.eventId, 10);
+export default async function EventDetailPage({ params }: { params: { eventId: string } }) {
+  const eventId = parseInt(params.eventId, 10);
   const session = await getAppSession();
   const userId = session?.user?.id ? session.user.id : null;
 
@@ -130,7 +129,7 @@ export default async function EventDetailPage({ params }: any) {
     // 2. イベントが終了後の場合 (isStarted: false, endTime < now)
     // ★★★ 修正点: roleが'member'の場合のみリダイレクトする ★★★
     if (!event.isStarted && event.endTime && new Date(event.endTime) < new Date()) {
-      const score = event.participants.find(p => p.userId === userId)?.event_getpoint ?? 0;
+      const score = event.participants.find(p => String(p.userId) === userId)?.event_getpoint ?? 0;
       // イベント名をエンコード
       const eventName = encodeURIComponent(event.title);
 

@@ -45,3 +45,28 @@ FROM builder AS migrator
 
 # このイメージのデフォルトの動作を設定
 CMD ["npm", "run", "db:deploy"]
+
+# --------------------------------------------------------------------
+# ★★★ ステージ4: サンドボックス (Sandbox / コード実行用の隔離部屋) ★★★
+# --------------------------------------------------------------------
+FROM node:20-alpine AS sandbox-env
+
+# 1. 必要なランタイムのインストール (例: Python, GCCなど)
+RUN apk add --no-cache python3 py3-pip build-base
+
+WORKDIR /sandbox
+
+# 2. セキュリティ強化: 権限の低いユーザーを作成
+RUN addgroup --system --gid 2000 sandboxgroup && \
+    adduser --system --uid 2000 sandboxuser -G sandboxgroup
+
+# 3. 実行に必要なスクリプトやライブラリがあればコピー
+# 例: ユーザーコードを受け取って実行する小さなサーバー(Worker)など
+COPY sandbox-worker/ ./
+
+# 4. ユーザーを切り替え (rootでの実行は絶対NG)
+USER sandboxuser
+
+# 5. 実行コマンド
+# ここでは例として、コード受け待ちのWorkerプロセスを起動
+CMD ["node", "worker.js"]

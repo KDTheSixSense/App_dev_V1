@@ -33,7 +33,7 @@ const DailyMissionPage = async () => {
     // 5. データベースから今日のミッション進捗を取得
     const progressEntries = await prisma.userDailyMissionProgress.findMany({
       where: {
-        userId: userId,
+        userId: userId as any,
         date: missionDate,
       },
       // 関連するミッションマスターの情報も一緒に取得 (include)

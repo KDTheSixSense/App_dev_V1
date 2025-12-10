@@ -21,7 +21,7 @@ export default async function GroupRedirectPage({ params }: Props) {
 
   const groupMembership = await prisma.groups_User.findFirst({
     where: {
-      user_id: userId,
+      user_id: userId as any,
       group: {
         hashedId: hashedId, // awaitした変数を使用
       },

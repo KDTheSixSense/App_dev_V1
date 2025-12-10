@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     // console.log(`Attempting to update user ${session.user.id} with icon path: /uploads/icons/${filename}`);
     const user = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: session.user.id as any },
       data: { icon: `/uploads/icons/${filename}` },
     });
     // console.log(`User updated successfully: ${user.id}`);

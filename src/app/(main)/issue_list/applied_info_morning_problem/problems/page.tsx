@@ -55,7 +55,7 @@ const AppliedInfoMorningProblemsListPage = async () => {
     // スキーマに基づき、applied_am_question_id を使用
     const correctAnswers = await prisma.userAnswer.findMany({
       where: {
-        userId: userId,
+        userId: userId as any,
         isCorrect: true,
         applied_am_question: { isNot: null },
       },

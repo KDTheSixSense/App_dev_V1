@@ -52,7 +52,7 @@ const ProgrammingProblemsListPage = async () => {
     // `programingProblem_id` を使って正解履歴を取得
     const correctAnswers = await prisma.userAnswer.findMany({
       where: {
-        userId: userId,
+        userId: userId as any,
         isCorrect: true,
         programingProblem_id: { not: null },
       },

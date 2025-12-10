@@ -28,7 +28,7 @@ export default async function MainPagesLayout({
   if (userId) {
     await ensureDailyMissionProgress(userId);
     userWithPet = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: userId as any },
       select: {
         id: true,
         email: true,

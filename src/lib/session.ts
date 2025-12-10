@@ -16,11 +16,7 @@ export const sessionOptions: SessionOptions = {
   cookieName: process.env.COOKIE_NAME!,
   cookieOptions: {
     httpOnly: true,
-<<<<<<< HEAD
     secure: process.env.NODE_ENV === 'production', // 本番環境のみSecure属性を有効化
-=======
-    secure: process.env.NODE_ENV === 'production', // 本番環境のみSecure属性を有効化
->>>>>>> main
     sameSite: 'lax',
   },
   // ブラウザを閉じたときにセッションを無効化するため、ttl（サーバー側の有効期限）や

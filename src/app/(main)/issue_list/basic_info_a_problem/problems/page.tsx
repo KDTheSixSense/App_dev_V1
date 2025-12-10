@@ -60,7 +60,7 @@ const ProblemsListPage = async () => {
 
     const correctAnswers = await prisma.userAnswer.findMany({
       where: {
-        userId: userId,
+        userId: userId as any,
         isCorrect: true,
         // 基本情報A問題の解答のみに絞り込む
         basic_A_Info_Question_id: {

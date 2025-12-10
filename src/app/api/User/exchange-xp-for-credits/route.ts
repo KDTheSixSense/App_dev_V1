@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const result = await prisma.$transaction(async (tx) => {
       // 1. (Optional) Optimistic check for better error message
       const currentUser = await tx.user.findUnique({
-        where: { id: userId },
+        where: { id: userId as any },
         select: { xp: true },
       });
       if (!currentUser) throw new Error('ユーザーが見つかりません');
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       // "where xp >= cost" ensures we never drop below 0 even in race conditions
       const result = await tx.user.updateMany({
         where: {
-          id: userId,
+          id: userId as any,
           xp: { gte: EXCHANGE_COST_XP },
         },
         data: {
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
       // 3. Fetch updated state
       const updatedUser = await tx.user.findUnique({
-        where: { id: userId },
+        where: { id: userId as any },
         select: {
           xp: true,
           aiAdviceCredits: true,

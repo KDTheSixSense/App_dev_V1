@@ -29,7 +29,7 @@ export async function updateUserProfileAction(formData: ProfileUpdateData) {
     const hasTitle = await prisma.userUnlockedTitle.findUnique({
       where: {
         userId_titleId: {
-          userId: userId,
+          userId: userId as any,
           titleId: formData.selectedTitleId,
         },
       },
@@ -42,7 +42,7 @@ export async function updateUserProfileAction(formData: ProfileUpdateData) {
 
   try {
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: userId as any },
       data: {
         username: formData.username,
         birth: formData.birth ? new Date(formData.birth) : null,
@@ -99,7 +99,7 @@ export async function getDailyActivityAction(timeframeDays: 7 | 14 | 30) {
     // 2. DBから取得 (problemsCompleted も select に追加)
     const dbData = await prisma.dailyActivitySummary.findMany({
       where: {
-        userId: userId,
+        userId: userId as any,
         date: {
           gte: startDateQuery,
           lte: endDateQuery,

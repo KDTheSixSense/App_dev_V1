@@ -8,7 +8,7 @@ export default async function Account() {
 
     const user = await prisma.user.findUnique({
         where: {
-            id: "9999", // IDが40のユーザーを検索
+            id: "9999" as any, // IDが40のユーザーを検索
         },
     });
 

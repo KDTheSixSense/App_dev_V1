@@ -12,15 +12,13 @@ import { ArrowLeft } from 'lucide-react'; // lucide-reactのインポートを�
 
 // 型定義を 'basic_info_a_problem' と同様に修正
 type AppliedInfoProblemDetailPageProps = {
-  params: { problemId: string }; // 'Promise' を削除
+  params: { problemId: string };
   searchParams?: { [key: string]: string | string[] | undefined };
 };
 
 // 'async' 関数に変更
-const AppliedInfoProblemDetailPage = async ({ params, searchParams }: any) => {
-  // 'await params' を使用
-  const resolvedParams = await params;
-  const problemIdStr = resolvedParams.problemId;
+const AppliedInfoProblemDetailPage = async ({ params, searchParams }: AppliedInfoProblemDetailPageProps) => {
+  const problemIdStr = params.problemId;
   const problemIdNum = parseInt(problemIdStr, 10);
 
   if (isNaN(problemIdNum)) {
@@ -45,7 +43,7 @@ const AppliedInfoProblemDetailPage = async ({ params, searchParams }: any) => {
   if (session?.user?.id) {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
+        where: { id: session.user.id as any },
         select: { aiAdviceCredits: true }
       });
       if (user) {

@@ -93,7 +93,6 @@ export default function ConfirmGoogleSignup() {
         {/* --- ヘッダーロゴ (中央配置) --- */}
         <header className="relative flex h-40 items-center justify-center py-6">
           <Link href="/" className="relative h-full w-full max-w-lg">
-<<<<<<< HEAD
             <Image
               src="/images/Infopia_logo.png"
               alt="Infopia Logo"
@@ -101,15 +100,6 @@ export default function ConfirmGoogleSignup() {
               priority
               className="object-contain"
             />
-=======
-            <Image
-              src="/images/Infopia_logo.png"
-              alt="Infopia Logo"
-              fill
-              priority
-              className="object-contain"
-            />
->>>>>>> main
           </Link>
         </header>
 

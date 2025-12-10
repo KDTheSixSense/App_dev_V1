@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
     // 現在のユーザー情報を取得
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: userId as any },
       select: { aiAdviceCredits: true },
     });
 
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
     // クレジットを1つ減らす
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: userId as any },
       data: {
         aiAdviceCredits: {
           decrement: 1,

@@ -10,15 +10,14 @@ import { getProblemForClient } from '@/lib/data';
 import ProblemClient from './ProblemClient'; // 同じ階層のクライアントコンポーネントをインポート
 
 interface PageProps {
-  params: Promise<{ problemId: string }>;
+  params: { problemId: string };
 }
 
 /**
  * 基本情報技術者試験 科目B の問題詳細ページ (サーバーコンポーネント)
  * ユーザーのクレジット数を取得し、クライアントに渡します
  */
-const BasicInfoBProblemDetailPage = async (props: PageProps) => {
-  const params = await props.params;
+const BasicInfoBProblemDetailPage = async ({params}: PageProps) => {
   const problemId = parseInt(params.problemId, 10);
   if (isNaN(problemId)) {
     notFound();
@@ -36,7 +35,7 @@ const BasicInfoBProblemDetailPage = async (props: PageProps) => {
   let userCredits = 0; // デフォルトは0回
   if (session.user) {
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: session.user.id as any },
       select: { aiAdviceCredits: true }
     });
     if (user) {

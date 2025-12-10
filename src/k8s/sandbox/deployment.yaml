@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sandbox-service
+  labels:
+    app: sandbox-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sandbox-service
+  template:
+    metadata:
+      labels:
+        app: sandbox-service
+    spec:
+      containers:
+      - name: sandbox-service
+        image: your-container-registry/sandbox-service:latest # ■■■ ここをあなたのコンテナレジストリのイメージ名に書き換えてください ■■■
+        ports:
+        - containerPort: 4000
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

@@ -17,13 +17,8 @@ export default async function RankingPage() {
   // 科目別ランキングのデータを準備 (Raw Queryを使用)
   const getSubjects = prisma.subject.findMany(); // 科目リストは引き続き必要
 
-<<<<<<< HEAD
-  const rawRankings: Array<{
+  const rawRankingsPromise = prisma.$queryRaw<Array<{
     id: string;
-=======
-  const rawRankings: Array<{
-    id: string;
->>>>>>> main
     name: string;
     iconUrl: string | null;
     score: number;
@@ -61,10 +56,10 @@ export default async function RankingPage() {
       rp.subject_id, rp.rank;
   `);
 
-  const [allUsersOverall, subjects, rawRankings] = await Promise.all([getUsers, getSubjects, getRawRankings]);
+  const [allUsersOverall, subjects, rawRankings] = await Promise.all([getUsers, getSubjects, rawRankingsPromise]);
   
   const overallRankingFull = assignRanks(allUsersOverall.map(user => ({
-    id: user.id,
+    id: String(user.id),
     name: user.username || '名無しさん',
     iconUrl: user.icon || '/images/test_icon.webp',
     score: user.level,

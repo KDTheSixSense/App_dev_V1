@@ -46,7 +46,7 @@ export default async function MemberLayout({
     where: {
       group_id_user_id: {
         group_id: group.id,
-        user_id: userId,
+        user_id: userId as any,
       },
     },
   });

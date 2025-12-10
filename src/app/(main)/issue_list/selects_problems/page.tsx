@@ -50,7 +50,7 @@ const SelectProblemsListPage = async () => {
     // `selectProblem_id` を使って正解履歴を取得
     const correctAnswers = await prisma.userAnswer.findMany({
       where: {
-        userId: userId,
+        userId: userId as any,
         isCorrect: true,
         selectProblem_id: { not: null },
       },

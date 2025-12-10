@@ -89,33 +89,15 @@ export default async function ProfilePage() {
   const userId = session.user.id;
 
   // --- 1. ユーザー、称号、ペット情報を一括取得 ---
-<<<<<<< HEAD
   // セキュリティ対策: password/hashを含めないようにselectを使用
   const userWithDetails = await prisma.user.findUnique({
-=======
-  // セキュリティ対策: password/hashを含めないようにselectを使用
-  const userWithDetails = await prisma.user.findUnique({
->>>>>>> main
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      level: true,
-      xp: true,
-      icon: true,
-      class: true,
-      year: true,
-      birth: true,
-      lastlogin: true,
-      continuouslogin: true,
-      isAgreedToTerms: true,
-      isAgreedToPrivacyPolicy: true,
+    where: { id: userId as any },
+    include: { // select を include に変更して、リレーション先のデータも取得
       unlockedTitles: { include: { title: true } },
       selectedTitle: true,
       status_Kohaku: true,
-      password: true, // パスワードの有無を確認するために取得 (後で削除)
     },
+  });
   if (!userWithDetails) {
     redirect("/auth/login");
   }
@@ -128,23 +110,16 @@ export default async function ProfilePage() {
 
   console.log(`[ProfilePage] UserID: ${userId}, hasPassword: ${hasPassword} (Value: ${userWithDetails.password === null ? 'null' : typeof userWithDetails.password})`);
 
-
-  // クライアントに渡す前にpasswordフィールドを削除（セキュリティ対策）
-  delete userWithDetails.password;
-
   // --- 2. チャート用の統計データを取得・計算 ---
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  const getRecentLogins = prisma.loginHistory.findMany({
-    where: { userId: userId, loggedInAt: { gte: sevenDaysAgo } },
+  const recentLogins = await prisma.loginHistory.findMany({
+    where: { userId: userId as any, loggedInAt: { gte: sevenDaysAgo } },
   });
-<<<<<<< HEAD
-  const uniqueLoginDates = new Set(recentLogins.map(login => login.loggedInAt.toISOString().split('T')[0]));=======
   const uniqueLoginDates = new Set(recentLogins.map(login => login.loggedInAt.toISOString().split('T')[0]));
 
->>>>>>> main
   // (ここはダミーデータのため、実際のロジックに置き換えてください)
   const subjectProgress = {
     basicA: 98,
@@ -160,21 +135,20 @@ export default async function ProfilePage() {
   const startDate = new Date(endDate);
   startDate.setDate(endDate.getDate() - (ADVICE_TIMEFRAME_DAYS - 1));
 
-<<<<<<< HEAD
   const startDateQuery = new Date(startDate.toISOString().split('T')[0]);
   const endDateQuery = new Date(endDate.toISOString().split('T')[0]);
 
   // 直近7日間の活動を集計
   const activitySummary = await prisma.dailyActivitySummary.aggregate({
     where: {
-      userId: userId,
+      userId: userId as any,
       date: {
         gte: startDateQuery,
         lte: endDateQuery,
       },
     },
     _sum: {
-      totalTimeSpentMs: true,  // 合計学習時間 (BigInt)
+      totalTimeSpentMs: true,  // 合計学習時間 (BigInt)
       problemsCompleted: true, // 合計完了問題数 (Int)
     },
   });
@@ -182,29 +156,6 @@ export default async function ProfilePage() {
   // BigIntを数値(分)に変換
   const totalStudyTimeMin = Math.floor(Number(activitySummary._sum.totalTimeSpentMs || 0) / 60000);
   const totalProblemsCompleted = activitySummary._sum.problemsCompleted || 0;
-=======
-  const startDateQuery = new Date(startDate.toISOString().split('T')[0]);
-  const endDateQuery = new Date(endDate.toISOString().split('T')[0]);
-
-  // 直近7日間の活動を集計
-  const activitySummary = await prisma.dailyActivitySummary.aggregate({
-    where: {
-      userId: userId,
-      date: {
-        gte: startDateQuery,
-        lte: endDateQuery,
-      },
-    },
-    _sum: {
-      totalTimeSpentMs: true,  // 合計学習時間 (BigInt)
-      problemsCompleted: true, // 合計完了問題数 (Int)
-    },
-  });
-
-  // BigIntを数値(分)に変換
-  const totalStudyTimeMin = Math.floor(Number(activitySummary._sum.totalTimeSpentMs || 0) / 60000);
-  const totalProblemsCompleted = activitySummary._sum.problemsCompleted || 0;
->>>>>>> main
 
   const userStats = {
     loginDays: uniqueLoginDates.size,
@@ -218,16 +169,18 @@ export default async function ProfilePage() {
   const aiAdvice = generateAdvice(userStats, userWithDetails);
 
   // --- 4. 日付型等をシリアライズ（文字列に変換） ---
+  const { password, hash, ...userForClient } = userWithDetails;
   const serializedUser = {
-    ...userWithDetails,
-    birth: userWithDetails.birth?.toISOString() ?? null,
-    lastlogin: userWithDetails.lastlogin?.toISOString() ?? null,
-    unlockedTitles: userWithDetails.unlockedTitles.map((ut: any) => ({
+    ...userForClient,
+    birth: userForClient.birth?.toISOString() ?? null,
+    lastlogin: userForClient.lastlogin?.toISOString() ?? null,
+    unlockedTitles: userForClient.unlockedTitles.map((ut: any) => ({
       ...ut,
       unlockedAt: ut.unlockedAt.toISOString(),
     })),
-    Status_Kohaku: userWithDetails.status_Kohaku ? [userWithDetails.status_Kohaku] : [],
+    Status_Kohaku: userForClient.status_Kohaku,
   };
+
 
   // --- 5. すべてのデータをクライアントコンポーネントに渡す ---
   return (

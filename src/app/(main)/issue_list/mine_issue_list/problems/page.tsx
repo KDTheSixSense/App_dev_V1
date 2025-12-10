@@ -95,8 +95,8 @@ const MineProblemsListPage = () => {
         if (progResult.error || selectResult.error) {
           setError(progResult.error || selectResult.error || '不明なエラーが発生しました。');
         } else {
-          if (progResult.data) setProgrammingProblems(progResult.data);
-          if (selectResult.data) setSelectProblems(selectResult.data);
+          if (progResult.data) setProgrammingProblems(progResult.data as any);
+          if (selectResult.data) setSelectProblems(selectResult.data as any);
         }
 
       } catch (e) {

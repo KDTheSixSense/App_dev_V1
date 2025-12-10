@@ -64,10 +64,6 @@
     "server-only": "^0.0.1",
     "sqlite3": "^5.x.x",
     "three": "^0.181.2",
-<<<<<<< HEAD
-
-=======
->>>>>>> main
     "zod": "^4.1.13"
   },
   "devDependencies": {

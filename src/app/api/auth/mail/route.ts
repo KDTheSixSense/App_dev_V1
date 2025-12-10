@@ -26,19 +26,12 @@ export async function POST(req: Request) {
       // 環境変数からベースURLを取得
       // const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-<<<<<<< HEAD
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
       const resetUrl = `${baseUrl}/reset-password/${rawToken}`;
 
       if (process.env.NODE_ENV === 'development') {
         console.log(`[開発用] リセットURL: ${resetUrl}`);
-      }=======
-      const resetUrl = `${baseUrl}/reset-password/${rawToken}`;
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[開発用] リセットURL: ${resetUrl}`);
       }
->>>>>>> main
 
       // --- Nodemailer (Gmail) メール送信ロジック ---
       const transporter = nodemailer.createTransport({

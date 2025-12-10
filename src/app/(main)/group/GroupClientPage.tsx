@@ -27,7 +27,7 @@ interface Group {
 interface Member {
   admin_flg: boolean;
   user: {
-    id: number;
+    id: string;
     username: string | null;
     icon: string | null;
   };
@@ -65,7 +65,7 @@ interface ToggleSwitchProps {
 
 interface GroupClientPageProps {
   initialGroups: Group[];
-  initialCurrentUserId: number | null;
+  initialCurrentUserId: string | null;
 }
 
 const GroupClientPage: React.FC<GroupClientPageProps> = ({
@@ -78,7 +78,7 @@ const GroupClientPage: React.FC<GroupClientPageProps> = ({
   >(initialGroups.length > 0 ? "groups" : "empty");
   const [groups, setGroups] = useState<Group[]>(initialGroups);
   const [currentUserId, setCurrentUserId] =
-    useState<number | null>(initialCurrentUserId);
+    useState<string | null>(initialCurrentUserId);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [activeTab, setActiveTab] = useState<"お知らせ" | "課題" | "メンバー">
     ("お知らせ");

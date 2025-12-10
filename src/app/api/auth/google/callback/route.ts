@@ -54,10 +54,7 @@ export async function GET(req: NextRequest) {
 
     if (existingUser) {
       // 5a. 既存ユーザー: ログイン処理を実行
-<<<<<<< HEAD
-      =======
 
->>>>>>> main
       // アイコンが更新されている可能性があるので、DBを更新
       await prisma.user.update({
         where: { id: existingUser.id },
