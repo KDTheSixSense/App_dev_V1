@@ -136,7 +136,7 @@ export async function middleware(req: NextRequest) {
 
     if (state.blockedUntil > now) {
         if (process.env.NODE_ENV !== 'production') {
-            console.log(`[Middleware] Rate limit exceeded but skipped in dev mode for ${limitKey}`);
+            // console.log(`[Middleware] Rate limit exceeded but skipped in dev mode for ${limitKey}`);
             return NextResponse.next();
         }
 
@@ -159,7 +159,7 @@ export async function middleware(req: NextRequest) {
 
     if (state.count > LIMIT) {
         if (process.env.NODE_ENV !== 'production') {
-            console.log(`[Middleware] Rate limit count exceeded but skipped in dev mode for ${limitKey}`);
+            // console.log(`[Middleware] Rate limit count exceeded but skipped in dev mode for ${limitKey}`);
         } else {
             state.violationCount++;
             state.blockedUntil = now + getBlockDuration(state.violationCount);

@@ -77,12 +77,12 @@ export async function detectSqlInjection(req: NextRequest): Promise<NextResponse
     // 4. Check Request Body (JSON only)
     if (req.method !== 'GET' && req.method !== 'HEAD') {
         const contentType = req.headers.get('content-type');
-        console.log(`[WAF DEBUG] Method: ${req.method}, Content-Type: ${contentType}`);
+        // console.log(`[WAF DEBUG] Method: ${req.method}, Content-Type: ${contentType}`);
         if (contentType && contentType.includes('application/json')) {
             try {
                 // Clone the request to read body without consuming it for the actual handler
                 const bodyText = await req.clone().text();
-                console.log(`[WAF DEBUG] Body Text: ${bodyText}`);
+                // console.log(`[WAF DEBUG] Body Text: ${bodyText}`);
                 const body = JSON.parse(bodyText);
 
                 if (checkObjectForSqlInjection(body)) {
@@ -122,4 +122,3 @@ function checkObjectForSqlInjection(obj: any): boolean {
     }
     return false;
 }
-
