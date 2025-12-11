@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getIronSession, IronSessionData } from 'iron-session';
-import { sessionOptions } from '@/lib/session';
+import { sessionOptions } from '@/lib/session-config';
 
 import { generateCsp } from '@/lib/csp';
+import { SECURITY_HEADERS } from '@/lib/security-headers';
 // Note: This logic is inlined here to ensure compatibility with the Next.js Edge Runtime which has strict
 // limitations on imports. Externalizing this to a library file caused 500 errors in this specific environment.
 
@@ -143,6 +144,9 @@ async function detectSecurityThreats(req: NextRequest): Promise<NextResponse | n
 
     // 3. Check Cookies
     for (const cookie of req.cookies.getAll()) {
+        // Skip session cookie checking as it contains encrypted data that may trigger false positives
+        if (cookie.name === sessionOptions.cookieName) continue;
+
         const threat = detectThreatType(cookie.value) || detectThreatType(cookie.name);
         if (threat) {
             console.warn(`[WAF] Blocked ${threat} attempt in Cookie: ${cookie.name}=${cookie.value} from IP: ${ip}`);
@@ -398,13 +402,15 @@ export async function middleware(req: NextRequest) {
 
     response.headers.set('Content-Security-Policy', cspHeader);
     response.headers.set('x-nonce', nonce); // For use in layout
-    response.headers.set('X-DNS-Prefetch-Control', 'on');
-    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
-    response.headers.set('X-XSS-Protection', '1; mode=block');
-    response.headers.set('X-Frame-Options', 'SAMEORIGIN'); // changed from DENY to SAMEORIGIN for internal iframes if needed
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+    // Apply Standard Security Headers
+    response.headers.set('X-DNS-Prefetch-Control', SECURITY_HEADERS.dnsPrefetchControl);
+    response.headers.set('Strict-Transport-Security', SECURITY_HEADERS.strictTransportSecurity);
+    response.headers.set('X-XSS-Protection', SECURITY_HEADERS.xXssProtection);
+    response.headers.set('X-Frame-Options', SECURITY_HEADERS.xFrameOptions);
+    response.headers.set('X-Content-Type-Options', SECURITY_HEADERS.xContentTypeOptions);
+    response.headers.set('Referrer-Policy', SECURITY_HEADERS.referrerPolicy);
+    response.headers.set('Permissions-Policy', SECURITY_HEADERS.permissionsPolicy);
 
     // CORS for API
     if (pathname.startsWith('/api')) {
