@@ -14,10 +14,20 @@ export type HistoryItem = {
     isCorrect: boolean;
     answeredAt: Date;
     category: string;
+    problemId: number; // Added for linking
 };
 
 export type HistoryStatistics = {
     totalQuestions: number;
+    totalAvailableQuestions: number;
+    availableCounts: {
+        programming: number;
+        basic_a: number;
+        basic_b: number;
+        applied_am: number;
+        select: number;
+        all: number;
+    };
     totalCorrect: number;
     accuracy: number;
     byCategory: Record<string, { total: number; correct: number; accuracy: number }>;
@@ -46,6 +56,25 @@ export async function getUserHistory(params: FetchHistoryParams = {}) {
     const hasDateFilter = startDate || endDate;
 
     try {
+        // Parallel fetch for total counts
+        const [
+            countProgramming,
+            countBasicA,
+            countQuestions, // Basic B (Sample)
+            countSelect,
+            countAppliedAm,
+            countAlgo // Basic B (Algo/Excel)
+        ] = await Promise.all([
+            prisma.programmingProblem.count(),
+            prisma.basic_Info_A_Question.count(),
+            prisma.questions.count(),
+            prisma.selectProblem.count(),
+            prisma.applied_am_Question.count(),
+            prisma.questions_Algorithm.count(),
+        ]);
+
+        const totalAvailableQuestions = countProgramming + countBasicA + countQuestions + countSelect + countAppliedAm + countAlgo;
+
         // 1. Fetch from UserAnswer (for most question types)
         const userAnswers = await prisma.userAnswer.findMany({
             where: {
@@ -87,28 +116,34 @@ export async function getUserHistory(params: FetchHistoryParams = {}) {
             let type: HistoryItem['type'] = 'unknown';
             let title = '不明な問題';
             let category = '未分類';
+            let problemId = 0;
 
             // Check which relation is present
             if (ua.programmingProblem) {
                 type = 'programming';
                 title = ua.programmingProblem.title;
                 category = ua.programmingProblem.category || 'プログラミング';
+                problemId = ua.programmingProblem.id;
             } else if (ua.basic_A_Info_Question) {
                 type = 'basic_a';
                 title = ua.basic_A_Info_Question.title;
                 category = ua.basic_A_Info_Question.category?.name || '基本情報A';
+                problemId = ua.basic_A_Info_Question.id;
             } else if (ua.questions) {
                 type = 'basic_b';
                 title = ua.questions.title;
                 category = '基本情報B (サンプル)';
+                problemId = ua.questions.id;
             } else if (ua.selectProblem) {
                 type = 'select';
                 title = ua.selectProblem.title;
                 category = '選択問題';
+                problemId = ua.selectProblem.id;
             } else if (ua.applied_am_question) {
                 type = 'applied_am';
                 title = ua.applied_am_question.title;
                 category = ua.applied_am_question.category?.name || '応用情報午前';
+                problemId = ua.applied_am_question.id;
             }
 
             return {
@@ -118,7 +153,8 @@ export async function getUserHistory(params: FetchHistoryParams = {}) {
                 title,
                 isCorrect: ua.isCorrect,
                 answeredAt: ua.answeredAt,
-                category
+                category,
+                problemId
             };
         });
 
@@ -131,7 +167,8 @@ export async function getUserHistory(params: FetchHistoryParams = {}) {
                 title: aa.question.title,
                 isCorrect: aa.isCorrect,
                 answeredAt: aa.answeredAt,
-                category: '基本情報B (応用)'
+                category: '基本情報B (応用)',
+                problemId: aa.question.id
             };
         });
 
@@ -168,7 +205,16 @@ export async function getUserHistory(params: FetchHistoryParams = {}) {
         return {
             items: allHistory,
             statistics: {
-                totalQuestions,
+                totalQuestions, // Total answered
+                totalAvailableQuestions, // Total count of problems in DB
+                availableCounts: {
+                    programming: countProgramming,
+                    basic_a: countBasicA,
+                    basic_b: countQuestions + countAlgo,
+                    applied_am: countAppliedAm,
+                    select: countSelect,
+                    all: totalAvailableQuestions,
+                },
                 totalCorrect,
                 accuracy,
                 byCategory

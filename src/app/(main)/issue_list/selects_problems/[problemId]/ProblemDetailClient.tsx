@@ -7,7 +7,7 @@ import Link from 'next/link';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import ProblemStatement from '../components/ProblemStatement'; // パスは環境に合わせて調整してください
 import KohakuChat from '@/components/KohakuChat';
-import { recordStudyTimeAction, awardXpForCorrectAnswer } from '@/lib/actions';
+import { recordStudyTimeAction, awardXpForCorrectAnswer, recordAnswerAction } from '@/lib/actions';
 import AnswerEffect from '@/components/AnswerEffect';
 import toast from 'react-hot-toast'; // 通知用
 import { getHintFromAI } from '@/lib/actions/hintactions'; // AIヒント用
@@ -235,6 +235,16 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
         } catch (error) {
           console.error("XP award error:", error);
           toast.error('経験値の付与に失敗しました。');
+        }
+      }
+    } else {
+      // Log incorrect answer
+      const numericId = parseInt(problem.id, 10);
+      if (!isNaN(numericId)) {
+        try {
+          await recordAnswerAction(numericId, 4, false, selectedValue);
+        } catch (error) {
+          console.error(error);
         }
       }
     }

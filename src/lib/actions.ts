@@ -463,6 +463,39 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   return { message: '経験値を獲得しました！', unlockedTitle };
 }
 
+/**
+ * 解答履歴のみを保存するサーバーアクション (正誤に関わらず記録)
+ */
+export async function recordAnswerAction(problemId: number, subjectid: number, isCorrect: boolean, answer: string) {
+  'use server';
+
+  const session = await getSession();
+  const userId = session.user?.id;
+
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+
+  // Determine foreign key based on subjectid (Similar mechanism to awardXpForCorrectAnswer)
+  let userAnswerForeignKeyData = {};
+  if (subjectid === 1) userAnswerForeignKeyData = { programingProblem_id: problemId };
+  else if (subjectid === 2) userAnswerForeignKeyData = { basic_A_Info_Question_id: problemId };
+  else if (subjectid === 3) userAnswerForeignKeyData = { questions_id: problemId };
+  else if (subjectid === 4) userAnswerForeignKeyData = { selectProblem_id: problemId };
+  else if (subjectid === 5) userAnswerForeignKeyData = { applied_am_question_id: problemId };
+  else userAnswerForeignKeyData = { questions_id: problemId }; // Fallback
+
+  await prisma.userAnswer.create({
+    data: {
+      userId,
+      isCorrect,
+      answer, // Store the actual answer provided (or "INCORRECT")
+      answeredAt: new Date(),
+      ...userAnswerForeignKeyData
+    }
+  });
+}
+
 // XPを加算し、レベルアップと称号獲得を処理するサーバーアクション
 // * @param user_id - XPを加算するユーザーのID
 // * @param subject_id - 科目のID

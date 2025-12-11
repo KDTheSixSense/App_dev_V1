@@ -2,6 +2,7 @@
 
 import { HistoryItem } from '../actions';
 import FormattedDate from './FormattedDate';
+import Link from 'next/link';
 
 type Props = {
     items: HistoryItem[];
@@ -62,7 +63,20 @@ export default function HistoryTable({ items }: Props) {
                                 </span>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={item.title}>
-                                {item.title}
+                                {(() => {
+                                    let url = '#';
+                                    if (item.type === 'programming') url = `/issue_list/programming_problem/${item.problemId}`;
+                                    else if (item.type === 'basic_a') url = `/issue_list/basic_info_a_problem/${item.problemId}`;
+                                    else if (item.type === 'basic_b') url = `/issue_list/basic_info_b_problem/${item.problemId}`;
+                                    else if (item.type === 'select') url = `/issue_list/selects_problems/${item.problemId}`;
+                                    else if (item.type === 'applied_am') url = `/issue_list/applied_info_morning_problem/${item.problemId}`;
+
+                                    return (
+                                        <Link href={url} className="text-blue-600 hover:text-blue-800 hover:underline">
+                                            {item.title}
+                                        </Link>
+                                    );
+                                })()}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                                 {item.isCorrect ? (

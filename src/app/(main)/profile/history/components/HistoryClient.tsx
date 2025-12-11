@@ -6,13 +6,15 @@ import HistoryTable from './HistoryTable';
 import StatisticsCards from './StatisticsCards';
 import HistoryCalendar from './HistoryCalendar'; // To be implemented
 import { format, subWeeks, subMonths, subYears, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { ja } from 'date-fns/locale';
+
+import Link from 'next/link';
 
 type Props = {
     initialData: {
         items: HistoryItem[];
         statistics: HistoryStatistics;
     };
+    showTable?: boolean; // New prop to control table visibility
 };
 
 type TimeRange = 'all' | '1week' | '1month' | '1year' | 'custom';
@@ -27,7 +29,7 @@ const TABS: { id: CategoryTab; label: string }[] = [
     { id: 'select', label: '選択問題' },
 ];
 
-export default function HistoryClient({ initialData }: Props) {
+export default function HistoryClient({ initialData, showTable = true }: Props) {
     const [items, setItems] = useState<HistoryItem[]>(initialData.items);
     // Re-calculate stats based on current items could be done here, 
     // but initialData.statistics is for the fetch result.
@@ -86,8 +88,25 @@ export default function HistoryClient({ initialData }: Props) {
         const total = filteredItems.length;
         const correct = filteredItems.filter(i => i.isCorrect).length;
         const accuracy = total > 0 ? (correct / total) * 100 : 0;
-        return { total, correct, accuracy };
-    }, [filteredItems]);
+
+        // Dynamic Total Available Questions based on activeTab
+        let totalAvailable = 0;
+        const counts = initialData.statistics.availableCounts;
+
+        if (counts) { // Check if availableCounts exists (it should with new backend)
+            if (activeTab === 'all') totalAvailable = counts.all;
+            else if (activeTab === 'programming') totalAvailable = counts.programming;
+            else if (activeTab === 'basic_a') totalAvailable = counts.basic_a;
+            else if (activeTab === 'basic_b') totalAvailable = counts.basic_b;
+            else if (activeTab === 'applied_am') totalAvailable = counts.applied_am;
+            else if (activeTab === 'select') totalAvailable = counts.select;
+        } else {
+            // Fallback for old data structure if needed
+            totalAvailable = initialData.statistics.totalAvailableQuestions;
+        }
+
+        return { total, correct, accuracy, totalAvailableQuestions: totalAvailable };
+    }, [filteredItems, initialData.statistics, activeTab]);
 
     return (
         <div className="space-y-6">
@@ -100,8 +119,8 @@ export default function HistoryClient({ initialData }: Props) {
                                 key={r}
                                 onClick={() => handleRangeChange(r)}
                                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${timeRange === r
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 {r === 'all' ? '全期間' : r === '1week' ? '1週間' : r === '1month' ? '1ヶ月' : '1年'}
@@ -129,8 +148,8 @@ export default function HistoryClient({ initialData }: Props) {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`pb-3 px-2 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id
-                                    ? 'border-blue-600 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                                ? 'border-blue-600 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             {tab.label}
@@ -138,9 +157,12 @@ export default function HistoryClient({ initialData }: Props) {
                     ))}
                 </div>
             </div>
-
-            {/* Table */}
-            <HistoryTable items={filteredItems} />
+            {/* Table or View More Link */}
+            {showTable ? (
+                <HistoryTable items={filteredItems} />
+            ) : (
+                <Link href="/profile/history" className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 hover:underline font-medium"></Link>
+            )}
         </div>
     );
 }
