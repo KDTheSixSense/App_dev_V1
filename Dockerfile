@@ -20,8 +20,15 @@ RUN npm run build
 FROM node:20-alpine AS runner
 
 # Add packages for linting
-RUN apk update && apk add --no-cache openjdk17 build-base mono php postgresql-client openssl1.1-compat
-
+RUN apk update && apk add --no-cache \
+    openjdk17 \
+    build-base \
+    mono \
+    php \
+    postgresql-client \
+    openssl \
+    compat-openssl1.1
+    
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs
