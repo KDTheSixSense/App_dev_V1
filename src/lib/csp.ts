@@ -10,7 +10,10 @@ export function generateCsp({ nonce, isDev, pathname }: CspOptions): string {
     const styleSrc = "'self' 'unsafe-inline' https://fonts.googleapis.com";
     const imgSrc = "'self' blob: data: https://lh3.googleusercontent.com"; // Profile images
     const fontSrc = "'self' https://fonts.gstatic.com";
-    const connectSrc = "'self' https://raw.githubusercontent.com blob: data:"; // External APIs
+    let connectSrc = "'self' https://raw.githubusercontent.com blob: data:"; // External APIs
+    if (isDev) {
+        connectSrc += " ws: wss:";
+    }
     const frameSrc = "'self' https://www.youtube.com https://youtube.com"; // YouTube Embeds
 
     // Script Logic

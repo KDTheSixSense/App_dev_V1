@@ -5,6 +5,8 @@ import path from 'path';
 import os from 'os';
 import 'acorn';
 import { LRUCache } from 'lru-cache';
+import { z } from 'zod';
+import { getAppSession } from '@/lib/auth';
 
 // --- Rate Limiting Setup ---
 const rateLimit = new LRUCache<string, number>({
@@ -28,6 +30,22 @@ type Annotation = {
     text: string;   // エラーメッセージ
     type: 'error' | 'warning' | 'info';
 };
+
+// --- Input Validation Schema ---
+const LintRequestSchema = z.object({
+    code: z.string().max(50000), // Max code size 50KB to prevent DoS
+    language: z.enum([
+        'python',
+        'python3',
+        'javascript',
+        'typescript',
+        'java',
+        'cpp',
+        'c',
+        'csharp',
+        'php'
+    ]),
+});
 
 // --- ヘルパー関数: パスの隠蔽 ---
 function sanitizeOutput(output: string): string {
@@ -54,7 +72,7 @@ async function runLintProcess(
     args: string[],
     codeContent: string,
     extension: string,
-    // 
+    // Node.js実行の場合はコマンド体系が少し違うためフラグで制御
     useNode: boolean = false
 ): Promise<{ stdout: string; stderr: string; tempFile: string }> {
     // 1. 一時ファイルを作成
@@ -65,10 +83,10 @@ async function runLintProcess(
     let effectiveCommand = command;
     let effectiveArgs = [...args, tempFile];
 
-    // 
+    // Node.jsの場合の特例処理
     if (useNode) {
         effectiveCommand = 'node';
-        effectiveArgs = [command, ...args, tempFile]; // 
+        effectiveArgs = [command, ...args, tempFile]; // commandがスクリプトパスになる
     }
 
     try {
@@ -239,7 +257,7 @@ async function lintPython(code: string): Promise<Annotation[]> {
 async function lintTypeScriptOrJavaScript(code: string, language: 'javascript' | 'typescript'): Promise<Annotation[]> {
     const extension = language === 'typescript' ? '.ts' : '.js';
 
-    // 
+    // 開発環境と本番環境でパスが異なる可能性があるため調整が必要だが、今回はworkspace前提
     const tscPath = path.join(process.cwd(), 'node_modules', 'typescript', 'bin', 'tsc');
 
     const tsArgs = [
@@ -256,13 +274,13 @@ async function lintTypeScriptOrJavaScript(code: string, language: 'javascript' |
         tsArgs.push('--checkJs', '--allowJs');
     }
 
-    // `node /path/to/tsc.js [args] [tempfile]` 
+    // `node /path/to/tsc.js [args] [tempfile]` という形で実行
     const { stdout, stderr, tempFile } = await runLintProcess(
         tscPath,
         tsArgs,
         code,
         extension,
-        true // 一時ファイルを使用する
+        true // Node.jsで実行するフラグ
     );
     await cleanupTempFile(tempFile);
 
@@ -275,13 +293,13 @@ async function lintTypeScriptOrJavaScript(code: string, language: 'javascript' |
     }
 
     const annotations: Annotation[] = [];
-    // tsc
+    // tscの出力形式: filename.ts(1,1): error TS1234: Message
     // エラーメッセージの正規表現
     const regex = /^(.*?)\((\d+),(\d+)\): (error|warning) (TS\d+): (.*)$/gm;
     let match;
 
     while ((match = regex.exec(output)) !== null) {
-        // 
+        // ファイル名が一致するものだけ拾う？ (今回はtempFileだけなので基本全一致)
         // if (!match[1].endsWith(extension)) continue; 
 
         annotations.push({
@@ -414,6 +432,7 @@ async function lintCpp(code: string): Promise<Annotation[]> {
             column: parseInt(match[3], 10) - 1,
             text: match[4],
             type: 'error',
+            // GCC returns both 'error' and 'warning', you might want to capture that too
         });
     }
     return annotations;
@@ -570,12 +589,10 @@ async function lintCode(code: string, language: string): Promise<Annotation[]> {
             return await lintPhp(code);
 
         default:
-            return []; // 
+            return []; // ここには到達しないはず(Zodで弾くため)
     }
 }
 
-
-import { getAppSession } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
     try {
@@ -591,13 +608,22 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { code, language } = body;
 
-        if (typeof code !== 'string' || typeof language !== 'string') {
-            return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+        // Validate Input with Zod
+        const validationResult = LintRequestSchema.safeParse(body);
+
+        if (!validationResult.success) {
+            return NextResponse.json(
+                {
+                    error: 'Invalid request parameters',
+                    details: validationResult.error.format()
+                },
+                { status: 400 }
+            );
         }
 
-        // 
+        const { code, language } = validationResult.data;
+
         const annotations = await lintCode(code, language);
 
         return NextResponse.json({ annotations });
