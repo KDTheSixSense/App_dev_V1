@@ -266,7 +266,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, programingProblem_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
       alreadyCorrectToday = true;
     }
 
@@ -282,7 +282,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, basic_A_Info_Question_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
       alreadyCorrectToday = true;
     }
 
@@ -298,7 +298,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, questions_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
       alreadyCorrectToday = true;
     }
 
@@ -314,7 +314,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, selectProblem_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
       alreadyCorrectToday = true;
     }
   } else if (subjectid === 5) { // 5: Applied_am_Question
@@ -333,7 +333,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, applied_am_question_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
       alreadyCorrectToday = true;
     }
   } else { // 5: Questions_Algorithm (仮)
@@ -348,7 +348,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       where: { userId, isCorrect: true, questions_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
-    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, nowJST)) {
+    if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
       alreadyCorrectToday = true;
     }
   }
@@ -441,7 +441,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       userId: userId,
       isCorrect: true,
       answer: 'CORRECT',
-      answeredAt: nowJST,
+      answeredAt: new Date(), // DBにはUTC(実時刻)を保存する
       // Step 3で決定した、正しい外部キーにIDをセットする
       ...userAnswerForeignKeyData
     },
