@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/session';
+import { getSession } from '@/lib/session.server';
 import { Icon } from 'lucide-react';
 
 export async function GET(request: NextRequest, context: { params: Promise<{ hashedId: string }> }) {

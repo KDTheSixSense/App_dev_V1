@@ -49,24 +49,44 @@ CMD ["npm", "run", "db:deploy"]
 # --------------------------------------------------------------------
 # ★★★ ステージ4: サンドボックス (Sandbox / コード実行用の隔離部屋) ★★★
 # --------------------------------------------------------------------
-FROM node:20-alpine AS sandbox-env
+# コンパイラの互換性のため、Debianベースのイメージを使用します
+FROM node:20-bookworm AS sandbox-env
 
-# 1. 必要なランタイムのインストール (例: Python, GCCなど)
-RUN apk add --no-cache python3 py3-pip build-base
+# 1. コンパイラと実行環境のインストール
+#    (iptablesはNetworkPolicyで代用するため除外しました)
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+    python3 \
+    python3-pip \
+    openjdk-17-jdk \
+    build-essential \
+    mono-mcs \
+    php-cli \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. TypeScriptコンパイラをグローバルインストール
+RUN npm install -g typescript
+
+# 3. セキュリティ強化: 権限の低いユーザーを作成
+RUN useradd -m -s /bin/bash sandboxuser
 
 WORKDIR /sandbox
 
-# 2. セキュリティ強化: 権限の低いユーザーを作成
-RUN addgroup --system --gid 2000 sandboxgroup && \
-    adduser --system --uid 2000 sandboxuser -G sandboxgroup
+# 4. ローカルで作成したsandbox-workerフォルダの中身をコピー
+COPY sandbox_deploy/package.json ./
 
-# 3. 実行に必要なスクリプトやライブラリがあればコピー
-# 例: ユーザーコードを受け取って実行する小さなサーバー(Worker)など
-COPY sandbox-worker/ ./
+# 5. 依存関係のインストール
+RUN npm install
 
-# 4. ユーザーを切り替え (rootでの実行は絶対NG)
+# 6. サーバーコードのコピー
+COPY sandbox_deploy/server.js ./
+
+# 7. ユーザー切り替え (rootでの実行は禁止)
 USER sandboxuser
 
-# 5. 実行コマンド
-# ここでは例として、コード受け待ちのWorkerプロセスを起動
-CMD ["node", "worker.js"]
+# 8. ポート公開 (server.jsで4000番を指定しています)
+EXPOSE 4000
+
+# 9. サーバー起動
+CMD ["node", "server.js"]

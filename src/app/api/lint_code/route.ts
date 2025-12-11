@@ -7,6 +7,11 @@ import 'acorn';
 import { LRUCache } from 'lru-cache';
 
 // --- Rate Limiting Setup ---
+const rateLimitCache = new LRUCache<string, number>({
+    max: 500, // 
+    ttl: 1000 * 60, // 1 minute
+});
+const RATE_LIMIT_PER_MINUTE = 30; // 1分あたりの最大リクエスト数
 
 
 // Ace Editorが要求するアノテーションの型
@@ -574,9 +579,13 @@ export async function POST(req: NextRequest) {
 
         // Rate Limiting Check
         const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
-        if (!checkRateLimit(ip)) {
+        const currentRequests = rateLimitCache.get(ip) || 0;
+
+        if (currentRequests >= RATE_LIMIT_PER_MINUTE) {
             return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
         }
+        rateLimitCache.set(ip, currentRequests + 1);
+
 
 
         const body = await req.json();

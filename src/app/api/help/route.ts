@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 // @/app/data/helpData のパスは、プロジェクトのエイリアス設定に合わせて調整してください
 import { helpSteps } from "@/app/data/helpData";
 import { HelpApiResponse } from "@/types/help";
-import { getSession } from "@/lib/session";
+import { getSession } from "@/lib/session.server";
 
 /**
  * ヘルプコンテンツのリストを返すAPI

@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { calculateLevelFromXp } from './leveling';
-import { getSession } from './session';
+import { getSession } from './session.server';
 import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid';
 import { sessionOptions, SessionData as ImportedSessionData } from '@/lib/session';

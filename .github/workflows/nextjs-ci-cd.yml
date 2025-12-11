@@ -72,7 +72,19 @@ jobs:
           no-cache: true
           # ビルド対象として 'migrator' ステージを指定
           target: migrator
-      
+      # --- Sandbox (コード実行環境) イメージのビルド ---
+      # ★★★ ここを追加 ★★★
+      - name: Build and push Sandbox image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          # タグの末尾に '-sandbox' をつける (例: ...:d65b5c1-sandbox)
+          tags: ${{ steps.meta.outputs.tags }}-sandbox
+          labels: ${{ steps.meta.outputs.labels }}
+          no-cache: true
+          # ★ Dockerfile内の 'sandbox-env' ステージを指定
+          target: sandbox-env
   # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
   update-manifest:
     runs-on: ubuntu-latest

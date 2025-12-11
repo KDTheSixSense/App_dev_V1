@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/session';
+import { getSession } from '@/lib/session.server';
 
 // GET: IDに基づいて単一の選択問題を取得
 export async function GET(

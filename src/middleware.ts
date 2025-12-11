@@ -414,9 +414,9 @@ export async function middleware(req: NextRequest) {
 
     // CORS for API
     if (pathname.startsWith('/api')) {
-        updatedResponse.headers.set('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin);
-        updatedResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        updatedResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        response.headers.set('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin);
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        response.headers.set('Access-control-Allow-Headers', 'Content-Type, Authorization');
     }
 
     // 0. Security: SQL Injection & Path Traversal Prevention in Query Params
@@ -431,7 +431,7 @@ export async function middleware(req: NextRequest) {
     response.headers.set('X-Debug-WAF', 'Active');
     response.headers.set('X-WAF-Version', '2.0');
 
-    return Response;
+    return response;
 }
 
 export const config = {

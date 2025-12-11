@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getSession } from '@/lib/session'; // iron-sessionのセッション取得関数
+import { getSession } from '@/lib/session.server'; // iron-sessionのセッション取得関数
 
 const prisma = new PrismaClient();
 

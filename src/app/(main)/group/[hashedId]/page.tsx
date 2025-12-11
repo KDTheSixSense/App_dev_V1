@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/session';
+import { getSession } from '@/lib/session.server';
 
 // 型定義を修正: params は Promise です
 type Props = {

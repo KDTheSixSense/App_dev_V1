@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getSession } from '@/lib/session';
+import { getSession } from '@/lib/session.server';
 import { executeAgainstTestCases } from '@/lib/sandbox';
 
 const prisma = new PrismaClient();
