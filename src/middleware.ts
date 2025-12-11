@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getIronSession, IronSessionData } from 'iron-session';
-import { sessionOptions } from '@/lib/session';
+import { sessionOptions } from '@/lib/session-config';
 
 import { generateCsp } from '@/lib/csp';
 import { SECURITY_HEADERS } from '@/lib/security-headers';

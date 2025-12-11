@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { detectThreatType, checkObjectForThreats } from './waf-rules';
-import { sessionOptions } from './session';
+import { sessionOptions } from './session-config';
 
 export { detectThreatType, checkObjectForThreats }; // Re-export
 
