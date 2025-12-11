@@ -1,7 +1,7 @@
 # --------------------------------------------------------------------
 # ステージ1: ビルダー (Builder / キッチン)
 # --------------------------------------------------------------------
-FROM node:20-alpine AS builder
+FROM node:20-alpine3.20 AS builder
 
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
@@ -17,7 +17,7 @@ RUN npm run build
 # --------------------------------------------------------------------
 # ステージ2: ランナー (Runner / アプリ用のお弁当箱)
 # --------------------------------------------------------------------
-FROM node:20-alpine AS runner
+FROM node:20-alpine3.20 AS runner
 
 # Add packages for linting
 RUN apk update && apk add --no-cache \
@@ -28,7 +28,7 @@ RUN apk update && apk add --no-cache \
     postgresql-client \
     openssl \
     compat-openssl1.1
-    
+
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs
