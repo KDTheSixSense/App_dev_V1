@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { detectThreatType, checkObjectForThreats } from './waf-rules';
+import { sessionOptions } from './session';
 
 export { detectThreatType, checkObjectForThreats }; // Re-export
 
@@ -43,6 +44,8 @@ export async function detectSecurityThreats(req: NextRequest): Promise<NextRespo
 
     // 3. Check Cookies
     for (const cookie of req.cookies.getAll()) {
+        if (cookie.name === sessionOptions.cookieName) continue;
+
         const threat = detectThreatType(cookie.value) || detectThreatType(cookie.name);
         if (threat) {
             console.warn(`[WAF] Blocked ${threat} attempt in Cookie: ${cookie.name}=${cookie.value} from IP: ${ip}`);
