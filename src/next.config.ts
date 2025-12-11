@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-          { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
@@ -72,6 +72,19 @@ const nextConfig: NextConfig = {
           { key: 'Content-Type', value: 'text/plain' },
           { key: 'Content-Disposition', value: 'inline' },
         ],
+      },
+      // ZAP対策: 静的ファイルにもCSPを付与する（動的ページはMiddlewareで処理）
+      {
+        source: '/images/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'none'; frame-ancestors 'none';" }
+        ]
+      },
+      {
+        source: '/favicon.ico',
+        headers: [
+          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'none'; frame-ancestors 'none';" }
+        ]
       },
     ];
   },
