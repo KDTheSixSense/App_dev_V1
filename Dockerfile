@@ -21,13 +21,9 @@ FROM node:20-alpine3.20 AS runner
 
 # Add packages for linting
 RUN apk update && apk add --no-cache \
-    openjdk17 \
-    build-base \
-    mono \
-    php \
-    postgresql-client \
     openssl \
-    compat-openssl1.1
+    curl \
+    postgresql-client
 
 WORKDIR /app
 
