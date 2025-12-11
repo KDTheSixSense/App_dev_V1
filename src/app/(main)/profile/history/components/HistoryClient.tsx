@@ -6,6 +6,9 @@ import HistoryTable from './HistoryTable';
 import StatisticsCards from './StatisticsCards';
 import HistoryCalendar from './HistoryCalendar'; // To be implemented
 import { format, subWeeks, subMonths, subYears, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { generateHistoryExcel } from '../exportAction';
+import { saveAs } from 'file-saver';
+import toast from 'react-hot-toast';
 
 import Link from 'next/link';
 
@@ -126,6 +129,50 @@ export default function HistoryClient({ initialData, showTable = true }: Props) 
                                 {r === 'all' ? '全期間' : r === '1week' ? '1週間' : r === '1month' ? '1ヶ月' : '1年'}
                             </button>
                         ))}
+                        <button
+                            onClick={async () => {
+                                const loadingToast = toast.loading('Excelを作成中...');
+                                try {
+                                    // Determine current filter dates
+                                    let start: Date | undefined = customDateRange.start || undefined;
+                                    const end: Date | undefined = customDateRange.end || undefined;
+
+                                    // If using preset ranges, calculate start date again to be sure
+                                    // (Logic duplicated from handleRangeChange, ideally state should hold the actual dates used)
+                                    if (timeRange === '1week') start = subWeeks(new Date(), 1);
+                                    else if (timeRange === '1month') start = subMonths(new Date(), 1);
+                                    else if (timeRange === '1year') start = subYears(new Date(), 1);
+
+                                    const result = await generateHistoryExcel({ startDate: start, endDate: end });
+
+                                    if (result.success && result.data) {
+                                        // Convert base64 to Blob
+                                        const byteCharacters = atob(result.data);
+                                        const byteNumbers = new Array(byteCharacters.length);
+                                        for (let i = 0; i < byteCharacters.length; i++) {
+                                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                        }
+                                        const byteArray = new Uint8Array(byteNumbers);
+                                        const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+                                        saveAs(blob, `history_export_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`);
+                                        toast.success('Excelを出力しました', { id: loadingToast });
+                                    } else {
+                                        toast.error('Excel出力に失敗しました', { id: loadingToast });
+                                    }
+                                } catch (e) {
+                                    console.error(e);
+                                    toast.error('エラーが発生しました', { id: loadingToast });
+                                }
+                            }}
+                            className="px-4 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center gap-2"
+                            title="Excel出力"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12 12 16.5m0 0 4.5-4.5M12 16.5v-9" />
+                            </svg>
+                            Excel出力
+                        </button>
                     </div>
 
                     {/* Custom Date Picker Trigger logic could go here or inside HistoryCalendar */}
