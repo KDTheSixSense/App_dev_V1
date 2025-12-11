@@ -1,12 +1,26 @@
 // /app/api/problems/publish/route.ts
 
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client'; // Prismaのエラー型をインポート
+import { PrismaClient, Prisma } from '@prisma/client';
+import { getIronSession } from 'iron-session';
+import { sessionOptions } from '@/lib/session';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
+interface SessionData {
+  user?: { id: string; email: string };
+}
+
 export async function POST(request: Request) {
   try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    const userId = session.user?.id;
+
+    if (!userId) {
+      return NextResponse.json({ message: '認証されていません。' }, { status: 401 });
+    }
+
     const body = await request.json();
     // サーバー側で受け取ったデータをログに出力して確認
     // console.log('✅ [API] Request body received:', JSON.stringify(body, null, 2));
@@ -36,6 +50,7 @@ export async function POST(request: Request) {
         allowTestCaseView: body.allowTestCaseView,
         isDraft: false,
         isPublished: true,
+        createdBy: userId, // 作成者を紐付け
       },
     });
 
@@ -62,10 +77,10 @@ export async function POST(request: Request) {
     // その他のエラーを処理
     if (error instanceof Error) {
       console.error('Generic Error:', error.message);
-      console.error('Stack Trace:', error.stack);
+      console.error('Generic Error:', error instanceof Error ? error.message : String(error));
       return NextResponse.json({
-        message: '問題の公開に失敗しました',
-        error: error.message
+        message: '問題の作成に失敗しました。',
+        error: 'Internal Server Error'
       }, { status: 500 });
     }
 

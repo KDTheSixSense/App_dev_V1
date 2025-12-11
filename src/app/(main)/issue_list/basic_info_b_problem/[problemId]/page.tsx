@@ -1,5 +1,6 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { detectThreatType } from '@/lib/waf';
 import { getAppSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
@@ -10,14 +11,36 @@ import { getProblemForClient } from '@/lib/data';
 import ProblemClient from './ProblemClient'; // 同じ階層のクライアントコンポーネントをインポート
 
 interface PageProps {
-  params: { problemId: string };
+  params: Promise<{ problemId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 /**
  * 基本情報技術者試験 科目B の問題詳細ページ (サーバーコンポーネント)
  * ユーザーのクレジット数を取得し、クライアントに渡します
  */
-const BasicInfoBProblemDetailPage = async ({params}: PageProps) => {
+const BasicInfoBProblemDetailPage = async (props: PageProps) => {
+  const params = await props.params;
+  const searchParams = await props.searchParams;
+
+  // Security Check: WAF for Search Params
+  if (searchParams) {
+    for (const [key, value] of Object.entries(searchParams)) {
+      let threat = detectThreatType(key);
+      if (threat) throw new Error(`Security Alert: Malicious query parameter detected (${threat}).`);
+
+      if (typeof value === 'string') {
+        threat = detectThreatType(value);
+        if (threat) throw new Error(`Security Alert: Malicious query parameter detected (${threat}).`);
+      } else if (Array.isArray(value)) {
+        for (const item of value) {
+          threat = detectThreatType(item);
+          if (threat) throw new Error(`Security Alert: Malicious query parameter detected (${threat}).`);
+        }
+      }
+    }
+  }
+
   const problemId = parseInt(params.problemId, 10);
   if (isNaN(problemId)) {
     notFound();

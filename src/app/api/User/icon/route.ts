@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error uploading icon:', error);
     if (error instanceof Error) {
-      return NextResponse.json({ error: 'Failed to upload icon', details: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to upload icon', details: 'Internal Server Error' }, { status: 500 });
     } else {
       return NextResponse.json({ error: 'Failed to upload icon', details: 'Unknown error' }, { status: 500 });
     }

@@ -36,7 +36,34 @@ const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, solve
 };
 
 // ページコンポーネントを非同期関数 `async` に変更します
-const SelectProblemsListPage = async () => {
+// ページコンポーネントを非同期関数 `async` に変更します
+import { detectThreatType } from '@/lib/waf';
+import { redirect } from 'next/navigation';
+
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+const SelectProblemsListPage = async (props: PageProps) => {
+  const searchParams = await props.searchParams;
+  // Security Check: WAF
+  if (searchParams) {
+    for (const [key, value] of Object.entries(searchParams)) {
+      let threat = detectThreatType(key);
+      if (threat) throw new Error(`Security Alert: Malicious query parameter detected (${threat}).`);
+
+      if (typeof value === 'string') {
+        threat = detectThreatType(value);
+        if (threat) throw new Error(`Security Alert: Malicious query parameter detected (${threat}).`);
+      } else if (Array.isArray(value)) {
+        for (const item of value) {
+          threat = detectThreatType(item);
+          if (threat) throw new Error(`Security Alert: Malicious query parameter detected (${threat}).`);
+        }
+      }
+    }
+  }
+
   const session = await getAppSession();
   const userId = session.user?.id;
 

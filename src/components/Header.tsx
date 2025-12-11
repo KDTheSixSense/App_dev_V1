@@ -1,3 +1,5 @@
+//components/Header.tsx
+
 'use client';
 
 import React from 'react';
@@ -51,6 +53,16 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
   // 1. ランク(level)のstate
   const [rank, setRank] = useState(() => userWithPet?.level ?? 1);
   
+  const headerRef = useRef<HTMLElement>(null);
+
+  // ヘッダーの高さを取得してCSS変数を設定する
+  useEffect(() => {
+    if (headerRef.current) {
+      const headerHeight = headerRef.current.offsetHeight;
+      document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
+    }
+  }, []); // コンポーネントのマウント時に一度だけ実行
+
   // 2. 連続ログイン日数のstate
   const [continuousLogin, setContinuousLogin] = useState(() => userWithPet?.continuouslogin ?? 0);
 
@@ -219,7 +231,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
   ];
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
+    <header ref={headerRef} className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
       
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0 ml-3">

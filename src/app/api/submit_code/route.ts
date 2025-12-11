@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { executeAgainstTestCases } from '@/lib/sandbox';
 
+import { getAppSession } from '@/lib/auth';
+
 // 入力データの検証スキーマ
 const submitCodeSchema = z.object({
   language: z.string(),
@@ -11,6 +13,11 @@ const submitCodeSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const session = await getAppSession();
+    if (!session?.user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { language, source_code, problemId } = submitCodeSchema.parse(body);
     const pId = Number(problemId);

@@ -76,7 +76,7 @@ export default function LandingPage() {
                         aspect-video">
             <iframe 
               className="absolute top-0 left-0 h-full w-full"
-              src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE" // ★ IDを置き換えてください
+              src="https://www.youtube.com/embed/9FrfDtypxzc" // ★ IDを置き換えました
               title="YouTube video player" 
               frameBorder="0" 
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 

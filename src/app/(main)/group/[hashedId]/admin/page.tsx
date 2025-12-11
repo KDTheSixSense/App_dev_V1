@@ -17,6 +17,7 @@ import { ProblemSelectModal } from './components/ProblemSelectModal';
 import { TabType, AssignmentViewMode, Assignment, ProgrammingProblem } from './types/AdminTypes';
 import { AssignmentStatusList } from './components/AssignmentStatusList';
 import { useAdminData } from './hooks/useAdminData';
+import { detectThreatType } from '@/lib/waf';
 
 const GroupDetailPage: React.FC = () => {
     const params = useParams();
@@ -66,7 +67,23 @@ const GroupDetailPage: React.FC = () => {
     const [problemPreview, setProblemPreview] = useState<ProgrammingProblem | null>(null);
 
     // クエリパラメータの処理 - 問題作成後の遷移時に使用
+    // クエリパラメータの処理 - 問題作成後の遷移時に使用
     const searchParams = useSearchParams();
+
+    // Client-side WAF Check
+    useEffect(() => {
+        if (searchParams) {
+            searchParams.forEach((value, key) => {
+                const threat = detectThreatType(value) || detectThreatType(key);
+                if (threat) {
+                    console.error(`Security Alert: Malicious query parameter detected (${threat}).`);
+                    // Force redirect to error page or simple error
+                    throw new Error(`Security Alert: Malicious query parameter detected (${threat}).`);
+                }
+            });
+        }
+    }, [searchParams]);
+
     useEffect(() => {
         // クエリパラメータから初期状態を設定（問題作成後の自動遷移用）
         const tabParam = searchParams.get('tab');

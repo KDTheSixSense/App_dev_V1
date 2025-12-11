@@ -23,6 +23,7 @@ export default async function RankingPage() {
     iconUrl: string | null;
     score: number;
     subjectId: number;
+    // Safe: No user input is interpolated here. Prisma.sql handles templating if needed.
     rank: bigint; // rankをbigint型に変更
     level: number;
   }>>(Prisma.sql`

@@ -13,33 +13,37 @@ export async function POST(req: Request) {
     }
     const userId = session.user.id;
 
-    // 現在のユーザー情報を取得
-    const user = await prisma.user.findUnique({
-      where: { id: userId as any },
-      select: { aiAdviceCredits: true },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
-    }
-
-    // クレジットが残っているかチェック
-    if (user.aiAdviceCredits <= 0) {
-      return NextResponse.json({ error: 'アドバイス回数が残っていません' }, { status: 400 });
-    }
-
-    // クレジットを1つ減らす
-    const updatedUser = await prisma.user.update({
-      where: { id: userId as any },
+    // Atomic update to prevent race conditions (decrement only if > 0)
+    const result = await prisma.user.updateMany({
+      where: {
+        id: userId,
+        aiAdviceCredits: { gt: 0 },
+      },
       data: {
         aiAdviceCredits: {
           decrement: 1,
         },
       },
-      select: {
-        aiAdviceCredits: true,
-      },
     });
+
+    if (result.count === 0) {
+      // Check if user exists or just no credits
+      const userExists = await prisma.user.findUnique({ where: { id: userId }, select: { aiAdviceCredits: true } });
+      if (!userExists) {
+        return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+      }
+      return NextResponse.json({ error: 'アドバイス回数が残っていません' }, { status: 400 });
+    }
+
+    // Get the new balance for the response
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { aiAdviceCredits: true },
+    });
+
+    if (!updatedUser) {
+      throw new Error('予期せぬエラー: ユーザー情報の取得に失敗しました');
+    }
 
     return NextResponse.json({
       message: 'クレジットを消費しました。',

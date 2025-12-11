@@ -37,11 +37,11 @@ const MAX_HUNGER = 200; //満腹度の最大値を一括管理
  */
 import { z } from 'zod';
 
-const registerSchema = z.object({
+import { registerSchema as baseRegisterSchema } from '@/lib/validations';
+
+const registerSchema = baseRegisterSchema.extend({
   username: z.string().min(1, 'ユーザー名は必須です'),
-  email: z.string().email('有効なメールアドレスを入力してください'),
-  password: z.string().min(8, 'パスワードは8文字以上である必要があります'),
-  birth: z.string().optional(),
+  // email, password, birth are inherited from baseRegisterSchema with strict checks
   isAgreedToTerms: z.boolean().refine(val => val === true, '利用規約への同意が必要です'),
   isAgreedToPrivacyPolicy: z.boolean().refine(val => val === true, 'プライバシーポリシーへの同意が必要です'),
 });

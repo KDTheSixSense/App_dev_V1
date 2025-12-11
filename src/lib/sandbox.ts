@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 
 // Updated interface to match the actual flat response structure from the sandbox service
-interface SandboxResult {
+export interface SandboxResult {
     build_result?: {
         stdout: string;
         stderr: string;
@@ -36,6 +36,55 @@ export interface ExecutionResult {
     score?: number;
     passedCount?: number;
     totalCount?: number;
+}
+
+// Shared execution logic
+export async function executeCode(
+    language: string,
+    sourceCode: string,
+    input: string
+): Promise<SandboxResult> {
+    const sandboxUrl = 'http://sandbox:4000/execute';
+
+    // INPUT INJECTION HACK:
+    // Sandbox service seems to fail piping stdin correctly for Python, causing EOFError.
+    // We inject sys.stdin mock directly into the code here.
+    let codeToRun = sourceCode;
+    if ((language === 'python' || language === 'python3') && input) {
+        const escapedInput = JSON.stringify(input);
+        // Prepend stdin mocking if not already present (simple check)
+        if (!codeToRun.includes('sys.stdin = io.StringIO')) {
+            codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO(${escapedInput})\n\n` + sourceCode;
+        }
+    }
+
+    try {
+        const response = await fetch(sandboxUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                language,
+                source_code: codeToRun,
+                input: input,
+            }),
+        });
+
+        if (!response.ok) {
+            return {
+                error: `Sandbox Error: ${response.statusText}`,
+                stderr: `Sandbox Error: ${response.statusText}`, // fallback
+            };
+        }
+
+        const result: SandboxResult = await response.json();
+        return result;
+    } catch (error: any) {
+        console.error('Sandbox connection error:', error);
+        return {
+            error: error.message || 'Failed to connect to sandbox',
+            stderr: error.message || 'Failed to connect to sandbox',
+        };
+    }
 }
 
 /**
@@ -90,7 +139,6 @@ export async function executeAgainstTestCases(
 
         // 2. Sandboxサービスでの実行 (逐次実行)
         const results: TestCaseResult[] = [];
-        const sandboxUrl = 'http://sandbox:4000/execute';
 
         for (const testCase of testCases) {
             let actualOutput = '';
@@ -98,66 +146,40 @@ export async function executeAgainstTestCases(
             let isCorrect = false;
 
             try {
-                // INPUT INJECTION HACK:
-                // Sandbox service seems to fail piping stdin correctly for Python, causing EOFError.
-                // We inject sys.stdin mock directly into the code.
-                let codeToRun = sourceCode;
-                if ((language === 'python' || language === 'python3') && testCase.input) {
-                    const escapedInput = JSON.stringify(testCase.input);
-                    // Prepend stdin mocking
-                    codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO(${escapedInput})\n\n` + sourceCode;
-                }
+                // Use the shared executeCode function
+                const result = await executeCode(language, sourceCode, testCase.input);
 
-                const response = await fetch(sandboxUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        language,
-                        source_code: codeToRun,
-                        input: testCase.input, // Still send it just in case
-                    }),
-                });
-
-                if (!response.ok) {
+                if (result.error) {
                     status = 'System Error';
-                    actualOutput = `Sandbox Error: ${response.statusText}`;
-                    console.error('Sandbox error response:', response.status, response.statusText);
+                    actualOutput = result.error;
+                } else if (result.build_result?.stderr) {
+                    status = 'Compilation Error';
+                    actualOutput = result.build_result.stderr;
                 } else {
-                    const result: SandboxResult = await response.json();
+                    // Handle both flat and nested structure (prioritize flat)
+                    const runtimeStderr = result.stderr || result.program_output?.stderr;
+                    const runtimeStdout = result.stdout || result.program_output?.stdout || '';
 
-                    if (result.error) {
-                        status = 'System Error';
-                        actualOutput = result.error;
-                    } else if (result.build_result?.stderr) {
-                        status = 'Compilation Error';
-                        actualOutput = result.build_result.stderr;
+                    if (runtimeStderr) {
+                        status = 'Runtime Error';
+                        actualOutput = runtimeStderr;
                     } else {
-                        // Handle both flat and nested structure (prioritize flat as per recent observations)
-                        const runtimeStderr = result.stderr || result.program_output?.stderr;
-                        const runtimeStdout = result.stdout || result.program_output?.stdout || '';
+                        actualOutput = runtimeStdout.trim();
 
-                        if (runtimeStderr) {
-                            status = 'Runtime Error';
-                            actualOutput = runtimeStderr;
+                        // 比較
+                        const expected = testCase.expectedOutput.trim();
+                        if (actualOutput === expected) {
+                            status = 'Accepted';
+                            isCorrect = true;
                         } else {
-                            actualOutput = runtimeStdout.trim();
-
-                            // 比較 (末尾の改行などはtrimして比較するのが一般的)
-                            const expected = testCase.expectedOutput.trim();
-
-                            if (actualOutput === expected) {
-                                status = 'Accepted';
-                                isCorrect = true;
-                            } else {
-                                status = 'Wrong Answer';
-                                isCorrect = false;
-                            }
+                            status = 'Wrong Answer';
+                            isCorrect = false;
                         }
                     }
                 }
 
             } catch (error: any) {
-                console.error('Sandbox execution error:', error);
+                console.error('Sandbox execution error in loop:', error);
                 status = 'System Error';
                 actualOutput = error.message || 'Unknown error';
             }

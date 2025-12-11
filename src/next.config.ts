@@ -33,9 +33,65 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-          { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
+      },
+      // Force text/plain for uploaded code files to prevent execution (XSS)
+      {
+        source: '/uploads/:path*.js',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' }, // Allow viewing in browser as text
+        ],
+      },
+      {
+        source: '/uploads/:path*.ts',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
+      {
+        source: '/uploads/:path*.py',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
+      {
+        source: '/uploads/:path*.java',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
+      {
+        source: '/uploads/:path*.c',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
+      {
+        source: '/uploads/:path*.cpp',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain' },
+          { key: 'Content-Disposition', value: 'inline' },
+        ],
+      },
+      // ZAP対策: 静的ファイルにもCSPを付与する（動的ページはMiddlewareで処理）
+      {
+        source: '/images/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'none'; frame-ancestors 'none';" }
+        ]
+      },
+      {
+        source: '/favicon.ico',
+        headers: [
+          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'none'; frame-ancestors 'none';" }
+        ]
       },
     ];
   },

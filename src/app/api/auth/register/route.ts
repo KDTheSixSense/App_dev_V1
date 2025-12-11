@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, password, birth } = validation.data;
-    const birthDate = new Date(birth);
+    const birthDate = birth ? new Date(birth) : null;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
