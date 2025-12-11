@@ -174,6 +174,20 @@ export default function CreateProgrammingQuestionPage() {
               setCorrectAnswer(String.fromCharCode(97 + correctIndex));
             }
           } else {
+            let parsedTags: string[] = [];
+            try {
+              const parsed = JSON.parse(data.tags || '[]');
+              parsedTags = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+              console.error("Failed to parse tags", e);
+              parsedTags = [];
+            }
+
+            // タグが空の場合、トピックを自動的にタグとして追加
+            if (parsedTags.length === 0 && data.topic) {
+              parsedTags.push(data.topic);
+            }
+
             setFormData({
               title: data.title || '',
               problemType: data.problemType || 'コーディング問題',
@@ -181,7 +195,7 @@ export default function CreateProgrammingQuestionPage() {
               timeLimit: data.timeLimit || 10,
               category: data.category || 'プログラミング基礎',
               topic: data.topic || '標準入力',
-              tags: JSON.parse(data.tags || '[]'),
+              tags: parsedTags,
               description: data.description || '',
               codeTemplate: data.codeTemplate || '',
               isPublic: data.isPublic || false,
@@ -755,10 +769,9 @@ export default function CreateProgrammingQuestionPage() {
                         </div>
 
                         <div className="form-group">
-                          {/*
                           <label className="form-label">タグ</label>
                           <div className="tags-container">
-                            {formData.tags.map((tag, index) => (
+                            {(Array.isArray(formData.tags) ? formData.tags : []).map((tag, index) => (
                               <div key={index} className="tag">
                                 {tag}
                                 <button
@@ -771,7 +784,6 @@ export default function CreateProgrammingQuestionPage() {
                               </div>
                             ))}
                           </div>
-                            */}
                           <div className="tag-input-container">
                             <input
                               type="text"
