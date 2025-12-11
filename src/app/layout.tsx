@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -30,6 +31,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = headers().get('x-nonce') || '';
 
   return (
     <html
@@ -40,6 +42,7 @@ export default async function RootLayout({
     ><body
       // <body>はbg-transparent（透明）にし、<html>の背景が見えるようにする
       className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-transparent`}
+      data-nonce={nonce} // For debugging CSP Nonce
     >
         {children}
         <Toaster position="bottom-right" toastOptions={{ style: { zIndex: 99999 } }} />

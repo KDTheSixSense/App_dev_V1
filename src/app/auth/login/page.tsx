@@ -159,8 +159,9 @@ const Login = () => {
 
             {/* --- メールアドレス --- */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300">メールアドレス</label>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-300">メールアドレス</label>
               <input
+                id="email"
                 {...register("email", {
                   required: "メールアドレスは必須です",
                   pattern: {
@@ -178,8 +179,9 @@ const Login = () => {
 
             {/* --- パスワード --- */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-300">パスワード</label>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-300">パスワード</label>
               <input
+                id="password"
                 {...register("password", {
                   required: "パスワードは必須です",
                   // minLength: { // 元のコードに合わせて 4文字

@@ -18,11 +18,20 @@ export function generateCsp({ nonce, isDev, pathname }: CspOptions): string {
     // Added https://cdn.jsdelivr.net (Ace Editor etc) and https://static.doubleclick.net (YouTube/Ads)
     let scriptSrc = `'self' 'nonce-${nonce}' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
 
+    const pathsNeedingUnsafeEval = [
+        '/simulator',
+        '/(main)/simulator',
+        '/customize_trace',
+        '/group/coding-page',
+        '/issue_list/programming_problem',
+        '/event/event_detail',
+    ];
+
     if (isDev) {
         // Development Mode: Needs looser policy for HMR and DevTools
         scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
-    } else if (pathname.startsWith('/simulator') || pathname.startsWith('/(main)/simulator')) {
-        // Simulator Route (Prod): Needs 'unsafe-eval' for code execution feature (e.g. Ace Editor, Skulpt)
+    } else if (pathsNeedingUnsafeEval.some(p => pathname.startsWith(p))) {
+        // Routes using code editors (Ace, Blockly) need 'unsafe-eval'
         // But we still require nonces for inline scripts to prevent XSS
         scriptSrc = `'self' 'nonce-${nonce}' 'unsafe-eval' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
     }
