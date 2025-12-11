@@ -755,6 +755,7 @@ export default function CreateProgrammingQuestionPage() {
                         </div>
 
                         <div className="form-group">
+                          {/*
                           <label className="form-label">タグ</label>
                           <div className="tags-container">
                             {formData.tags.map((tag, index) => (
@@ -770,6 +771,7 @@ export default function CreateProgrammingQuestionPage() {
                               </div>
                             ))}
                           </div>
+                            */}
                           <div className="tag-input-container">
                             <input
                               type="text"

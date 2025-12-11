@@ -54,7 +54,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     { email: 'tanaka@example.com', password: 'password131', username: '田中 恵子', icon: '/images/users/tanaka.png' },
     { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎', icon: '/images/users/suzuki.png' },
     { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲', icon: '/images/users/sato.png' },
-    { email: 'kobe_taro@example.com', password: 'kobe', username: '神戸太郎', icon: '/images/users/kobe.png' },
+    { email: 'kobe_taro@example.com', password: 'kobetarou', username: '神戸太郎', icon: '/images/users/kobe.png' },
   ];
 
   // --- 3. 各ユーザーのデータと関連データを作成 ---
