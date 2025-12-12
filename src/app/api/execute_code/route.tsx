@@ -109,7 +109,8 @@ export async function POST(request: Request) {
     }
 
     const { language, source_code, input } = validationResult.data;
-    const decoded_source_code = Buffer.from(source_code, 'base64').toString('utf-8');
+    // The source_code is plain text from the client.
+    // The executeCode function will handle Base64 encoding.
 
     // Security Check: WAF for Input (SQL Injection, XSS, Path Traversal)
     if (input && containsSecurityThreats(input)) {
@@ -128,14 +129,14 @@ export async function POST(request: Request) {
     }
 
     // Security Check: Forbidden Keywords
-    if (containsForbiddenKeywords(decoded_source_code, language)) {
+    if (containsForbiddenKeywords(source_code, language)) {
       await logAudit(
         null,
         AuditAction.EXECUTE_CODE,
         {
           message: 'Blocked forbidden keyword usage',
           language,
-          code_snippet: decoded_source_code.substring(0, 50)
+          code_snippet: source_code.substring(0, 50)
         }
       );
       return NextResponse.json({
@@ -153,7 +154,7 @@ export async function POST(request: Request) {
 
     // Use shared execution logic
     // Use shared execution logic
-    result = await executeCode(language, decoded_source_code, input || '') as any;
+    result = await executeCode(language, source_code, input || '') as any;
 
     if (result.error && result.error.startsWith('Sandbox Error')) {
       // Network/System error

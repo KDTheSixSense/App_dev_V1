@@ -44,7 +44,7 @@ export async function executeCode(
     sourceCode: string,
     input: string
 ): Promise<SandboxResult> {
-    const sandboxUrl = 'http://sandbox:4000/execute';
+    const sandboxUrl = `${process.env.SANDBOX_URL}/execute`;
 
     // INPUT INJECTION HACK:
     // Sandbox service seems to fail piping stdin correctly for Python, causing EOFError.
@@ -57,6 +57,9 @@ export async function executeCode(
             codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO(${escapedInput})\n\n` + sourceCode;
         }
     }
+    
+    // Base64 encode the code to be sent to the sandbox
+    const encodedCode = Buffer.from(codeToRun).toString('base64');
 
     try {
         const response = await fetch(sandboxUrl, {
@@ -64,15 +67,17 @@ export async function executeCode(
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 language,
-                source_code: codeToRun,
+                source_code: encodedCode, // Send the encoded code
                 input: input,
             }),
         });
 
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Sandbox service error:", errorText);
             return {
                 error: `Sandbox Error: ${response.statusText}`,
-                stderr: `Sandbox Error: ${response.statusText}`, // fallback
+                stderr: `Sandbox Error: ${response.statusText} - ${errorText}`, // fallback
             };
         }
 

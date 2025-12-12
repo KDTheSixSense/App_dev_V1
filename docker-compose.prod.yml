@@ -42,7 +42,7 @@ services:
   # サンドボックスコンテナ (Code Execution) - Added for production
   sandbox:
     build:
-      context: .devcontainer/sandbox
+      context: sandbox_deploy/package.json ./
     ports:
       - "4000:4000"
     restart: always
