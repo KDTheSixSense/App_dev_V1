@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
       - name: sandbox-service
-        image: your-container-registry/sandbox-service:latest # ■■■ ここをあなたのコンテナレジストリのイメージ名に書き換えてください ■■■
+        image: sandbox-service:latest # ■■■ ここをあなたのコンテナレジストリのイメージ名に書き換えてください ■■■
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 4000
         resources:
