@@ -187,7 +187,8 @@ const ProblemSolverPage = () => {
         setIsSubmitting(true);
         setExecutionResult('確認中...');
         try {
-            const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: problem?.sampleCases?.[0]?.input || '' }), });
+            const encodedCode = Buffer.from(userCode).toString('base64');
+            const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: encodedCode, input: problem?.sampleCases?.[0]?.input || '' }), });
             const data = await response.json();
             const output = (data.program_output?.stdout || '').trim();
             const expectedOutput = (problem?.correctAnswer || 'UNSET').trim();
