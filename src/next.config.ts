@@ -26,60 +26,30 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {
-    return [
+    const securityHeaders = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+      { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+    ];
+
+    const codeFileExtensions = ['js', 'ts', 'py', 'java', 'c', 'cpp'];
+    const codeFileHeaders = [
+      { key: 'Content-Type', value: 'text/plain' },
+      { key: 'Content-Disposition', value: 'inline' },
+    ];
+
+    const headers = [
       {
         source: '/:path*',
-        headers: [
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-        ],
+        headers: securityHeaders,
       },
       // Force text/plain for uploaded code files to prevent execution (XSS)
-      {
-        source: '/uploads/:path*.js',
-        headers: [
-          { key: 'Content-Type', value: 'text/plain' },
-          { key: 'Content-Disposition', value: 'inline' }, // Allow viewing in browser as text
-        ],
-      },
-      {
-        source: '/uploads/:path*.ts',
-        headers: [
-          { key: 'Content-Type', value: 'text/plain' },
-          { key: 'Content-Disposition', value: 'inline' },
-        ],
-      },
-      {
-        source: '/uploads/:path*.py',
-        headers: [
-          { key: 'Content-Type', value: 'text/plain' },
-          { key: 'Content-Disposition', value: 'inline' },
-        ],
-      },
-      {
-        source: '/uploads/:path*.java',
-        headers: [
-          { key: 'Content-Type', value: 'text/plain' },
-          { key: 'Content-Disposition', value: 'inline' },
-        ],
-      },
-      {
-        source: '/uploads/:path*.c',
-        headers: [
-          { key: 'Content-Type', value: 'text/plain' },
-          { key: 'Content-Disposition', value: 'inline' },
-        ],
-      },
-      {
-        source: '/uploads/:path*.cpp',
-        headers: [
-          { key: 'Content-Type', value: 'text/plain' },
-          { key: 'Content-Disposition', value: 'inline' },
-        ],
-      },
+      ...codeFileExtensions.map((ext) => ({
+        source: `/uploads/:path*.${ext}`,
+        headers: codeFileHeaders,
+      })),
       // ZAP対策: 静的ファイルにもCSPを付与する（動的ページはMiddlewareで処理）
       {
         source: '/images/:path*',
@@ -94,6 +64,8 @@ const nextConfig: NextConfig = {
         ]
       },
     ];
+
+    return headers;
   },
   // @ts-ignore: Next.js 16 turbopack config
   turbopack: {

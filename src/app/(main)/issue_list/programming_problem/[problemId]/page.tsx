@@ -12,7 +12,7 @@ import { sanitize } from '@/lib/sanitizer';
 import toast from 'react-hot-toast';
 
 import type { Problem as SerializableProblem } from '@/lib/types';
-import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
+import { getProblemByIdAction, getNextProgrammingProblemId, awardXpForCorrectAnswer, recordStudyTimeAction, recordAnswerAction } from '@/lib/actions';
 import TestCaseResultModal, { TestCaseResult } from '@/components/TestCaseResultModal';
 
 const MAX_HUNGER = 200;
@@ -503,6 +503,9 @@ const ProblemSolverPage = () => {
                 });
                 await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1);
                 window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+            } else {
+                // 不正解の場合も履歴に記録 (Programming subjectId = 1)
+                await recordAnswerAction(parseInt(problemId), 1, false, 'INCORRECT');
             }
         } catch (error) { console.error('Error submitting code:', error); setSubmitResult({ success: false, message: '確認処理中にエラーが発生しました。' }); }
         finally { setIsSubmitting(false); }

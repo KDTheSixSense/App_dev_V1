@@ -10,7 +10,7 @@ import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '@/components/KohakuChat';
 
 // --- データと型、アクションのインポート ---
-import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
+import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction, recordAnswerAction } from '@/lib/actions';
 import toast from 'react-hot-toast';
 import type { SerializableProblem } from '@/lib/data';
 import { getHintFromAI } from '@/lib/actions/hintactions';
@@ -173,6 +173,16 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           }
         } catch (error) {
           toast.error('経験値の付与に失敗しました。');
+        }
+      }
+    } else {
+      // Log incorrect answer
+      const numericId = parseInt(problem.id, 10);
+      if (!isNaN(numericId)) {
+        try {
+          await recordAnswerAction(numericId, 5, false, selectedValue);
+        } catch (error) {
+          console.error(error);
         }
       }
     }

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import ProblemStatement from '../components/ProblemStatement';
 // KohakuChat のインポートパスを確認
 import KohakuChat from '@/components/KohakuChat'; // '@/' から始まるパスに変更 (B問題のコード例より)
-import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
+import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction, recordAnswerAction } from '@/lib/actions';
 import { getHintFromAI } from '@/lib/actions/hintactions'; // インポート
 import toast from 'react-hot-toast';
 import type { SerializableProblem } from '@/lib/data';
@@ -188,9 +188,9 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
     setAnswerEffectType(correct ? 'correct' : 'incorrect');
 
-    if (correct) {
-      const numericId = parseInt(problem.id, 10);
-      if (!isNaN(numericId)) {
+    const numericId = parseInt(problem.id, 10);
+    if (!isNaN(numericId)) {
+      if (correct) {
         try {
           const result = await awardXpForCorrectAnswer(numericId, undefined, 2);
           if (result.message === '経験値を獲得しました！') {
@@ -201,6 +201,13 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           }
         } catch (error) {
           toast.error('経験値の付与に失敗しました。');
+        }
+      } else {
+        // Log incorrect answer
+        try {
+          await recordAnswerAction(numericId, 2, false, selectedValue);
+        } catch (error) {
+          console.error("Failed to record incorrect answer:", error);
         }
       }
     }

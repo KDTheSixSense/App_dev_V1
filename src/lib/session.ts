@@ -1,5 +1,6 @@
 // /workspaces/my-next-app/src/lib/session.ts
-import { IronSessionData, SessionOptions } from 'iron-session';
+import { getIronSession, IronSession, IronSessionData, SessionOptions } from 'iron-session';
+import { cookies } from 'next/headers';
 
 export interface SessionData {
   user?: {
@@ -18,9 +19,7 @@ export const sessionOptions: SessionOptions = {
     secure: process.env.NODE_ENV === 'production', // 本番環境のみSecure属性を有効化
     sameSite: 'lax',
   },
-  // ブラウザを閉じたときにセッションを無効化するため、ttl（サーバー側の有効期限）や
-  // cookie の `maxAge` / `expires` を設定しません。
-  // これによりクッキーはセッションCookie（ブラウザ終了で消える）になります。
+  ttl: 86400, // 1日 (秒単位)
 };
 
 /**
@@ -28,7 +27,7 @@ export const sessionOptions: SessionOptions = {
  */
 // IronSessionData の型定義を拡張
 declare module 'iron-session' {
-interface IronSessionData {
+  interface IronSessionData {
     // 既存のログイン済みユーザー情報
     user?: {
       id: string;
@@ -36,7 +35,6 @@ interface IronSessionData {
       username: string | null;
       isAdmin: boolean;
       lastlogin?: Date | null;
-      openid?: string | null;
     };
     // Google新規登録確認用の一時データ
     googleSignupProfile?: {

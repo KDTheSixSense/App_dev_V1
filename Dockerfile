@@ -5,11 +5,21 @@ FROM node:20-alpine3.20 AS builder
 
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
 
 WORKDIR /app
-COPY src/package.json src/package-lock.json ./
-# prismaもdependenciesに含めておく
-RUN npm ci
+
+# 依存関係のファイルを先にコピー
+COPY src/package.json src/package-lock.json* ./
+
+# Native modules build dependencies
+RUN apk add --no-cache python3 make g++
+
+# 依存関係をインストール
+RUN npm install
+
+# プロジェクトのソースコードを全部コピー
 COPY src/ .
 RUN npx prisma generate
 RUN npm run build
@@ -27,6 +37,11 @@ RUN apk update && apk add --no-cache \
 
 WORKDIR /app
 
+# PrismaにはOpenSSLが必要です
+# また、lint機能のためにPython3などのランタイムも必要です
+RUN apk add --no-cache openssl python3 make g++ openjdk17-jre php
+
+# 実行に必要な最小限のユーザーを作成
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 

@@ -1,6 +1,6 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["linux-musl-openssl-3.0.x"]
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -141,6 +141,7 @@ model Answer_Algorithm {
   // --- リレーション定義 ---
   user     User                @relation(fields: [userId], references: [id])
   question Questions_Algorithm @relation(fields: [questionId], references: [id])
+  answeredAt DateTime @default(now())
 }
 
 // 問題のカテゴリを管理するマスターテーブル (例: "ストラテジ", "マネジメント")

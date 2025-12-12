@@ -32,11 +32,12 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   console.log('🌱 Seeding users and groups...');
 
   // --- 1. 既存データをクリア ---
-  // 依存関係の末端から削除していく
-  await prisma.assignmentComment.deleteMany({});
-  await prisma.event_Submission.deleteMany({});
-  await prisma.event_Participants.deleteMany({});
-  await prisma.event_Issue_List.deleteMany({});
+  await prisma.auditLog.deleteMany({});
+  await prisma.loginHistory.deleteMany({});
+  await prisma.groups_User.deleteMany({});
+  await prisma.userSubjectProgress.deleteMany({});
+  await prisma.status_Kohaku.deleteMany({});
+  await prisma.groups.deleteMany({});
   await prisma.create_event.deleteMany({});
   await prisma.post.deleteMany({});
   await prisma.submissions.deleteMany({});
@@ -56,7 +57,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   await prisma.user.deleteMany({});
   console.log('🗑️ Cleared existing user and group data.');
 
-  
+
   // --- 2. シーディングするユーザーの基本情報を定義 ---
   const usersToSeed = [
     { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', icon: '/images/users/alice.png' },
@@ -69,7 +70,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     { email: 'tanaka@example.com', password: 'password131', username: '田中 恵子', icon: '/images/users/tanaka.png' },
     { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎', icon: '/images/users/suzuki.png' },
     { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲', icon: '/images/users/sato.png' },
-    { email: 'kobe_taro@example.com', password: 'kobe', username: '神戸太郎', icon: '/images/users/kobe.png' },
+    { email: 'kobe_taro@example.com', password: 'kobetarou', username: '神戸太郎', icon: '/images/users/kobe.png' },
   ];
 
   // --- 3. 各ユーザーのデータと関連データを作成 ---
@@ -82,7 +83,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     // 科目ごとの進捗を生成
     for (let subjectId = 1; subjectId <= numberOfSubjects; subjectId++) {
       let subjectXp = 0;
-      
+
       // ユーザーごとにXPの生成範囲を変える
       if (userData.username === '神戸太郎') {
         subjectXp = 8999;
@@ -104,7 +105,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
 
     // アカウント全体のレベルとXPを計算
     const accountLevel = calculateLevelFromXp(totalAccountXp);
-    
+
     // パスワードをハッシュ化
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     const isKobeTaro = userData.username === '神戸太郎';
@@ -121,7 +122,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
         lastlogin: yesterday,
         totallogin: 100,
       };
-    } 
+    }
     await prisma.user.create({
       data: {
         email: userData.email,
@@ -183,7 +184,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
       ],
     });
     console.log(`✅ Created group "${group2.groupname}" with Taro as a Member.`);
-    
+
     // グループ3: 神戸太郎が参加していない (招待コード固定)
     const group3 = await prisma.groups.create({
       data: {
@@ -215,27 +216,27 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     });
     console.log(`✅ Added ${group3Members.length} members to "${group3.groupname}".`);
 
-        // 「神戸ゼミ」のお知らせと課題
+    // 「神戸ゼミ」のお知らせと課題
     await prisma.post.createMany({
-        data: [
-            { content: '第一回ゼミ会のお知らせです。来週月曜の18時から開催します。', groupId: group1.id, authorId: kobeTaro.id },
-            { content: '参考文献リストを共有します。各自確認してください。', groupId: group1.id, authorId: kobeTaro.id },
-        ]
+      data: [
+        { content: '第一回ゼミ会のお知らせです。来週月曜の18時から開催します。', groupId: group1.id, authorId: kobeTaro.id },
+        { content: '参考文献リストを共有します。各自確認してください。', groupId: group1.id, authorId: kobeTaro.id },
+      ]
     });
     await prisma.assignment.createMany({
-        data: [
-            { groupid: group1.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-09-30T23:59:59Z') },
-            { groupid: group1.id, title: '[実践] ReactでTodoアプリ作成', description: 'Next.jsとTypeScriptを使い、簡単なTodoアプリを実装してください。', due_date: new Date('2025-10-15T23:59:59Z') },
-        ]
+      data: [
+        { groupid: group1.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-09-30T23:59:59Z') },
+        { groupid: group1.id, title: '[実践] ReactでTodoアプリ作成', description: 'Next.jsとTypeScriptを使い、簡単なTodoアプリを実装してください。', due_date: new Date('2025-10-15T23:59:59Z') },
+      ]
     });
 
     // 「KDITクラス」のお知らせ
     await prisma.post.create({
-        data: {
-            content: '夏期集中講座の申し込みが開始されました。希望者はメールを確認してください。',
-            groupId: group3.id,
-            authorId: alice.id, // 管理者であるアリスが投稿
-        }
+      data: {
+        content: '夏期集中講座の申し込みが開始されました。希望者はメールを確認してください。',
+        groupId: group3.id,
+        authorId: alice.id, // 管理者であるアリスが投稿
+      }
     });
     // --- ▼▼▼ ここから課題のシーディング処理を追加 ▼▼▼ ---
     console.log('🌱 Seeding assignments with problem relations...');
