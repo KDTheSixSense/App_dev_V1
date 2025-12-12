@@ -200,7 +200,10 @@ app.post('/execute', async (req, res) => {
         return res.status(400).json({ error: 'Missing language or source_code' });
     }
 
-    const result = await executeCode(language, source_code, input || '');
+    // Decode source_code from Base64
+    const decodedSourceCode = Buffer.from(source_code, 'base64').toString('utf-8');
+
+    const result = await executeCode(language, decodedSourceCode, input || '');
     res.json(result);
 });
 
