@@ -265,7 +265,7 @@ function applyDeviceIdCookie(res: NextResponse, deviceId: string) {
 
 // --- Middleware ---
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
     // 0. Security: WAF (SQL Injection)
     // Run this FIRST to block malicious requests before any processing
     const wafResponse = await detectSecurityThreats(req);
@@ -434,7 +434,7 @@ export async function middleware(req: NextRequest) {
     return response;
 }
 
-export const proxy = {
+export const config = {
     // Apply to all routes except Next.js internals and static assets
     matcher: [
         '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:css|js|gif|svg|jpg|jpeg|png|webp|ico)$).*)',
