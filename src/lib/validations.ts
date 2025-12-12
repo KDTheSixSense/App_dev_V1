@@ -44,3 +44,18 @@ export const paginationSchema = z.object({
 export const groupParamsSchema = z.object({
     hashedId: z.string().min(1, 'Group ID is required').max(50).regex(/^[a-zA-Z0-9_-]+$/, 'Invalid Group ID format'),
 });
+
+export const eventJoinSchema = z.object({
+    inviteCode: z.string()
+        .min(1, 'Invite code is required')
+        .max(50, 'Invite code is too long')
+        .regex(/^[a-zA-Z0-9_-]+$/, 'Invalid invite code format'),
+});
+
+export const submissionSchema = z.object({
+    assignmentId: z.number().int().positive('Assignment ID must be a positive integer'),
+    status: z.string().optional(),
+    description: z.string().optional(),
+    codingId: z.number().int().optional(),
+    language: z.string().optional(),
+});

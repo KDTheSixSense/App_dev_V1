@@ -23,7 +23,7 @@ services:
       - SECRET_COOKIE_PASSWORD=complex_password_at_least_32_characters_long_1234567890
       - COOKIE_NAME=infopia_session_prod
     deploy:
-      replicas: 3
+      replicas: 5
     expose:
       - "3000"
     depends_on:
@@ -43,18 +43,19 @@ services:
   sandbox:
     build:
       context: .devcontainer/sandbox
-    ports:
-      - "4000:4000"
+    expose:
+      - "4000"
     restart: always
     security_opt:
       - no-new-privileges:true
     cap_add:
       - NET_ADMIN
     deploy:
+      replicas: 3
       resources:
         limits:
-          cpus: '0.50'
-          memory: 512M
+          cpus: '1.0'
+          memory: 1G
 
   db:
     image: postgres:16
