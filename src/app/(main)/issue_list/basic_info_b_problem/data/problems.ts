@@ -1820,7 +1820,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
     {
         id: '30',
         logicType: 'HASH_OPEN_ADDRESSING',
-        title: { ja: "サンプル問題 [科目B] ハッシュ法によるデータ格納", en: "Sample Problem [Subject B] Q30" },
+        title: { ja: "令和5年 科目B ハッシュ法によるデータ格納", en: "Sample Problem [Subject B] Q30" },
         description: {
             ja: "次の記述中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 add は，引数で指定された正の整数 value を大域の整数型の配列 hashArray に格納する。格納できた場合は true を返し，格納できなかった場合は false を返す。\nここで，整数 value を hashArray のどの要素に格納すべきかを，関数 calcHash1 及び calcHash2 を利用して決める。\n手続 test は，関数 add を呼び出して，hashArray に正の整数を格納する。手続 test の処理が終了した直後の hashArray の内容は，[  ?  ]である。",
             en: "..."
@@ -2604,7 +2604,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       answerOptions: {
         ja: [
           { label: 'ア', value: '行番号02の宣言文を「x ← 0」に訂正' },
-          { label: 'イ', value: '行番号04の制御記述を「i を 11 から num まで -1 ずつ増やす」に訂正' },
+          { label: 'イ', value: '行番号04の制御記述を「i を 11 から num まで 1 ずつ増やす」に訂正' },
           { label: 'ウ', value: '行番号05の処理を「i ← i + x」に訂正' },
           { label: 'エ', value: '行番号07の処理を「return i」に変更' }
         ],
@@ -2617,7 +2617,16 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       initialVariables: { num: null, x: null, i: null },
       traceOptions: {
-        presets: [15, 20]
+        logicVariants: [
+          { id: 'ア', label: '02: x ← 0 ' },
+          { id: 'イ', label: '04: for (i: 11...-1)' },
+          { id: 'ウ', label: '05: i ← i + x' },
+          { id: 'エ', label: '07: return i' },
+        ],
+        presets_array: [
+          { label: 'num = 15', value: { num: 15 } },
+          { label: 'num = 20', value: { num: 20 } }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,
