@@ -457,10 +457,11 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         const handler = setTimeout(async () => {
             console.log(`[Lint] Running server-side lint for ${selectedLanguage}...`);
             try {
+                const encodedCode = Buffer.from(userCode).toString('base64');
                 const res = await fetch('/api/lint_code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: userCode, language: selectedLanguage })
+                    body: JSON.stringify({ code: encodedCode, language: selectedLanguage })
                 });
 
                 if (res.ok) {

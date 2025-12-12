@@ -303,10 +303,11 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         // ユーザーのタイピングが終わるのを待つ（デバウンス）
         const handler = setTimeout(async () => {
             try {
+                const encodedCode = Buffer.from(userCode).toString('base64');
                 const res = await fetch('/api/lint_code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: userCode, language: selectedLanguage })
+                    body: JSON.stringify({ code: encodedCode, language: selectedLanguage })
                 });
 
                 if (res.ok) {

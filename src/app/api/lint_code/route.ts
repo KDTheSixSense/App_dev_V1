@@ -622,7 +622,8 @@ export async function POST(req: NextRequest) {
 
         const { code, language } = validationResult.data;
 
-        const annotations = await lintCode(code, language);
+        const decodedCode = Buffer.from(code, 'base64').toString('utf-8');
+        const annotations = await lintCode(decodedCode, language);
 
         return NextResponse.json({ annotations });
 

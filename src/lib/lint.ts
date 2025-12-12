@@ -13,12 +13,13 @@ export type Annotation = {
  */
 export async function lintCode(code: string, language: string): Promise<Annotation[]> {
   try {
+    const encodedCode = Buffer.from(code).toString('base64');
     const response = await fetch('/api/lint_code', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ code, language }),
+      body: JSON.stringify({ code: encodedCode, language }),
     });
 
     if (!response.ok) {
