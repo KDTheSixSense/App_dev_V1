@@ -4,8 +4,12 @@
 FROM node:20-alpine AS builder
 
 ARG DATABASE_URL
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXTAUTH_URL
 # その引数の値を環境変数として設定
 ENV DATABASE_URL=$DATABASE_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
 
 
 # Next.jsプロジェクトのルートを作業ディレクトリにする
@@ -13,6 +17,9 @@ WORKDIR /app
 
 # 依存関係のファイルを先にコピー
 COPY src/package.json src/package-lock.json* ./
+
+# Native modules build dependencies
+RUN apk add --no-cache python3 make g++
 
 # 依存関係をインストール
 RUN npm install
@@ -35,6 +42,10 @@ RUN npm run build
 FROM node:20-alpine AS runner
 
 WORKDIR /app
+
+# PrismaにはOpenSSLが必要です
+# また、lint機能のためにPython3などのランタイムも必要です
+RUN apk add --no-cache openssl python3 make g++ openjdk17-jre php
 
 # 実行に必要な最小限のユーザーを作成
 RUN addgroup --system --gid 1001 nodejs

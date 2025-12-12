@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
 import PetStatusView from '../profile/Pet/PetStatusview';
@@ -48,11 +49,14 @@ type UserStats = {
   };
 };
 
+import HistoryClient from './history/components/HistoryClient';
+
 interface ProfileClientProps {
   initialUser: SerializedUser;
   initialStats: UserStats;
   aiAdvice: string;
   hasPassword: boolean;
+  initialHistory: any; // Type should be inferred or imported properly, using any to avoid deep import issues for now
 }
 
 const presetIcons = {
@@ -60,7 +64,7 @@ const presetIcons = {
   female: ['/images/DefaultIcons/female1.jpg', '/images/DefaultIcons/female2.jpg', '/images/DefaultIcons/female3.jpg'],
 };
 
-export default function ProfileClient({ initialUser, initialStats, aiAdvice, hasPassword }: ProfileClientProps) {
+export default function ProfileClient({ initialUser, initialStats, aiAdvice, hasPassword, initialHistory }: ProfileClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -310,6 +314,19 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice, has
               petBirthdate={formattedPetBirthdate}
             />
           </div>
+
+          {/* ---  新しい行：問題解答履歴  --- */}
+          <div className="lg:col-span-3">
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+              <div className="flex justify-between items-center mb-6">
+                <Link href="/profile/history" className="text-2xl font-semibold text-gray-800 hover:text-blue-600 hover:underline flex items-center gap-2">
+                  問題解答履歴
+                </Link>
+              </div>
+              <HistoryClient initialData={initialHistory} showTable={false} />
+            </div>
+          </div>
+
           {/* ---  新しい行：中央に配置するグラフ  --- */}
           <div className="lg:col-span-3">
             {/*  新しいチャートコンポーネントを配置  */}

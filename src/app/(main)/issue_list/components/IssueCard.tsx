@@ -26,9 +26,9 @@ const IssueCard: React.FC<IssueCardProps> = ({ title, description, image, onClic
       
       {/* テキストコンテンツ：オーバーレイの上に配置 */}
       <div className="h-full flex flex-col justify-center items-center p-6 text-center text-white pb-10">
-        <h3 className="text-3xl font-extrabold drop-shadow-md">{title}</h3>
-        <div className="w-20 h-1 bg-white my-4 rounded-full"></div> {/* 区切り線 */}
-        <p className="mt-2 text-base whitespace-pre-line font-medium drop-shadow-sm">{description}</p>
+        <h3 className="text-6xl font-extrabold drop-shadow-lg [-webkit-text-stroke:2px_#000000] [paint-order:stroke_fill]">{title}</h3>
+        <div className="w-24 h-2 bg-gradient-to-r from-sky-400 to-cyan-500 my-6 rounded-full"></div> {/* 区切り線 */}
+        <p className="mt-2 text-2xl whitespace-pre-line font-bold drop-shadow-md [-webkit-text-stroke:1px_#000000] [paint-order:stroke_fill]">{description}</p>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ProfileClient from './ProfileClient';
 import { User } from '@prisma/client';
+import { getUserHistory } from './history/actions';
 
 // AIアドバイスを生成するヘルパー関数
 type SubjectProgressStats = {
@@ -199,6 +200,9 @@ export default async function ProfilePage() {
     Status_Kohaku: userWithDetails.status_Kohaku ? [userWithDetails.status_Kohaku] : [],
   };
 
+  // --- 6. 問題解答履歴を取得 (追加) ---
+  const historyData = await getUserHistory();
+
   // --- 5. すべてのデータをクライアントコンポーネントに渡す ---
   return (
     <ProfileClient
@@ -206,6 +210,7 @@ export default async function ProfilePage() {
       initialStats={userStats}
       aiAdvice={aiAdvice}
       hasPassword={hasPassword}
+      initialHistory={historyData}
     />
   );
 }

@@ -93,6 +93,7 @@ CREATE TABLE "Answer_Algorithm" (
     "symbol" TEXT NOT NULL,
     "isCorrect" BOOLEAN NOT NULL,
     "text" TEXT,
+    "answeredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Answer_Algorithm_pkey" PRIMARY KEY ("id")
 );

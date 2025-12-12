@@ -35,16 +35,16 @@ import 'swiper/css/pagination';
  * 新しいカテゴリを追加する場合は、この配列に新しいオブジェクトを追加するだけで済みます。
  */
 const questionCategories = [
-  { title: '基本情報 科目A', description: '基本情報技術者試験の午前問題です。\nIT単語の知識について学習しましょう。', path: '/issue_list/basic_info_a_problem/problems', image: '/images/issue_list/basic_info_a_problems1.png' },
-  { title: '基本情報 科目B', description: '基本情報技術者試験の午後問題です。\n実践的なアルゴリズムとプログラミング能力を試します。', path: '/issue_list/basic_info_b_problem/problems', image: '/images/issue_list/basic_info_b_problem.png' },
-  { title: '応用情報 午前', description: '応用情報技術者試験の午前問題です。\nより応用的な知識と技術に関する\n幅広い分野からの出題です。', path: '/issue_list/applied_info_morning_problem/problems', image: '/images/issue_list/applied-info_morning_problem.png' },
+  { title: '基本情報 科目A', description: '基本情報技術者試験の午前問題です\nIT単語の知識について学習しましょう', path: '/issue_list/basic_info_a_problem/problems', image: '/images/issue_list/basic_info_a_problems1.png' },
+  { title: '基本情報 科目B', description: '基本情報技術者試験の午後問題です\n実践的なアルゴリズムとプログラミング能力を試します', path: '/issue_list/basic_info_b_problem/problems', image: '/images/issue_list/basic_info_b_problem.png' },
+  { title: '応用情報 午前', description: '応用情報技術者試験の午前問題です\nより応用的な知識と技術に関する\n幅広い分野からの出題です', path: '/issue_list/applied_info_morning_problem/problems', image: '/images/issue_list/applied-info_morning_problem.png' },
   // { 
   //   title: '応用情報 午後', description: 'Title\nDescription', 
   //   path: '/issue_list/applied_info_afternoon_problem/problems', image: '/images/placeholder.jpg' 
   // },
-  { title: 'プログラミング', description: '様々な言語を活用できる\n実践的なコーディング問題です。', path: '/issue_list/programming_problem/problems', image: '/images/issue_list/programming_problem.png' },
-  { title: '4択問題', description: '様々なジャンルの4択問題を\n手軽に解くことができます。', path: '/issue_list/selects_problems', image: '/images/issue_list/selects_problems.png' },
-  { title: '作成した問題', description: 'あなたが作成したオリジナルの\n問題に挑戦できます。', path: '/issue_list/mine_issue_list/problems', image: '/images/issue_list/mine_issue_list.png' },
+  { title: 'プログラミング', description: '様々な言語を活用できる\n実践的なコーディング問題です', path: '/issue_list/programming_problem/problems', image: '/images/issue_list/programming_problem.png' },
+  { title: '4択問題', description: '様々なジャンルの4択問題を\n手軽に解くことができます', path: '/issue_list/selects_problems', image: '/images/issue_list/selects_problems.png' },
+  { title: '作成した問題', description: 'あなたが作成したオリジナルの\n問題に挑戦できます', path: '/issue_list/mine_issue_list/problems', image: '/images/issue_list/mine_issue_list.png' },
 ];
 
 /**
@@ -79,6 +79,31 @@ const QuestionsPage: React.FC = () => {
   return (
     // ページ全体のコンテナ。背景色や最小の高さなどを設定。
     <div className="h-screen flex flex-col bg-gray-50">
+      {/* Swiperの矢印とページネーションのスタイルを強制的に上書き */}
+      <style>{`
+        .swiper-button-next, .swiper-button-prev {
+          color: white !important; /* 矢印の色を白に */
+          background-color: transparent !important; /* 通常時は背景透明 */
+          opacity: 0 !important; /* 通常時は矢印自体を透明にする */
+          height: 100% !important; /* 高さは親要素いっぱい */
+          top: 0 !important; /* 上端に配置 */
+          margin-top: 0 !important; /* マージンリセット */
+          width: 120px !important; /* 幅をさらに広げて選択しやすく */
+          transition: opacity 0.3s ease, background-color 0.3s ease !important; /* 透明度と背景色の変化をアニメーション */
+        }
+        /* ホバー時のスタイル：不透明度を1にし、背景を黒の半透明にする */
+        .swiper-button-next:hover, .swiper-button-prev:hover {
+          opacity: 1 !important;
+          background-color: rgba(0, 0, 0, 0.5) !important;
+        }
+        .swiper-button-next::after, .swiper-button-prev::after {
+          font-size: 30px !important; /* 矢印のサイズを小さく */
+          font-weight: bold !important;
+        }
+        .swiper-pagination-bullet-active {
+          background: #06b6d4 !important;
+        }
+      `}</style>
       
       {/* メインコンテンツエリア */}
       <div className="w-full p-4 flex-1 flex flex-col justify-center">

@@ -62,7 +62,7 @@ export async function PUT(request: Request, context: { params: Promise<{ problem
             return NextResponse.json({ message: '更新対象の問題が見つかりません' }, { status: 404 });
         }
 
-        if (Number(existingProblem.createdBy) !== Number(userId)) {
+        if (existingProblem.createdBy !== userId) {
             return NextResponse.json({ message: 'この問題を編集する権限がありません' }, { status: 403 });
         }
 

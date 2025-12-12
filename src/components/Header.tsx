@@ -55,7 +55,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
 
   // 1. ランク(level)のstate
   const [rank, setRank] = useState(() => userWithPet?.level ?? 1);
-  
+
   const headerRef = useRef<HTMLElement>(null);
 
   // ヘッダーの高さを取得してCSS変数を設定する
@@ -97,12 +97,12 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
     }
     // ユーザーはいるがペット情報がない場合 (フォールバック)
     if (userWithPet) {
-        const displayState = getPetDisplayState(MAX_HUNGER);
-        console.log("[Header Debug] Initial petStatus (fallback for no status_Kohaku):", { hungerlevel: MAX_HUNGER, ...displayState });
-        return { hungerlevel: MAX_HUNGER, ...displayState };
+      const displayState = getPetDisplayState(MAX_HUNGER);
+      console.log("[Header Debug] Initial petStatus (fallback for no status_Kohaku):", { hungerlevel: MAX_HUNGER, ...displayState });
+      return { hungerlevel: MAX_HUNGER, ...displayState };
     }
     console.log("[Header Debug] Initial petStatus (no userWithPet): null");
-    return null;  
+    return null;
   });
 
   // 4. ファビコンをペットのアイコンに動的に変更する処理（強化版）
@@ -112,7 +112,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
     const updateFavicon = (url: string) => {
       // 1. 既存のアイコンタグ（rel="icon" または rel="shortcut icon"）をすべて探す
       const links = document.querySelectorAll("link[rel*='icon']");
-      
+
       // 2. 既存のタグがあれば、そのhrefを更新する
       links.forEach((link) => {
         (link as HTMLLinkElement).href = url;
@@ -131,79 +131,79 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
 
   }, [petStatus]); // petStatus (icon) が変わるたびに実行される
 
-    // 4. ペットのステータスをAPIから再取得して、Stateを更新する関数
-  // (useCallbackでラップ)
-  const refetchPetStatus = useCallback(async (isPeriodicCheck: boolean = false) => {
-    console.log("[Header Debug] refetchPetStatus called.");
-    try {
-      const res = await fetch('/api/pet/status', { cache: 'no-store' }); // キャッシュを無効化
-      if (res.ok) {
-        const { data } = await res.json();
-        if (data) {
-          const displayState = getPetDisplayState(data.hungerlevel);
-          
-          let hungerLevelChanged = false;
-          setPetStatus(prevStatus => {
-            if (prevStatus?.hungerlevel !== data.hungerlevel) {
-              hungerLevelChanged = true;
-            }
-            return {
-              hungerlevel: data.hungerlevel,
-              ...displayState,
-            };
-          });
-          
-          setRank(data.level);
-          setContinuousLogin(data.continuouslogin);
-          
-          // 定期チェックで満腹度が変わっていたら、イベントを発火
-          if (isPeriodicCheck && hungerLevelChanged) {
-            console.log("[Header Debug] Hunger level changed on periodic check. Dispatching event.");
-            window.dispatchEvent(new CustomEvent('petStatusUpdated'));
-          }
-        }
-      } else {
-        console.error("[Header Debug] Failed to fetch pet status. Response not OK:", res.status, await res.text());
-      }
-    } catch (error) {
-      console.error("[Header Debug] ペット情報の再取得に失敗:", error);
-    }
-  }, []); // 空の依存配列
+  // 4. ペットのステータスをAPIから再取得して、Stateを更新する関数
+  // (useCallbackでラップ)
+  const refetchPetStatus = useCallback(async (isPeriodicCheck: boolean = false) => {
+    console.log("[Header Debug] refetchPetStatus called.");
+    try {
+      const res = await fetch('/api/pet/status', { cache: 'no-store' }); // キャッシュを無効化
+      if (res.ok) {
+        const { data } = await res.json();
+        if (data) {
+          const displayState = getPetDisplayState(data.hungerlevel);
+
+          let hungerLevelChanged = false;
+          setPetStatus(prevStatus => {
+            if (prevStatus?.hungerlevel !== data.hungerlevel) {
+              hungerLevelChanged = true;
+            }
+            return {
+              hungerlevel: data.hungerlevel,
+              ...displayState,
+            };
+          });
+
+          setRank(data.level);
+          setContinuousLogin(data.continuouslogin);
+
+          // 定期チェックで満腹度が変わっていたら、イベントを発火
+          if (isPeriodicCheck && hungerLevelChanged) {
+            console.log("[Header Debug] Hunger level changed on periodic check. Dispatching event.");
+            window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+          }
+        }
+      } else {
+        console.error("[Header Debug] Failed to fetch pet status. Response not OK:", res.status, await res.text());
+      }
+    } catch (error) {
+      console.error("[Header Debug] ペット情報の再取得に失敗:", error);
+    }
+  }, []); // 空の依存配列
 
   // レンダリング直前にpetStatus.iconの値をログ出力
   console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
 
   useEffect(() => {
-      // ページ読み込み時にも最新の情報を取得
-    if (userWithPet) { // ログインしている場合のみ
-      const timerId = setTimeout(() => {
-        refetchPetStatus();
-      }, 500); // 500ms遅延実行
+    // ページ読み込み時にも最新の情報を取得
+    if (userWithPet) { // ログインしている場合のみ
+      const timerId = setTimeout(() => {
+        refetchPetStatus();
+      }, 500); // 500ms遅延実行
 
-      // addEventListener 用のラッパー関数を定義
-      const handlePetStatusUpdate = () => {
-        refetchPetStatus(false); // isPeriodicCheck = false
-      };
+      // addEventListener 用のラッパー関数を定義
+      const handlePetStatusUpdate = () => {
+        refetchPetStatus(false); // isPeriodicCheck = false
+      };
 
-      // ラッパー関数をリスナーに登録
-      window.addEventListener('petStatusUpdated', handlePetStatusUpdate);
+      // ラッパー関数をリスナーに登録
+      window.addEventListener('petStatusUpdated', handlePetStatusUpdate);
 
-      // 満腹度減少を同期間隔タイマー（1分ごと）
-      const intervalId = setInterval(() => {
-        if (userWithPet) {
-          refetchPetStatus(true); // 定期チェックであることを示すフラグを立てる
-        }
-      }, 60000); // 60000ms = 1分
+      // 満腹度減少を同期間隔タイマー（1分ごと）
+      const intervalId = setInterval(() => {
+        if (userWithPet) {
+          refetchPetStatus(true); // 定期チェックであることを示すフラグを立てる
+        }
+      }, 60000); // 60000ms = 1分
 
-      // コンポーネントが不要になった時に、イベントリスナーとタイマーを解除
-      return () => {
-        clearTimeout(timerId); // 遅延実行タイマーを解除
-        // ラッパー関数を解除
-        window.removeEventListener('petStatusUpdated', handlePetStatusUpdate);
-        clearInterval(intervalId); // 定期実行タイマーを解除
-      };
-    }
-  }, [userWithPet, refetchPetStatus]); // 依存配列に refetchPetStatus を追加
+      // コンポーネントが不要になった時に、イベントリスナーとタイマーを解除
+      return () => {
+        clearTimeout(timerId); // 遅延実行タイマーを解除
+        // ラッパー関数を解除
+        window.removeEventListener('petStatusUpdated', handlePetStatusUpdate);
+        clearInterval(intervalId); // 定期実行タイマーを解除
+      };
+    }
+  }, [userWithPet, refetchPetStatus]); // 依存配列に refetchPetStatus を追加
 
   // ログアウト処理を行う非同期関数
   const handleLogout = async () => {
@@ -235,7 +235,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
 
   return (
     <header ref={headerRef} className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
-      
+
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0 ml-3">
         {/* Linkをaタグに変更 */}
@@ -270,21 +270,21 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
           </li>
         </ul>
       </nav>
-      
+
       {/*コハクの情報*/}
       {petStatus && (
         <div className="flex items-center gap-2 ml-auto">
-            {/* アイコンをStateから動的に設定 */}
-            <Image src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
-            <div className="w-50">
-                <div className="w-full bg-gray-300 rounded-full h-5 overflow-hidden">
-                    <div
-                        // ゲージの色をStateから動的に設定
-                        className={`${petStatus.colorClass} h-full rounded-full transition-all duration-500 ease-out`}
-                        style={{ width: `${(petStatus.hungerlevel / MAX_HUNGER) * 100}%` }}
-                    />
-                </div>
+          {/* アイコンをStateから動的に設定 */}
+          <Image src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
+          <div className="w-50">
+            <div className="w-full bg-gray-300 rounded-full h-5 overflow-hidden">
+              <div
+                // ゲージの色をStateから動的に設定
+                className={`${petStatus.colorClass} h-full rounded-full transition-all duration-500 ease-out`}
+                style={{ width: `${(petStatus.hungerlevel / MAX_HUNGER) * 100}%` }}
+              />
             </div>
+          </div>
         </div>
       )}
 
@@ -300,7 +300,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
             {/* ツールチップ */}
             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-999">
               アカウントランク
-             <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-gray-800"></div>
+              <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-gray-800"></div>
             </div>
           </div>
           <div className="relative group flex items-center gap-2">
@@ -313,15 +313,15 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
             {/* ツールチップ */}
             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-999">
               連続ログイン日数
-             <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-gray-800"></div>
+              <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-gray-800"></div>
             </div>
           </div>
         </div>
-        
+
         {/* プロフィールアイコン (プルダウンメニュー付き) */}
         <div className="w-14 h-14 relative" ref={profileMenuRef}>
           {/* 元のaタグをbuttonタグに変更して開閉を制御 */}
-          <button 
+          <button
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
             className="w-full h-full focus:outline-none"
           >
@@ -338,21 +338,27 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
           {isProfileMenuOpen && (
             <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
               <div className="py-1">
-                <a 
-                  href="/profile" 
+                <a
+                  href="/profile"
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors border-b border-gray-50 font-medium"
                 >
                   プロフィール
                 </a>
-                <a 
-                  href="/terms" 
+                <a
+                  href="/profile/history"
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  問題解答履歴
+                </a>
+                <a
+                  href="/terms"
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   利用規約
                 </a>
-                <a 
-                  href="/privacypolicy" 
-                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                <a
+                  href="/privacypolicy"
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors border-b border-gray-50"
                 >
                   プライバシーポリシー
                 </a>
