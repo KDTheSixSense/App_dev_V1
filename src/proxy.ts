@@ -434,7 +434,7 @@ export async function middleware(req: NextRequest) {
     return response;
 }
 
-export const config = {
+export const proxy = {
     // Apply to all routes except Next.js internals and static assets
     matcher: [
         '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:css|js|gif|svg|jpg|jpeg|png|webp|ico)$).*)',
