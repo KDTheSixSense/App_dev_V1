@@ -20,7 +20,7 @@ export function generateCsp({ nonce, isDev, pathname }: CspOptions): string {
     // [CRITICAL FIX] Removed 'nonce-${nonce}' because it invalidates 'unsafe-inline'.
     // We strictly need 'unsafe-inline' for the current environment/library state.
     // Also removed invalid comments from the template string below.
-    let scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
+    let scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net https://static.doubleclick.net https://static.cloudflareinsights.com`;
 
     const pathsNeedingUnsafeEval = [
         '/simulator',
@@ -32,9 +32,9 @@ export function generateCsp({ nonce, isDev, pathname }: CspOptions): string {
     ];
 
     if (isDev) {
-        scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
+        scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://static.doubleclick.net https://static.cloudflareinsights.com`;
     } else if (pathname.startsWith('/simulator') || pathname.startsWith('/(main)/simulator')) {
-        scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
+        scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://static.doubleclick.net https://static.cloudflareinsights.com`;
     }
 
     // Construct Header

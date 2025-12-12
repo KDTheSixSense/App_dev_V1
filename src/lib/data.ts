@@ -149,15 +149,15 @@ export async function getUnsubmittedAssignments() {
     where: {
       group: {
         groups_User: {
-          some: { user_id: userId as any },
+          some: { user_id: String(userId) },
         },
       },
       // ユーザーからの提出記録(Submissions)が「存在し」、
       // そのステータスが「未提出」または「差し戻し」である課題に絞り込む
       Submissions: {
         some: {
-          userid: userId as any,
-          status: { // statusが"未提出"または"差し戻し"のものを探す
+          userid: String(userId),
+          status: {
             in: ["未提出", "差し戻し"],
           },
         },
@@ -176,7 +176,7 @@ export async function getUnsubmittedAssignments() {
         },
       },
       Submissions: { // submissionStatusを取得するためにSubmissionsも選択
-        where: { userid: userId as any },
+        where: { userid: String(userId) },
         select: { status: true },
         take: 1, // ユーザーの最新の提出ステータスを取得（複数ある場合は最初の一つ）
       },
@@ -388,12 +388,12 @@ export async function getUnsubmittedAssignmentCount(): Promise<number> {
       where: {
         group: {
           groups_User: {
-            some: { user_id: userId as any },
+            some: { user_id: String(userId) },
           },
         },
         Submissions: {
           some: {
-            userid: userId as any,
+            userid: String(userId),
             status: "未提出", // "未提出" のステータスを持つもの
           },
         },

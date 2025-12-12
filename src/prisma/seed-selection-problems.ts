@@ -53,7 +53,7 @@ function parseAnswerOptionsText(text: string): string[] | null {
 /**
  * ハードコードされたサンプル選択問題をDBに登録
  */
-async function seedSampleSelectionProblems(prisma: PrismaClient) {
+export async function seedSampleSelectionProblems(prisma: PrismaClient) {
   console.log('🌱 Seeding sample selection problems...');
   const selectionProblems = [
     // ... (元ファイルからコピー)
@@ -86,7 +86,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
 /**
  * Excelファイルから選択問題をDBに登録
  */
-async function seedSelectProblemsFromExcel(prisma: PrismaClient) {
+export async function seedSelectProblemsFromExcel(prisma: PrismaClient) {
   console.log('🌱 Seeding Selection Problems from Excel file...');
   const excelFileName = 'PBL3_4択問題ベースシート.xlsx';
   const sheetName = '4択問題統合用シート';
@@ -166,19 +166,3 @@ async function seedSelectProblemsFromExcel(prisma: PrismaClient) {
   }
 }
 
-async function main() {
-  console.log(`🚀 Start seeding selection problems...`);
-  await seedSampleSelectionProblems(prisma);
-  await seedSelectProblemsFromExcel(prisma);
-  console.log('✅ Seeding for selection problems finished.');
-}
-
-main()
-  .catch(e => {
-    console.error(`❌ Seeding failed:`, e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-    console.log(`\n🔌 Disconnected from database.`);
-  });

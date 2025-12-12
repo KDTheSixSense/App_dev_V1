@@ -6,6 +6,7 @@ import { runOperations } from './seed/run-operations';
 import { seedEventDifficulty } from './seed/event-difficulty-data';
 import { seedHistoryDummy } from './seed/history-dummy';
 import { seedSchoolFestivalQuestions } from './seed/school_festival_questions';
+import { seedSampleSelectionProblems, seedSelectProblemsFromExcel } from './seed-selection-problems';
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,8 @@ async function main() {
   await seedEventDifficulty(prisma);
   await seedProblems(prisma);
   await seedSchoolFestivalQuestions(prisma);
+  await seedSampleSelectionProblems(prisma);
+  await seedSelectProblemsFromExcel(prisma);
   await seedUsersAndGroups(prisma);
 
   // 3. 作成者となるユーザーを取得
