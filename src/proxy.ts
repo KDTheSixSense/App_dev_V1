@@ -268,10 +268,10 @@ function applyDeviceIdCookie(res: NextResponse, deviceId: string) {
 export async function proxy(req: NextRequest) {
     // 0. Security: WAF (SQL Injection)
     // Run this FIRST to block malicious requests before any processing
-    const wafResponse = await detectSecurityThreats(req);
-    if (wafResponse) {
-        return wafResponse;
-    }
+    // const wafResponse = await detectSecurityThreats(req);
+    // if (wafResponse) {
+    //     return wafResponse;
+    // }
 
     let response = NextResponse.next();
     const { pathname } = req.nextUrl;
