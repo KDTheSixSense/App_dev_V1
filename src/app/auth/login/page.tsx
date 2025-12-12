@@ -41,20 +41,23 @@ const Login = () => {
   const [loading, setLoading] = React.useState(false);
 
   // ★ Web APIを使用するように変更
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(() => {
-    const error = searchParams.get('error');
-    if (error === 'google_account_not_found') {
-      return 'このGoogleアカウントは登録されていません。新規登録を行ってください。';
+  // ★ Web APIを使用するように変更
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const error = searchParams.get('error');
+
+      if (error === 'google_account_not_found') {
+        setErrorMessage('このGoogleアカウントは登録されていません。新規登録を行ってください。');
+      } else if (error === 'google_callback_failed' || error === 'google_auth_failed') {
+        setErrorMessage('Googleログインに失敗しました。時間をおいて再度お試しください。');
+      } else if (error === 'invalid_flow') {
+        setErrorMessage('不正な操作が検出されました。もう一度お試しください。');
+      }
     }
-    if (error === 'google_callback_failed' || error === 'google_auth_failed') {
-      return 'Googleログインに失敗しました。時間をおいて再度お試しください。';
-    }
-    if (error === 'invalid_flow') {
-      return '不正な操作が検出されました。もう一度お試しください。';
-    }
-    return null; // エラーがなければ null
-  });
+  }, []);
 
   //非同期関数
   const onSubmit = async (data: Inputs) => {

@@ -228,7 +228,7 @@ interface RateLimitState {
 // deviceId または ip をキーにするため string 型で汎用的に扱う
 const limitMap = new Map<string, RateLimitState>();
 const WINDOW_MS = 10 * 1000; // 10 seconds
-const LIMIT = 50; // Increased limit slightly for standard usage (5 requests/sec average)
+const LIMIT = 1000; // Adjusted for shared IP environment (approx 400 students)
 const CLEANUP_INTERVAL = 100;
 const DEVICE_ID_COOKIE_NAME = 'd_id'; // Device ID Cookie Name
 let requestCounter = 0;

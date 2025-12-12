@@ -17,17 +17,15 @@ export function generateCsp({ nonce, isDev, pathname }: CspOptions): string {
     const frameSrc = "'self' https://www.youtube.com https://youtube.com"; // YouTube Embeds
 
     // Script Logic
-    // Default to strict nonce-based policy
-    // Added https://cdn.jsdelivr.net (Ace Editor etc) and https://static.doubleclick.net (YouTube/Ads)
-    let scriptSrc = `'self' 'nonce-${nonce}' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
+    // [CRITICAL FIX] Removed 'nonce-${nonce}' because it invalidates 'unsafe-inline'.
+    // We strictly need 'unsafe-inline' for the current environment/library state.
+    // Also removed invalid comments from the template string below.
+    let scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
 
     if (isDev) {
-        // Development Mode: Needs looser policy for HMR and DevTools
         scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
     } else if (pathname.startsWith('/simulator') || pathname.startsWith('/(main)/simulator')) {
-        // Simulator Route (Prod): Needs 'unsafe-eval' for code execution feature (e.g. Ace Editor, Skulpt)
-        // But we still require nonces for inline scripts to prevent XSS
-        scriptSrc = `'self' 'nonce-${nonce}' 'unsafe-eval' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
+        scriptSrc = `'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://static.doubleclick.net`;
     }
 
     // Construct Header
@@ -39,7 +37,6 @@ export function generateCsp({ nonce, isDev, pathname }: CspOptions): string {
     font-src ${fontSrc};
     connect-src ${connectSrc};
     frame-src ${frameSrc};
-    // Workers might need eval depending on libraries (Blockly uses workers?)
     worker-src 'self' blob: data: 'unsafe-inline' 'unsafe-eval';
     frame-ancestors 'none';
     form-action 'self';
