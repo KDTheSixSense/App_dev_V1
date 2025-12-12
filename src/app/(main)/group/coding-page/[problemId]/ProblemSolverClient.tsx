@@ -536,7 +536,8 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         recordStudyTime();
         setExecutionResult('実行中...');
         try {
-            const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: userCode, input: stdin }), });
+            const encodedCode = Buffer.from(userCode).toString('base64');
+            const response = await fetch('/api/execute_code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language: selectedLanguage, source_code: encodedCode, input: stdin }), });
             const data = await response.json();
             if (response.ok) { setExecutionResult(data.program_output?.stdout || data.program_output?.stderr || data.build_result?.stderr || '出力なし'); }
             else { setExecutionResult(`エラー: ${data.error || '不明なエラー'}`); }
