@@ -9,6 +9,7 @@ export enum AuditAction {
     CREATE_GROUP = 'CREATE_GROUP',
     JOIN_GROUP = 'JOIN_GROUP',
     UPDATE_USER = 'UPDATE_USER',
+    PAGE_VIEW = 'PAGE_VIEW',
 }
 
 export async function logAudit(
@@ -31,7 +32,7 @@ export async function logAudit(
 
         await prisma.auditLog.create({
             data: {
-                userId: userId as any,
+                userId: userId,
                 action,
                 details: details && typeof details === 'string' ? details : (details ? JSON.stringify(details) : null),
                 ipAddress,

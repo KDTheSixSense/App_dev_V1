@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getAppSession } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import { verifyAdminAccess } from '@/lib/auth-helpers';
 import { AuditLogTable } from './components/AuditLogTable';
 
 export const dynamic = 'force-dynamic';
@@ -8,15 +7,9 @@ export const dynamic = 'force-dynamic';
 export default async function AdminAuditPage(props: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    const session = await getAppSession();
-    if (!session.user) {
-        redirect('/auth/login');
-    }
+    // DBベースの厳密な管理者チェックを実行
+    await verifyAdminAccess();
 
-    // isAdmin チェック: オペレーターが権限を付与しない限り閲覧不可
-    if (!session.user?.isAdmin) {
-        redirect('/'); // 権限がない場合はホームへリダイレクト
-    }
 
     const searchParams = await props.searchParams;
     const limitParam = searchParams.limit;

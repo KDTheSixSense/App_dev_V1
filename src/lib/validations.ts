@@ -59,3 +59,28 @@ export const submissionSchema = z.object({
     codingId: z.number().int().optional(),
     language: z.string().optional(),
 });
+
+export const programmingProblemSchema = z.object({
+    title: z.string().min(1, 'Title is required').max(100, 'Title is too long'),
+    description: z.string().min(1, 'Description is required'),
+    problemType: z.string().min(1, 'Problem type is required'),
+    difficulty: z.coerce.number().int().min(1).max(5),
+    timeLimit: z.coerce.number().int().min(1).max(60), // Max 60 sec
+    category: z.string().optional(),
+    topic: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    codeTemplate: z.string().optional(),
+    isPublic: z.boolean().optional(),
+    allowTestCaseView: z.boolean().optional(),
+    isDraft: z.boolean().optional(),
+    sampleCases: z.array(z.any()).optional(), // Detailed validation can be added if needed
+    testCases: z.array(z.any()).optional(),
+});
+
+export const assignmentSchema = z.object({
+    title: z.string().min(1, 'Title is required').max(100),
+    description: z.string().optional(),
+    dueDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date format" }),
+    programmingProblemId: z.union([z.string(), z.number()]).optional(),
+    selectProblemId: z.union([z.string(), z.number()]).optional(),
+});

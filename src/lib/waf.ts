@@ -49,9 +49,13 @@ export const XSS_REGEX = new RegExp(
 export function detectThreatType(input: string): string | null {
     if (!input || typeof input !== 'string') return null;
 
-    if (SQL_INJECTION_REGEX.test(input)) return 'SQL Injection';
-    if (TRAVERSAL_REGEX.test(input)) return 'Path Traversal';
-    if (XSS_REGEX.test(input)) return 'XSS';
+    // Normalize input to NFKC form to handle Unicode equivalence (e.g., Fullwidth characters, Kelvin sign)
+    // This prevents WAF bypasses using alternative Unicode representations.
+    const normalizedInput = input.normalize('NFKC');
+
+    if (SQL_INJECTION_REGEX.test(normalizedInput)) return 'SQL Injection';
+    if (TRAVERSAL_REGEX.test(normalizedInput)) return 'Path Traversal';
+    if (XSS_REGEX.test(normalizedInput)) return 'XSS';
 
     return null;
 }

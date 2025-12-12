@@ -308,6 +308,9 @@ export async function middleware(req: NextRequest) {
             }
         }
 
+        /* 
+        // Session-based admin check is disabled to allow DB-backed verification in pages.
+        // This prevents "stale session" issues where a newly promoted admin is blocked.
         if (isAdminPath && !session.user.isAdmin) {
             // 管理者権限がない場合
             if (pathname.startsWith('/api')) {
@@ -320,6 +323,7 @@ export async function middleware(req: NextRequest) {
                 return res;
             }
         }
+        */
     }
 
     // 3. Security Headers
