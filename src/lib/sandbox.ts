@@ -58,8 +58,9 @@ export async function executeCode(
         }
     }
     
-    // Base64 encode the code to be sent to the sandbox
-    const encodedCode = Buffer.from(codeToRun).toString('base64');
+    // The client is expected to send Base64-encoded code.
+    // To prevent double-encoding, we no longer encode it here.
+    const encodedCode = codeToRun;
 
     try {
         const response = await fetch(sandboxUrl, {
@@ -67,7 +68,7 @@ export async function executeCode(
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 language,
-                source_code: encodedCode, // Send the encoded code
+                source_code: encodedCode, // Send the already-encoded code
                 input: input,
             }),
         });
