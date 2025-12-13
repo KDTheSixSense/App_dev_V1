@@ -30,6 +30,10 @@ export async function logAudit(
         const ipAddress = additionalLogs?.ipAddress || headersList.get('x-forwarded-for') || 'unknown';
         const userAgent = additionalLogs?.userAgent || headersList.get('user-agent');
 
+        // Get Device ID from cookies
+        const cookiesList = await import('next/headers').then(m => m.cookies());
+        const deviceId = cookiesList.get('d_id')?.value;
+
         await prisma.auditLog.create({
             data: {
                 userId: userId,
@@ -37,6 +41,7 @@ export async function logAudit(
                 details: details && typeof details === 'string' ? details : (details ? JSON.stringify(details) : null),
                 ipAddress,
                 userAgent,
+                deviceId: deviceId || null,
                 path: additionalLogs?.path,
                 method: additionalLogs?.method,
                 duration: additionalLogs?.duration,

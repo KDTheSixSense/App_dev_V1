@@ -133,6 +133,19 @@ export async function POST(request: Request) {
       status: 'completed'
     };
 
+    // Log Successful Execution
+    await logAudit(
+      session.user.id,
+      AuditAction.EXECUTE_CODE,
+      {
+        message: 'Code Execution Completed',
+        language,
+        input_snippet: input ? input.substring(0, 50) : null,
+        exit_code: result.exit_code,
+        duration: result.duration // If available from executeCode
+      }
+    );
+
     return NextResponse.json(formattedResult, { status: 200 });
 
   } catch (error: any) {

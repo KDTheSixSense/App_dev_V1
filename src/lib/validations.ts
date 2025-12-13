@@ -74,7 +74,13 @@ export const programmingProblemSchema = z.object({
     allowTestCaseView: z.boolean().optional(),
     isDraft: z.boolean().optional(),
     sampleCases: z.array(z.any()).optional(), // Detailed validation can be added if needed
-    testCases: z.array(z.any()).optional(),
+    testCases: z.array(z.object({
+        name: z.string().optional(),
+        input: z.string().min(1, 'Test case input is required'),
+        expectedOutput: z.string().min(1, 'Test case expected output is required'),
+        description: z.string().optional(),
+        order: z.any().optional(), // order can be number or other type if not strict, but usually number
+    })).min(1, 'At least one test case is required'),
 });
 
 export const assignmentSchema = z.object({

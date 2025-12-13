@@ -1,16 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 
-// PrismaClientの型を定義
-type PrismaClientSingleton = PrismaClient;
+const prismaClientSingleton = () => {
+  return new PrismaClient();
+};
 
-// グローバルオブジェクトにPrismaClientのインスタンスを格納するためのキーを定義
+type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClientSingleton | undefined;
 };
 
-// prismaインスタンスが存在すればそれを使い、なければ新しく作成する
-export const prisma =
-  globalForPrisma.prisma ?? new PrismaClient();
+export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
-// 開発環境でのみ、グローバルオブジェクトにprismaインスタンスを格納する
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

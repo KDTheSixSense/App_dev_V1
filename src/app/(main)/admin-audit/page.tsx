@@ -27,15 +27,25 @@ export default async function AdminAuditPage(props: {
         }
     });
 
+    // BAN済みのIP/Deviceを取得
+    const bannedUsers = await prisma.bannedUser.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+            targetUser: {
+                select: { username: true, email: true }
+            }
+        }
+    });
+
     return (
         <div className="container mx-auto py-8">
-            <h1 className="text-2xl font-bold mb-6">Security Audit Log</h1>
+            <h1 className="text-2xl font-bold mb-6">セキュリティ監査ログ</h1>
             <p className="mb-4 text-gray-600">
                 最新のユーザーアクティビティログ (直近 {safeLimit} 件) を表示しています。
                 全てのページビュー、ログイン試行、重要なアクションが記録されています。
             </p>
 
-            <AuditLogTable initialLogs={logs} currentLimit={safeLimit} />
+            <AuditLogTable initialLogs={logs} currentLimit={safeLimit} initialBannedUsers={bannedUsers} />
         </div>
     );
 }

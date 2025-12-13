@@ -153,12 +153,16 @@ interface RateLimitState {
     startTime: number;
     blockedUntil: number;
     violationCount: number;
+    ddosCount: number;
+    ddosStartTime: number;
 }
 
 // deviceId または ip をキーにするため string 型で汎用的に扱う
 const limitMap = new Map<string, RateLimitState>();
 const WINDOW_MS = 10 * 1000; // 10 seconds
 const LIMIT = 1000; // Adjusted for shared IP environment (approx 400 students)
+const DDOS_WINDOW_MS = 60 * 1000; // 1 minute
+const DDOS_LIMIT = 5000;
 const CLEANUP_INTERVAL = 100;
 const DEVICE_ID_COOKIE_NAME = 'd_id'; // Device ID Cookie Name
 let requestCounter = 0;
@@ -229,7 +233,7 @@ export async function middleware(req: NextRequest) {
     // limitKey (IP or DeviceID) で状態管理
     let state = limitMap.get(limitKey!); // limitKey is always string
     if (!state) {
-        state = { count: 0, startTime: now, blockedUntil: 0, violationCount: 0 };
+        state = { count: 0, startTime: now, blockedUntil: 0, violationCount: 0, ddosCount: 0, ddosStartTime: now };
         limitMap.set(limitKey!, state);
     }
 
@@ -240,6 +244,23 @@ export async function middleware(req: NextRequest) {
         }
 
         const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
+
+        // ログ記録 (既存のブロック中)
+        fetch(`${req.nextUrl.origin}/api/system/audit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-internal-api-key': 'internal-secure-ban-key-v1'
+            },
+            body: JSON.stringify({
+                action: 'RATE_LIMIT_KICK',
+                ipAddress: ip,
+                deviceId: deviceId,
+                userAgent: req.headers.get('user-agent'),
+                details: JSON.stringify({ reason: 'Already Blocked', violationCount: state.violationCount })
+            })
+        }).catch(() => { });
+
         const res = new NextResponse(
             JSON.stringify({ error: `沢山のアクセスを検知しました。 あなたのアカウントをブロックしました。解除まで約${remainingSeconds}秒。` }),
             { status: 429, headers: { 'Content-Type': 'application/json' } }
@@ -247,6 +268,52 @@ export async function middleware(req: NextRequest) {
         if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
         return res;
     }
+
+    // --- DDoS Protection (1 minute window) ---
+    // Initialize if missing (for existing states)
+    if (!state.ddosStartTime) {
+        state.ddosStartTime = now;
+        state.ddosCount = 0;
+    }
+
+    if (now - state.ddosStartTime > DDOS_WINDOW_MS) {
+        state.ddosCount = 1;
+        state.ddosStartTime = now;
+    } else {
+        state.ddosCount++;
+    }
+
+    // DDoS Check
+    if (state.ddosCount > DDOS_LIMIT) {
+        console.warn(`[Middleware] DDoS Detected from ${limitKey}: ${state.ddosCount} reqs in 1 min.`);
+
+        // Trigger Permanent Ban
+        if (deviceId) {
+            fetch(`${req.nextUrl.origin}/api/system/ban-device`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-internal-api-key': 'internal-secure-ban-key-v1'
+                },
+                body: JSON.stringify({
+                    deviceId: deviceId,
+                    reason: `Auto-ban: DDoS Attack Detected (${state.ddosCount} requests in 1 minute)`
+                })
+            }).catch(err => console.error('[Middleware] Failed to trigger DDoS auto-ban:', err));
+        }
+
+        // Block immediately (long duration)
+        state.blockedUntil = now + (24 * 60 * 60 * 1000); // 24 hours block in memory as well
+        state.violationCount = 100; // Force high violation count
+
+        const res = new NextResponse(
+            JSON.stringify({ error: 'DDoS攻撃を検知しました。アカウントを永久に停止しました。' }),
+            { status: 403, headers: { 'Content-Type': 'application/json' } }
+        );
+        if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
+        return res;
+    }
+    // -----------------------------------------
 
     if (now - state.startTime > WINDOW_MS) {
         // Reset window
@@ -262,7 +329,39 @@ export async function middleware(req: NextRequest) {
         } else {
             state.violationCount++;
             state.blockedUntil = now + getBlockDuration(state.violationCount);
-            console.warn(`[Middleware] Key ${limitKey} blocked for ${state.blockedUntil - now}ms`);
+            console.warn(`[Middleware] Key ${limitKey} blocked for ${state.blockedUntil - now}ms (Violation: ${state.violationCount})`);
+
+            // 10回以上の違反で自動BAN (Cookie IDがある場合のみ)
+            if (state.violationCount >= 10 && shouldSetCookie && deviceId) {
+                fetch(`${req.nextUrl.origin}/api/system/ban-device`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-internal-api-key': 'internal-secure-ban-key-v1'
+                    },
+                    body: JSON.stringify({
+                        deviceId: deviceId,
+                        reason: `Auto-ban: Excessive rate limit violations (${state.violationCount} times)`
+                    })
+                }).catch(err => console.error('[Middleware] Failed to trigger auto-ban:', err));
+            } else {
+                // 通常のブロックログ (Kick)
+                fetch(`${req.nextUrl.origin}/api/system/audit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-internal-api-key': 'internal-secure-ban-key-v1'
+                    },
+                    body: JSON.stringify({
+                        action: 'RATE_LIMIT_KICK',
+                        ipAddress: ip,
+                        deviceId: deviceId,
+                        userAgent: req.headers.get('user-agent'),
+                        details: JSON.stringify({ reason: 'New Block', violationCount: state.violationCount })
+                    })
+                }).catch(() => { });
+            }
+
             const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
             const res = new NextResponse(
                 JSON.stringify({ error: `沢山のアクセスを検知しました。 あなたのアカウントをブロックしました。解除まで約${remainingSeconds}秒。` }),
