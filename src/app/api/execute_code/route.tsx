@@ -4,41 +4,42 @@ import { executeCodeSchema } from '@/lib/validations';
 import { logAudit, AuditAction } from '@/lib/audit';
 import { getAppSession } from '@/lib/auth';
 import { executeCode } from '@/lib/sandbox';
-// Duplicate from lib/waf.ts due to build system export resolution issues
-// Comprehensive SQL Injection Patterns
+
+// ビルドシステムのexport解決問題回避のため、lib/waf.ts から複製
+// --- 包括的なSQLインジェクションパターン ---
 const SQL_INJECTION_REGEX = new RegExp(
   [
-    /(--)/.source,                              // Standard SQL comment
-    /(\/\*)/.source,                            // Inline comment start
-    /(#\s)/.source,                             // MySQL comment
-    /(\bUNION\s+SELECT\b)/.source,              // Union Select
-    /(\b(AND|OR)\s+[\w']+\s*[=<>!])/.source,    // Boolean Blind (e.g., " AND 1=1")
-    /(\b(AND|OR)\s+\d+\s*=\s*\d+)/.source,      // Boolean Blind Numeric (e.g., " AND 1=1")
-    /(pg_sleep)/.source,                        // PostgreSQL Time-based
-    /(WAITFOR\s+DELAY)/.source,                 // SQL Server Time-based
-    /(SLEEP\()/.source,                         // MySQL Time-based
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)\b.*\bFROM\b)/.source, // Broad SQL keywords
-    /(\b(EXEC|EXECUTE)\s*\(+)/.source,          // Execution of raw commands
-    /(;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|EXEC|SHUTDOWN|DECLARE))\b/.source, // Stacked queries (strict)
-    /('\s*\))/.source,                          // Common closing parenthesis for string injections
+    /(--)/.source,                      // 標準的なSQLコメント
+    /(\/\*)/.source,                    // インラインコメント開始
+    /(#\s)/.source,                     // MySQLコメント
+    /(\bUNION\s+SELECT\b)/.source,      // Union Select
+    /(\b(AND|OR)\s+[\w']+\s*[=<>!])/.source,    // ブールベースのBlind SQLi (例: " AND 1=1")
+    /(\b(AND|OR)\s+\d+\s*=\s*\d+)/.source,      // ブールベース(数値)
+    /(pg_sleep)/.source,                        // PostgreSQL 時間ベース
+    /(WAITFOR\s+DELAY)/.source,                 // SQL Server 時間ベース
+    /(SLEEP\()/.source,                         // MySQL 時間ベース
+    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)\b.*\bFROM\b)/.source, // 幅広いSQLキーワード
+    /(\b(EXEC|EXECUTE)\s*\(+)/.source,          // 生コマンドの実行
+    /(;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|EXEC|SHUTDOWN|DECLARE))\b/.source, // スタッククエリ (厳格)
+    /('\s*\))/.source,                          // 文字列インジェクションでよくある閉じ括弧
   ].join('|'),
-  'i' // Case insensitive
+  'i' // 大文字小文字を区別しない
 );
 
-// Path Traversal Patterns
+// --- パストラバーサルパターン ---
 const TRAVERSAL_REGEX = new RegExp(
   [
-    /(\.\.\/)/.source,           // ../
-    /(\.\.%2f)/.source,          // ..%2f (URL encoded)
-    /(\.\.\\)/.source,           // ..\ (Windows)
-    /(\.\.%5c)/.source,          // ..%5c (URL encoded Windows)
-    /(\/etc\/passwd)/.source,    // Common target
-    /(\/windows\/system\.ini)/.source, // Common Windows target
+    /(\.\.\/)/.source,          // ../
+    /(\.\.%2f)/.source,         // ..%2f (URLエンコード)
+    /(\.\.\\)/.source,          // ..\ (Windows)
+    /(\.\.%5c)/.source,         // ..%5c (URLエンコード Windows)
+    /(\/etc\/passwd)/.source,   // 一般的なターゲット
+    /(\/windows\/system\.ini)/.source, // 一般的なWindowsターゲット
   ].join('|'),
   'i'
 );
 
-// XSS Patterns (Basic)
+// --- XSSパターン (基本) ---
 const XSS_REGEX = new RegExp(
   [
     /(<script)/.source,
@@ -56,7 +57,7 @@ function containsSecurityThreats(input: string): boolean {
   return SQL_INJECTION_REGEX.test(input) || TRAVERSAL_REGEX.test(input) || XSS_REGEX.test(input);
 }
 
-// --- Rate Limiting Setup ---
+// --- レート制限の設定 ---
 const rateLimit = new LRUCache<string, number>({
   max: 500, // 最大500ユーザー
   ttl: 60 * 1000, // 1分間
@@ -71,11 +72,8 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-// --- Output Sanitization ---
-// --- Output Sanitization (Removed unused local function) ---
-
-// --- Basic Keyword Blocking (Defense in Depth) ---
-// Note: This is NOT a complete security solution.
+// --- 基本的なキーワードブロック (多層防御) ---
+// 注: これは完全なセキュリティソリューションではありません
 function containsForbiddenKeywords(code: string, language: string): boolean {
   const dangerousKeywords = [
     'child_process', 'spawn', 'exec', 'fork', // Node.js
@@ -85,6 +83,9 @@ function containsForbiddenKeywords(code: string, language: string): boolean {
     'System.Diagnostics.Process' // C#
   ];
 
+  // Pythonの場合、入力ハックのために 'import sys' を許可する必要がある場合がありますが、
+  // ユーザーコードとしての使用はブロックするのが一般的です。
+  // ただし、lib/sandbox.ts で自動挿入される sys はここを通過した後なので問題ありません。
   return dangerousKeywords.some(keyword => code.includes(keyword));
 }
 
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Rate Limiting Check
+    // 1. レート制限のチェック
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
     if (!checkRateLimit(ip)) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
@@ -109,10 +110,11 @@ export async function POST(request: Request) {
     }
 
     const { language, source_code, input } = validationResult.data;
-    // The source_code is plain text from the client.
-    // The executeCode function will handle Base64 encoding.
+    
+    // ★重要: source_code はクライアントから「プレーンテキスト」で送られてきます。
+    // executeCode 関数 (lib/sandbox.ts) が Base64 エンコードを担当します。
 
-    // Security Check: WAF for Input (SQL Injection, XSS, Path Traversal)
+    // 2. セキュリティチェック: 入力値に対するWAF (SQLi, XSS, Path Traversal)
     if (input && containsSecurityThreats(input)) {
       await logAudit(
         session.user.id,
@@ -128,7 +130,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Security Check: Forbidden Keywords
+    // 3. セキュリティチェック: 禁止キーワードの確認
     if (containsForbiddenKeywords(source_code, language)) {
       await logAudit(
         null,
@@ -139,34 +141,25 @@ export async function POST(request: Request) {
           code_snippet: source_code.substring(0, 50)
         }
       );
+      // エラーメッセージを含めて 200 OK を返す (クライアント側で表示するため)
       return NextResponse.json({
         build_result: { stdout: '', stderr: 'Security Error: Forbidden keywords detected.' },
         program_output: { stdout: '', stderr: '' },
-      }, { status: 200 }); // 200 OK with error message in body
+      }, { status: 200 });
     }
 
     let result;
 
-    // Sandbox Execution
-    // console.log('Executing code via Sandbox Container...');
-
-
-
-    // Use shared execution logic
-    // Use shared execution logic
+    // 4. サンドボックスでの実行
+    // 共通の実行ロジックを使用 (ここで Base64化 などの処理が行われます)
     result = await executeCode(language, source_code, input || '') as any;
 
     if (result.error && result.error.startsWith('Sandbox Error')) {
-      // Network/System error
+      // ネットワークやシステムのエラー
       throw new Error(result.error);
     }
-    // Note: If result.error is a compilation/runtime error string, it might be in result.error or stderr.
-    // The original code expected raw JSON. executeCode returns raw JSON (mostly).
-    // But executeCode MIGHT return { error: ... } if fetch failed.
-    // If fetch succeeded, it returns the JSON.
 
-
-    // Format Response
+    // レスポンスの整形
     const formattedResult = {
       build_result: {
         stdout: result.build_stdout || '',
