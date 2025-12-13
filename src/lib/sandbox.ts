@@ -46,33 +46,35 @@ export async function executeCode(
 ): Promise<SandboxResult> {
     const sandboxUrl = `${process.env.SANDBOX_URL}/execute`;
 
-    // INPUT INJECTION HACK:
-    // Sandbox service seems to fail piping stdin correctly for Python, causing EOFError.
-    // We inject sys.stdin mock directly into the code here.
-    let codeToRun = sourceCode;
-    if ((language === 'python' || language === 'python3') && input) {
-        const escapedInput = JSON.stringify(input);
-        // Prepend stdin mocking if not already present (simple check)
-        if (!codeToRun.includes('sys.stdin = io.StringIO')) {
-            codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO(${escapedInput})\n\n` + sourceCode;
-        }
-    }
-    
-    // To prevent double-encoding, we check if the code is already in Base64 format.
-    // If not, we encode it. This makes the function robust to both raw and encoded inputs.
-    const isAlreadyEncoded = (() => {
-        if (codeToRun.trim() === '') return false;
+    // The incoming source code can be either raw or Base64.
+    // We must first decode it to its raw form before making any modifications.
+    const isSourceEncoded = (() => {
+        if (!sourceCode || sourceCode.trim() === '') return false;
         try {
-            // A string is considered Base64 if decoding it and re-encoding it results in the original string.
-            // This is a common and reasonably reliable way to check for Base64 encoding.
-            return Buffer.from(codeToRun, 'base64').toString('base64') === codeToRun;
+            // Check if the string is valid Base64 by attempting to decode and re-encode it.
+            return Buffer.from(sourceCode, 'base64').toString('base64') === sourceCode;
         } catch (e) {
-            // If Buffer.from throws, it's not valid Base64.
             return false;
         }
     })();
 
-    const encodedCode = isAlreadyEncoded ? codeToRun : Buffer.from(codeToRun).toString('base64');
+    let codeToRun = isSourceEncoded
+        ? Buffer.from(sourceCode, 'base64').toString('utf-8')
+        : sourceCode;
+
+    // INPUT INJECTION HACK:
+    // With the raw code, we can now safely inject the stdin mock for Python execution if needed.
+    if ((language === 'python' || language === 'python3') && input) {
+        const escapedInput = JSON.stringify(input);
+        // Prepend stdin mocking only if it's not already present.
+        if (!codeToRun.includes('sys.stdin = io.StringIO')) {
+            // Note: We prepend to the already decoded code.
+            codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO(${escapedInput})\n\n` + codeToRun;
+        }
+    }
+    
+    // Finally, after all modifications, we encode the final code payload into Base64 for the sandbox.
+    const encodedCode = Buffer.from(codeToRun).toString('base64');
 
     try {
         const response = await fetch(sandboxUrl, {
