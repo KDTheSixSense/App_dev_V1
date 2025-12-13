@@ -58,9 +58,21 @@ export async function executeCode(
         }
     }
     
-    // The client is expected to send Base64-encoded code.
-    // To prevent double-encoding, we no longer encode it here.
-    const encodedCode = codeToRun;
+    // To prevent double-encoding, we check if the code is already in Base64 format.
+    // If not, we encode it. This makes the function robust to both raw and encoded inputs.
+    const isAlreadyEncoded = (() => {
+        if (codeToRun.trim() === '') return false;
+        try {
+            // A string is considered Base64 if decoding it and re-encoding it results in the original string.
+            // This is a common and reasonably reliable way to check for Base64 encoding.
+            return Buffer.from(codeToRun, 'base64').toString('base64') === codeToRun;
+        } catch (e) {
+            // If Buffer.from throws, it's not valid Base64.
+            return false;
+        }
+    })();
+
+    const encodedCode = isAlreadyEncoded ? codeToRun : Buffer.from(codeToRun).toString('base64');
 
     try {
         const response = await fetch(sandboxUrl, {
@@ -68,7 +80,7 @@ export async function executeCode(
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 language,
-                source_code: encodedCode, // Send the already-encoded code
+                source_code: encodedCode, // Send the encoded code
                 input: input,
             }),
         });
