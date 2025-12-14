@@ -58,7 +58,7 @@ async function seedAppliedInfoAmProblems(prisma: PrismaClient) {
 
   const excelFileName = 'PBL3応用午前統合版.xlsx';
   const sheetName = '応用情報午前問題統合用シート';
-  const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'applied_info_morning_problem', 'data', excelFileName);
+  const filePath = path.join(__dirname, '..', 'src', 'app', '(main)', 'issue_list', 'applied_info_morning_problem', 'data', excelFileName);
 
   try {
     if (!fs.existsSync(filePath)) {

@@ -12,13 +12,13 @@ import { ArrowLeft } from 'lucide-react'; // lucide-reactのインポートを�
 
 // 型定義を 'basic_info_a_problem' と同様に修正
 type AppliedInfoProblemDetailPageProps = {
-  params: { problemid?: string };
+  params: { problemId?: string };
   searchParams?: { [key: string]: string | string[] | undefined };
 };
 
 // 'async' 関数に変更
 const AppliedInfoProblemDetailPage = async ({ params, searchParams }: AppliedInfoProblemDetailPageProps) => {
-  const problemIdStr = params.problemid;
+  const problemIdStr = params.problemId;
 
   if (!problemIdStr) {
     console.log(`[Page] Problem ID is missing from params. Calling notFound().`);
