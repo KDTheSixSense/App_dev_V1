@@ -20,6 +20,7 @@ type BasicInfoAProblemDetailPageProps = {
 // --- 修正点 2: props の型から Promise を削除 ---
 const BasicInfoAProblemDetailPage = async ({ params, searchParams }: BasicInfoAProblemDetailPageProps) => {
 
+  console.log('Params:', params);
   const problemIdStr = params.problemId;
 
   if (!problemIdStr) {
