@@ -219,8 +219,8 @@ export async function getNextProblemId(currentId: number, category: string): Pro
  * 正解時に経験値を付与し、解答履歴を保存するサーバーアクション
  */
 export async function awardXpForCorrectAnswer(problemId: number, eventId: number | undefined, subjectid?: number, problemStartedAt?: string | number) {
-  console.log('awardXpForCorrectAnswer called with:', { problemId, eventId, subjectid, problemStartedAt });
   'use server';
+  console.log('awardXpForCorrectAnswer called with:', { problemId, eventId, subjectid, problemStartedAt });
 
   const session = await getSession();
   const user = session.user;
@@ -468,8 +468,8 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
  * 解答履歴のみを保存するサーバーアクション (正誤に関わらず記録)
  */
 export async function recordAnswerAction(problemId: number, subjectid: number, isCorrect: boolean, answer: string) {
-  console.log('recordAnswerAction called with:', { problemId, subjectid, isCorrect, answer });
   'use server';
+  console.log('recordAnswerAction called with:', { problemId, subjectid, isCorrect, answer });
 
   const session = await getSession();
   const userId = session.user?.id;
