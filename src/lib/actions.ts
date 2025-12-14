@@ -400,7 +400,12 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   }
 
   // 5c. 日次サマリーテーブルを更新（非同期で実行し、待たない）
-  upsertDailyActivity(userId, xpAmount, timeSpentMs);
+  try {
+    await upsertDailyActivity(userId, xpAmount, timeSpentMs);
+  } catch (e) {
+    console.error('Error in upsertDailyActivity:', e);
+    throw e; // Re-throw to propagate the error
+  }
 
   // --- 6. 史上初の解答かどうかの判定 ---
   const totalAnswerCount = await prisma.userAnswer.count({ where: { userId } });
@@ -415,26 +420,50 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   }
 
   // 5. 経験値を付与
-  const { unlockedTitle } = await addXp(userId, subjectid, difficultyId);
+  let unlockedTitleResult;
+  try {
+    unlockedTitleResult = await addXp(userId, subjectid, difficultyId);
+  } catch (e) {
+    console.error('Error in addXp:', e);
+    throw e;
+  }
+  const { unlockedTitle } = unlockedTitleResult;
+
   // 6. コハクの満腹度を回復
-  await feedPetAction(difficultyId);
+  try {
+    await feedPetAction(difficultyId);
+  } catch (e) {
+    console.error('Error in feedPetAction:', e);
+    throw e;
+  }
 
   // 7. イベント参加者の得点を更新 (eventIdが渡された場合のみ)
   if (eventId !== undefined && xpAmount > 0) {
-    await prisma.event_Participants.updateMany({
-      where: {
-        eventId: eventId,
-        userId: userId,
-      },
-      data: {
-        event_getpoint: { increment: xpAmount },
-      },
-    });
-    console.log(`[EventScore] ユーザーID:${userId} の イベントID:${eventId} での得点を ${xpAmount}点 加算しました。`);
+    try {
+      await prisma.event_Participants.updateMany({
+        where: {
+          eventId: eventId,
+          userId: userId,
+        },
+        data: {
+          event_getpoint: { increment: xpAmount },
+        },
+      });
+      console.log(`[EventScore] ユーザーID:${userId} の イベントID:${eventId} での得点を ${xpAmount}点 加算しました。`);
+    } catch (e) {
+      console.error('Error updating event participant score:', e);
+      throw e;
+    }
   }
 
   // ログイン統計を更新
-  await updateUserLoginStats(userId);
+  try {
+    await updateUserLoginStats(userId);
+  } catch (e) {
+    console.error('Error in updateUserLoginStats:', e);
+    throw e;
+  }
+
 
   // --- 9. 統一された解答履歴の保存 ---
   await prisma.userAnswer.create({
