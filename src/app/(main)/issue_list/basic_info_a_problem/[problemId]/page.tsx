@@ -21,6 +21,7 @@ type BasicInfoAProblemDetailPageProps = {
 const BasicInfoAProblemDetailPage = async ({ params, searchParams }: BasicInfoAProblemDetailPageProps) => {
 
   const problemIdStr = params.problemId;
+  
   const problemIdNum = parseInt(problemIdStr, 10);
   // const resolvedSearchParams = searchParams; // searchParams も await は不要です
 

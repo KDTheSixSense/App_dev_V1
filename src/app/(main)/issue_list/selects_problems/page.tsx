@@ -115,6 +115,22 @@ const SelectProblemsListPage = async (props: PageProps) => {
     }
   });
 
+  // ========== DEBUGGING CODE START ==========
+  console.log(`[DEBUG] Found ${problems.length} problems in findMany (SelectProblem).`);
+  for (const problem of problems) {
+    const found = await prisma.selectProblem.findUnique({
+      where: { id: problem.id },
+      select: { id: true }
+    });
+    if (!found) {
+      console.error(`[DEBUG] ‼️ FAILED to findUnique for id: ${problem.id} (SelectProblem)`);
+    } else {
+      console.log(`[DEBUG] ✅ Successfully confirmed findUnique for id: ${problem.id} (SelectProblem)`);
+    }
+  }
+  console.log(`[DEBUG] Finished confirmation loop (SelectProblem).`);
+  // ========== DEBUGGING CODE END ==========
+
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="container mx-auto px-4">

@@ -100,6 +100,22 @@ const ProblemsListPage = async () => {
     ]
   });
 
+  // ========== DEBUGGING CODE START ==========
+  console.log(`[DEBUG] Found ${problems.length} problems in findMany.`);
+  for (const problem of problems) {
+    const found = await prisma.basic_Info_A_Question.findUnique({
+      where: { id: problem.id },
+      select: { id: true }
+    });
+    if (!found) {
+      console.error(`[DEBUG] ‼️ FAILED to findUnique for id: ${problem.id}`);
+    } else {
+      console.log(`[DEBUG] ✅ Successfully confirmed findUnique for id: ${problem.id}`);
+    }
+  }
+  console.log(`[DEBUG] Finished confirmation loop.`);
+  // ========== DEBUGGING CODE END ==========
+
   return (
     <div className="min-h-screen py-10">
       <div className="container mx-auto px-4">
