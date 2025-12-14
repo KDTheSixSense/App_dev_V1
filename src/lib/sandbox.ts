@@ -69,7 +69,7 @@ export async function executeCode(
         // Prepend stdin mocking only if it's not already present.
         if (!codeToRun.includes('sys.stdin = io.StringIO')) {
             // Note: We prepend to the already decoded code.
-            codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO(${escapedInput})\n\n` + codeToRun;
+            codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO('${input}')\n\n` + codeToRun;
         }
     }
     

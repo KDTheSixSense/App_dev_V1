@@ -27,7 +27,7 @@ export default async function MainPagesLayout({
   let userWithPet: UserWithPetStatus | null = null;
   if (userId) {
     await ensureDailyMissionProgress(userId);
-    userWithPet = await prisma.user.findUnique({
+    const userFromDb = await prisma.user.findUnique({
       where: { id: userId as any },
       select: {
         id: true,
@@ -47,7 +47,10 @@ export default async function MainPagesLayout({
         hash: false,
         password: false,
       }
-    }) as any; // Type mismatch回避のため一時的にanyキャスト (本来は型定義を更新すべき)
+    }); // Type mismatch回避のため一時的にanyキャスト (本来は型定義を更新すべき)
+    if (userFromDb) {
+      userWithPet = JSON.parse(JSON.stringify(userFromDb));
+    }
   }
 
   return (

@@ -8,11 +8,15 @@ import { getAppSession } from '@/lib/auth'; // セッション取得用
 
 // ページに渡されるパラメータの型
 interface ProblemDetailPageProps {
-  params: { problemId?: string; problemid?: string };
+  params: { problemid?: string };
 }
 
 export default async function ProblemDetailPage({ params }: ProblemDetailPageProps) {
-  const problemIdStr = params.problemId || params.problemid;
+  const problemIdStr = params.problemid;
+
+  if (!problemIdStr) {
+    notFound();
+  }
   const id = parseInt(problemIdStr, 10);
 
   if (isNaN(id)) {

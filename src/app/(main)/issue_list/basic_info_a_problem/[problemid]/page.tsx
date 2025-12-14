@@ -13,14 +13,20 @@ import { ArrowLeft } from 'lucide-react'; // lucide-reactのインポートを�
 // --- 修正点 1: 型定義を修正 ---
 // params は Promise ではなく、プロパティ名はファイル名に合わせて 'problemid' (小文字) にします。
 type BasicInfoAProblemDetailPageProps = {
-  params: { problemId?: string; problemid?: string };
+  params: { problemid?: string };
   searchParams?: { [key: string]: string | string[] | undefined };
 };
 
 // --- 修正点 2: props の型から Promise を削除 ---
 const BasicInfoAProblemDetailPage = async ({ params, searchParams }: BasicInfoAProblemDetailPageProps) => {
 
-  const problemIdStr = params.problemId || params.problemid;
+  const problemIdStr = params.problemid;
+
+  if (!problemIdStr) {
+    console.log(`[Page] Problem ID is missing from params. Calling notFound().`);
+    notFound();
+  }
+
   const problemIdNum = parseInt(problemIdStr, 10);
   // const resolvedSearchParams = searchParams; // searchParams も await は不要です
 
