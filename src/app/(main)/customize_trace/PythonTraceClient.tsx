@@ -193,10 +193,16 @@ const PythonTraceClient = () => {
             recordStudyTime();
             setIsTraceStarted(true);
 
-            const steps = await runPythonTraceAction(code) as TraceStepData[];
+            const result = await runPythonTraceAction(code);
+
+            if (!result.success || !result.data) {
+                throw new Error(result.error || "トレース結果が取得できませんでした。");
+            }
+
+            const steps = result.data as TraceStepData[];
 
             if (!steps || steps.length === 0) {
-                throw new Error("トレース結果が取得できませんでした。");
+                throw new Error("トレース結果が空でした。");
             }
 
             setTraceSteps(steps);

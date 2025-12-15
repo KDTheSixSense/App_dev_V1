@@ -814,11 +814,10 @@ export async function runPythonTraceAction(code: string) {
   // 1. Zod Validation
   const validationResult = executeCodeSchema.safeParse({ source_code: code, language: 'python' });
   if (!validationResult.success) {
-    throw new Error(`Validation Error: ${(validationResult.error as any).errors.map((e: any) => e.message).join(', ')}`);
+    return { success: false, error: `Validation Error: ${(validationResult.error as any).errors.map((e: any) => e.message).join(', ')}` };
   }
 
   // 2. Keyword Blocking (Client-side pre-check)
-  // Note: This is a basic filter. The real security is provided by the Sandbox container.
   const forbiddenKeywords = [
     'import os', 'from os', 'import sys', 'from sys', 'import subprocess', 'from subprocess',
     'import shutil', 'from shutil', 'import pathlib', 'from pathlib',
@@ -826,7 +825,7 @@ export async function runPythonTraceAction(code: string) {
   ];
   for (const keyword of forbiddenKeywords) {
     if (code.includes(keyword)) {
-      throw new Error(`Security Error: Forbidden keyword "${keyword}" detected.`);
+      return { success: false, error: `Security Error: Forbidden keyword "${keyword}" detected.` };
     }
   }
 
@@ -836,8 +835,6 @@ export async function runPythonTraceAction(code: string) {
 
     // Sandbox URL (Env var or default)
     const sandboxUrl = process.env.SANDBOX_URL || 'http://sandbox:4000/execute';
-
-    // console.log(`[Debug] Sending request to Sandbox: ${sandboxUrl}`);
 
     // Sandboxへリクエスト
     const response = await fetch(sandboxUrl, {
@@ -854,11 +851,10 @@ export async function runPythonTraceAction(code: string) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Sandbox service error (${response.status}): ${errorText}`);
+      return { success: false, error: `Sandbox service error (${response.status}): ${errorText}` };
     }
 
     const result = await response.json();
-    // console.log("[Debug] Sandbox Response received.");
 
     // 結果の解析
     const programStdout = result.program_output?.stdout || result.stdout || "";
@@ -867,25 +863,23 @@ export async function runPythonTraceAction(code: string) {
 
     if (buildStderr) {
       console.error("[Debug] Build Stderr:", buildStderr);
-      throw new Error(`Build Error: ${buildStderr}`);
+      return { success: false, error: `Build Error: ${buildStderr}` };
     }
 
     if (!programStdout.trim()) {
       console.error("[Debug] Empty stdout from sandbox.");
-      console.error("[Debug] Sandbox Result Dump:", JSON.stringify(result, null, 2));
 
       if (programStderr) {
-        throw new Error(`Runtime Error: ${programStderr}`);
+        return { success: false, error: `Runtime Error: ${programStderr}` };
       }
-      throw new Error("Tracer produced no output.");
+      return { success: false, error: "Tracer produced no output." };
     }
 
     // JSONパース
     const jsonMatch = programStdout.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       console.error("[Debug] No JSON found in output:", programStdout);
-      console.error("[Debug] Sandbox Result Dump:", JSON.stringify(result, null, 2));
-      throw new Error("Invalid output format from tracer.");
+      return { success: false, error: "Invalid output format from tracer." };
     }
 
     let traceData;
@@ -893,13 +887,13 @@ export async function runPythonTraceAction(code: string) {
       traceData = JSON.parse(jsonMatch[0]);
     } catch (e) {
       console.error("[Debug] JSON Parse Error. Output was:", programStdout);
-      throw new Error("Failed to parse trace results.");
+      return { success: false, error: "Failed to parse trace results." };
     }
 
-    return traceData;
+    return { success: true, data: traceData };
 
   } catch (error: any) {
     console.error("runPythonTraceAction Error:", error);
-    throw error;
+    return { success: false, error: error.message || "An unexpected error occurred." };
   }
 }

@@ -489,7 +489,8 @@ const ProblemSolverPage = () => {
             const data = await response.json();
             setSubmitResult(data);
 
-            if (data.testCaseResults && data.testCaseResults.length > 0) {
+            // 明示的に配列の長さを確認してからモーダルを開く
+            if (Array.isArray(data.testCaseResults) && data.testCaseResults.length > 0) {
                 setIsResultModalOpen(true);
             }
 

@@ -8,11 +8,11 @@
 
 // 'use client' は、このコンポーネントがクライアントサイドで動作することを示すNext.jsの宣言です。
 // これにより、useStateやuseEffect、useRouterなどのReactフックが使用可能になります。
-'use client'; 
+'use client';
 
 // --- React / Next.js のコア機能 ---
 import React from 'react';
-import { useRouter } from 'next/navigation'; // Next.jsのページ遷移（ナビゲーション）機能をインポート
+// import { useRouter } from 'next/navigation'; // Next.jsのページ遷移（ナビゲーション）機能をインポート
 
 // --- 自作コンポーネント ---
 // 画面を構成する各UIパーツをインポートします。
@@ -52,27 +52,7 @@ const questionCategories = [
  */
 const QuestionsPage: React.FC = () => {
   // --- Hooks ---
-  // Next.jsのルーター機能を初期化し、プログラムによるページ遷移を可能にします。
-  const router = useRouter();
-
-  // --- Handlers ---
-  // ユーザーのアクション（ボタンクリックなど）に応じて実行される関数です。
-
-  /**
-   * IssueCardコンポーネントがクリックされたときに呼び出される処理。
-   * @param path - 遷移先のURLパス文字列。
-   */
-  const handleCardClick = (path: string) => {
-    // pathが空や未定義でないことを確認
-    if (path) {
-      // 指定されたパスにページを遷移させる
-      router.push(path);
-    } else {
-      // もしpathが設定されていないカードがクリックされた場合のフォールバック処理
-      console.log('このカテゴリには遷移パスが設定されていません。');
-      // ここで、ユーザーにアラートを表示するなどの対応も可能です。
-    }
-  };
+  // --- Render (画面描画) ---
 
   // --- Render (画面描画) ---
   // 画面の構造をJSX（HTMLに似た記法）で記述します。
@@ -104,14 +84,14 @@ const QuestionsPage: React.FC = () => {
           background: #06b6d4 !important;
         }
       `}</style>
-      
+
       {/* メインコンテンツエリア */}
       <div className="w-full p-4 flex-1 flex flex-col justify-center">
-        
+
         {/* 左側の出題項目（9つのカード）エリア */}
         <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-md overflow-hidden flex flex-col h-[85vh]">
 
-          
+
           {/* カードをカルーセルで表示。画面サイズに応じて表示数が変わるレスポンシブ対応。 */}
           <Swiper
             // ナビゲーション（矢印）やページネーション（ドット）などのモジュールを有効化
@@ -136,7 +116,7 @@ const QuestionsPage: React.FC = () => {
                   description={category.description}
                   image={category.image}
                   isPriority={index === 0}
-                  onClick={() => handleCardClick(category.path)}
+                  path={category.path}
                 />
               </SwiperSlide>
             ))}
