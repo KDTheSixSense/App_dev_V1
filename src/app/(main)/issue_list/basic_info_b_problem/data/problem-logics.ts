@@ -3032,7 +3032,7 @@ const mergeAlgorithmLogic: { traceLogic: TraceStep[]; calculateNextLine: (curren
 // =================================================================================
 // --- 【完全修正版】問37: 商品関連度分析ロジック ---
 // =================================================================================
-const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState, variant: string | null) => number } = {
+const associationAnalysisLogic: LogicDef = {
     traceLogic: [
         /* 0: Line 1 */ (vars) => vars,
         /* 1: Line 2 */ (vars) => vars,
@@ -3076,46 +3076,49 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
         /* 11: Line 12 (maxL init) */
         (vars) => ({ ...vars, valueL: null, maxL: -Infinity }),
         
-        /* 12: Line 13 (relatedItem init) */ 
+        /* 12: Line 13 (order decl) */ (vars) => vars, // ★追加
+        
+        /* 13: Line 14 (relatedItem decl) */ 
         (vars) => ({ ...vars, relatedItem: '' }),
         
-        /* 13: Line 14 */ (vars) => vars,
+        /* 14: Line 15 */ (vars) => vars,
         
-        /* 14: Line 15 (for order in orders) */
+        /* 15: Line 16 (for order in orders) */
         (vars) => {
-            // 配列が未定義ならここで緊急初期化 (安全策)
-            const other = (vars.otherItems as string[]) || [];
-            let k = vars.arrayK;
-            let m = vars.arrayM;
-            if (!k) k = new Array(other.length).fill(0);
-            if (!m) m = new Array(other.length).fill(0);
-
             const idx = vars.order_idx === null ? 0 : (vars.order_idx as number) + 1;
-            return { ...vars, order_idx: idx, arrayK: k, arrayM: m };
+            const orders = vars.orders as string[][];
+            // 範囲外なら何もしない（ループ終了へ）
+            if (idx >= orders.length) return { ...vars, order_idx: idx };
+
+            // ★修正: ここで order 変数に値をセット
+            return { 
+                ...vars, 
+                order_idx: idx, 
+                order: orders[idx], // 現在の注文データ
+                i: null // 内側ループ用に i をリセット
+            };
         },
         
-        /* 15: Line 16 (if order contains item) */ (vars) => vars,
+        /* 16: Line 17 (if order contains item) */ (vars) => vars,
         
-        /* 16: Line 17 (itemCount++) */
+        /* 17: Line 18 (itemCount++) */
         (vars) => ({ ...vars, itemCount: (vars.itemCount as number) + 1 }),
         
-        /* 17: Line 18 (endif) */ (vars) => vars,
+        /* 18: Line 19 (endif) */ (vars) => vars,
         
-        /* 18: Line 19 (for i in otherItems) */
+        /* 19: Line 20 (for i in otherItems) */
         (vars) => {
             const newI = vars.i === null ? 1 : (vars.i as number) + 1;
             return { ...vars, i: newI };
         },
         
-        /* 19: Line 20 (if order contains otherItems[i]) */ (vars) => vars,
-        /* 20: Line 21 (if order contains item) */ (vars) => vars,
+        /* 20: Line 21 (if order contains otherItems[i]) */ (vars) => vars,
+        /* 21: Line 22 (if order contains item) */ (vars) => vars,
         
-        /* 21: Line 22 (update [a]) */
+        /* 22: Line 23 (update [a]) */
         (vars) => {
             const variant = vars._variant as string || 'オ';
             const i = (vars.i as number) - 1;
-            
-            // ★修正: 配列がnullの場合のガード
             const otherLen = (vars.otherItems as string[] || []).length;
             const arrayM = vars.arrayM ? [...(vars.arrayM as number[])] : new Array(otherLen).fill(0);
             const arrayK = vars.arrayK ? [...(vars.arrayK as number[])] : new Array(otherLen).fill(0);
@@ -3128,13 +3131,12 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
             return { ...vars, arrayM, arrayK };
         },
         
-        /* 22: Line 23 (endif) */ (vars) => vars,
+        /* 23: Line 24 (endif) */ (vars) => vars,
         
-        /* 23: Line 24 (update [b]) */
+        /* 24: Line 25 (update [b]) */
         (vars) => {
             const variant = vars._variant as string || 'オ';
             const i = (vars.i as number) - 1;
-            
             const otherLen = (vars.otherItems as string[] || []).length;
             const arrayM = vars.arrayM ? [...(vars.arrayM as number[])] : new Array(otherLen).fill(0);
             const arrayK = vars.arrayK ? [...(vars.arrayK as number[])] : new Array(otherLen).fill(0);
@@ -3147,23 +3149,22 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
             return { ...vars, arrayM, arrayK };
         },
         
-        /* 24: Line 25 (endif) */ (vars) => vars,
-        /* 25: Line 26 (endfor inner) */ (vars) => vars,
+        /* 25: Line 26 (endif) */ (vars) => vars,
+        /* 26: Line 27 (endfor inner) */ (vars) => vars,
         
-        /* 26: Line 27 (endfor outer) */ 
-        (vars) => ({ ...vars, i: null }), // iリセット
+        /* 27: Line 28 (endfor outer) */ 
+        (vars) => ({ ...vars, i: null }), // iリセット (calc loop用)
         
-        /* 27: Line 28 (for i in otherItems - calc loop) */
+        /* 28: Line 29 (for i in otherItems - calc loop) */
         (vars) => {
             const newI = vars.i === null ? 1 : (vars.i as number) + 1;
             return { ...vars, i: newI };
         },
         
-        /* 28: Line 29 (valueL calc) */
+        /* 29: Line 30 (valueL calc) */
         (vars) => {
             const variant = vars._variant as string || 'オ';
             const i = (vars.i as number) - 1;
-            // ガード付きアクセス
             const M = vars.arrayM ? (vars.arrayM as number[])[i] : 0;
             const K = vars.arrayK ? (vars.arrayK as number[])[i] : 0;
             const itemCount = vars.itemCount as number;
@@ -3177,13 +3178,14 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
             if (itemCount * K !== 0) {
                 val = (M * c_val) / (itemCount * K);
             }
+            // 小数点以下が見やすいように少し丸めても良いかもですが、そのまま
             return { ...vars, valueL: val };
         },
         
-        /* 29: Line 30 (comment) */ (vars) => vars,
-        /* 30: Line 31 (if valueL > maxL) */ (vars) => vars,
+        /* 30: Line 31 (comment) */ (vars) => vars,
+        /* 31: Line 32 (if valueL > maxL) */ (vars) => vars,
         
-        /* 31: Line 32 (maxL update) */
+        /* 32: Line 33 (maxL update) */
         (vars) => {
             const val = vars.valueL as number;
             const idx = (vars.i as number) - 1;
@@ -3191,16 +3193,16 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
             return { ...vars, maxL: val, relatedItem: related };
         },
         
-        /* 32: Line 33 (relatedItem) */ (vars) => vars,
-        /* 33: Line 34 (endif) */ (vars) => vars,
-        /* 34: Line 35 (endfor) */ (vars) => vars,
+        /* 33: Line 34 (relatedItem) */ (vars) => vars,
+        /* 34: Line 35 (endif) */ (vars) => vars,
+        /* 35: Line 36 (endfor) */ (vars) => vars,
         
-        /* 35: Line 36 (output) */ 
+        /* 36: Line 37 (output) */ 
         (vars) => ({ ...vars, output: [`${vars.relatedItem}, ${vars.maxL}`] }),
     ],
 
     calculateNextLine(currentLine, vars, variant) {
-        if (vars.orders === null) return currentLine;
+        if (!vars.orders) return currentLine;
 
         const lineNum = currentLine + 1; // 1-based
         const orders = vars.orders as string[][];
@@ -3208,81 +3210,94 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
         const item = vars.item as string;
 
         switch (lineNum) {
-            case 1: return 2;
-            case 2: return 3;
-            case 3: return 4;
-            case 4: return 5;
-            case 5: return 6;
-            case 6: return 7;
-            case 7: return 8;
-            case 8: return 9;
-            case 9: return 10; // Line 9 -> 10 (arrayK init)
-            case 10: return 11; // Line 10 -> 11 (arrayM init)
-            case 11: return 12; // Line 11 -> 12 (maxL init)
-            case 12: return 13;
-            case 13: return 14;
-            case 14: return 15; // Line 14 -> 15 (for start)
+            case 14: return 15; // Line 14 -> 15
 
-            case 15: // Line 15: for (order in orders)
-                const nextOrderIdx = (vars.order_idx === null) ? 0 : vars.order_idx + 1; // traceLogicでの更新予測
-                // 更新されたidxが length と等しくなる(==length)とき、ループは終了する
-                if (nextOrderIdx > orders.length) return 27; // 安全策
-                if (nextOrderIdx === orders.length) return 27; // 次で終わり -> Line 28 (index 27)
-                return 15; // -> Line 16 (index 15)
+            // --- Outer Loop (orders) ---
+            case 15: // Line 16: for (order in orders)
+                // 次のインデックス (traceLogicで更新される予定の値)
+                const nextOrderIdx = (vars.order_idx === null) ? 0 : (vars.order_idx as number) + 1;
+                
+                // 全ての注文を見終わったら、集計ループ(Line 29)へ
+                if (nextOrderIdx >= orders.length) return 28; 
+                return 16; // 継続なら Line 17
 
-            case 16: // Line 16: if (item in order)
-                const currentOrder = orders[vars.order_idx as number];
-                if (currentOrder.includes(item)) return 16; // -> Line 17
-                return 18; // -> Line 19 (else/endif)
+            case 16: // Line 17: if (order contains item)
+                // ここではまだ vars.order は更新前の可能性があるため、order_idx を使う
+                // ただし traceLogic[15] で更新された後の値を見る必要がある
+                // 簡易的に: currentLine 15 の実行後にここに来るので、vars.order は最新になっているはず
+                
+                // 安全策: order が null なら traceLogic 実行前なので、orders[0] を見る
+                const currentOrder = vars.order || orders[0]; 
+                
+                if (currentOrder.includes(item)) return 17; // -> Line 18
+                return 19; // -> Line 20 (endif)
 
-            case 17: return 17; // -> 18
-            case 18: return 18; // -> 19
+            case 17: return 18; // -> 19
+            case 18: return 19; // -> 20
 
-            case 19: // Line 19: for (i in otherItems)
-                const nextI = (vars.i === null) ? 1 : vars.i + 1;
-                if (nextI > otherItems.length) return 26; // -> Line 27 (endfor outer)
-                return 19; // -> Line 20
+            // --- Inner Loop (otherItems) ---
+            case 19: // Line 20: for (i in otherItems)
+                const nextI = (vars.i === null) ? 1 : (vars.i as number) + 1;
+                // ループ終了 -> Outer Loop のお尻(Line 28)へ
+                if (nextI > otherItems.length) return 27; 
+                return 20; // 継続 -> Line 21
 
-            case 20: // Line 20: if (order contains otherItems[i])
-                const ord = orders[vars.order_idx as number];
-                const oth = otherItems[(vars.i as number) - 1];
-                if (ord.includes(oth)) return 20; // -> Line 21
-                return 25; // -> Line 26 (endfor inner)
+            case 20: // Line 21: if (order contains otherItems[i])
+                const ord = vars.order as string[];
+                // vars.i は traceLogic[19] で更新される前なので、ここでは +1 した値(nextI)を使うか、
+                // あるいは traceLogic 実行後なら vars.i を使う。
+                // ProblemClientの仕様上、calculateNextLine -> traceLogic の順なので、
+                // ここでの vars.i は「前のループの値」または「null」
+                
+                // 正確には: まだ i は更新されていない。
+                // 次に Line 20 が実行されると i が 1 (初回) になる。
+                // しかし、この calculateNextLine(20) は「Line 21 の判定」を行うために呼ばれる（Line 20実行後）。
+                // その時点では i は更新済み。
+                
+                const currentI_inner = vars.i as number;
+                const oth = otherItems[currentI_inner - 1];
 
-            case 21: // Line 21: if (order contains item)
-                const ord2 = orders[vars.order_idx as number];
-                if (ord2.includes(item)) return 21; // -> Line 22
-                return 23; // -> Line 24 ([b])
+                if (ord.includes(oth)) return 21; // -> Line 22
+                return 26; // False -> Line 27 (endfor inner)
 
-            case 22: return 22; // -> 23
-            case 23: return 23; // -> 24
-            case 24: return 24; // -> 25
-            case 25: return 18; // endfor inner -> Line 19 (loop check)
+            case 21: // Line 22: if (order contains item)
+                const ord2 = vars.order as string[];
+                if (ord2.includes(item)) return 22; // -> Line 23
+                return 24; // -> Line 25 ([b])
 
-            case 26: return 14; // endfor outer -> Line 15 (loop check)
+            case 22: return 23; // -> 24
+            case 23: return 24; // -> 25
+            case 24: return 25; // -> 26
+            
+            case 25: return 26; // -> 27
+            case 26: return 19; // Line 27: endfor inner -> Line 20 (Loop Check)
 
-            case 27: // Line 28: for (i in otherItems) - calc
-                const nextCalcI = (vars.i === null) ? 1 : vars.i + 1;
-                if (nextCalcI > otherItems.length) return 35; // -> Line 36 (output)
-                return 28; // -> Line 29
+            case 27: return 15; // Line 28: endfor outer -> Line 16 (Loop Check)
 
-            case 28: return 29; // -> 30
-            case 29: return 29; // -> 30
-            case 30: return 30; // -> 31
-            case 31: // Line 31: if valueL > maxL
-                return (vars.valueL > vars.maxL) ? 31 : 33; // -> 32 or 34
+            // --- Calculation Loop ---
+            case 28: // Line 29: for (i in otherItems) - calc
+                const nextCalcI = (vars.i === null) ? 1 : (vars.i as number) + 1;
+                if (nextCalcI > otherItems.length) return 36; // -> Line 37 (Output)
+                return 29; // -> Line 30
 
-            case 32: return 32; // -> 33
-            case 33: return 33; // -> 34
-            case 34: return 27; // endfor calc -> Line 28
+            case 29: return 30; // -> 31
+            case 30: return 31; // -> 32
+            
+            case 31: // Line 32: if valueL > maxL
+                return (vars.valueL > vars.maxL) ? 32 : 34; // -> 33 or 35
 
-            case 35: return 99; // output -> finish
+            case 32: return 33; // -> 34
+            case 33: return 34; // -> 35
+            
+            case 34: return 35; // endif -> endfor
+            case 35: return 28; // Line 36: endfor calc -> Line 29 (Loop Check)
+
+            case 36: return 99; // Line 37: Output -> Finish
 
             default: return currentLine + 1;
         }
     },
 };
-
 
 // 共通の型定義
 export interface LogicDef {
