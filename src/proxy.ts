@@ -8,56 +8,7 @@ import { SECURITY_HEADERS } from '@/lib/security-headers';
 // Note: This logic is inlined here to ensure compatibility with the Next.js Edge Runtime which has strict
 // limitations on imports. Externalizing this to a library file caused 500 errors in this specific environment.
 
-// Comprehensive SQL Injection Patterns
-const SQL_INJECTION_REGEX = new RegExp(
-    [
-        /(\bUNION\s+SELECT\b)/.source,              // Union Select
-        /(\b(AND|OR)\s+[\w'"]+\s*[=<>!])/.source,   // Boolean Blind (e.g., " AND 1=1")
-        /(\b(AND|OR)\s+\d+\s*=\s*\d+)/.source,      // Boolean Blind Numeric (e.g., " AND 1=1")
-        /(pg_sleep)/.source,                        // PostgreSQL Time-based
-        /(WAITFOR\s+DELAY)/.source,                 // SQL Server Time-based
-        /(SLEEP\()/.source,                         // MySQL Time-based
-        /(\b(EXEC|EXECUTE)\s*\(+)/.source,          // Execution of raw commands
-        /(;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|EXEC|SHUTDOWN|DECLARE))\b/.source, // Stacked queries (strict)
-    ].join('|'),
-    'i' // Case insensitive
-);
-
-// Path Traversal Patterns
-const TRAVERSAL_REGEX = new RegExp(
-    [
-        /(\.\.\/)/.source,           // ../
-        /(\.\.%2f)/.source,          // ..%2f (URL encoded)
-        /(\.\.\\)/.source,           // ..\ (Windows)
-        /(\.\.%5c)/.source,          // ..%5c (URL encoded Windows)
-        /(\/etc\/passwd)/.source,    // Common target
-        /(\/windows\/system\.ini)/.source, // Common Windows target
-    ].join('|'),
-    'i'
-);
-
-// XSS Patterns (Basic)
-const XSS_REGEX = new RegExp(
-    [
-        /(<script)/.source,
-        /(javascript:)/.source,
-        /(onerror=)/.source,
-        /(onload=)/.source,
-        /(onclick=)/.source,
-        /(alert\()/.source,
-    ].join('|'),
-    'i'
-);
-
-function detectThreatType(input: string): string | null {
-    if (!input || typeof input !== 'string') return null;
-
-    if (SQL_INJECTION_REGEX.test(input)) return 'SQL Injection';
-    if (TRAVERSAL_REGEX.test(input)) return 'Path Traversal';
-    if (XSS_REGEX.test(input)) return 'XSS';
-
-    return null;
-}
+import { detectThreatType, checkObjectForThreats } from '@/lib/waf';
 
 function createBlockResponse(reason: string): NextResponse {
     return new NextResponse(
@@ -70,22 +21,7 @@ function createBlockResponse(reason: string): NextResponse {
     );
 }
 
-function checkObjectForThreats(obj: any): string | null {
-    if (typeof obj === 'string') {
-        return detectThreatType(obj);
-    }
-    if (typeof obj === 'object' && obj !== null) {
-        for (const key of Object.keys(obj)) {
-            const keyThreat = detectThreatType(key);
-            if (keyThreat) return keyThreat;
 
-            // Recursive check
-            const valueThreat = checkObjectForThreats(obj[key]);
-            if (valueThreat) return valueThreat;
-        }
-    }
-    return null;
-}
 
 async function detectSecurityThreats(req: NextRequest): Promise<NextResponse | null> {
     const url = req.nextUrl;
@@ -217,12 +153,16 @@ interface RateLimitState {
     startTime: number;
     blockedUntil: number;
     violationCount: number;
+    ddosCount: number;
+    ddosStartTime: number;
 }
 
 // deviceId または ip をキーにするため string 型で汎用的に扱う
 const limitMap = new Map<string, RateLimitState>();
 const WINDOW_MS = 10 * 1000; // 10 seconds
 const LIMIT = 1000; // Adjusted for shared IP environment (approx 400 students)
+const DDOS_WINDOW_MS = 60 * 1000; // 1 minute
+const DDOS_LIMIT = 5000;
 const CLEANUP_INTERVAL = 100;
 const DEVICE_ID_COOKIE_NAME = 'd_id'; // Device ID Cookie Name
 let requestCounter = 0;
@@ -293,7 +233,7 @@ export async function proxy(req: NextRequest) {
     // limitKey (IP or DeviceID) で状態管理
     let state = limitMap.get(limitKey!); // limitKey is always string
     if (!state) {
-        state = { count: 0, startTime: now, blockedUntil: 0, violationCount: 0 };
+        state = { count: 0, startTime: now, blockedUntil: 0, violationCount: 0, ddosCount: 0, ddosStartTime: now };
         limitMap.set(limitKey!, state);
     }
 
@@ -304,6 +244,23 @@ export async function proxy(req: NextRequest) {
         }
 
         const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
+
+        // ログ記録 (既存のブロック中)
+        fetch(`${req.nextUrl.origin}/api/system/audit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-internal-api-key': 'internal-secure-ban-key-v1'
+            },
+            body: JSON.stringify({
+                action: 'RATE_LIMIT_KICK',
+                ipAddress: ip,
+                deviceId: deviceId,
+                userAgent: req.headers.get('user-agent'),
+                details: JSON.stringify({ reason: 'Already Blocked', violationCount: state.violationCount })
+            })
+        }).catch(() => { });
+
         const res = new NextResponse(
             JSON.stringify({ error: `沢山のアクセスを検知しました。 あなたのアカウントをブロックしました。解除まで約${remainingSeconds}秒。` }),
             { status: 429, headers: { 'Content-Type': 'application/json' } }
@@ -311,6 +268,52 @@ export async function proxy(req: NextRequest) {
         if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
         return res;
     }
+
+    // --- DDoS Protection (1 minute window) ---
+    // Initialize if missing (for existing states)
+    if (!state.ddosStartTime) {
+        state.ddosStartTime = now;
+        state.ddosCount = 0;
+    }
+
+    if (now - state.ddosStartTime > DDOS_WINDOW_MS) {
+        state.ddosCount = 1;
+        state.ddosStartTime = now;
+    } else {
+        state.ddosCount++;
+    }
+
+    // DDoS Check
+    if (state.ddosCount > DDOS_LIMIT) {
+        console.warn(`[Middleware] DDoS Detected from ${limitKey}: ${state.ddosCount} reqs in 1 min.`);
+
+        // Trigger Permanent Ban
+        if (deviceId) {
+            fetch(`${req.nextUrl.origin}/api/system/ban-device`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-internal-api-key': 'internal-secure-ban-key-v1'
+                },
+                body: JSON.stringify({
+                    deviceId: deviceId,
+                    reason: `Auto-ban: DDoS Attack Detected (${state.ddosCount} requests in 1 minute)`
+                })
+            }).catch(err => console.error('[Middleware] Failed to trigger DDoS auto-ban:', err));
+        }
+
+        // Block immediately (long duration)
+        state.blockedUntil = now + (24 * 60 * 60 * 1000); // 24 hours block in memory as well
+        state.violationCount = 100; // Force high violation count
+
+        const res = new NextResponse(
+            JSON.stringify({ error: 'DDoS攻撃を検知しました。アカウントを永久に停止しました。' }),
+            { status: 403, headers: { 'Content-Type': 'application/json' } }
+        );
+        if (shouldSetCookie) applyDeviceIdCookie(res, deviceId!);
+        return res;
+    }
+    // -----------------------------------------
 
     if (now - state.startTime > WINDOW_MS) {
         // Reset window
@@ -326,7 +329,39 @@ export async function proxy(req: NextRequest) {
         } else {
             state.violationCount++;
             state.blockedUntil = now + getBlockDuration(state.violationCount);
-            console.warn(`[Middleware] Key ${limitKey} blocked for ${state.blockedUntil - now}ms`);
+            console.warn(`[Middleware] Key ${limitKey} blocked for ${state.blockedUntil - now}ms (Violation: ${state.violationCount})`);
+
+            // 10回以上の違反で自動BAN (Cookie IDがある場合のみ)
+            if (state.violationCount >= 10 && shouldSetCookie && deviceId) {
+                fetch(`${req.nextUrl.origin}/api/system/ban-device`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-internal-api-key': 'internal-secure-ban-key-v1'
+                    },
+                    body: JSON.stringify({
+                        deviceId: deviceId,
+                        reason: `Auto-ban: Excessive rate limit violations (${state.violationCount} times)`
+                    })
+                }).catch(err => console.error('[Middleware] Failed to trigger auto-ban:', err));
+            } else {
+                // 通常のブロックログ (Kick)
+                fetch(`${req.nextUrl.origin}/api/system/audit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-internal-api-key': 'internal-secure-ban-key-v1'
+                    },
+                    body: JSON.stringify({
+                        action: 'RATE_LIMIT_KICK',
+                        ipAddress: ip,
+                        deviceId: deviceId,
+                        userAgent: req.headers.get('user-agent'),
+                        details: JSON.stringify({ reason: 'New Block', violationCount: state.violationCount })
+                    })
+                }).catch(() => { });
+            }
+
             const remainingSeconds = Math.ceil((state.blockedUntil - now) / 1000);
             const res = new NextResponse(
                 JSON.stringify({ error: `沢山のアクセスを検知しました。 あなたのアカウントをブロックしました。解除まで約${remainingSeconds}秒。` }),
@@ -372,6 +407,9 @@ export async function proxy(req: NextRequest) {
             }
         }
 
+        /* 
+        // Session-based admin check is disabled to allow DB-backed verification in pages.
+        // This prevents "stale session" issues where a newly promoted admin is blocked.
         if (isAdminPath && !session.user.isAdmin) {
             // 管理者権限がない場合
             if (pathname.startsWith('/api')) {
@@ -384,6 +422,7 @@ export async function proxy(req: NextRequest) {
                 return res;
             }
         }
+        */
     }
 
     // 3. Security Headers
@@ -431,6 +470,6 @@ export async function proxy(req: NextRequest) {
 export const config = {
     // Apply to all routes except Next.js internals and static assets
     matcher: [
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:css|js|gif|svg|jpg|jpeg|png|webp|ico)$).*)',
+        '/((?!_next/static|favicon.ico|.*\\.(?:css|js|gif|svg|jpg|jpeg|png|webp|ico)$).*)',
     ],
 };

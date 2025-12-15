@@ -16,11 +16,16 @@ interface SessionData {
 
 import type { UserWithPetStatus } from '@/lib/types';
 
+import { checkBanStatus } from '@/lib/ban-check';
+
 export default async function MainPagesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Check for ban first
+  await checkBanStatus();
+
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? session.user.id : null;
 

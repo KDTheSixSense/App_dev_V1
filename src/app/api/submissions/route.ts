@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { sessionOptions } from '@/lib/session';
 import { executeAgainstTestCases } from '@/lib/sandbox';
+import { submissionSchema } from '@/lib/validations';
 
 interface SessionData {
   user?: { id: string; email: string };
@@ -24,18 +25,20 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const {
-      assignmentId, // どの課題に対する提出か
-      status,       // 例: '提出済み', '採点中'
-      description,  // 選択問題の答えや、プログラミング問題へのコメント（コードが入る場合もある）
-      codingId,     // プログラミング問題の提出コードID
-      language,     // プログラミング言語 (追加)
-    } = body;
 
-    // 基本的なバリデーション
-    if (!assignmentId) {
-      return NextResponse.json({ success: false, message: '課題IDが必要です' }, { status: 400 });
+    // Validate request body
+    const validationResult = submissionSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json({ success: false, message: '無効なリクエスト形式です。', details: validationResult.error.flatten() }, { status: 400 });
     }
+
+    const {
+      assignmentId,
+      status,
+      description,
+      codingId,
+      language,
+    } = validationResult.data;
 
     const userId = sessionUserId;
 

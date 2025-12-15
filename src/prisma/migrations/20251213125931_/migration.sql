@@ -32,6 +32,20 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
+CREATE TABLE "BannedUser" (
+    "id" SERIAL NOT NULL,
+    "targetType" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "reason" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdBy" TEXT,
+    "targetUserId" TEXT,
+    "expiresAt" TIMESTAMP(3),
+
+    CONSTRAINT "BannedUser_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "LoginHistory" (
     "id" SERIAL NOT NULL,
     "userId" TEXT NOT NULL,
@@ -568,6 +582,7 @@ CREATE TABLE "AuditLog" (
     "details" TEXT,
     "ipAddress" TEXT,
     "userAgent" TEXT,
+    "deviceId" TEXT,
     "path" TEXT,
     "method" TEXT,
     "duration" INTEGER,
@@ -582,6 +597,12 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_selectedTitleId_key" ON "User"("selectedTitleId");
+
+-- CreateIndex
+CREATE INDEX "BannedUser_value_idx" ON "BannedUser"("value");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BannedUser_targetType_value_key" ON "BannedUser"("targetType", "value");
 
 -- CreateIndex
 CREATE INDEX "UserAnswer_userId_idx" ON "UserAnswer"("userId");
@@ -684,6 +705,12 @@ CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_selectedTitleId_fkey" FOREIGN KEY ("selectedTitleId") REFERENCES "Title"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BannedUser" ADD CONSTRAINT "BannedUser_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BannedUser" ADD CONSTRAINT "BannedUser_targetUserId_fkey" FOREIGN KEY ("targetUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LoginHistory" ADD CONSTRAINT "LoginHistory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

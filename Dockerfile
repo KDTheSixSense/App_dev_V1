@@ -48,8 +48,16 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# schema.prismaは実行時にも必要
-COPY --from=builder /app/prisma/schema.prisma ./prisma/schema.prisma
+
+# Prismaのスキーマファイルも実行環境にコピーする
+# これがないと、実行時にPrismaがスキーマを見つけられずにエラーになることがある
+# Prismaのスキーマファイルも実行環境にコピーする
+# これがないと、実行時にPrismaがスキーマを見つけられずにエラーになることがある
+COPY --from=builder /app/prisma ./prisma
+
+# Tracerスクリプトをコピー (traceActions.tsが参照するため)
+# builderでは src/ の中身をルートにコピーしているため /app/lib/python_tracer.py にある
+COPY --from=builder /app/lib/python_tracer.py ./src/lib/python_tracer.py
 
 USER nextjs
 EXPOSE 3000

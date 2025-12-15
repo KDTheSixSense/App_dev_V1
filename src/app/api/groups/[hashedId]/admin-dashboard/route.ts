@@ -14,7 +14,7 @@ export async function GET(
 ) {
   const { hashedId } = await params;
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  
+
   if (!session.user?.id) {
     return NextResponse.json({ success: false, message: '認証されていません' }, { status: 401 });
   }
@@ -29,6 +29,30 @@ export async function GET(
     if (!group) {
       return NextResponse.json({ success: false, message: 'グループが見つかりません' }, { status: 404 });
     }
+
+    // --- Security Check: Global Admin OR Group Admin ---
+    // セッションのisAdminは古いため、DBで直接確認する
+    const currentUser = await prisma.user.findUnique({
+      where: { id: String(session.user.id) },
+      select: { isAdmin: true }
+    });
+
+    if (!currentUser?.isAdmin) {
+      // グローバル管理者でない場合、グループ管理者か確認
+      const groupUser = await prisma.groups_User.findUnique({
+        where: {
+          group_id_user_id: {
+            group_id: group.id,
+            user_id: String(session.user.id)
+          }
+        }
+      });
+
+      if (!groupUser?.admin_flg) {
+        return NextResponse.json({ success: false, message: 'このページにアクセスする権限がありません' }, { status: 403 });
+      }
+    }
+    // ----------------------------------------------------
 
     // 2. 関連データを並列で一気に取得 (Promise.all)
     // これにより、それぞれのクエリが同時に走るため、最も遅いクエリの時間だけで済みます
@@ -64,7 +88,7 @@ export async function GET(
     ]);
 
     // 3. データの整形 (フロントエンドの型に合わせる)
-    
+
     // メンバー整形
     const formattedMembers = members.map(gu => ({
       id: gu.user.id,
@@ -76,7 +100,7 @@ export async function GET(
       level: gu.user.level,
       xp: gu.user.xp,
     }));
-    
+
     const adminCount = formattedMembers.filter(m => m.isAdmin).length;
     const memberStats = {
       totalMembers: formattedMembers.length,

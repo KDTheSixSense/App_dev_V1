@@ -44,3 +44,49 @@ export const paginationSchema = z.object({
 export const groupParamsSchema = z.object({
     hashedId: z.string().min(1, 'Group ID is required').max(50).regex(/^[a-zA-Z0-9_-]+$/, 'Invalid Group ID format'),
 });
+
+export const eventJoinSchema = z.object({
+    inviteCode: z.string()
+        .min(1, 'Invite code is required')
+        .max(50, 'Invite code is too long')
+        .regex(/^[a-zA-Z0-9_-]+$/, 'Invalid invite code format'),
+});
+
+export const submissionSchema = z.object({
+    assignmentId: z.number().int().positive('Assignment ID must be a positive integer'),
+    status: z.string().optional(),
+    description: z.string().optional(),
+    codingId: z.number().int().optional(),
+    language: z.string().optional(),
+});
+
+export const programmingProblemSchema = z.object({
+    title: z.string().min(1, 'Title is required').max(100, 'Title is too long'),
+    description: z.string().min(1, 'Description is required'),
+    problemType: z.string().min(1, 'Problem type is required'),
+    difficulty: z.coerce.number().int().min(1).max(5),
+    timeLimit: z.coerce.number().int().min(1).max(60), // Max 60 sec
+    category: z.string().optional(),
+    topic: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    codeTemplate: z.string().optional(),
+    isPublic: z.boolean().optional(),
+    allowTestCaseView: z.boolean().optional(),
+    isDraft: z.boolean().optional(),
+    sampleCases: z.array(z.any()).optional(), // Detailed validation can be added if needed
+    testCases: z.array(z.object({
+        name: z.string().optional(),
+        input: z.string().min(1, 'Test case input is required'),
+        expectedOutput: z.string().min(1, 'Test case expected output is required'),
+        description: z.string().optional(),
+        order: z.any().optional(), // order can be number or other type if not strict, but usually number
+    })).min(1, 'At least one test case is required'),
+});
+
+export const assignmentSchema = z.object({
+    title: z.string().min(1, 'Title is required').max(100),
+    description: z.string().optional(),
+    dueDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date format" }),
+    programmingProblemId: z.union([z.string(), z.number()]).optional(),
+    selectProblemId: z.union([z.string(), z.number()]).optional(),
+});

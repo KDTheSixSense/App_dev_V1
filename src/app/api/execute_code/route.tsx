@@ -4,53 +4,7 @@ import { executeCodeSchema } from '@/lib/validations';
 import { logAudit, AuditAction } from '@/lib/audit';
 import { getAppSession } from '@/lib/auth';
 import { executeCode } from '@/lib/sandbox';
-
-// ビルドシステムのexport解決問題回避のため、lib/waf.ts から複製
-// --- 包括的なSQLインジェクションパターン ---
-const SQL_INJECTION_REGEX = new RegExp(
-  [
-    /(--)/.source,                      // 標準的なSQLコメント
-    /(\/\*)/.source,                    // インラインコメント開始
-    /(#\s)/.source,                     // MySQLコメント
-    /(\bUNION\s+SELECT\b)/.source,      // Union Select
-    /(\b(AND|OR)\s+[\w']+\s*[=<>!])/.source,    // ブールベースのBlind SQLi (例: " AND 1=1")
-    /(\b(AND|OR)\s+\d+\s*=\s*\d+)/.source,      // ブールベース(数値)
-    /(pg_sleep)/.source,                        // PostgreSQL 時間ベース
-    /(WAITFOR\s+DELAY)/.source,                 // SQL Server 時間ベース
-    /(SLEEP\()/.source,                         // MySQL 時間ベース
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)\b.*\bFROM\b)/.source, // 幅広いSQLキーワード
-    /(\b(EXEC|EXECUTE)\s*\(+)/.source,          // 生コマンドの実行
-    /(;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|EXEC|SHUTDOWN|DECLARE))\b/.source, // スタッククエリ (厳格)
-    /('\s*\))/.source,                          // 文字列インジェクションでよくある閉じ括弧
-  ].join('|'),
-  'i' // 大文字小文字を区別しない
-);
-
-// --- パストラバーサルパターン ---
-const TRAVERSAL_REGEX = new RegExp(
-  [
-    /(\.\.\/)/.source,          // ../
-    /(\.\.%2f)/.source,         // ..%2f (URLエンコード)
-    /(\.\.\\)/.source,          // ..\ (Windows)
-    /(\.\.%5c)/.source,         // ..%5c (URLエンコード Windows)
-    /(\/etc\/passwd)/.source,   // 一般的なターゲット
-    /(\/windows\/system\.ini)/.source, // 一般的なWindowsターゲット
-  ].join('|'),
-  'i'
-);
-
-// --- XSSパターン (基本) ---
-const XSS_REGEX = new RegExp(
-  [
-    /(<script)/.source,
-    /(javascript:)/.source,
-    /(onerror=)/.source,
-    /(onload=)/.source,
-    /(onclick=)/.source,
-    /(alert\()/.source,
-  ].join('|'),
-  'i'
-);
+import { SQL_INJECTION_REGEX, TRAVERSAL_REGEX, XSS_REGEX } from '@/lib/waf';
 
 function containsSecurityThreats(input: string): boolean {
   if (!input || typeof input !== 'string') return false;
@@ -110,7 +64,7 @@ export async function POST(request: Request) {
     }
 
     const { language, source_code, input } = validationResult.data;
-    
+
     // ★重要: source_code はクライアントから「プレーンテキスト」で送られてきます。
     // executeCode 関数 (lib/sandbox.ts) が Base64 エンコードを担当します。
 
@@ -172,6 +126,19 @@ export async function POST(request: Request) {
       },
       status: 'completed'
     };
+
+    // Log Successful Execution
+    await logAudit(
+      session.user.id,
+      AuditAction.EXECUTE_CODE,
+      {
+        message: 'Code Execution Completed',
+        language,
+        input_snippet: input ? input.substring(0, 50) : null,
+        exit_code: result.exit_code,
+        duration: result.duration // If available from executeCode
+      }
+    );
 
     return NextResponse.json(formattedResult, { status: 200 });
 

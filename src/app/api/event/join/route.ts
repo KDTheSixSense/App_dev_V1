@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions } from '@/lib/session';
+import { eventJoinSchema } from '@/lib/validations';
 
 interface SessionData {
   user?: {
@@ -20,11 +21,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { inviteCode } = body;
 
-    if (!inviteCode) {
-      return NextResponse.json({ error: '招待コードが必要です。' }, { status: 400 });
+    const validationResult = eventJoinSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json({ error: '無効なリクエスト形式です。', details: validationResult.error.flatten() }, { status: 400 });
     }
+
+    const { inviteCode } = validationResult.data;
 
     // 1. 招待コードに一致するイベントを検索
     const event = await prisma.create_event.findUnique({

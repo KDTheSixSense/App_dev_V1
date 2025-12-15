@@ -726,20 +726,28 @@ export async function runPythonTraceAction(code: string) {
     const cwd = process.cwd();
 
     // Tracerのパス解決
-    let scriptRelativePath = 'src/lib/python_tracer.py';
-    if (cwd.endsWith('src')) {
-      scriptRelativePath = 'lib/python_tracer.py';
-    }
-    const tracerPath = path.join(cwd, scriptRelativePath);
-    // console.log("[Debug] Reading Tracer Path:", tracerPath);
+    // 複数の候補をチェックする (Prod/Dev/Standaloneでパスが異なるため)
+    const candidates = [
+      path.join(cwd, 'src/lib/python_tracer.py'), // Default / Standalone (manually copied)
+      path.join(cwd, 'lib/python_tracer.py'),     // Fallback
+    ];
 
-    // Tracerのコードを読み込む
+    let tracerPath = '';
     let tracerCode = "";
-    try {
-      tracerCode = await fs.readFile(tracerPath, 'utf-8');
-    } catch (e) {
-      console.error("[Debug] Tracer file NOT found at:", tracerPath);
-      throw new Error(`Tracer file not found at ${tracerPath}`);
+
+    for (const p of candidates) {
+      try {
+        tracerCode = await fs.readFile(p, 'utf-8');
+        tracerPath = p;
+        break;
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    if (!tracerCode) {
+      console.error("[TraceAction] Tracer file NOT found in candidates:", candidates);
+      throw new Error(`Tracer file not found. Checked: ${candidates.join(', ')}`);
     }
 
     // Sandbox URL (Env var or default)

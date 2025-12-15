@@ -7,6 +7,7 @@ import 'acorn';
 import { LRUCache } from 'lru-cache';
 import { z } from 'zod';
 import { getAppSession } from '@/lib/auth';
+import { TRAVERSAL_REGEX } from '@/lib/waf';
 
 // --- Rate Limiting Setup ---
 const rateLimitCache = new LRUCache<string, number>({
@@ -622,8 +623,18 @@ export async function POST(req: NextRequest) {
 
         const { code, language } = validationResult.data;
 
-        const decodedCode = Buffer.from(code, 'base64').toString('utf-8');
-        const annotations = await lintCode(decodedCode, language);
+        // Explicit Security Check: Path Traversal
+        if (TRAVERSAL_REGEX.test(code)) {
+            return NextResponse.json(
+                {
+                    error: 'Security Alert: Malicious input detected.',
+                    code: 'WAF_BLOCK_TRAVERSAL'
+                },
+                { status: 400 }
+            );
+        }
+
+        const annotations = await lintCode(code, language);
 
         return NextResponse.json({ annotations });
 
