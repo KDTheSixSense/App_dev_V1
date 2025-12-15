@@ -621,7 +621,23 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const { code, language } = validationResult.data;
+        let { code, language } = validationResult.data;
+
+        // Base64デコード (クライアントはBase64で送信してくるため)
+        try {
+            // Check if the string is valid Base64 by attempts to decode and re-encode it.
+            // Simplified check: usually if it's base64, we decode it.
+            // Client sends `Buffer.from(userCode).toString('base64')`.
+            const decoded = Buffer.from(code, 'base64').toString('utf-8');
+            // Basic heuristic checking: if decoded looks like code, use it.
+            // Use a simple check: if the decoded version is different and valid utf-8, assume it was encoded.
+            if (decoded !== code) {
+                code = decoded;
+            }
+        } catch (e) {
+            // decoding failed or not base64, treat as raw string
+            console.warn('Base64 decode failed in lint api, using raw string');
+        }
 
         // Explicit Security Check: Path Traversal
         if (TRAVERSAL_REGEX.test(code)) {

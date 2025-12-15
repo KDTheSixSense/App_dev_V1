@@ -833,8 +833,12 @@ export async function runPythonTraceAction(code: string) {
     // Use embedded tracer code to avoid file path issues in production (Docker/Next.js)
     const tracerCode = PYTHON_TRACER_SOURCE;
 
-    // Sandbox URL (Env var or default)
-    const sandboxUrl = process.env.SANDBOX_URL || 'http://sandbox:4000/execute';
+    // Sandbox URL configuration
+    const baseUrl = (process.env.SANDBOX_URL || 'http://sandbox:4000').replace(/\/$/, '');
+    const sandboxUrl = `${baseUrl}/execute`;
+
+    // Base64 encode the source code for safety (handling line breaks/quotes)
+    const encodedSource = Buffer.from(tracerCode).toString('base64');
 
     // Sandboxへリクエスト
     const response = await fetch(sandboxUrl, {
@@ -844,8 +848,8 @@ export async function runPythonTraceAction(code: string) {
       },
       body: JSON.stringify({
         language: 'python',
-        source_code: tracerCode,
-        input: code
+        source_code: encodedSource, // Send Base64 encoded code
+        input: code // User's code is strictly text input for the tracer
       }),
     });
 

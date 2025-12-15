@@ -6,6 +6,7 @@ import { sessionOptions } from './session';
  * サーバーコンポーネント、Server Actions、APIルートで現在のセッションを取得するためのヘルパー関数です。
  */
 export async function getSession(): Promise<IronSession<IronSessionData>> {
-  const session = await getIronSession(cookies() as any, sessionOptions);
+  const cookieStore = await cookies();
+  const session = await getIronSession(cookieStore, sessionOptions);
   return session;
 }

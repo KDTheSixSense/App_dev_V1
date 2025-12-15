@@ -4,6 +4,7 @@ services:
   app:
     build:
       context: .
+      target: runner
       args:
         - DATABASE_URL=postgresql://user:password@db:5432/mydatabase
         - NEXT_PUBLIC_APP_URL=http://localhost
@@ -22,6 +23,8 @@ services:
       # Session Security (Fixed 500 Error)
       - SECRET_COOKIE_PASSWORD=complex_password_at_least_32_characters_long_1234567890
       - COOKIE_NAME=infopia_session_prod
+      # Sandbox URL for server-side calls
+      - SANDBOX_URL=http://sandbox:4000
     deploy:
       replicas: 5
     expose:

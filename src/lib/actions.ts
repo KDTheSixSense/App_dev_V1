@@ -288,10 +288,20 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     }
 
   } else if (subjectid === 3) { // 3: Questions
-    const problem = await prisma.questions.findUnique({
+    // まず Questions テーブルで検索
+    let problem = await prisma.questions.findUnique({
       where: { id: problemId },
       select: { difficultyId: true }
     });
+
+    // 見つからなければ Questions_Algorithm テーブルで検索 (アルゴリズム問題の可能性)
+    if (!problem) {
+      problem = await prisma.questions_Algorithm.findUnique({
+        where: { id: problemId },
+        select: { difficultyId: true }
+      });
+    }
+
     difficultyId = problem?.difficultyId;
     userAnswerForeignKeyData = { questions_id: problemId };
 

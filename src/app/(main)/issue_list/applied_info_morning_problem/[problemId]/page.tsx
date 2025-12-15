@@ -12,12 +12,13 @@ import { ArrowLeft } from 'lucide-react'; // lucide-reactのインポートを�
 
 // 型定義を 'basic_info_a_problem' と同様に修正
 type AppliedInfoProblemDetailPageProps = {
-  params: { problemId?: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
+  params: Promise<{ problemId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 // 'async' 関数に変更
-const AppliedInfoProblemDetailPage = async ({ params, searchParams }: AppliedInfoProblemDetailPageProps) => {
+const AppliedInfoProblemDetailPage = async (props: AppliedInfoProblemDetailPageProps) => {
+  const params = await props.params;
   const problemIdStr = params.problemId;
 
   if (!problemIdStr) {

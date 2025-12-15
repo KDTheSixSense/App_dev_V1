@@ -505,8 +505,27 @@ const ProblemSolverPage = () => {
                     success: true,
                     message: '正解です！おめでとうございます！'
                 });
-                await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1);
-                window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+
+                // 6. XPの付与 (エラーが発生しても結果表示は妨げないように分離)
+                try {
+                    const xpResult = await awardXpForCorrectAnswer(
+                        parseInt(problemId, 10),
+                        undefined, // eventId
+                        1,         // subjectid: 1 (ProgrammingProblem)
+                        undefined  // startTimeRef is not available here
+                    );
+
+                    if (xpResult.message === '経験値を獲得しました！') {
+                        setTimeout(() => {
+                            window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+                        }, 1000); // 少し遅延させて、アニメーションと被らないようにする
+                    }
+                    if (xpResult.unlockedTitle) {
+                        toast.success(`称号【${xpResult.unlockedTitle.name}】を獲得しました！`, { duration: 4000 });
+                    }
+                } catch (xpError) {
+                    console.error("Failed to award XP:", xpError);
+                }
             } else {
                 // 不正解の場合も履歴に記録 (Programming subjectId = 1)
                 await recordAnswerAction(parseInt(problemId), 1, false, 'INCORRECT');
