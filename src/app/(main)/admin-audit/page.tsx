@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getAppSession } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import { verifyAdminAccess } from '@/lib/auth-helpers';
 import { AuditLogTable } from './components/AuditLogTable';
 
 export const dynamic = 'force-dynamic';
@@ -8,15 +7,9 @@ export const dynamic = 'force-dynamic';
 export default async function AdminAuditPage(props: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    const session = await getAppSession();
-    if (!session.user) {
-        redirect('/auth/login');
-    }
+    // DBベースの厳密な管理者チェックを実行
+    await verifyAdminAccess();
 
-    // isAdmin チェック: オペレーターが権限を付与しない限り閲覧不可
-    if (!session.user?.isAdmin) {
-        redirect('/'); // 権限がない場合はホームへリダイレクト
-    }
 
     const searchParams = await props.searchParams;
     const limitParam = searchParams.limit;
@@ -34,15 +27,25 @@ export default async function AdminAuditPage(props: {
         }
     });
 
+    // BAN済みのIP/Deviceを取得
+    const bannedUsers = await prisma.bannedUser.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+            targetUser: {
+                select: { username: true, email: true }
+            }
+        }
+    });
+
     return (
         <div className="container mx-auto py-8">
-            <h1 className="text-2xl font-bold mb-6">Security Audit Log</h1>
+            <h1 className="text-2xl font-bold mb-6">セキュリティ監査ログ</h1>
             <p className="mb-4 text-gray-600">
                 最新のユーザーアクティビティログ (直近 {safeLimit} 件) を表示しています。
                 全てのページビュー、ログイン試行、重要なアクションが記録されています。
             </p>
 
-            <AuditLogTable initialLogs={logs} currentLimit={safeLimit} />
+            <AuditLogTable initialLogs={logs} currentLimit={safeLimit} initialBannedUsers={bannedUsers} />
         </div>
     );
 }

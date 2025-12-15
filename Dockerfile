@@ -59,7 +59,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Prismaのスキーマファイルも実行環境にコピーする
 # これがないと、実行時にPrismaがスキーマを見つけられずにエラーになることがある
+# Prismaのスキーマファイルも実行環境にコピーする
+# これがないと、実行時にPrismaがスキーマを見つけられずにエラーになることがある
 COPY --from=builder /app/prisma ./prisma
+
+# Tracerスクリプトをコピー (traceActions.tsが参照するため)
+# builderでは src/ の中身をルートにコピーしているため /app/lib/python_tracer.py にある
+COPY --from=builder /app/lib/python_tracer.py ./src/lib/python_tracer.py
 
 USER nextjs
 

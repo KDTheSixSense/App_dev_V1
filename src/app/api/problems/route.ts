@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { getAppSession } from '@/lib/auth';
+import { programmingProblemSchema } from '@/lib/validations';
 
 const prisma = new PrismaClient();
 
@@ -23,30 +24,43 @@ export async function POST(request: NextRequest) {
     }
 
     // --- 手順3: バリデーション ---
-    if (!body.title || !body.description) {
-      return NextResponse.json({ error: 'タイトルと問題文は必須です' }, { status: 400 });
+    const validationResult = programmingProblemSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json({ error: '入力データが無効です', details: validationResult.error.flatten() }, { status: 400 });
     }
-    const difficultyNum = parseInt(body.difficulty, 10);
-    const timeLimitNum = parseInt(body.timeLimit, 10);
-    if (isNaN(difficultyNum) || isNaN(timeLimitNum)) {
-      return NextResponse.json({ error: '難易度または制限時間が無効な数値です' }, { status: 400 });
-    }
+
+    const {
+      title,
+      description,
+      problemType,
+      difficulty,
+      timeLimit,
+      category,
+      topic,
+      tags,
+      codeTemplate,
+      isPublic,
+      allowTestCaseView,
+      isDraft,
+      sampleCases,
+      testCases
+    } = validationResult.data;
 
     // ★★★ 修正の核心: データベースに渡すデータを明示的に構築（ホワイトリスト方式） ★★★
     const dataToCreate: Prisma.ProgrammingProblemCreateInput = {
-      title: body.title,
-      problemType: body.problemType,
-      difficulty: difficultyNum,
-      timeLimit: timeLimitNum,
-      category: body.category,
-      topic: body.topic,
-      tags: JSON.stringify(body.tags || []),
-      description: body.description,
-      codeTemplate: body.codeTemplate,
-      isPublic: Boolean(body.isPublic),
-      allowTestCaseView: Boolean(body.allowTestCaseView),
-      isDraft: Boolean(body.isDraft),
-      isPublished: !Boolean(body.isDraft),
+      title,
+      problemType,
+      difficulty,
+      timeLimit,
+      category: category || '',
+      topic: topic || '',
+      tags: JSON.stringify(tags || []),
+      description,
+      codeTemplate: codeTemplate || '',
+      isPublic: Boolean(isPublic),
+      allowTestCaseView: Boolean(allowTestCaseView),
+      isDraft: Boolean(isDraft),
+      isPublished: !Boolean(isDraft),
       creator: {
         connect: {
           id: userId,
@@ -54,7 +68,7 @@ export async function POST(request: NextRequest) {
       },
       // ネストされたデータも、必要なプロパティだけを選んで新しいオブジェクトを作成
       sampleCases: {
-        create: (body.sampleCases || []).map((sc: any) => ({
+        create: (sampleCases || []).map((sc: any) => ({
           input: sc.input,
           expectedOutput: sc.expectedOutput,
           description: sc.description || '',
@@ -62,7 +76,7 @@ export async function POST(request: NextRequest) {
         }))
       },
       testCases: {
-        create: (body.testCases || []).map((tc: any) => ({
+        create: (testCases || []).map((tc: any) => ({
           name: tc.name || 'ケース',
           input: tc.input,
           expectedOutput: tc.expectedOutput,

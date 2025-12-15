@@ -9,6 +9,7 @@ export enum AuditAction {
     CREATE_GROUP = 'CREATE_GROUP',
     JOIN_GROUP = 'JOIN_GROUP',
     UPDATE_USER = 'UPDATE_USER',
+    PAGE_VIEW = 'PAGE_VIEW',
 }
 
 export async function logAudit(
@@ -29,13 +30,18 @@ export async function logAudit(
         const ipAddress = additionalLogs?.ipAddress || headersList.get('x-forwarded-for') || 'unknown';
         const userAgent = additionalLogs?.userAgent || headersList.get('user-agent');
 
+        // Get Device ID from cookies
+        const cookiesList = await import('next/headers').then(m => m.cookies());
+        const deviceId = cookiesList.get('d_id')?.value;
+
         await prisma.auditLog.create({
             data: {
-                userId: userId as any,
+                userId: userId,
                 action,
                 details: details && typeof details === 'string' ? details : (details ? JSON.stringify(details) : null),
                 ipAddress,
                 userAgent,
+                deviceId: deviceId || null,
                 path: additionalLogs?.path,
                 method: additionalLogs?.method,
                 duration: additionalLogs?.duration,
