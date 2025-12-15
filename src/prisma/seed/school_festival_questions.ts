@@ -209,14 +209,27 @@ export async function seedSchoolFestivalQuestions(prisma: PrismaClient) {
   let createdCount = 0;
   for (const problem of allProblems) {
     try {
-      await prisma.selectProblem.create({
-        data: {
-          ...problem,
-          difficultyId: FESTIVAL_DIFFICULTY_ID,
-          subjectId: FESTIVAL_SUBJECT_ID,
-        },
+      const data = {
+        ...problem,
+        difficultyId: FESTIVAL_DIFFICULTY_ID,
+        subjectId: FESTIVAL_SUBJECT_ID,
+      };
+
+      const existing = await prisma.selectProblem.findFirst({
+        where: { title: problem.title }
       });
-      createdCount++;
+
+      if (existing) {
+        await prisma.selectProblem.update({
+          where: { id: existing.id },
+          data: data
+        });
+      } else {
+        await prisma.selectProblem.create({
+          data: data
+        });
+        createdCount++;
+      }
     } catch (error) {
       console.error(`❌ Failed to create school festival problem: "${problem.title}"`, error);
     }

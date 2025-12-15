@@ -632,6 +632,21 @@ CREATE UNIQUE INDEX "Language_name_key" ON "Language"("name");
 CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Basic_Info_A_Question_title_key" ON "Basic_Info_A_Question"("title");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Applied_am_Question_title_key" ON "Applied_am_Question"("title");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Questions_Algorithm_title_description_key" ON "Questions_Algorithm"("title", "description");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SelectProblem_title_key" ON "SelectProblem"("title");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProgrammingProblem_title_key" ON "ProgrammingProblem"("title");
+
+-- CreateIndex
 CREATE INDEX "SampleCase_problemId_idx" ON "SampleCase"("problemId");
 
 -- CreateIndex

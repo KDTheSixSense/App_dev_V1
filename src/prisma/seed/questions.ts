@@ -43,7 +43,8 @@ export async function seedProblems(prisma: PrismaClient) {
     // サンプルは一旦コメントアウトするか、IDが被らないように注意（今回はExcelを優先するためコメントアウト推奨だが、残す場合はID管理が必要）
     await seedSampleSelectionProblems(prisma);
 
-    await seedSelectProblemsFromExcel(prisma);
+    // seed.ts で実行されるため、ここでは実行しない
+    // await seedSelectProblemsFromExcel(prisma);
 
     // 5.基本A問題のシーディング
     await seedBasicInfoAProblems(prisma);
@@ -55,7 +56,8 @@ export async function seedProblems(prisma: PrismaClient) {
 
 async function seedProblemsFromExcel(prisma: PrismaClient) {
     const excelFileName = 'PBL2 科目B問題.xlsx';
-    const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'basic_info_b_problem', 'data', excelFileName);
+    // Use process.cwd() to resolve path from project root, insensitive to dist/src location
+    const filePath = path.join(process.cwd(), 'app', '(main)', 'issue_list', 'basic_info_b_problem', 'data', excelFileName);
 
     const lastLocalQuestion = await prisma.questions.findFirst({ orderBy: { id: 'desc' } });
     let nextId = (lastLocalQuestion?.id || 0) + 1;
@@ -1257,7 +1259,10 @@ function createImageFileMap(): Map<string, string> {
  */
 function createAppliedAmImageFileMap(): Map<string, string> {
     // 1. /src/public/images/applied_am/ の絶対パスを取得
-    const imageDir = path.join(
+    // Use process.cwd() to resolve path from project root
+    const imageDir = path.join(process.cwd(), 'public', 'images', 'applied_am');
+    // Renaming old variable to avoid matching issues with weird whitespace in subsequent lines
+    const imageDir_OLD = path.join(
         __dirname, // 現在のディレクトリ (seed/)
         '..',      // prisma/
         '..',      // src/
@@ -1379,7 +1384,8 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
     const sheetName = '基本情報A問題統合用シート';   // 新しいシート名
     //   
 
-    const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
+    // Use process.cwd() to resolve path from project root, insensitive to dist/src location
+    const filePath = path.join(process.cwd(), 'app', '(main)', 'issue_list', 'basic_info_a_problem', 'data', excelFileName);
 
     try {
         const workbook = XLSX.readFile(filePath);
@@ -1628,10 +1634,21 @@ async function seedBasicInfoAProblems(prisma: PrismaClient) {
 
 
             try {
-                await prisma.basic_Info_A_Question.create({
-                    data: dataToSave
+                const existing = await prisma.basic_Info_A_Question.findFirst({
+                    where: { title: dataToSave.title }
                 });
-                createdCount++;
+
+                if (existing) {
+                    await prisma.basic_Info_A_Question.update({
+                        where: { id: existing.id },
+                        data: dataToSave
+                    });
+                } else {
+                    await prisma.basic_Info_A_Question.create({
+                        data: dataToSave
+                    });
+                    createdCount++;
+                }
             } catch (error: any) {
                 //  ID重複エラー (P2002) の場合のログを追加
                 if (error.code === 'P2002' && error.meta?.target?.includes('id')) {
@@ -1667,7 +1684,8 @@ async function seedAppliedInfoAmProblems(prisma: PrismaClient) {
     //  TODOここまで 
 
     //  変更: 応用AM用のデータパス
-    const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'applied_info_morning_problem', 'data', excelFileName);
+    // Use process.cwd() to resolve path from project root, insensitive to dist/src location
+    const filePath = path.join(process.cwd(), 'app', '(main)', 'issue_list', 'applied_info_morning_problem', 'data', excelFileName);
 
     try {
         const workbook = XLSX.readFile(filePath);
@@ -1863,10 +1881,21 @@ async function seedAppliedInfoAmProblems(prisma: PrismaClient) {
 
             try {
                 //  変更: 投入先モデルを Applied_am_Question に変更
-                await prisma.applied_am_Question.create({
-                    data: dataToSave
+                const existing = await prisma.applied_am_Question.findFirst({
+                    where: { title: dataToSave.title }
                 });
-                createdCount++;
+
+                if (existing) {
+                    await prisma.applied_am_Question.update({
+                        where: { id: existing.id },
+                        data: dataToSave
+                    });
+                } else {
+                    await prisma.applied_am_Question.create({
+                        data: dataToSave
+                    });
+                    createdCount++;
+                }
             } catch (error: any) {
                 if (error.code === 'P2002' && error.meta?.target?.includes('id')) {
                     console.error(`❌ Error saving record for Row ${processedRowCount + 2}: Duplicate ID ${problemId} found in Excel sheet "${sheetName}". Skipping this row. Title: "${record.title}"`);

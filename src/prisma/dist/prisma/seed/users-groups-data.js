@@ -33,11 +33,12 @@ function calculateLevelFromXp(xp) {
 async function seedUsersAndGroups(prisma) {
     console.log('🌱 Seeding users and groups...');
     // --- 1. 既存データをクリア ---
-    // 依存関係の末端から削除していく
-    await prisma.assignmentComment.deleteMany({});
-    await prisma.event_Submission.deleteMany({});
-    await prisma.event_Participants.deleteMany({});
-    await prisma.event_Issue_List.deleteMany({});
+    await prisma.auditLog.deleteMany({});
+    await prisma.loginHistory.deleteMany({});
+    await prisma.groups_User.deleteMany({});
+    await prisma.userSubjectProgress.deleteMany({});
+    await prisma.status_Kohaku.deleteMany({});
+    await prisma.groups.deleteMany({});
     await prisma.create_event.deleteMany({});
     await prisma.post.deleteMany({});
     await prisma.submissions.deleteMany({});
@@ -68,14 +69,14 @@ async function seedUsersAndGroups(prisma) {
         { email: 'tanaka@example.com', password: 'password131', username: '田中 恵子', icon: '/images/users/tanaka.png' },
         { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎', icon: '/images/users/suzuki.png' },
         { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲', icon: '/images/users/sato.png' },
-        { email: 'kobe_taro@example.com', password: 'kobe', username: '神戸太郎', icon: '/images/users/kobe.png' },
+        { email: 'kobe_taro@example.com', password: 'kobetarou', username: '神戸太郎', icon: '/images/users/kobe.png' },
     ];
     // --- 3. 各ユーザーのデータと関連データを作成 ---
     console.log('🌱 Seeding users, pets, and subject progresses...');
     for (const userData of usersToSeed) {
         const subjectProgressData = [];
         let totalAccountXp = 0;
-        const numberOfSubjects = 5; // subject_idが5まであると仮定
+        const numberOfSubjects = 5; // subject_idは1から5まで
         // 科目ごとの進捗を生成
         for (let subjectId = 1; subjectId <= numberOfSubjects; subjectId++) {
             let subjectXp = 0;

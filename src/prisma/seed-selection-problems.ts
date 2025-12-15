@@ -73,11 +73,21 @@ export async function seedSampleSelectionProblems(prisma: PrismaClient) {
   let updatedCount = 0;
 
   for (const problem of selectionProblems) {
-    await prisma.selectProblem.upsert({
+    const existing = await prisma.selectProblem.findFirst({
       where: { title: problem.title },
-      update: problem,
-      create: problem,
     });
+    if (existing) {
+      await prisma.selectProblem.update({
+        where: { id: existing.id },
+        data: problem,
+      });
+      updatedCount++;
+    } else {
+      await prisma.selectProblem.create({
+        data: problem,
+      });
+      createdCount++;
+    }
     // ログのためにupsertの結果を知りたい場合は個別にfindFirst->update/createする
   }
   console.log(`✅ Finished seeding sample selection problems.`);
@@ -90,14 +100,15 @@ export async function seedSelectProblemsFromExcel(prisma: PrismaClient) {
   console.log('🌱 Seeding Selection Problems from Excel file...');
   const excelFileName = 'PBL3_4択問題ベースシート.xlsx';
   const sheetName = '4択問題統合用シート';
-  const filePath = path.join(__dirname, '..', '..', 'app', '(main)', 'issue_list', 'selects_problems', 'data', excelFileName);
+  // Use process.cwd() to resolve path from project root, insensitive to dist/src location
+  const filePath = path.join(process.cwd(), 'app', '(main)', 'issue_list', 'selects_problems', 'data', excelFileName);
   const TARGET_DIFFICULTY_ID = 11;
   const TARGET_SUBJECT_ID = 4;
 
   try {
     if (!fs.existsSync(filePath)) {
-        console.warn(` ⚠️ File not found: ${filePath}. Skipping Excel seeding for SelectProblem.`);
-        return;
+      console.warn(` ⚠️ File not found: ${filePath}. Skipping Excel seeding for SelectProblem.`);
+      return;
     }
 
     const workbook = XLSX.readFile(filePath);
@@ -126,28 +137,28 @@ export async function seedSelectProblemsFromExcel(prisma: PrismaClient) {
       const correctChar = String(record.correctAnswer).trim().toUpperCase();
       const correctIndex = answerIndexMap[correctChar];
       if (correctIndex === undefined || !parsedOptions[correctIndex]) {
-          console.warn(` ⚠️ Invalid correct answer "${correctChar}" for problem: "${record.title}". Skipping.`);
-          continue;
+        console.warn(` ⚠️ Invalid correct answer "${correctChar}" for problem: "${record.title}". Skipping.`);
+        continue;
       }
       const correctAnswerText = parsedOptions[correctIndex];
 
       let descriptionToSave = String(record.description || "");
       const rawImageName = record.imageFileName ? String(record.imageFileName).trim() : null;
       if (rawImageName) {
-          descriptionToSave += `\n\n![問題画像](/images/select_problems/${rawImageName})`;
+        descriptionToSave += `\n\n![問題画像](/images/select_problems/${rawImageName})`;
       }
 
       const dataToSave = {
-          title: String(record.title),
-          description: descriptionToSave,
-          explanation: String(record.explanation || ""),
-          answerOptions: parsedOptions,
-          correctAnswer: correctAnswerText,
-          difficultyId: TARGET_DIFFICULTY_ID,
-          subjectId: TARGET_SUBJECT_ID,
+        title: String(record.title),
+        description: descriptionToSave,
+        explanation: String(record.explanation || ""),
+        answerOptions: parsedOptions,
+        correctAnswer: correctAnswerText,
+        difficultyId: TARGET_DIFFICULTY_ID,
+        subjectId: TARGET_SUBJECT_ID,
       };
 
-      const existingProblem = await prisma.selectProblem.findUnique({
+      const existingProblem = await prisma.selectProblem.findFirst({
         where: { title: dataToSave.title },
       });
 
