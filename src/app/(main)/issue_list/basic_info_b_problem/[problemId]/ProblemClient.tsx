@@ -540,6 +540,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
               explanation={problem.explanationText[currentLang] || ''}
               language={language}
               textResources={{ ...t, title: problem.title[currentLang] }}
+              problemId={problem.id} // 追加: 画像表示判定のために問題IDを渡す
             />
           </div>
 
