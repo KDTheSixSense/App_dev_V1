@@ -76,15 +76,17 @@ export async function executeCode(
     // Finally, after all modifications, we encode the final code payload into Base64 for the sandbox.
     const encodedCode = Buffer.from(codeToRun).toString('base64');
 
+    const body = {
+        language,
+        source_code: encodedCode, // Send the encoded code
+        input: (language === 'python' || language === 'python3') ? '' : input,
+    };
+
     try {
         const response = await fetch(sandboxUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                language,
-                source_code: encodedCode, // Send the encoded code
-                input: input,
-            }),
+            body: JSON.stringify(body),
         });
 
         if (!response.ok) {

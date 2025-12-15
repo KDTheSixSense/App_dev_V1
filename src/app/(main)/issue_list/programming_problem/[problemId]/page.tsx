@@ -473,6 +473,7 @@ const ProblemSolverPage = () => {
     const handleSubmit = async () => {
         if (!userCode.trim()) { toast.error('コードを入力してから完了を選択してください。'); return; }
         setIsSubmitting(true);
+        setIsResultModalOpen(false);
         setExecutionResult('確認中...');
         recordStudyTime();
         try {
