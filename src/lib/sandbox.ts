@@ -65,14 +65,20 @@ export async function executeCode(
     // INPUT INJECTION HACK:
     // With the raw code, we can now safely inject the stdin mock for Python execution if needed.
     if ((language === 'python' || language === 'python3') && input) {
-        const escapedInput = JSON.stringify(input);
+        // Safe injection using Base64 to avoid syntax errors with special characters (e.g. triple quotes)
+        const encodedInput = Buffer.from(input).toString('base64');
+        const injectionCode = `import sys
+import io
+import base64
+sys.stdin = io.StringIO(base64.b64decode("${encodedInput}").decode("utf-8"))
+
+`;
         // Prepend stdin mocking only if it's not already present.
         if (!codeToRun.includes('sys.stdin = io.StringIO')) {
-            // Note: We prepend to the already decoded code.
-            codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO("""${input}""")\n\n` + codeToRun;
+            codeToRun = injectionCode + codeToRun;
         }
     }
-    
+
     // Finally, after all modifications, we encode the final code payload into Base64 for the sandbox.
     const encodedCode = Buffer.from(codeToRun).toString('base64');
 
