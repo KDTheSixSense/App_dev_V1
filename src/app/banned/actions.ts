@@ -4,6 +4,35 @@ import nodemailer from 'nodemailer';
 import { z } from 'zod';
 import { headers, cookies } from 'next/headers';
 
+// Rate Limiting Map (In-Memory)
+// Key: IP address, Value: { count: number, lastTime: number }
+const MAX_REQUESTS_PER_HOUR = 5;
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
+const rateLimitMap = new Map<string, { count: number, lastTime: number }>();
+
+function checkRateLimit(ip: string): boolean {
+    const now = Date.now();
+    const record = rateLimitMap.get(ip);
+
+    if (!record) {
+        rateLimitMap.set(ip, { count: 1, lastTime: now });
+        return true;
+    }
+
+    if (now - record.lastTime > RATE_LIMIT_WINDOW) {
+        // Reset window
+        rateLimitMap.set(ip, { count: 1, lastTime: now });
+        return true;
+    }
+
+    if (record.count >= MAX_REQUESTS_PER_HOUR) {
+        return false;
+    }
+
+    record.count++;
+    return true;
+}
+
 const formSchema = z.object({
     email: z.string().email({ message: '有効なメールアドレスを入力してください' }),
     reason: z.string().min(10, { message: '理由は10文字以上で入力してください' }).max(1000, { message: '理由は1000文字以内で入力してください' }),
@@ -40,6 +69,12 @@ export async function sendAppealEmail(prevState: AppealState, formData: FormData
     const ip = headersList.get('x-forwarded-for') || 'unknown';
     const deviceId = cookiesList.get('d_id')?.value || 'unknown';
     const userAgent = headersList.get('user-agent') || 'unknown';
+
+    // Check Rate Limit
+    if (!checkRateLimit(ip)) {
+        console.warn(`[BanAppeal] Rate limit exceeded for IP: ${ip}`);
+        return { success: false, message: '送信回数制限を超えました。しばらく待ってから再送信してください。' };
+    }
 
     const transporter = nodemailer.createTransport({
         service: 'gmail',
