@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { headers, cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getAppSession } from '@/lib/auth';
+import BanAppealForm from './components/BanAppealForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,9 +114,11 @@ export default async function BannedPage() {
                     )}
 
                     <div className="mt-8 text-center">
+
                         <a href="/" className="inline-block px-8 py-3 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
                             再読み込み / Reload
                         </a>
+                        <BanAppealForm />
                     </div>
                 </div>
             </div>
