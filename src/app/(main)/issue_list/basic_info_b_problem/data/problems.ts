@@ -2465,20 +2465,20 @@ initialVariables: { n: null, current_n: null, result: 1 },
         },
         traceOptions: {
             logicVariants: [
-                { id: 'ア', label: 'ア: a=K[i], b=M[i], c=All数' },
-                { id: 'イ', label: 'イ: a=K[i], b=M[i], c=Order数' },
-                { id: 'ウ', label: 'ウ: a=K[i], b=M[i], c=Other数' },
-                { id: 'エ', label: 'エ: a=M[i], b=K[i], c=All数' },
-                { id: 'オ', label: 'オ: a=M[i], b=K[i], c=Order数' }, // 正解
-                { id: 'カ', label: 'カ: a=M[i], b=K[i], c=Other数' },
+                { id: 'ア', label: 'ア: a：arrayK[i], b：arrayM[i], c：allItemsの要素数' },
+                { id: 'イ', label: 'イ: a：arrayK[i], b：arrayM[i], c：ordersの要素数' },
+                { id: 'ウ', label: 'ウ: a：arrayK[i], b：arrayM[i], c：otherItemsの要素数' },
+                { id: 'エ', label: 'エ: a：arrayM[i], b：arrayK[i], c：allItemsの要素数' },
+                { id: 'オ', label: 'オ: a：arrayM[i], b：arrayK[i], c：ordersの要素数' }, // 正解
+                { id: 'カ', label: 'カ: a：arrayM[i], b：arrayK[i], c：otherItemsの要素数' },
             ],
             presets_array: [
                 { 
-                    label: 'item="A" (正解なら relatedItem="B", L=1.0)', 
+                    label: 'item="A"', 
                     value: { item: "A" } 
                 },
                 { 
-                    label: 'item="B" (正解なら relatedItem="A", L=1.0)', 
+                    label: 'item="B"', 
                     value: { item: "B" } 
                 },
             ]
