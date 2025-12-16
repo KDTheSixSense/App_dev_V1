@@ -9,6 +9,8 @@ interface UpcomingEvent {
     endTime: Date | null;
     creatorName: string;
     creatorIcon?: string | null;
+    isStarted: boolean;
+    hasBeenStarted: boolean;
 }
 
 interface EventCardProps {
@@ -17,26 +19,24 @@ interface EventCardProps {
 
 export default function EventCard({ events = [] }: EventCardProps) {
     // 日付表示用のヘルパー
-    const formatDate = (start: Date | null, end: Date | null) => {
+    const formatDate = (start: Date | null, end: Date | null, isStarted: boolean, hasBeenStarted: boolean) => {
         if (!start) return '日時未定';
 
-        const now = new Date();
         const startDate = new Date(start);
-        const endDate = end ? new Date(end) : null;
-
-        // 開催中: 開始日時 <= 現在 <= 終了日時
-        const isHolding = endDate && startDate <= now && now <= endDate;
-        // 終了: 現在 > 終了日時
-        const isEnded = endDate && now > endDate;
-
         const dateStr = startDate.toLocaleDateString();
 
-        if (isHolding) {
+        // フラグベースのステータス判定
+        // 開催中: isStarted === true
+        if (isStarted) {
             return <span className="text-orange-500 font-bold">開催中 ({dateStr}〜)</span>;
         }
-        if (isEnded) {
+
+        // 終了: isStarted === false && hasBeenStarted === true
+        if (!isStarted && hasBeenStarted) {
             return <span className="text-slate-400">終了 ({dateStr})</span>;
         }
+
+        // 開催予定: isStarted === false && hasBeenStarted === false
         return `${dateStr} 開催予定`;
     };
 
@@ -79,7 +79,7 @@ export default function EventCard({ events = [] }: EventCardProps) {
 
                                     {/* Date / Status */}
                                     <p className="text-[10px] text-slate-500">
-                                        {formatDate(event.startTime, event.endTime)}
+                                        {formatDate(event.startTime, event.endTime, event.isStarted, event.hasBeenStarted)}
                                     </p>
                                 </div>
                             </div>

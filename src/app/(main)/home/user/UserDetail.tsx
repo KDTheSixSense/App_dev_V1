@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import type { User, Title } from '@prisma/client';
 
 // Userオブジェクトに、関連するTitleも含まれるように型を拡張
@@ -32,10 +33,12 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
             {/* Top Section: Blue Gradient */}
             <div className="bg-gradient-to-r from-sky-400 to-cyan-500 p-6 text-white relative">
                 <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <div className="w-20 h-20 rounded-full border-2 border-white/50 shadow-md overflow-hidden flex-shrink-0 bg-slate-200">
-                        <Image src={user?.icon || "/images/test_icon.webp"} alt="Icon" width={80} height={80} className="w-full h-full object-cover" />
-                    </div>
+                    {/* Avatar with Link to Profile */}
+                    <Link href="/profile" className="block flex-shrink-0 group">
+                        <div className="w-20 h-20 rounded-full border-2 border-white/50 shadow-md overflow-hidden bg-slate-200 transition-transform group-hover:scale-105">
+                            <Image src={user?.icon || "/images/test_icon.webp"} alt="Icon" width={80} height={80} className="w-full h-full object-cover" />
+                        </div>
+                    </Link>
 
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
@@ -43,9 +46,11 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
                             <span className="text-sm font-bold opacity-90 font-mono">RANK</span>
                             <span className="text-3xl font-bold">{user?.level ?? 1}</span>
                         </div>
-                        <h2 className="text-xl font-bold truncate leading-tight mb-2">
-                            {user?.username || 'ゲスト'}
-                        </h2>
+                        <Link href="/profile" className="hover:underline opacity-100 hover:opacity-80 transition-opacity">
+                            <h2 className="text-xl font-bold truncate leading-tight mb-2">
+                                {user?.username || 'ゲスト'}
+                            </h2>
+                        </Link>
 
                         {/* Progress Bar */}
                         <div className="w-full bg-black/20 h-1.5 rounded-full mb-1">

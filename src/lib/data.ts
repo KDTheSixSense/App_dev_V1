@@ -569,9 +569,11 @@ export async function getUpcomingEvents() {
       id: event.id,
       title: event.title,
       startTime: event.startTime,
-      endTime: event.endTime, // 追加
+      endTime: event.endTime,
+      isStarted: event.isStarted, // 追加
+      hasBeenStarted: event.hasBeenStarted, // 追加
       creatorName: event.creator.username || '不明',
-      creatorIcon: event.creator.icon, // アイコン追加
+      creatorIcon: event.creator.icon,
     }));
   } catch (error) {
     console.error("Failed to fetch upcoming events:", error);

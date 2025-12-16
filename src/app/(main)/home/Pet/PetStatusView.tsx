@@ -63,6 +63,9 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, assig
       linkPath = `/group/coding-page/${nextAssignment.programmingProblemId}?assignmentId=${nextAssignment.id}&hashedId=${nextAssignment.groupHashedId}`;
     } else if (nextAssignment.selectProblemId) {
       linkPath = `/group/select-page/${nextAssignment.selectProblemId}?assignmentId=${nextAssignment.id}&hashedId=${nextAssignment.groupHashedId}`;
+    } else if (nextAssignment.groupHashedId) {
+      // Problem not attached -> Go to Group Member Page
+      linkPath = `/group/${nextAssignment.groupHashedId}/member`;
     }
   }
 
@@ -135,7 +138,7 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, assig
             </div>
 
             <Link href={linkPath} className="w-full bg-[#009bf2] hover:bg-[#0089d6] text-white py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors shadow-md">
-              <span>この問題を解く</span>
+              <span>課題を解く</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="transform rotate-0">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>

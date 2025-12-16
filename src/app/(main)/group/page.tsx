@@ -6,6 +6,7 @@ import FloatingActionButton from './button/FloatingActionButton';
 import { createGroupAction, getGroupsAction, joinGroupAction } from '@/lib/actions'; // グループ作成アクションをインポート
 import MemberList from './components/MemberList'; // メンバーリストコンポーネントをインポート
 import toast from 'react-hot-toast';
+import { getGroupNavigationPath } from '@/lib/group-navigation'; // ★ 追加: ナビゲーション関数をインポート
 
 // グループデータの型定義
 interface Group {
@@ -362,25 +363,9 @@ const ClassroomApp: React.FC = () => {
     };
     // グループクリック処理
     const handleGroupClick = (group: Group) => {
-        // 中間ページを経由せず、権限を見て直接ページへ飛ばす
-
-        if (currentUserId) {
-            // メンバーリストの中から自分を探す
-            const myMembership = group.members.find(m => m.user.id === currentUserId);
-
-            if (myMembership) {
-                // 自分が管理者なら /admin、そうでなければ /member へ直接遷移
-                const targetPath = myMembership.admin_flg
-                    ? `/group/${group.hashedId}/admin`
-                    : `/group/${group.hashedId}/member`;
-                router.push(targetPath);
-                return;
-            }
-        }
-
-        // 万が一IDが取得できていない場合などのフォールバック（従来のリダイレクトページへ）
-        router.push(`/group/${group.hashedId}`);
-        // ▲▲▲ 修正ここまで ▲▲▲
+        // ★ 修正: 共通関数を使用して遷移先を決定
+        const targetPath = getGroupNavigationPath(group.hashedId, currentUserId, group.members);
+        router.push(targetPath);
     };
 
 

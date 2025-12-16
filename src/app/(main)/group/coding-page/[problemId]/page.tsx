@@ -1,10 +1,20 @@
 // /workspaces/my-next-app/src/app/(main)/group/coding-page/[problemId]/page.tsx
 
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import { sessionOptions } from '@/lib/session';
 import ProblemSolverClient from './ProblemSolverClient';
 import type { Problem as SerializableProblem } from '@/lib/types';
+
+interface SessionData {
+  user?: {
+    id: string;
+    email: string;
+  };
+}
 
 type ProblemSolverPageProps = {
   params: Promise<{ problemId: string }>;
@@ -12,6 +22,12 @@ type ProblemSolverPageProps = {
 };
 
 export default async function ProblemSolverPage({ params, searchParams }: ProblemSolverPageProps) {
+  // Authentication Check
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    redirect('/auth/login');
+  }
+
   const resolvedParams = await params;
   const { problemId: problemIdString } = resolvedParams;
   const resolvedSearchParams = searchParams ? await searchParams : undefined; // searchParams を await する
