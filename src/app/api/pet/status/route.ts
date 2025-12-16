@@ -21,6 +21,7 @@ export async function GET() {
       where: { id: userId },
       select: {
         level: true,            // 1. ランク(レベル)
+        xp: true,               // 4. 経験値 (NEW)
         continuouslogin: true,  // 2. 連続ログイン日数
         status_Kohaku: {        // 3. ペット情報
           select: {
@@ -37,6 +38,7 @@ export async function GET() {
     // 3. 取得したデータを整形して返す
     const responseData = {
       level: userWithPet.level,
+      xp: userWithPet.xp ?? 0, // nullの場合は0を返す
       continuouslogin: userWithPet.continuouslogin ?? 0, // nullの場合は0を返す
       hungerlevel: userWithPet.status_Kohaku?.hungerlevel ?? MAX_HUNGER // ペット情報がない場合は最大値を返す
     };

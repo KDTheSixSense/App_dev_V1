@@ -406,3 +406,67 @@ export async function getUnsubmittedAssignmentCount(): Promise<number> {
     return 0; // エラー時は0を返す
   }
 }
+
+/**
+ * 期限が最も近い未提出の課題を1件取得する
+ */
+export async function getNextDueAssignment(): Promise<UnsubmittedAssignment | null> {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) return null;
+  const userId = session.user.id;
+
+  try {
+    const assignment = await prisma.assignment.findFirst({
+      where: {
+        group: {
+          groups_User: {
+            some: { user_id: userId as any },
+          },
+        },
+        Submissions: {
+          some: {
+            userid: userId as any,
+            status: { in: ["未提出", "差し戻し"] },
+          },
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        due_date: true,
+        programmingProblemId: true,
+        selectProblemId: true,
+        group: {
+          select: {
+            groupname: true,
+            hashedId: true,
+          },
+        },
+        Submissions: {
+          where: { userid: userId as any },
+          select: { status: true },
+          take: 1,
+        },
+      },
+      orderBy: {
+        due_date: 'asc',
+      },
+    });
+
+    if (!assignment) return null;
+
+    return {
+      id: assignment.id,
+      title: assignment.title,
+      dueDate: assignment.due_date.toISOString(),
+      groupName: assignment.group.groupname,
+      groupHashedId: assignment.group.hashedId,
+      programmingProblemId: assignment.programmingProblemId,
+      selectProblemId: assignment.selectProblemId,
+      submissionStatus: assignment.Submissions[0]?.status || null,
+    };
+  } catch (error) {
+    console.error("Failed to get next due assignment:", error);
+    return null;
+  }
+}

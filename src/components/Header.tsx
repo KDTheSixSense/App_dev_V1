@@ -53,8 +53,16 @@ const getPetDisplayState = (hungerLevel: number) => {
 export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
 
-  // 1. ランク(level)のstate
+  // 1. ランク(level)と経験値(xp)のstate
   const [rank, setRank] = useState(() => userWithPet?.level ?? 1);
+  const [xp, setXp] = useState(() => userWithPet?.xp ?? 0);
+  // 2. 連続ログイン日数のstate
+  const [continuousLogin, setContinuousLogin] = useState(() => userWithPet?.continuouslogin ?? 0);
+
+  // ランク進捗の計算
+  const requiredXpForNextLevel = 1000;
+  const currentXpInLevel = xp % requiredXpForNextLevel;
+  const progressPercentage = (currentXpInLevel / requiredXpForNextLevel) * 100;
 
   const headerRef = useRef<HTMLElement>(null);
 
@@ -65,9 +73,6 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
       document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
     }
   }, []); // コンポーネントのマウント時に一度だけ実行
-
-  // 2. 連続ログイン日数のstate
-  const [continuousLogin, setContinuousLogin] = useState(() => userWithPet?.continuouslogin ?? 0);
 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -153,8 +158,9 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
             };
           });
 
-          setRank(data.level);
-          setContinuousLogin(data.continuouslogin);
+          setRank(data.level ?? 1);
+          setXp(data.xp ?? 0);
+          setContinuousLogin(data.continuouslogin ?? 0);
 
           // 定期チェックで満腹度が変わっていたら、イベントを発火
           if (isPeriodicCheck && hungerLevelChanged) {
@@ -224,13 +230,13 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
 
   // ナビゲーションボタンのデータを配列で管理
   const navItems = [
-    { href: '/home', icon: '/images/home_slateblue.png', label: 'ホーム' },
-    { href: '/issue_list', icon: '/images/question_list_slateblue.png', label: '問題一覧' },
-    { href: '/CreateProgrammingQuestion', icon: '/images/question_create_slateblue.png', label: '問題作成' },
-    { href: '/group', icon: '/images/group_slateblue.png', label: 'グループ' },
+    { href: '/home', icon: '/images/home.png', label: 'ホーム' },
+    { href: '/issue_list', icon: '/images/question_list.png', label: '問題一覧' },
+    { href: '/CreateProgrammingQuestion', icon: '/images/question_create.png', label: '問題作成' },
+    { href: '/group', icon: '/images/group.png', label: 'グループ' },
     //提出機能とイベント機能はまだ完成してないから一旦コメントアウトで隠しておく
-    { href: '/unsubmitted-assignments', icon: '/images/assignment_slateblue.png', label: '課題' },
-    { href: '/event/event_list', icon: '/images/event_slateblue.png', label: 'イベント' },
+    { href: '/unsubmitted-assignments', icon: '/images/assignment.png', label: '課題' },
+    { href: '/event/event_list', icon: '/images/event.png', label: 'イベント' },
   ];
 
   return (
@@ -258,14 +264,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
               {/* router.pushをwindow.location.hrefに変更 */}
               <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
                 <Image src={item.icon} alt={item.label} width={40} height={40} />
-                <span className='text-[#546E7A] text-sm mt-1 font-bold'>{item.label}</span>
+                <span className='text-[#008391] text-xs mt-1 font-bold'>{item.label}</span>
               </button>
             </li>
           ))}
           <li>
             <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
-              <Image src="/images/logout_slateblue.png" alt="ログアウト" width={40} height={40} />
-              <span className='text-[#546E7A] text-sm mt-1 font-bold'>ログアウト</span>
+              <Image src="/images/logout.png" alt="ログアウト" width={40} height={40} />
+              <span className='text-[#008391] text-xs mt-1 font-bold'>ログアウト</span>
             </button>
           </li>
         </ul>
@@ -275,7 +281,9 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
       {petStatus && (
         <div className="flex items-center gap-2 ml-auto">
           {/* アイコンをStateから動的に設定 */}
-          <Image src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
+          <div className="flex-shrink-0">
+            <Image src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
+          </div>
           <div className="w-50">
             <div className="w-full bg-gray-300 rounded-full h-5 overflow-hidden">
               <div
@@ -289,31 +297,57 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
       )}
 
       {/* 右側：ユーザー情報 */}
-      <div className="flex items-center gap-4 ml-6">
+      <div className="flex items-center gap-4 ml-6 h-full">
         {/* ランクとログイン日数 */}
-        <div className="flex flex-col">
-          <div className="relative group flex items-center gap-2">
-            <Image src="/images/rank.png" alt="ランク" width={45} height={15} />
-            <div className='flex ml-auto'>
-              <p className="text-[#5FE943] text-2xl font-bold select-none">{rank}</p>
+        <div className="flex items-center gap-6 h-full pt-1">
+          {/* Rank Circular Gauge - Enlarged */}
+          <div className="relative flex flex-col items-center justify-center -mt-2">
+            <div className="relative w-16 h-16">
+              <svg className="w-full h-full transform -rotate-90">
+                {/* Background Circle */}
+                <circle
+                  cx="32" cy="32" r="26"
+                  fill="transparent"
+                  stroke="#E2E8F0"
+                  strokeWidth="5"
+                />
+                {/* Progress Circle */}
+                <circle
+                  cx="32" cy="32" r="26"
+                  fill="transparent"
+                  stroke="#0EA5E9" // Sky blue
+                  strokeWidth="5"
+                  strokeDasharray={`${2 * Math.PI * 26}`}
+                  strokeDashoffset={`${2 * Math.PI * 26 * (1 - ((Number.isNaN(progressPercentage) ? 0 : progressPercentage) / 100))}`}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center pb-1">
+                <span className="text-sm font-bold text-sky-600">
+                  {Number.isNaN(progressPercentage) ? 0 : Math.floor(progressPercentage)}%
+                </span>
+              </div>
             </div>
-            {/* ツールチップ */}
-            <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-999">
-              アカウントランク
-              <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-gray-800"></div>
+            <div className="absolute -bottom-2 bg-white px-2 rounded-full border border-sky-100 shadow-sm z-10">
+              <span className="text-[11px] font-bold text-cyan-600 whitespace-nowrap">RANK {rank}</span>
             </div>
           </div>
-          <div className="relative group flex items-center gap-2">
-            <div className='flex ml-3'>
-              <Image src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} />
+
+          {/* Continuous Login - Image Style - Enlarged */}
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <div className="relative w-12 h-12">
+              <Image
+                src="/images/Continuous_login.png"
+                alt="Continuous Login"
+                width={48}
+                height={48}
+                className="object-contain"
+              />
             </div>
-            <div className='flex ml-auto'>
-              <p className="text-[#feb75c] text-2xl font-bold select-none">{continuousLogin}</p>
-            </div>
-            {/* ツールチップ */}
-            <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-999">
-              連続ログイン日数
-              <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-gray-800"></div>
+            <div className="flex items-baseline -mt-3">
+              <span className="text-2xl font-bold text-slate-700 leading-none">{continuousLogin}</span>
+              <span className="text-xs text-slate-500 font-bold ml-0.5">日</span>
             </div>
           </div>
         </div>
@@ -349,6 +383,18 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   問題解答履歴
+                </a>
+                <a
+                  href="/customize_trace"
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  疑似言語トレース
+                </a>
+                <a
+                  href="/simulator"
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  ノーコード
                 </a>
                 <a
                   href="/terms"
