@@ -44,7 +44,7 @@ export async function executeCode(
     sourceCode: string,
     input: string
 ): Promise<SandboxResult> {
-    const sandboxUrl = 'http://sandbox:4000/execute';
+    const sandboxUrl = process.env.SANDBOX_URL || 'http://sandbox:4000/execute';
 
     // INPUT INJECTION HACK:
     // Sandbox service seems to fail piping stdin correctly for Python, causing EOFError.
