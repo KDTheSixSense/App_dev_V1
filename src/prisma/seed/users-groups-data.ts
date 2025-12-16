@@ -57,6 +57,12 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎', icon: '/images/users/suzuki.png' },
     { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲', icon: '/images/users/sato.png' },
     { email: 'kobe_taro@example.com', password: 'kobetarou', username: '神戸太郎', icon: '/images/users/kobe.png' },
+    { email: 'evo@example1.com', password: 'password123', username: 'Evolution Test1', icon: '/images/users/alice.png' },
+    { email: 'evo@example2.com', password: 'password123', username: 'Evolution Test2', icon: '/images/users/alice.png' },
+    { email: 'evo@example3.com', password: 'password123', username: 'Evolution Test3', icon: '/images/users/alice.png' },
+    { email: 'evo@example4.com', password: 'password123', username: 'Evolution Test4', icon: '/images/users/alice.png' },
+    { email: 'evo@example5.com', password: 'password123', username: 'Evolution Test5', icon: '/images/users/alice.png' },
+
   ];
 
   // --- 3. 各ユーザーのデータと関連データを作成 ---
@@ -73,6 +79,9 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
       // ユーザーごとにXPの生成範囲を変える
       if (userData.username === '神戸太郎') {
         subjectXp = 8999;
+      } else if (userData.email.startsWith('evo@example')) {
+        // レベル29 (XP 28950) に設定。あと50XPでレベル30になる。
+        subjectXp = subjectId === 1 ? 28950 : 0;
       } else if (['Frank Castle', 'Grace Hopper'].includes(userData.username!)) {
         subjectXp = getRandomInt(10000, 50000);
       } else if (['Alice Smith', '鈴木 一郎'].includes(userData.username!)) {

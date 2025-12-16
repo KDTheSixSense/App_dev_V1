@@ -279,6 +279,18 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         // 処理が成功し、エラーでなければヘッダーのペットゲージを更新する
         if (result.message === '経験値を獲得しました！') {
           window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+
+          // レベルアップチェック (30の倍数)
+          const res = await fetch('/api/pet/status');
+          if (res.ok) {
+            const { data } = await res.json();
+            if (data?.level && data.level > 0 && data.level % 30 === 0) {
+              // 30の倍数に到達した場合、ホーム画面へ強制遷移
+              setTimeout(() => {
+                router.push('/home?evolution=true');
+              }, 1500);
+            }
+          }
         } console.log(result.message); // "経験値を獲得しました！" or "既に正解済みです。"
         if (result.unlockedTitle) {
           toast.success(`称号【${result.unlockedTitle.name}】を獲得しました！`);

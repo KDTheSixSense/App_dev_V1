@@ -2083,9 +2083,17 @@ const callStackLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine
                         // 呼び出し元に戻る。
                         if (stack.length > 0) {
                             const callerFrame = stack[stack.length - 1];
-                            // 呼び出し元の「関数呼び出し行」に戻して、処理が戻ったことを視覚的に示す
-                            if (callerFrame.func === 'proc2') nextLine = 5; // Line 6 (Index 5)
-                            if (callerFrame.func === 'proc1') nextLine = 2; // Line 3 (Index 2)
+                            if (callerFrame.func === 'proc2') {
+                                nextLine = 5; // Line 6 (Index 5)
+                            } else if (callerFrame.func === 'proc1') {
+                                nextLine = 2; // Line 3 (Index 2)
+                            } else {
+                                // 想定外の呼び出し元の場合のデバッグログ
+                                console.error("Unexpected caller:", callerFrame);
+                                // とりあえず終了させずに安全な行（例えば proc2 の戻り先など）を指定するか、
+                                // エラーとして扱うかを決める
+                                nextLine = 99; 
+                            }
                         } else {
                             nextLine = 99;
                         }
@@ -2285,238 +2293,293 @@ const quickSortLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine
 // =================================================================================
 // --- 問30: ハッシュ法 (オープンアドレス) ロジック ---
 // =================================================================================
-const hashOpenAddressingLogic: { 
-    getTraceStep: (line: number, variant: string | null) => TraceStep;
-    calculateNextLine: (currentLine: number, vars: VariablesState) => number 
-} = {
+const hashOpenAddressingLogic: LogicDef = {
     // -------------------------------------------------------
-    // 1. 変数・スタックの更新ロジック (Execute current line)
+    // 1. 変数・スタックの更新ロジック
     // -------------------------------------------------------
-    getTraceStep: (line) => {
-        return (vars) => {
-            const stack = [...(vars.callStack as any[] || [])];
-            // 配列操作用のヘルパー
-            const getHashArray = () => [...(vars.hashArray as number[])];
+    traceLogic: [
+        /* 0: Line 1 */ (vars) => vars,
+        /* 1: Line 2 */ (vars) => vars,
+        /* 2: Line 3: def add */ (vars) => vars,
 
-            switch (line) {
-                // --- test() ---
-                case 23: // Line 24: hashArray ← {-1...}
-                    return { ...vars, hashArray: [-1, -1, -1, -1, -1] };
-
-                case 24: // Line 25: add(3)
-                    // 戻ってきた場合
-                    if (vars.tempRet !== null) {
-                        // 戻り値(true/false)は捨てるが、tempRetを消費(クリア)する
-                        return { ...vars, tempRet: null }; 
-                    }
-                    // 新規呼び出し
-                    stack.push({ returnLine: 24, savedValue: vars.value, savedI: vars.i });
-                    return { ...vars, callStack: stack, value: 3 };
-
-                case 25: // Line 26: add(18)
-                    if (vars.tempRet !== null) return { ...vars, tempRet: null };
-                    stack.push({ returnLine: 25, savedValue: vars.value, savedI: vars.i });
-                    return { ...vars, callStack: stack, value: 18 };
-
-                case 26: // Line 27: add(11)
-                    if (vars.tempRet !== null) return { ...vars, tempRet: null };
-                    stack.push({ returnLine: 26, savedValue: vars.value, savedI: vars.i });
-                    return { ...vars, callStack: stack, value: 11 };
-
-                // --- add(value) ---
-                case 2: // Line 3: def add
-                    return vars;
-
-                case 3: // Line 4: i ← calcHash1(value)
-                    // 戻ってきた場合: i に代入
-                    if (vars.tempRet !== null) {
-                        return { ...vars, i: vars.tempRet, tempRet: null }; 
-                    }
-                    // 新規呼び出し
-                    stack.push({ returnLine: 3, savedValue: vars.value, savedI: vars.i });
-                    return { ...vars, callStack: stack };
-
-                case 4: // Line 5: if (hashArray[i] = -1)
-                    return vars;
-
-                case 5: // Line 6: hashArray[i] ← value
-                    {
-                        const arr = getHashArray();
-                        if (vars.i !== null) arr[(vars.i as number) - 1] = vars.value as number;
-                        return { ...vars, hashArray: arr };
-                    }
-
-                case 6: // Line 7: return true
-                    if (stack.length > 0) {
-                        const saved = stack.pop();
-                        return { 
-                            ...vars, callStack: stack, tempRet: true, 
-                            value: saved.savedValue, i: saved.savedI, targetLine: saved.returnLine 
-                        };
-                    }
-                    return vars;
-
-                case 7: // Line 8: else
-                    return vars;
-
-                case 8: // Line 9: i ← calcHash2(value)
-                    if (vars.tempRet !== null) {
-                        return { ...vars, i: vars.tempRet, tempRet: null };
-                    }
-                    stack.push({ returnLine: 8, savedValue: vars.value, savedI: vars.i });
-                    return { ...vars, callStack: stack };
-
-                case 9: // Line 10: if (hashArray[i] = -1)
-                    return vars;
-
-                case 10: // Line 11: hashArray[i] ← value
-                    {
-                        const arr = getHashArray();
-                        if (vars.i !== null) arr[(vars.i as number) - 1] = vars.value as number;
-                        return { ...vars, hashArray: arr };
-                    }
-
-                case 11: // Line 12: return true
-                    if (stack.length > 0) {
-                        const saved = stack.pop();
-                        return { 
-                            ...vars, callStack: stack, tempRet: true,
-                            value: saved.savedValue, i: saved.savedI, targetLine: saved.returnLine 
-                        };
-                    }
-                    return vars;
-
-                case 14: // Line 15: return false
-                    if (stack.length > 0) {
-                        const saved = stack.pop();
-                        return { 
-                            ...vars, callStack: stack, tempRet: false,
-                            value: saved.savedValue, i: saved.savedI, targetLine: saved.returnLine 
-                        };
-                    }
-                    return vars;
-
-                // --- calcHash1 ---
-                case 16: // Line 17: def calcHash1
-                    return vars;
-
-                case 17: // Line 18: return (value mod size) + 1
-                    {
-                        const val = vars.value as number;
-                        const len = (vars.hashArray as number[]).length;
-                        const res = (val % len) + 1;
-                        
-                        if (stack.length > 0) {
-                            const saved = stack.pop();
-                            return { 
-                                ...vars, callStack: stack, tempRet: res, 
-                                value: saved.savedValue, i: saved.savedI, targetLine: saved.returnLine 
-                            };
-                        }
-                        return vars;
-                    }
-
-                // --- calcHash2 ---
-                case 19: // Line 20: def calcHash2
-                    return vars;
-
-                case 20: // Line 21: return ((value+3) mod size) + 1
-                    {
-                        const val = vars.value as number;
-                        const len = (vars.hashArray as number[]).length;
-                        const res = ((val + 3) % len) + 1;
-
-                        if (stack.length > 0) {
-                            const saved = stack.pop();
-                            return { 
-                                ...vars, callStack: stack, tempRet: res, 
-                                value: saved.savedValue, i: saved.savedI, targetLine: saved.returnLine 
-                            };
-                        }
-                        return vars;
-                    }
-
-                default:
-                    return vars;
+        /* 3: Line 4: i ← calcHash1(value) */
+        (vars) => {
+            // 戻り値がある場合は i にセットしてフラグクリア
+            if (vars.tempRet !== null && vars.tempRet !== undefined) {
+                return { ...vars, i: vars.tempRet, tempRet: null };
             }
-        };
-    },
+            // 新規呼び出し: calcHash1(Line 17 -> Index 16) へ
+            const stack = [...(vars.callStack as any[] || [])];
+            stack.push({ returnLine: 3, savedValue: vars.value }); // 戻り先は自分自身(Line 4)
+            return { ...vars, callStack: stack };
+        },
+
+        /* 4: Line 5: if (hashArray[i] = -1) */
+        (vars) => vars, // 判定は calculateNextLine で
+
+        /* 5: Line 6: hashArray[i] ← value */
+        (vars) => {
+            const arr = [...(vars.hashArray as number[])];
+            const i = vars.i as number;
+            // iは1-based
+            if (i >= 1 && i <= arr.length) {
+                arr[i - 1] = vars.value as number;
+            }
+            return { ...vars, hashArray: arr };
+        },
+
+        /* 6: Line 7: return true */
+        (vars) => {
+            const stack = [...(vars.callStack as any[] || [])];
+            if (stack.length > 0) {
+                const saved = stack.pop();
+                // 呼び出し元に戻る準備 (tempRet=true)
+                return { 
+                    ...vars, 
+                    callStack: stack, 
+                    tempRet: true, 
+                    value: saved.savedValue 
+                };
+            }
+            return vars;
+        },
+
+        /* 7: Line 8: else */ (vars) => vars,
+
+        /* 8: Line 9: i ← calcHash2(value) */
+        (vars) => {
+            if (vars.tempRet !== null && vars.tempRet !== undefined) {
+                return { ...vars, i: vars.tempRet, tempRet: null };
+            }
+            // 新規呼び出し: calcHash2(Line 20 -> Index 19) へ
+            const stack = [...(vars.callStack as any[] || [])];
+            stack.push({ returnLine: 8, savedValue: vars.value });
+            return { ...vars, callStack: stack };
+        },
+
+        /* 9: Line 10: if (hashArray[i] = -1) */
+        (vars) => vars,
+
+        /* 10: Line 11: hashArray[i] ← value */
+        (vars) => {
+            const arr = [...(vars.hashArray as number[])];
+            const i = vars.i as number;
+            if (i >= 1 && i <= arr.length) {
+                arr[i - 1] = vars.value as number;
+            }
+            return { ...vars, hashArray: arr };
+        },
+
+        /* 11: Line 12: return true */
+        (vars) => {
+            const stack = [...(vars.callStack as any[] || [])];
+            if (stack.length > 0) {
+                const saved = stack.pop();
+                return { 
+                    ...vars, 
+                    callStack: stack, 
+                    tempRet: true, 
+                    value: saved.savedValue 
+                };
+            }
+            return vars;
+        },
+
+        /* 12: Line 13: endif */ (vars) => vars,
+        /* 13: Line 14: endif */ (vars) => vars,
+
+        /* 14: Line 15: return false */
+        (vars) => {
+            const stack = [...(vars.callStack as any[] || [])];
+            if (stack.length > 0) {
+                const saved = stack.pop();
+                return { 
+                    ...vars, 
+                    callStack: stack, 
+                    tempRet: false, 
+                    value: saved.savedValue 
+                };
+            }
+            return vars;
+        },
+
+        /* 15: Line 16 (blank) */ (vars) => vars,
+
+        /* 16: Line 17: calcHash1 def */ (vars) => vars,
+
+        /* 17: Line 18: return (value mod size) + 1 */
+        (vars) => {
+            const val = vars.value as number;
+            const len = (vars.hashArray as number[]).length;
+            const res = (val % len) + 1;
+            
+            const stack = [...(vars.callStack as any[] || [])];
+            if (stack.length > 0) {
+                const saved = stack.pop();
+                return { 
+                    ...vars, 
+                    callStack: stack, 
+                    tempRet: res, // 計算結果を戻り値に
+                    value: saved.savedValue 
+                };
+            }
+            return vars;
+        },
+
+        /* 18: Line 19 (blank) */ (vars) => vars,
+        /* 19: Line 20: calcHash2 def */ (vars) => vars,
+
+        /* 20: Line 21: return ((value + 3) mod size) + 1 */
+        (vars) => {
+            const val = vars.value as number;
+            const len = (vars.hashArray as number[]).length;
+            const res = ((val + 3) % len) + 1;
+
+            const stack = [...(vars.callStack as any[] || [])];
+            if (stack.length > 0) {
+                const saved = stack.pop();
+                return { 
+                    ...vars, 
+                    callStack: stack, 
+                    tempRet: res, 
+                    value: saved.savedValue 
+                };
+            }
+            return vars;
+        },
+
+        /* 21: Line 22 (blank) */ (vars) => vars,
+        /* 22: Line 23: test() */ (vars) => vars,
+
+        /* 23: Line 24: hashArray init */
+        (vars) => ({ ...vars, hashArray: [-1, -1, -1, -1, -1] }),
+
+        /* 24: Line 25: add(3) */
+        (vars) => {
+            if (vars.tempRet !== null && vars.tempRet !== undefined) {
+                // 戻ってきたらフラグクリアして終了
+                return { ...vars, tempRet: null };
+            }
+            // 新規呼び出し
+            const stack = [...(vars.callStack as any[] || [])];
+            stack.push({ returnLine: 24, savedValue: vars.value }); 
+            return { ...vars, callStack: stack, value: 3 };
+        },
+
+        /* 25: Line 26: add(18) */
+        (vars) => {
+            if (vars.tempRet !== null && vars.tempRet !== undefined) {
+                return { ...vars, tempRet: null };
+            }
+            const stack = [...(vars.callStack as any[] || [])];
+            stack.push({ returnLine: 25, savedValue: vars.value });
+            return { ...vars, callStack: stack, value: 18 };
+        },
+
+        /* 26: Line 27: add(11) */
+        (vars) => {
+            if (vars.tempRet !== null && vars.tempRet !== undefined) {
+                return { ...vars, tempRet: null };
+            }
+            const stack = [...(vars.callStack as any[] || [])];
+            stack.push({ returnLine: 26, savedValue: vars.value });
+            return { ...vars, callStack: stack, value: 11 };
+        }
+    ],
 
     // -------------------------------------------------------
     // 2. 次の行番号を決定するロジック
     // -------------------------------------------------------
-    calculateNextLine(currentLine, vars) {
+    calculateNextLine: (currentLine, vars) => {
         // 初期状態なら test() の中身(Line 24)へジャンプ
-        // ただし Line 23, 24 にいるときは邪魔しない
         if (vars.hashArray === null && currentLine < 23) return 23;
 
+        const stack = vars.callStack as any[] || [];
         const hashArray = vars.hashArray as number[];
         const i = (vars.i !== null) ? (vars.i as number) : 0;
 
-        // return文でセットされた targetLine があれば、そこへジャンプして復帰
-        // (getTraceStep でセットされた直後にここが呼ばれる)
-        if (vars.targetLine !== null && vars.targetLine !== undefined) {
-            return vars.targetLine as number;
-        }
-
         switch (currentLine) {
             // --- test() ---
-            case 23: return 24; // Line 23 -> Line 24
-            case 24: return 25; // Line 24 -> Line 25
+            case 23: return 24; // Line 24: init -> Line 25
             
-            case 25: // Line 25: add(3)
-                // 戻ってきた(tempRetがある)なら Line 26 へ
-                // まだ(tempRetがない)なら Line 3 (add) へ
-                return (vars.tempRet !== null) ? 26 : 2; 
+            case 24: // Line 25: add(3)
+                // 戻り値があるなら、処理完了として次の行へ
+                if (vars.tempRet !== null) return 25; 
+                // なければ関数呼び出しへ (addの先頭 Line 3 / Index 2)
+                return 2; 
 
-            case 26: // Line 26: add(18)
-                // 戻ってきたら Line 27 へ
-                return (vars.tempRet !== null) ? 27 : 2;
+            case 25: // Line 26: add(18)
+                if (vars.tempRet !== null) return 26;
+                return 2;
 
-            case 27: // Line 27: add(11)
-                // 戻ってきたら終了
-                return (vars.tempRet !== null) ? 99 : 2;
+            case 26: // Line 27: add(11)
+                if (vars.tempRet !== null) return 99; // 全て完了
+                return 2;
 
             // --- add(value) ---
             case 2: return 3; // Line 3 -> Line 4
-            
-            case 3: // Line 4: i ← calcHash1
-                // 戻ってきた(tempRetあり)なら Line 5 へ
-                // まだなら calcHash1 (Line 17) へ
-                return (vars.tempRet !== null) ? 4 : 16; 
 
-            case 4: // Line 5: if (hashArray[i] = -1)
-                return (hashArray[i - 1] === -1) ? 5 : 7; // True -> 6, False -> 8
+            case 3: // Line 4: i <- calcHash1
+                if (vars.tempRet !== null) return 4; // 計算完了 -> Line 5
+                return 16; // -> calcHash1 (Line 17 / Index 16)
+
+            case 4: // Line 5: if (hashArray[i] == -1)
+                // 衝突判定
+                if (i >= 1 && hashArray[i - 1] === -1) {
+                    return 5; // 空きあり -> Line 6 (代入)
+                } else {
+                    return 7; // 衝突 -> Line 8 (else)
+                }
 
             case 5: return 6; // Line 6 -> Line 7
-            case 6: return 6; // Line 7: return true (getTraceStepでtargetLineへ飛ぶのでここは維持でOK)
+            
+            case 6: // Line 7: return true
+                // スタックの戻り先へジャンプ
+                if (stack.length > 0) return stack[stack.length - 1].returnLine;
+                return 99;
 
             case 7: return 8; // Line 8 -> Line 9
 
-            case 8: // Line 9: i ← calcHash2
-                return (vars.tempRet !== null) ? 9 : 19; // -> 10 or 20(calcHash2)
+            case 8: // Line 9: i <- calcHash2
+                if (vars.tempRet !== null) return 9; // 計算完了 -> Line 10
+                return 19; // -> calcHash2 (Line 20 / Index 19)
 
-            case 9: // Line 10: if (hashArray[i] = -1)
-                return (hashArray[i - 1] === -1) ? 10 : 13; // True -> 11, False -> 13(endif)
+            case 9: // Line 10: if (hashArray[i] == -1)
+                // 再ハッシュ後の衝突判定
+                if (i >= 1 && hashArray[i - 1] === -1) {
+                    return 10; // 空きあり -> Line 11 (代入)
+                } else {
+                    return 13; // 衝突 -> Line 14 (endif -> return falseへの流れ)
+                }
 
             case 10: return 11; // Line 11 -> Line 12
-            case 11: return 11; // return true
+            
+            case 11: // Line 12: return true
+                if (stack.length > 0) return stack[stack.length - 1].returnLine;
+                return 99;
 
-            case 12: return 13; // endif
+            case 12: return 13; // endif -> endif
             case 13: return 14; // endif -> return false
-            case 14: return 14; // return false
+
+            case 14: // Line 15: return false
+                if (stack.length > 0) return stack[stack.length - 1].returnLine;
+                return 99;
 
             // --- calcHash1 ---
-            case 16: return 17; // Line 17 -> Line 18
-            case 17: return 17; // return
+            case 16: return 17; // def -> body
+            case 17: // return value
+                if (stack.length > 0) return stack[stack.length - 1].returnLine;
+                return 99;
 
             // --- calcHash2 ---
-            case 19: return 20; // Line 20 -> Line 21
-            case 20: return 20; // return
+            case 19: return 20; // def -> body
+            case 20: // return value
+                if (stack.length > 0) return stack[stack.length - 1].returnLine;
+                return 99;
 
             default: return currentLine + 1;
         }
-    },
+    }
 };
 
 // =================================================================================
@@ -2967,16 +3030,16 @@ const mergeAlgorithmLogic: { traceLogic: TraceStep[]; calculateNextLine: (curren
 };
 
 // =================================================================================
-// --- 【完全修正版】問37: 商品関連度分析ロジック ---
+// --- 【再修正版】問37: 商品関連度分析ロジック ---
 // =================================================================================
-const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (currentLine: number, vars: VariablesState, variant: string | null) => number } = {
+const associationAnalysisLogic: LogicDef = {
     traceLogic: [
-        /* 0: Line 1 */ (vars) => vars,
-        /* 1: Line 2 */ (vars) => vars,
-        /* 2: Line 3 */ (vars) => vars,
-        /* 3: Line 4 */ (vars) => vars,
+        /* Index 0: Line 1 */ (vars) => vars,
+        /* Index 1: Line 2 */ (vars) => vars,
+        /* Index 2: Line 3 */ (vars) => vars,
+        /* Index 3: Line 4 */ (vars) => vars,
         
-        /* 4: Line 5 (allItems) */
+        /* Index 4: Line 5 (allItems) */
         (vars) => {
             const orders = vars.orders as string[][];
             const set = new Set<string>();
@@ -2984,75 +3047,76 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
             return { ...vars, allItems: Array.from(set).sort() };
         },
         
-        /* 5: Line 6 */ (vars) => vars,
+        /* Index 5: Line 6 */ (vars) => vars,
         
-        /* 6: Line 7 (otherItems) */
+        /* Index 6: Line 7 (otherItems) */
         (vars) => {
             const all = (vars.allItems as string[]) || [];
             const target = vars.item as string;
             return { ...vars, otherItems: all.filter(x => x !== target) };
         },
         
-        /* 7: Line 8 */ (vars) => vars,
+        /* Index 7: Line 8 */ (vars) => vars,
         
-        /* 8: Line 9 (init i, itemCount) */
+        /* Index 8: Line 9 (init i, itemCount) */
         (vars) => ({ ...vars, i: null, itemCount: 0, order_idx: null }),
         
-        /* 9: Line 10 (arrayK init) */
+        /* Index 9: Line 10 (arrayK init) */
         (vars) => {
             const other = (vars.otherItems as string[]) || [];
             return { ...vars, arrayK: new Array(other.length).fill(0) };
         },
         
-        /* 10: Line 11 (arrayM init) */
+        /* Index 10: Line 11 (arrayM init) */
         (vars) => {
             const other = (vars.otherItems as string[]) || [];
             return { ...vars, arrayM: new Array(other.length).fill(0) };
         },
         
-        /* 11: Line 12 (maxL init) */
+        /* Index 11: Line 12 (maxL init) */
         (vars) => ({ ...vars, valueL: null, maxL: -Infinity }),
         
-        /* 12: Line 13 (relatedItem init) */ 
+        /* Index 12: Line 13 (order decl) */ (vars) => vars,
+        
+        /* Index 13: Line 14 (relatedItem decl) */ 
         (vars) => ({ ...vars, relatedItem: '' }),
         
-        /* 13: Line 14 */ (vars) => vars,
+        /* Index 14: Line 15 */ (vars) => vars,
         
-        /* 14: Line 15 (for order in orders) */
+        /* Index 15: Line 16 (for order in orders) */
         (vars) => {
-            // 配列が未定義ならここで緊急初期化 (安全策)
-            const other = (vars.otherItems as string[]) || [];
-            let k = vars.arrayK;
-            let m = vars.arrayM;
-            if (!k) k = new Array(other.length).fill(0);
-            if (!m) m = new Array(other.length).fill(0);
-
             const idx = vars.order_idx === null ? 0 : (vars.order_idx as number) + 1;
-            return { ...vars, order_idx: idx, arrayK: k, arrayM: m };
+            const orders = vars.orders as string[][];
+            if (idx >= orders.length) return { ...vars, order_idx: idx, i: null };
+
+            return { 
+                ...vars, 
+                order_idx: idx, 
+                order: orders[idx], // 現在の注文データ
+                i: null // 内側ループ用に i をリセット
+            };
         },
         
-        /* 15: Line 16 (if order contains item) */ (vars) => vars,
+        /* Index 16: Line 17 (if order contains item) */ (vars) => vars,
         
-        /* 16: Line 17 (itemCount++) */
+        /* Index 17: Line 18 (itemCount++) */
         (vars) => ({ ...vars, itemCount: (vars.itemCount as number) + 1 }),
         
-        /* 17: Line 18 (endif) */ (vars) => vars,
+        /* Index 18: Line 19 (endif) */ (vars) => vars,
         
-        /* 18: Line 19 (for i in otherItems) */
+        /* Index 19: Line 20 (for i in otherItems) */
         (vars) => {
             const newI = vars.i === null ? 1 : (vars.i as number) + 1;
             return { ...vars, i: newI };
         },
         
-        /* 19: Line 20 (if order contains otherItems[i]) */ (vars) => vars,
-        /* 20: Line 21 (if order contains item) */ (vars) => vars,
+        /* Index 20: Line 21 (if order contains otherItems[i]) */ (vars) => vars,
+        /* Index 21: Line 22 (if order contains item) */ (vars) => vars,
         
-        /* 21: Line 22 (update [a]) */
+        /* Index 22: Line 23 (update [a]) */
         (vars) => {
             const variant = vars._variant as string || 'オ';
             const i = (vars.i as number) - 1;
-            
-            // ★修正: 配列がnullの場合のガード
             const otherLen = (vars.otherItems as string[] || []).length;
             const arrayM = vars.arrayM ? [...(vars.arrayM as number[])] : new Array(otherLen).fill(0);
             const arrayK = vars.arrayK ? [...(vars.arrayK as number[])] : new Array(otherLen).fill(0);
@@ -3065,13 +3129,12 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
             return { ...vars, arrayM, arrayK };
         },
         
-        /* 22: Line 23 (endif) */ (vars) => vars,
+        /* Index 23: Line 24 (endif) */ (vars) => vars,
         
-        /* 23: Line 24 (update [b]) */
+        /* Index 24: Line 25 (update [b]) */
         (vars) => {
             const variant = vars._variant as string || 'オ';
             const i = (vars.i as number) - 1;
-            
             const otherLen = (vars.otherItems as string[] || []).length;
             const arrayM = vars.arrayM ? [...(vars.arrayM as number[])] : new Array(otherLen).fill(0);
             const arrayK = vars.arrayK ? [...(vars.arrayK as number[])] : new Array(otherLen).fill(0);
@@ -3084,23 +3147,22 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
             return { ...vars, arrayM, arrayK };
         },
         
-        /* 24: Line 25 (endif) */ (vars) => vars,
-        /* 25: Line 26 (endfor inner) */ (vars) => vars,
+        /* Index 25: Line 26 (endif) */ (vars) => vars,
+        /* Index 26: Line 27 (endfor inner) */ (vars) => vars,
         
-        /* 26: Line 27 (endfor outer) */ 
-        (vars) => ({ ...vars, i: null }), // iリセット
+        /* Index 27: Line 28 (endfor outer) */ 
+        (vars) => ({ ...vars, i: null }), // iリセット (calc loop用)
         
-        /* 27: Line 28 (for i in otherItems - calc loop) */
+        /* Index 28: Line 29 (for i in otherItems - calc loop) */
         (vars) => {
             const newI = vars.i === null ? 1 : (vars.i as number) + 1;
             return { ...vars, i: newI };
         },
         
-        /* 28: Line 29 (valueL calc) */
+        /* Index 29: Line 30 (valueL calc) */
         (vars) => {
             const variant = vars._variant as string || 'オ';
             const i = (vars.i as number) - 1;
-            // ガード付きアクセス
             const M = vars.arrayM ? (vars.arrayM as number[])[i] : 0;
             const K = vars.arrayK ? (vars.arrayK as number[])[i] : 0;
             const itemCount = vars.itemCount as number;
@@ -3117,10 +3179,10 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
             return { ...vars, valueL: val };
         },
         
-        /* 29: Line 30 (comment) */ (vars) => vars,
-        /* 30: Line 31 (if valueL > maxL) */ (vars) => vars,
+        /* Index 30: Line 31 (comment) */ (vars) => vars,
+        /* Index 31: Line 32 (if valueL > maxL) */ (vars) => vars,
         
-        /* 31: Line 32 (maxL update) */
+        /* Index 32: Line 33 (maxL update) */
         (vars) => {
             const val = vars.valueL as number;
             const idx = (vars.i as number) - 1;
@@ -3128,98 +3190,98 @@ const associationAnalysisLogic: { traceLogic: TraceStep[]; calculateNextLine: (c
             return { ...vars, maxL: val, relatedItem: related };
         },
         
-        /* 32: Line 33 (relatedItem) */ (vars) => vars,
-        /* 33: Line 34 (endif) */ (vars) => vars,
-        /* 34: Line 35 (endfor) */ (vars) => vars,
+        /* Index 33: Line 34 (relatedItem) */ (vars) => vars,
+        /* Index 34: Line 35 (endif) */ (vars) => vars,
+        /* Index 35: Line 36 (endfor) */ (vars) => vars,
         
-        /* 35: Line 36 (output) */ 
+        /* Index 36: Line 37 (output) */ 
         (vars) => ({ ...vars, output: [`${vars.relatedItem}, ${vars.maxL}`] }),
     ],
 
     calculateNextLine(currentLine, vars, variant) {
-        if (vars.orders === null) return currentLine;
+        if (!vars.orders) return currentLine;
 
-        const lineNum = currentLine + 1; // 1-based
-        const orders = vars.orders as string[][];
-        const otherItems = (vars.otherItems as string[]) || [];
-        const item = vars.item as string;
+        // currentLine は 0-based index
+        const idx = currentLine;
 
-        switch (lineNum) {
-            case 1: return 2;
-            case 2: return 3;
-            case 3: return 4;
-            case 4: return 5;
-            case 5: return 6;
-            case 6: return 7;
-            case 7: return 8;
-            case 8: return 9;
-            case 9: return 10; // Line 9 -> 10 (arrayK init)
-            case 10: return 11; // Line 10 -> 11 (arrayM init)
-            case 11: return 12; // Line 11 -> 12 (maxL init)
-            case 12: return 13;
-            case 13: return 14;
-            case 14: return 15; // Line 14 -> 15 (for start)
+        switch (idx) {
+            case 14: return 15; // Line 15 -> 16
 
-            case 15: // Line 15: for (order in orders)
-                const nextOrderIdx = (vars.order_idx === null) ? 0 : vars.order_idx + 1; // traceLogicでの更新予測
-                // 更新されたidxが length と等しくなる(==length)とき、ループは終了する
-                if (nextOrderIdx > orders.length) return 27; // 安全策
-                if (nextOrderIdx === orders.length) return 27; // 次で終わり -> Line 28 (index 27)
-                return 15; // -> Line 16 (index 15)
+            // --- Outer Loop (orders) ---
+            case 15: // Line 16: for (order in orders)
+                const nextOrderIdx = (vars.order_idx === null) ? 0 : (vars.order_idx as number) + 1;
+                if (nextOrderIdx >= (vars.orders as string[][]).length) return 28; 
+                return 16; 
 
-            case 16: // Line 16: if (item in order)
-                const currentOrder = orders[vars.order_idx as number];
-                if (currentOrder.includes(item)) return 16; // -> Line 17
-                return 18; // -> Line 19 (else/endif)
+            case 16: // Line 17: if (order contains item)
+                const currentOrder = vars.order || (vars.orders as string[][])[0]; 
+                const item = vars.item as string;
+                if (currentOrder.includes(item)) return 17; 
+                return 18; 
 
-            case 17: return 17; // -> 18
-            case 18: return 18; // -> 19
+            case 17: return 18;
+            case 18: return 19;
 
-            case 19: // Line 19: for (i in otherItems)
-                const nextI = (vars.i === null) ? 1 : vars.i + 1;
-                if (nextI > otherItems.length) return 26; // -> Line 27 (endfor outer)
-                return 19; // -> Line 20
+            // --- Inner Loop (otherItems) ---
+            case 19: // Line 20: for (i in otherItems)
+                // ★修正: traceLogic[19]ですでにiは加算されているため、ここでは vars.i をそのまま使う
+                const currentI = (vars.i as number); 
+                const otherItems = vars.otherItems as string[];
+                
+                // ループ終了判定
+                if (currentI > otherItems.length) return 27; 
+                return 20; // 継続 -> Line 21
 
-            case 20: // Line 20: if (order contains otherItems[i])
-                const ord = orders[vars.order_idx as number];
-                const oth = otherItems[(vars.i as number) - 1];
-                if (ord.includes(oth)) return 20; // -> Line 21
-                return 25; // -> Line 26 (endfor inner)
+            case 20: // Line 21: if (order contains otherItems[i])
+                const ord = vars.order as string[];
+                // ★修正: ここも +1 せず、現在の vars.i を使う
+                const currentI_inner = vars.i as number;
+                const oth = (vars.otherItems as string[])[currentI_inner - 1];
 
-            case 21: // Line 21: if (order contains item)
-                const ord2 = orders[vars.order_idx as number];
-                if (ord2.includes(item)) return 21; // -> Line 22
-                return 23; // -> Line 24 ([b])
+                if (ord.includes(oth)) return 21; // -> Line 22
+                return 25; // False -> Line 26
 
-            case 22: return 22; // -> 23
-            case 23: return 23; // -> 24
-            case 24: return 24; // -> 25
-            case 25: return 18; // endfor inner -> Line 19 (loop check)
+            case 21: // Line 22: if (order contains item)
+                const ord2 = vars.order as string[];
+                const item2 = vars.item as string;
+                if (ord2.includes(item2)) return 22; 
+                return 24; 
 
-            case 26: return 14; // endfor outer -> Line 15 (loop check)
+            case 22: return 23;
+            case 23: return 24;
+            case 24: return 25;
+            
+            case 25: return 26;
+            case 26: return 19; // Line 27 (endfor inner) -> Line 20
 
-            case 27: // Line 28: for (i in otherItems) - calc
-                const nextCalcI = (vars.i === null) ? 1 : vars.i + 1;
-                if (nextCalcI > otherItems.length) return 35; // -> Line 36 (output)
-                return 28; // -> Line 29
+            case 27: return 15; // Line 28 (endfor outer) -> Line 16
 
-            case 28: return 29; // -> 30
-            case 29: return 29; // -> 30
-            case 30: return 30; // -> 31
-            case 31: // Line 31: if valueL > maxL
-                return (vars.valueL > vars.maxL) ? 31 : 33; // -> 32 or 34
+            // --- Calculation Loop ---
+            case 28: // Line 29: for (i in otherItems) - calc
+                // ★修正: ここも +1 しない
+                const currentCalcI = vars.i as number;
+                const otherItems2 = vars.otherItems as string[];
+                if (currentCalcI > otherItems2.length) return 36; 
+                return 29; 
 
-            case 32: return 32; // -> 33
-            case 33: return 33; // -> 34
-            case 34: return 27; // endfor calc -> Line 28
+            case 29: return 30;
+            case 30: return 31;
+            
+            case 31: // Line 32: if valueL > maxL
+                return (vars.valueL > vars.maxL) ? 32 : 34; 
 
-            case 35: return 99; // output -> finish
+            case 32: return 33;
+            case 33: return 34;
+            
+            case 34: return 35;
+            case 35: return 28; // Line 36 (endfor calc) -> Line 29
 
-            default: return currentLine + 1;
+            case 36: return 99; 
+
+            default: return idx + 1;
         }
     },
 };
-
 
 // 共通の型定義
 export interface LogicDef {
@@ -3279,29 +3341,85 @@ const logic_39: LogicDef = {
   }
 };
 
-// ID: 40 (総和計算 - バグあり) のロジック
+// ==================================================================================
+// --- 問40: バグあり加算ループの修正版ロジック ---
+// ==================================================================================
 const logic_40: LogicDef = {
   traceLogic: [
     /* 0: signature */ (vars) => vars,
-    /* 1: x <- 10 */   (vars) => ({ ...vars, x: 10 }), // バグ: xの初期化
+    
+    /* 1: x initialization */   
+    (vars) => {
+        const variant = vars._variant as string;
+        // ア以外（デフォルト含む）はバグありの「10」で初期化
+        // アのみ正しく「0」で初期化
+        const initX = (variant === 'ア') ? 0 : 10;
+        return { ...vars, x: initX };
+    }, 
+    
     /* 2: i decl */    (vars) => vars,
-    /* 3: for */       (vars) => {
-       // ループ開始時または継続時のiの更新
-       if (vars.i === null) return { ...vars, i: 10 };
+    
+    /* 3: for loop init/check */        
+    (vars) => {
+       // iの初期化
+       if (vars.i === null) {
+           const variant = vars._variant as string;
+           // ★修正: イの場合は 11 から開始、それ以外は 10 から
+           const startI = (variant === 'イ') ? 11 : 10;
+           return { ...vars, i: startI };
+       }
        return vars;
     },
-    /* 4: x+=i */      (vars) => ({ ...vars, x: (vars.x as number) + (vars.i as number) }),
-    /* 5: endfor */    (vars) => ({ ...vars, i: (vars.i as number) + 1 }),
-    /* 6: return */    (vars) => vars,
+    
+    /* 4: calculation */       
+    (vars) => {
+        const variant = vars._variant as string;
+        const x = vars.x as number;
+        const i = vars.i as number;
+        
+        if (variant === 'ウ') {
+            // ウ: i ← i + x (間違い)
+            return { ...vars, i: i + x };
+        } else {
+            // 通常: x ← x + i
+            return { ...vars, x: x + i };
+        }
+    },
+    
+    /* 5: endfor (increment) */    
+    (vars) => {
+        const i = vars.i as number;
+        // ★修正: 全てのバリアントで +1 ずつ増やす (イの -1 を廃止)
+        return { ...vars, i: i + 1 };
+    },
+    
+    /* 6: return */    
+    (vars) => {
+        return vars;
+    },
   ],
-  calculateNextLine: (line, vars) => {
+
+  calculateNextLine: (line, vars, variant) => {
     if (vars.num === null) return line;
+    
+    const selectedVariant = variant || (vars._variant as string);
+    
     switch (line) {
       case 3: // for判定
-        return (vars.i as number) <= (vars.num as number) ? 4 : 6;
+        // 次の i の値（初期化前なら初期値、そうでなければ現在の値）
+        const i = (vars.i === null) ? ((selectedVariant === 'イ') ? 11 : 10) : (vars.i as number);
+        const num = vars.num as number;
+        
+        // ★修正: 通常のループ条件 (i <= num) で判定
+        // イの場合でも 11 <= 15 なのでループする
+        return i <= num ? 4 : 6;
+
       case 4: return 5;
+      
       case 5: return 3; // loop back
+      
       case 6: return 99; // end
+      
       default: return line + 1;
     }
   }

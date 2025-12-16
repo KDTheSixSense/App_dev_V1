@@ -1820,7 +1820,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
     {
         id: '30',
         logicType: 'HASH_OPEN_ADDRESSING',
-        title: { ja: "サンプル問題 [科目B] ハッシュ法によるデータ格納", en: "Sample Problem [Subject B] Q30" },
+        title: { ja: "令和5年 科目B ハッシュ法によるデータ格納", en: "Sample Problem [Subject B] Q30" },
         description: {
             ja: "次の記述中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 add は，引数で指定された正の整数 value を大域の整数型の配列 hashArray に格納する。格納できた場合は true を返し，格納できなかった場合は false を返す。\nここで，整数 value を hashArray のどの要素に格納すべきかを，関数 calcHash1 及び calcHash2 を利用して決める。\n手続 test は，関数 add を呼び出して，hashArray に正の整数を格納する。手続 test の処理が終了した直後の hashArray の内容は，[  ?  ]である。",
             en: "..."
@@ -2403,30 +2403,31 @@ initialVariables: { n: null, current_n: null, result: 1 },
                 '10:   整数型の配列: arrayK ← {otherItemsの要素数個の0}',
                 '11:   整数型の配列: arrayM ← {otherItemsの要素数個の0}',
                 '12:   実数型: valueL, maxL ← -∞',
-                '13:   文字列型の配列: relatedItem',
-                '14: ',
-                '15:   for (orderにordersの要素を順に代入する)',
-                '16:     if (orderのいずれかの要素の値がitemの値と等しい)',
-                '17:       itemCountの値を1増やす',
-                '18:     endif',
-                '19:     for (iを1からotherItemsの要素数まで1ずつ増やす)',
-                '20:       if (orderのいずれかの要素の値がotherItems[i]の値と等しい)',
-                '21:         if (orderのいずれかの要素の値がitemの値と等しい)',
-                '22:           [   a   ] の値を1増やす',
-                '23:         endif',
-                '24:         [   b   ] の値を1増やす',
-                '25:       endif',
-                '26:     endfor',
-                '27:   endfor',
-                '28:   for (iを1からotherItemsの要素数まで1ずつ増やす)',
-                '29:     valueL ← (arrayM[i] × [   c   ]) ÷ (itemCount × arrayK[i])',
-                '30:     /* 実数として計算する */',
-                '31:     if (valueLがmaxLより大きい)',
-                '32:       maxL ← valueL',
-                '33:       relatedItem ← otherItems[i]',
-                '34:     endif',
-                '35:   endfor',
-                '36:   relatedItemの値とmaxLの値をこの順にコンマ区切りで出力する',
+                '13:   文字列型の配列: order', // ★追加
+                '14:   文字列型: relatedItem',  // ★配列ではないため型修正&行番号調整
+                '15: ',
+                '16:   for (orderにordersの要素を順に代入する)',
+                '17:     if (orderのいずれかの要素の値がitemの値と等しい)',
+                '18:       itemCountの値を1増やす',
+                '19:     endif',
+                '20:     for (iを1からotherItemsの要素数まで1ずつ増やす)',
+                '21:       if (orderのいずれかの要素の値がotherItems[i]の値と等しい)',
+                '22:         if (orderのいずれかの要素の値がitemの値と等しい)',
+                '23:           [   a   ] の値を1増やす',
+                '24:         endif',
+                '25:         [   b   ] の値を1増やす',
+                '26:       endif',
+                '27:     endfor',
+                '28:   endfor',
+                '29:   for (iを1からotherItemsの要素数まで1ずつ増やす)',
+                '30:     valueL ← (arrayM[i] × [   c   ]) ÷ (itemCount × arrayK[i])',
+                '31:     /* 実数として計算する */',
+                '32:     if (valueLがmaxLより大きい)',
+                '33:       maxL ← valueL',
+                '34:       relatedItem ← otherItems[i]',
+                '35:     endif',
+                '36:   endfor',
+                '37:   relatedItemの値とmaxLの値をこの順にコンマ区切りで出力する',
             ],
             en: [/* ... */]
         },
@@ -2451,6 +2452,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
             item: null,
             allItems: null,
             otherItems: null,
+            order: null, // ★追加: 現在処理中の注文データ
             itemCount: 0,
             arrayK: null,
             arrayM: null,
@@ -2463,20 +2465,20 @@ initialVariables: { n: null, current_n: null, result: 1 },
         },
         traceOptions: {
             logicVariants: [
-                { id: 'ア', label: 'ア: a=K[i], b=M[i], c=All数' },
-                { id: 'イ', label: 'イ: a=K[i], b=M[i], c=Order数' },
-                { id: 'ウ', label: 'ウ: a=K[i], b=M[i], c=Other数' },
-                { id: 'エ', label: 'エ: a=M[i], b=K[i], c=All数' },
-                { id: 'オ', label: 'オ: a=M[i], b=K[i], c=Order数' }, // 正解
-                { id: 'カ', label: 'カ: a=M[i], b=K[i], c=Other数' },
+                { id: 'ア', label: 'ア: a：arrayK[i], b：arrayM[i], c：allItemsの要素数' },
+                { id: 'イ', label: 'イ: a：arrayK[i], b：arrayM[i], c：ordersの要素数' },
+                { id: 'ウ', label: 'ウ: a：arrayK[i], b：arrayM[i], c：otherItemsの要素数' },
+                { id: 'エ', label: 'エ: a：arrayM[i], b：arrayK[i], c：allItemsの要素数' },
+                { id: 'オ', label: 'オ: a：arrayM[i], b：arrayK[i], c：ordersの要素数' }, // 正解
+                { id: 'カ', label: 'カ: a：arrayM[i], b：arrayK[i], c：otherItemsの要素数' },
             ],
             presets_array: [
                 { 
-                    label: 'item="A" (正解なら relatedItem="B", L=1.0)', 
+                    label: 'item="A"', 
                     value: { item: "A" } 
                 },
                 { 
-                    label: 'item="B" (正解なら relatedItem="A", L=1.0)', 
+                    label: 'item="B"', 
                     value: { item: "B" } 
                 },
             ]
@@ -2604,7 +2606,7 @@ initialVariables: { n: null, current_n: null, result: 1 },
       answerOptions: {
         ja: [
           { label: 'ア', value: '行番号02の宣言文を「x ← 0」に訂正' },
-          { label: 'イ', value: '行番号04の制御記述を「i を 11 から num まで -1 ずつ増やす」に訂正' },
+          { label: 'イ', value: '行番号04の制御記述を「i を 11 から num まで 1 ずつ増やす」に訂正' },
           { label: 'ウ', value: '行番号05の処理を「i ← i + x」に訂正' },
           { label: 'エ', value: '行番号07の処理を「return i」に変更' }
         ],
@@ -2617,7 +2619,16 @@ initialVariables: { n: null, current_n: null, result: 1 },
       },
       initialVariables: { num: null, x: null, i: null },
       traceOptions: {
-        presets: [15, 20]
+        logicVariants: [
+          { id: 'ア', label: '02: x ← 0 ' },
+          { id: 'イ', label: '04: for (i: 11...-1)' },
+          { id: 'ウ', label: '05: i ← i + x' },
+          { id: 'エ', label: '07: return i' },
+        ],
+        presets_array: [
+          { label: 'num = 15', value: { num: 15 } },
+          { label: 'num = 20', value: { num: 20 } }
+        ]
       },
       traceLogic: [],
       calculateNextLine: undefined,

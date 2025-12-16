@@ -501,8 +501,20 @@ const ProblemSolverPage = () => {
                     success: true,
                     message: '正解です！おめでとうございます！'
                 });
-                await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1);
+                const xpResult = await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1);
                 window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+
+                if (xpResult.message === '経験値を獲得しました！') {
+                    const res = await fetch('/api/pet/status');
+                    if (res.ok) {
+                        const { data: statusData } = await res.json();
+                        if (statusData?.level && statusData.level > 0 && statusData.level % 30 === 0) {
+                            setTimeout(() => {
+                                router.push('/home?evolution=true');
+                            }, 1500);
+                        }
+                    }
+                }
             } else {
                 // 不正解の場合も履歴に記録 (Programming subjectId = 1)
                 await recordAnswerAction(parseInt(problemId), 1, false, 'INCORRECT');

@@ -167,6 +167,18 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           const result = await awardXpForCorrectAnswer(numericId, undefined, 5, startTimeRef.current || Date.now());
           if (result.message === '経験値を獲得しました！') {
             window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+
+            // レベルアップチェック (30の倍数)
+            const res = await fetch('/api/pet/status');
+            if (res.ok) {
+              const { data } = await res.json();
+              if (data?.level && data.level > 0 && data.level % 30 === 0) {
+                // 30の倍数に到達した場合、ホーム画面へ強制遷移
+                setTimeout(() => {
+                  router.push('/home?evolution=true');
+                }, 1500);
+              }
+            }
           }
           if (result.unlockedTitle) {
             toast.success(`称号【${result.unlockedTitle.name}】を獲得しました！`);

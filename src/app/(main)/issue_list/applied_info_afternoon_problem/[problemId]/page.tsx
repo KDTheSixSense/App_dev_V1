@@ -12,7 +12,8 @@ import KohakuChat from '../components/KohakuChat';
 import type { Problem as SerializableProblem } from '@/lib/types/index';
 // 基本情報 科目B の問題データを取得する関数をインポート
 import { getBasicInfoBProblemsById } from '@/lib/issue_list/basic_info_b_problem/problem';
-import { getNextProblemId } from '@/lib/actions'; // サーバーアクション
+import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions'; // サーバーアクション
+import toast from 'react-hot-toast';
 
 // --- カスタムアラートモーダルコンポーネント ---
 const CustomAlertModal: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
@@ -140,10 +141,43 @@ const ProblemDetailPage = () => {
     return t.hintGenericQuestion;
   };
 
-  const handleSelectAnswer = (selectedValue: string) => {
+  const handleSelectAnswer = async (selectedValue: string) => {
     if (isAnswered || !problem) return;
     setSelectedAnswer(selectedValue);
     setIsAnswered(true);
+
+    const correct = isCorrectAnswer(selectedValue, problem.correctAnswer);
+
+    if (correct) {
+      const numericId = parseInt(problem.id, 10);
+      if (!isNaN(numericId)) {
+        try {
+          const result = await awardXpForCorrectAnswer(numericId, undefined, 2);
+          if (result.message === '経験値を獲得しました！') {
+            window.dispatchEvent(new CustomEvent('petStatusUpdated'));
+
+            // レベルアップチェック (30の倍数)
+            const res = await fetch('/api/pet/status');
+            if (res.ok) {
+              const { data } = await res.json();
+              if (data?.level && data.level > 0 && data.level % 30 === 0) {
+                // 30の倍数に到達した場合、ホーム画面へ強制遷移
+                setTimeout(() => {
+                  router.push('/home?evolution=true');
+                }, 1500);
+              }
+            }
+          }
+          if (result.unlockedTitle) {
+            toast.success(`称号【${result.unlockedTitle.name}】を獲得しました！`);
+          }
+        } catch (error) {
+          console.error('XP award error:', error);
+          toast.error('経験値の付与に失敗しました。');
+        }
+      }
+    }
+
     const hint = generateKohakuResponse(true, selectedValue);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
   };
