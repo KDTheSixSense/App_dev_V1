@@ -9,16 +9,31 @@ type Props = {
 
 export default function RankingList({ users, myRankInfo }: Props) {
   return (
-    <div className="mt-4">
-      <ul className="space-y-2 max-h-60 overflow-y-auto md:max-h-full md:overflow-y-visible">
+    <div className="mt-4 flex-1 overflow-hidden">
+      <ul className="space-y-2 h-full overflow-y-auto pr-2 custom-scrollbar">
         {users.map((user) => (
-          <RankingListItem 
-            key={user.id} 
-            user={user} 
-            isCurrentUser={user.id === myRankInfo?.id} 
+          <RankingListItem
+            key={user.id}
+            user={user}
+            isCurrentUser={user.id === myRankInfo?.id}
           />
         ))}
       </ul>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(0,0,0,0.1);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(0,0,0,0.2);
+        }
+      `}</style>
     </div>
   );
 }

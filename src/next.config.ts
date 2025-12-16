@@ -60,10 +60,7 @@ const nextConfig: NextConfig = {
 
     return headers;
   },
-  // @ts-ignore: Next.js 16 turbopack config
-  turbopack: {
-    root: process.cwd(),
-  },
+
 };
 
 export default nextConfig;

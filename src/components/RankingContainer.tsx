@@ -83,7 +83,7 @@ export default function RankingContainer({
   };
 
   return (
-    <div>
+    <div className="flex flex-col h-full relative overflow-hidden">
       {/* スクロールバーを非表示にするためのスタイル */}
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {
@@ -96,7 +96,7 @@ export default function RankingContainer({
       `}</style>
 
       {/* タブ表示 */}
-      <div className="mt-4 p-1 bg-sky-100/50 rounded-lg">
+      <div className="mt-4 p-1 bg-sky-100/50 rounded-lg flex-shrink-0">
         <nav
           ref={navRef}
           className="relative flex space-x-1 overflow-x-auto flex-nowrap hide-scrollbar"
@@ -128,25 +128,70 @@ export default function RankingContainer({
         </nav>
       </div>
 
-      {/* トップ10ランキングリスト */}
-      <RankingList users={displayedUsers} myRankInfo={myRankInfo} />
+      {/* トップ100ランキングリスト (スクロール可能) */}
+      {/* 下部に自分のランク表示スペース(約80px)を確保するために padding-bottom を設定 */}
+      <div className="flex-1 overflow-hidden relative">
+        <div className="h-full overflow-y-auto pb-24 custom-scrollbar">
+          <RankingList users={displayedUsers} myRankInfo={myRankInfo} />
+        </div>
+      </div>
 
-      {/* 「自分の順位」表示部分 */}
-      <div className="pt-4 border-t border-slate-200 mt-4">
-        {isLoadingMyRank ? (
-          <p className="text-sm text-center text-gray-500">あなたの順位を読み込み中...</p>
-        ) : currentUserId === null ? (
-          <p className="text-sm text-center text-gray-500">ログインすると自分の順位が表示されます。</p>
-        ) : myRankInfo ? (
-          <>
-            <p className="text-sm text-center text-gray-500 mb-2">あなたの順位</p>
-            <RankingListItem user={myRankInfo} isCurrentUser={true} />
-          </>
-        ) : (
-          <p className="text-sm text-center text-gray-500">あなたは現在ランキング圏外です。(上位100位まで表示)</p>
-        )}
+      {/* 「自分の順位」表示部分 (オーバーレイ) */}
+      {/* 「自分の順位」表示部分 (オーバーレイ - 統合されたデザイン) */}
+      <div className="absolute bottom-0 left-0 w-full z-20">
+        {/* フェード部分 */}
+        <div className="h-6 bg-gradient-to-t from-[#FFF8E1]/80 to-transparent w-full pointer-events-none"></div>
+
+        <div className="bg-[#E0F7FA] rounded-2xl p-6 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] w-auto ml-0 mr-1 mb-2 border border-cyan-200">
+          {isLoadingMyRank ? (
+            <p className="text-sm text-center text-cyan-800 font-bold">順位読込中...</p>
+          ) : currentUserId === null ? (
+            <div className="text-center">
+              <p className="text-sm text-cyan-800 font-bold mb-1">ゲストユーザー</p>
+              <p className="text-xs text-cyan-600">ログインして順位を表示</p>
+            </div>
+          ) : myRankInfo ? (
+            <div className="flex items-center justify-between">
+              {/* Rank Section */}
+              <div className="flex flex-col items-center justify-center mr-3 relative">
+                <span className="text-[10px] font-bold text-cyan-600 mb-0.5 absolute -top-4 w-20 text-center">Your Rank</span>
+                <div className="relative w-12 h-12 flex items-center justify-center bg-white rounded-full border-2 border-cyan-400 shadow-sm mt-1">
+                  {/* Crown Icon for top 3 */}
+                  {myRankInfo.rank <= 3 && (
+                    <img
+                      src={`/images/rank${myRankInfo.rank}_icon.png`}
+                      alt="Rank"
+                      className="absolute top-2 -left-8 w-9 h-9 object-contain"
+                    />
+                  )}
+                  <span className="text-cyan-600 font-black text-xl">{myRankInfo.rank}</span>
+                </div>
+              </div>
+
+              {/* User Info */}
+              <div className="flex flex-1 items-center gap-3 overflow-hidden">
+                <img
+                  src={myRankInfo.iconUrl}
+                  alt={myRankInfo.name}
+                  className="w-10 h-10 rounded-full object-cover border border-white shadow-sm flex-shrink-0"
+                />
+                <div className="flex flex-col min-w-0">
+                  <span className="font-bold text-slate-700 text-sm truncate">{myRankInfo.name}</span>
+                </div>
+              </div>
+
+              {/* Score/Label */}
+              <div className="text-right flex-shrink-0 ml-2">
+                <span className="text-[#00BCD4] font-bold text-sm">ランク{myRankInfo.score}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-2">
+              <p className="text-sm text-cyan-800 font-bold">ランキング圏外</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-

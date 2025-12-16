@@ -57,17 +57,13 @@ const DailyMissionPage = async () => {
     }));
 
     // 7. 画面を描画
+    // 7. 画面を描画
     return (
-      <div className="bg-[#f0f9ff] py-10">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-            デイリーミッション
-          </h1>
-
-          {/* DBから取得・変換したデータを MissionList に渡す */}
-          <MissionList missions={missionsForClient} />
-
-        </div>
+      <div className="bg-[#FFF8E1] rounded-3xl p-6 h-full shadow-sm min-h-[300px]">
+        <h2 className="text-xl font-bold text-slate-700 mb-6">
+          デイリーミッション
+        </h2>
+        <MissionList missions={missionsForClient} />
       </div>
     );
 

@@ -67,16 +67,16 @@ const MissionList: React.FC<MissionListProps> = ({ missions }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="w-full">
       {/* モバイル用のカルーセル */}
       <div className="md:hidden">
-        <div 
+        <div
           className="relative overflow-hidden"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div 
+          <div
             className="flex transition-transform duration-300 ease-in-out"
             style={{ transform: `translateX(-${currentIndex * 100}%)` }}
           >
@@ -90,10 +90,10 @@ const MissionList: React.FC<MissionListProps> = ({ missions }) => {
             ))}
           </div>
         </div>
-        
+
         <div className="flex justify-center items-center mt-4">
-          <button 
-            onClick={goToPrevious} 
+          <button
+            onClick={goToPrevious}
             className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-full"
           >
             &lt;
@@ -106,8 +106,8 @@ const MissionList: React.FC<MissionListProps> = ({ missions }) => {
               ></div>
             ))}
           </div>
-          <button 
-            onClick={goToNext} 
+          <button
+            onClick={goToNext}
             className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full"
           >
             &gt;
