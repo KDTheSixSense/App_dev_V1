@@ -29,6 +29,9 @@ $env:DATABASE_URL="postgresql://user:password@localhost:6543/mydatabase"
 # 3. Seedコマンドを実行
 npx prisma db seed
 
+# 3.1 エラーが発生した場合は、以下のコマンドを実行して再試行
+npx prisma migrate reset --force
+
 # 4. 元のディレクトリに戻る（任意）
 cd ..
 ```
@@ -51,6 +54,29 @@ Seedコマンドで作成された管理者（作成者）アカウントです�
 - ログインができること
 - 「問題一覧」ページに問題が表示されていること
 - 任意のプログラミング問題を開き、「実行」ボタンを押して結果が返ってくること（Sandbox機能の確認）
+
+---
+
+## 4. データ・クライアントの更新・再生成（トラブルシュート）
+
+開発中にスキーマを変更したり、データを強制的にリセットして再投入したい場合は以下のコマンドを使用します。
+これらは `src` ディレクトリ内で実行してください。
+（事前に `$env:DATABASE_URL="postgresql://user:password@localhost:6543/mydatabase"` が設定されている必要があります）
+
+### Prisma Clientの再生成 (Generate)
+`schema.prisma` を変更した場合や、クライアントとDBの同期が取れていない場合に実行します。
+
+```powershell
+npx prisma generate
+```
+
+### データベースの強制リセットと再シード
+データベースを完全に削除（Drop）して作り直し、初期データ（Seed）を再投入します。
+**警告**: 既存のユーザーデータなどはすべて消去されます。
+
+```powershell
+npx prisma migrate reset --force
+```
 
 ---
 
