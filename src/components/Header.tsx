@@ -5,7 +5,9 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
+import { useSearchParams } from 'next/navigation';
 // Link, Image, useRouter はNext.js固有のため削除
+import { getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
 
 type UserWithPetStatus = User & {
@@ -16,6 +18,7 @@ type HeaderProps = {
   userWithPet: UserWithPetStatus | null; // ユーザー情報を受け取る
   isMenuOpen: boolean;
   setIsMenuOpen: (isOpen: boolean) => void;
+  subjectProgress?: SubjectProgress[]; // 進化判定用に科目の進捗を受け取る
 };
 
 type PetDisplayStatus = {
@@ -50,8 +53,9 @@ const getPetDisplayState = (hungerLevel: number) => {
   }
 };
 
-export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: HeaderProps) {
+export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subjectProgress }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
+  const searchParams = useSearchParams();
 
   // 1. ランク(level)のstate
   const [rank, setRank] = useState(() => userWithPet?.level ?? 1);
@@ -88,11 +92,21 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
   // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
     const initialStatus = userWithPet?.status_Kohaku;
+    const currentLevel = userWithPet?.level ?? 1;
+    const isEvolving = searchParams.get('evolution') === 'true';
+
     if (initialStatus) {
       const displayState = getPetDisplayState(initialStatus.hungerlevel);
+      
+      // レベル30以上なら進化画像を優先する（ただし進化演出中は通常画像を表示）
+      const icon = (currentLevel >= 30 && !isEvolving)
+        ? getEvolvedImageSrc(subjectProgress) 
+        : displayState.icon;
+
       return {
         hungerlevel: initialStatus.hungerlevel,
-        ...displayState,
+        icon: icon,
+        colorClass: displayState.colorClass
       };
     }
     // ユーザーはいるがペット情報がない場合 (フォールバック)
@@ -141,6 +155,10 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         const { data } = await res.json();
         if (data) {
           const displayState = getPetDisplayState(data.hungerlevel);
+          const isEvolving = searchParams.get('evolution') === 'true';
+          // APIレスポンスにsubjectProgressが含まれていると仮定、もしくはpropsの値を使用
+          // ※API側もsubjectProgressを返すように修正が必要な場合があります
+          const icon = (data.level >= 30 && !isEvolving) ? getEvolvedImageSrc(subjectProgress) : displayState.icon;
           
           let hungerLevelChanged = false;
           setPetStatus(prevStatus => {
@@ -149,15 +167,16 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
             }
             return {
               hungerlevel: data.hungerlevel,
-              ...displayState,
+              icon: icon,
+              colorClass: displayState.colorClass
             };
           });
           
-          setRank(data.level);
+          setRank(data.level);
           setContinuousLogin(data.continuouslogin);
           
           // 定期チェックで満腹度が変わっていたら、イベントを発火
-          if (isPeriodicCheck && hungerLevelChanged) {
+          if (isPeriodicCheck && hungerLevelChanged) {
             console.log("[Header Debug] Hunger level changed on periodic check. Dispatching event.");
             window.dispatchEvent(new CustomEvent('petStatusUpdated'));
           }
@@ -168,10 +187,11 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
     } catch (error) {
       console.error("[Header Debug] ペット情報の再取得に失敗:", error);
     }
-  }, []); // 空の依存配列
+  }, [subjectProgress, searchParams]); // subjectProgressが変わったら再計算できるように依存配列に追加
 
   // レンダリング直前にpetStatus.iconの値をログ出力
   console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
+  console.log("[Header Debug] subjectProgress in Header:", subjectProgress);
 
   useEffect(() => {
       // ページ読み込み時にも最新の情報を取得
@@ -203,7 +223,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         clearInterval(intervalId); // 定期実行タイマーを解除
       };
     }
-  }, [userWithPet, refetchPetStatus]); // 依存配列に refetchPetStatus を追加
+  }, [userWithPet, refetchPetStatus, searchParams]); // 依存配列に refetchPetStatus を追加
 
   // ログアウト処理を行う非同期関数
   const handleLogout = async () => {
