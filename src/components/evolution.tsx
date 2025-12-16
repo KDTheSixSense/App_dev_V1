@@ -13,7 +13,7 @@ type EvolutionProps = {
   className?: string;
 };
 
-type EvolutionPhase = 'idle' | 'front-video' | 'pre-evolution' | 'post-evolution';
+type EvolutionPhase = 'idle' | 'pre-animation' | 'front-video' | 'post-evolution';
 
 function EvolutionContent({ userLevel, subjectProgress, className = '' }: EvolutionProps) {
   const searchParams = useSearchParams();
@@ -36,7 +36,7 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
       // まだ開始していない場合のみ開始
       if (phase === 'idle') {
         console.log('[Evolution Debug] Starting evolution sequence.');
-        setPhase('front-video');
+        setPhase('pre-animation');
         setDisplayImage(normalImageSrc);
       }
     } else {
@@ -53,21 +53,20 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
 
   // フェーズ遷移の制御
   useEffect(() => {
-    if (phase === 'pre-evolution') {
-      // 進化前画像が表示され、Back動画が流れている状態
-      // 少し動いた後（2秒後）に進化後画像へ切り替え
+    if (phase === 'pre-animation') {
+      // 5秒動かす進化前コハク
       const timer = setTimeout(() => {
-        setPhase('post-evolution');
-        setDisplayImage(evolvedImageSrc);
-      }, 2000);
+        setPhase('front-video');
+      }, 5000);
       return () => clearTimeout(timer);
     }
 
     if (phase === 'post-evolution') {
+      setDisplayImage(evolvedImageSrc);
       // 進化後画像が表示されている状態
       // 数秒後に演出終了
       const timer = setTimeout(() => {
-        setPhase('idle');
+        // setPhase('idle'); // URLパラメータ削除検知による自動遷移に任せることで、一瞬進化前に戻るのを防ぐ
         // エフェクト終了後、URLからクエリパラメータを削除
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.delete('evolution');
@@ -99,8 +98,8 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black ${className}`}>
-      {/* 進化エフェクト (Back) - Front動画終了後に表示 */}
-      {(phase === 'pre-evolution' || phase === 'post-evolution') && (
+      {/* 進化エフェクト (Back) - 進化後のみ表示 */}
+      {phase === 'post-evolution' && (
         <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
           <video
             src="/images/evolution/action/back.mp4"
@@ -115,13 +114,13 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
 
       {/* コハク画像 - Front動画再生中は非表示 */}
       {phase !== 'front-video' && (
-        <div className={`relative z-10 transition-all duration-1000 ease-in-out ${phase === 'pre-evolution' ? 'scale-110 brightness-110' : 'scale-100 brightness-100'}`}>
+        <div className={`relative z-10 transition-all duration-1000 ease-in-out ${phase === 'pre-animation' ? 'animate-bounce scale-110' : 'scale-100 brightness-100'}`}>
           <Image
             src={displayImage}
             alt="Kohaku"
-            width={300}
-            height={300}
-            className="object-contain drop-shadow-lg"
+            width={600}
+            height={600}
+            className="object-contain drop-shadow-lg max-w-[80vw] max-h-[80vh]"
             priority
           />
         </div>
@@ -137,7 +136,7 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
             muted
             // loopはさせず、終了を検知する
             playsInline
-            onEnded={() => setPhase('pre-evolution')}
+            onEnded={() => setPhase('post-evolution')}
             onError={(e) => console.error('Video load error:', e)}
             className="w-full h-full object-cover"
           />
