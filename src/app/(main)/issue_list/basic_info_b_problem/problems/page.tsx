@@ -48,23 +48,52 @@ const BasicInfoBProblemsListPage = async () => {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 
-    // `questions_id` を使って正解履歴を取得
+    // `questions_id` または `questions_algorithm_id` を使って正解履歴を取得
     const correctAnswers = await prisma.userAnswer.findMany({
       where: {
         userId: userId,
         isCorrect: true,
-        questions_id: { not: null },
+        OR: [
+          { questions_id: { not: null } },
+          { questions_algorithm_id: { not: null } }
+        ]
       },
       select: {
         questions_id: true,
+        questions_algorithm_id: true,
         answeredAt: true,
       },
       orderBy: { answeredAt: 'desc' },
     });
 
+    // Answer_Algorithm テーブルからも正解履歴を取得
+    const algoAnswers = await prisma.answer_Algorithm.findMany({
+      where: {
+        userId: userId,
+        isCorrect: true,
+      },
+      select: {
+        questionId: true,
+        answeredAt: true,
+      },
+      orderBy: { answeredAt: 'desc' },
+    });
+
+    // UserAnswer からの履歴をマップに追加
     for (const answer of correctAnswers) {
-      const problemId = answer.questions_id;
+      const problemId = answer.questions_id || answer.questions_algorithm_id; // どちらかのIDを使用
       if (problemId === null || solvedStatusMap.has(problemId)) {
+        continue;
+      }
+      const answeredDate = answer.answeredAt;
+      const status = answeredDate >= todayStart && answeredDate < todayEnd ? 'today' : 'past';
+      solvedStatusMap.set(problemId, status);
+    }
+
+    // Answer_Algorithm からの履歴をマップに追加
+    for (const answer of algoAnswers) {
+      const problemId = answer.questionId;
+      if (solvedStatusMap.has(problemId)) {
         continue;
       }
       const answeredDate = answer.answeredAt;
@@ -74,23 +103,23 @@ const BasicInfoBProblemsListPage = async () => {
   }
 
   // 1. 両方のテーブルからデータを同時に取得します
-  const [staticProblems, algoProblems] = await Promise.all([
-    prisma.questions.findMany({
-      orderBy: { id: 'asc' },
-      select: { id: true, title: true }
-    }),
-    prisma.questions_Algorithm.findMany({
+  const [staticProblems, algoProblems] = await Promise.all([
+    prisma.questions.findMany({
+      orderBy: { id: 'asc' },
+      select: { id: true, title: true }
+    }),
+    prisma.questions_Algorithm.findMany({
       where: { subject: { name: '基本情報B問題' } }, // 科目Bの問題に絞り込む
-      orderBy: { id: 'asc' },
-      select: { id: true, title: true }
-    })
-  ]);
+      orderBy: { id: 'asc' },
+      select: { id: true, title: true }
+    })
+  ]);
 
-  // 2. 取得した2つの配列を1つに結合します
-  const allProblems = [...staticProblems, ...algoProblems];
+  // 2. 取得した2つの配列を1つに結合します
+  const allProblems = [...staticProblems, ...algoProblems];
 
-  // 3. ID順に並び替えます
-  allProblems.sort((a, b) => a.id - b.id);
+  // 3. ID順に並び替えます
+  allProblems.sort((a, b) => a.id - b.id);
 
   return (
     <div className="min-h-screen py-10">

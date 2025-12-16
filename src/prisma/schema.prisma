@@ -114,13 +114,15 @@ model UserAnswer {
   questions_id             Int?
   selectProblem_id         Int?
   applied_am_question_id   Int? // 応用情報問題のIDを保存するカラムを追加
+  questions_algorithm_id   Int? // 基本情報B問題（アルゴリズム）のIDを保存するカラムを追加
 
   // --- リレーション定義 ---
   programmingProblem    ProgrammingProblem?    @relation(fields: [programingProblem_id], references: [id])
   basic_A_Info_Question Basic_Info_A_Question? @relation(fields: [basic_A_Info_Question_id], references: [id])
   questions             Questions?             @relation(fields: [questions_id], references: [id])
   selectProblem         SelectProblem?         @relation(fields: [selectProblem_id], references: [id])
-  applied_am_question   Applied_am_Question?   @relation(fields: [applied_am_question_id], references: [id]) // 応用情報問題とのリレーションを追加
+  applied_am_question   Applied_am_Question?   @relation(fields: [applied_am_question_id], references: [id])
+  questions_algorithm   Questions_Algorithm?   @relation(fields: [questions_algorithm_id], references: [id])
 
   // --- パフォーマンス向上のためのインデックス (推奨) ---
   @@index([userId])
@@ -128,7 +130,8 @@ model UserAnswer {
   @@index([basic_A_Info_Question_id])
   @@index([questions_id])
   @@index([selectProblem_id])
-  @@index([applied_am_question_id]) // インデックスを追加
+  @@index([applied_am_question_id])
+  @@index([questions_algorithm_id])
 }
 
 //科目テーブル
@@ -260,6 +263,7 @@ model Questions_Algorithm {
   subject    Subject    @relation(fields: [subjectId], references: [id])
   difficulty Difficulty @relation(fields: [difficultyId], references: [id])
   language   Language   @relation(fields: [language_id], references: [id])
+  userAnswers UserAnswer[]
 }
 
 model Questions {
