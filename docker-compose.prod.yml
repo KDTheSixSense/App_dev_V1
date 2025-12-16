@@ -4,6 +4,7 @@ services:
   app:
     build:
       context: .
+      target: runner
       args:
         - DATABASE_URL=postgresql://user:password@db:5432/mydatabase
         - NEXT_PUBLIC_APP_URL=http://localhost

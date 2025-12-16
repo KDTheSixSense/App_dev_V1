@@ -263,14 +263,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
             <li key={item.label}>
               {/* router.pushをwindow.location.hrefに変更 */}
               <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
-                <Image src={item.icon} alt={item.label} width={40} height={40} />
+                <Image src={item.icon} alt={item.label} width={40} height={40} unoptimized />
                 <span className='text-[#008391] text-xs mt-1 font-bold'>{item.label}</span>
               </button>
             </li>
           ))}
           <li>
             <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
-              <Image src="/images/logout.png" alt="ログアウト" width={40} height={40} />
+              <Image src="/images/logout.png" alt="ログアウト" width={40} height={40} unoptimized />
               <span className='text-[#008391] text-xs mt-1 font-bold'>ログアウト</span>
             </button>
           </li>
@@ -282,7 +282,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
         <div className="flex items-center gap-2 ml-auto">
           {/* アイコンをStateから動的に設定 */}
           <div className="flex-shrink-0">
-            <Image src={petStatus.icon} alt="ペットアイコン" width={70} height={70} />
+            <Image src={petStatus.icon} alt="ペットアイコン" width={70} height={70} unoptimized />
           </div>
           <div className="w-50">
             <div className="w-full bg-gray-300 rounded-full h-5 overflow-hidden">
@@ -343,6 +343,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
                 width={48}
                 height={48}
                 className="object-contain"
+                unoptimized
               />
             </div>
             <div className="flex items-baseline -mt-3">
@@ -365,6 +366,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen }: Heade
               width={56}
               height={56}
               className="rounded-full object-cover transition hover:opacity-80"
+              unoptimized
             />
           </button>
 

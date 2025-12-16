@@ -18,18 +18,36 @@ export async function seedProblems(prisma: PrismaClient) {
 
     console.log('✅ Old problem data cleared.');
 
-    // 1. localProblems からのシーディング
-    console.log('🌱 Seeding questions from local data...');
+    // 1. localProblems からのシーディング (Questions_Algorithmへ)
+    console.log('🌱 Seeding questions from local data to Questions_Algorithm...');
     for (const p of localProblems) {
-        const questionDataForDB = { id: parseInt(p.id, 10), title: p.title.ja, question: p.description.ja, explain: p.explanationText.ja, language_id: 1, genre_id: 1, genreid: 1, difficultyId: p.difficultyId, answerid: 1, term: "不明" };
-        await prisma.questions.create({ data: questionDataForDB });
+        // Questions_Algorithm (Subject 3: Basic Info B) にデータを投入
+        // programLines, answerOptionsはDB上では文字列(JSON文字列)として扱われるためstringifyする
+        await prisma.questions_Algorithm.create({
+            data: {
+                id: parseInt(p.id, 10),
+                title: p.title.ja,
+                description: p.description.ja,
+                explanation: p.explanationText.ja,
+                programLines: JSON.stringify(p.programLines.ja),
+                answerOptions: JSON.stringify(p.answerOptions ? p.answerOptions.ja : []),
+                correctAnswer: p.correctAnswer,
+                language_id: 2, // 擬似言語
+                subjectId: 3, // 基本情報B問題
+                difficultyId: p.difficultyId,
+                initialVariable: p.initialVariables || {},
+                logictype: p.logicType || 'PSEUDO_CODE',
+                // optionsにtraceOptionsを入れる(PrismaがJson型ならそのまま、Stringならstringifyだが、Excel側は{}を渡していたのでJson型と推測)
+                options: p.traceOptions || {},
+            }
+        });
     }
     console.log(`✅ Created ${localProblems.length} questions from local data.`);
 
     // 2. Excel からのシーディング 修正する際非効率になるため一旦コメントアウト
     // 2. Excel からのシーディング
     console.log('🌱 Seeding problems from Excel file...');
-    await seedProblemsFromExcel(prisma);
+    // await seedProblemsFromExcel(prisma);
 
     // 3. スプレッドシートからのプログラミング問題のシーディング
     console.log('🌱 Seeding programming problems from spreadsheet data...');
