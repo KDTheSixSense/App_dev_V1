@@ -45,6 +45,12 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
                         <div className="flex items-baseline gap-2 mb-1">
                             <span className="text-sm font-bold opacity-90 font-mono">RANK</span>
                             <span className="text-3xl font-bold">{user?.level ?? 1}</span>
+                            {/* Admin Link if applicable */}
+                            {user.isAdmin && (
+                                <Link href="/admin-audit" className="ml-2 bg-red-500 hover:bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm transition-colors" title="管理者監査ログへ">
+                                    ADMIN
+                                </Link>
+                            )}
                         </div>
                         <Link href="/profile" className="hover:underline opacity-100 hover:opacity-80 transition-opacity">
                             <h2 className="text-xl font-bold truncate leading-tight mb-2">

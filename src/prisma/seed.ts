@@ -5,6 +5,7 @@ import { seedProblems } from './seed/questions';
 import { runOperations } from './seed/run-operations';
 import { seedEventDifficulty } from './seed/event-difficulty-data';
 import { seedHistoryDummy } from './seed/history-dummy';
+import { seedAdminUsers } from './seed/admin_alice';
 
 const prisma = new PrismaClient();
 
@@ -16,6 +17,7 @@ async function main() {
   await seedEventDifficulty(prisma);
   await seedProblems(prisma);
   await seedUsersAndGroups(prisma);
+  await seedAdminUsers(prisma);
 
   // 3. 作成者となるユーザーを取得
   // (users-groups-data.ts で作成される 'alice@example.com' を使用)

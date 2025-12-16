@@ -51,6 +51,7 @@ export default async function HomePage({
       totallogin: true,
       selectedTitle: true,
       status_Kohaku: true, // Petコンポーネントで必要
+      isAdmin: true, // UserDetailでAdminバッジを表示するために必要
     }
   }) as any : null;
 

@@ -34,6 +34,10 @@ export async function middleware(req: NextRequest) {
   }
 
   // Check for admin pages
+  // Check for admin pages
+  // REMOVED: Authentication is handled by verifyAdminAccess() in the page component (IronSession).
+  // The middleware check was using NextAuth (getToken) which is not compatible here.
+  /*
   if (
     pathname.startsWith("/admin-audit") ||
     pathname.startsWith("/event/admin/create_event")
@@ -42,6 +46,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/auth/login", req.url));
     }
   }
+  */
 
   // NOTE: Group pages are protected by Layouts (IronSession), not Middleware (NextAuth).
   // Calls to /group/... are allowed to pass through here to reach the Layout check,

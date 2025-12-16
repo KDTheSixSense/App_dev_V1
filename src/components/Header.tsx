@@ -339,6 +339,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
           {isProfileMenuOpen && (
             <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
               <div className="py-1">
+                {user?.isAdmin && (
+                  <a
+                    href="/admin-audit"
+                    className="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-b border-gray-50 font-bold"
+                  >
+                    🔒 管理者用監査ログ
+                  </a>
+                )}
                 <a
                   href="/profile"
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors border-b border-gray-50 font-medium"
