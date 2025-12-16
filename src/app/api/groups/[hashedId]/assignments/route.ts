@@ -1,7 +1,7 @@
 // /app/api/groups/[hashedId]/assignments/route.ts
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { groupParamsSchema, paginationSchema } from '@/lib/validations';
+import { groupParamsSchema, paginationSchema, assignmentSchema } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client'; // Prismaの型をインポート
 import { getIronSession } from 'iron-session';
@@ -158,12 +158,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: '無効なグループID形式です' }, { status: 400 });
     }
     const hashedId = groupValidation.data.hashedId;
+    // Validate body with assignmentSchema
     const body = await req.json();
-    const { title, description, dueDate, programmingProblemId, selectProblemId } = body;
+    const validationResult = assignmentSchema.safeParse(body);
 
-    if (!title || !dueDate) {
-      return NextResponse.json({ success: false, message: 'タイトルと期日は必須です。' }, { status: 400 });
+    if (!validationResult.success) {
+      return NextResponse.json({ success: false, message: '入力データが無効です', details: validationResult.error.flatten() }, { status: 400 });
     }
+
+    const { title, description, dueDate, programmingProblemId, selectProblemId } = validationResult.data;
 
     if (typeof hashedId !== 'string') {
       return NextResponse.json({ success: false, message: '無効なグループIDです。' }, { status: 400 });
@@ -187,14 +190,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'この操作を行う権限がありません' }, { status: 403 });
     }
 
+    // dueDate string is already validated as date string by Zod, safe to use new Date()
+    // programmingProblemId and selectProblemId are optional
+
     const newAssignment = await prisma.$transaction(async (tx) => {
       const createdAssignment = await tx.assignment.create({
         data: {
           title,
-          description,
-          due_date: new Date(dueDate), // due_dateをDateオブジェクトに変換
+          description: description ?? '',
+          due_date: new Date(dueDate),
           group: { connect: { id: group.id } },
-          // IDが存在する場合のみ、それぞれの問題と接続
+          // Validation ensures these are numbers if coercible, or we cast them safely
           ...(programmingProblemId && { programmingProblem: { connect: { id: Number(programmingProblemId) } } }),
           ...(selectProblemId && { selectProblem: { connect: { id: Number(selectProblemId) } } }),
         },

@@ -1,0 +1,72 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        - DATABASE_URL=postgresql://user:password@db:5432/mydatabase
+        - NEXT_PUBLIC_APP_URL=http://localhost
+        - NEXTAUTH_URL=http://localhost
+    restart: always
+    env_file:
+      - .env.local
+    environment:
+      # Override DATABASE_URL to use the internal docker service 'db'
+      - DATABASE_URL=postgresql://user:password@db:5432/mydatabase
+      - PORT=3000
+      # Critical for NextAuth behind proxy
+      - NEXTAUTH_URL=http://localhost
+      # Critical for Custom Google Auth
+      - NEXT_PUBLIC_APP_URL=http://localhost
+      # Session Security (Fixed 500 Error)
+      - SECRET_COOKIE_PASSWORD=complex_password_at_least_32_characters_long_1234567890
+      - COOKIE_NAME=infopia_session_prod
+    deploy:
+      replicas: 5
+    expose:
+      - "3000"
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+
+  # サンドボックスコンテナ (Code Execution) - Added for production
+  sandbox:
+    build:
+      context: .devcontainer/sandbox
+    expose:
+      - "4000"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_add:
+      - NET_ADMIN
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "6543:5432"
+
+volumes:
+  db_data:

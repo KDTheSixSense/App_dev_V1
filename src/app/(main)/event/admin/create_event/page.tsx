@@ -2,6 +2,7 @@
 // /workspaces/my-next-app/src/app/(main)/event/admin/create_event/page.tsx
 import { prisma } from '@/lib/prisma';
 import { CreateEventClient } from './CreateEventClient'; // 次のステップで作成
+import { verifyAdminAccess } from '@/lib/auth-helpers';
 
 /**
  * フォームで選択可能なプログラミング問題の型
@@ -39,6 +40,9 @@ async function getAvailableProblems(): Promise<ProblemSelectItem[]> {
  * イベント作成ページ (サーバーコンポーネント)
  */
 export default async function CreateEventPage() {
+  // DBベースの管理者チェック
+  await verifyAdminAccess();
+
   // サーバーサイドで問題一覧を取得
   const problems = await getAvailableProblems();
 

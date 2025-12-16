@@ -17,9 +17,7 @@ export default function MainLayout({
   return (
     <>
       <Header userWithPet={userWithPet} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-      <main className={`flex-grow w-full transition-all duration-300 ease-out pb-20 md:pt-20`}>
-
-
+      <main className={`flex-grow w-full transition-all duration-300 ease-out mt-20`}>
 
         <style jsx global>{`
           main a {

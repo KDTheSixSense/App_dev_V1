@@ -10,7 +10,7 @@ import TraceScreen from '../components/TraceScreen';
 import VariableTraceControl from '../components/VariableTraceControl';
 import KohakuChat from '@/components/KohakuChat'; // KohakuChat コンポーネントをインポート
 import { getHintFromAI } from '@/lib/actions/hintactions';
-import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction } from '@/lib/actions';
+import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction, recordAnswerAction } from '@/lib/actions';
 import toast from 'react-hot-toast';
 import { problemLogicsMap } from '../data/problem-logics';
 import AnswerEffect from '@/components/AnswerEffect'; // AnswerEffect コンポーネントをインポート
@@ -298,6 +298,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       } catch (error) {
         toast.error('経験値の付与に失敗しました。');
       }
+    } else {
+      // Log incorrect answer
+      try {
+        const problemId = parseInt(problem.id, 10);
+        await recordAnswerAction(problemId, 3, false, selectedValue);
+      } catch (error) {
+        console.error("Failed to record incorrect answer:", error);
+      }
     }
     const hint = correct ? t.hintCorrect : t.hintIncorrect(problem.correctAnswer);
     setChatMessages((prev) => [...prev, { sender: 'kohaku', text: hint }]);
@@ -544,6 +552,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
               explanation={problem.explanationText[currentLang] || ''}
               language={language}
               textResources={{ ...t, title: problem.title[currentLang] }}
+              problemId={problem.id} // 追加: 画像表示判定のために問題IDを渡す
             />
           </div>
 

@@ -25,6 +25,7 @@ interface ProblemStatementProps {
   explanation: string;               // 問題の解説テキスト
   language: 'ja' | 'en';             // 現在の表示言語（日本語 'ja' または英語 'en'）
   textResources: any;                // 親コンポーネントから渡される、現在の言語に応じたUIテキスト集
+  problemId: string;                 // 追加: 問題ID (画像表示判定用)
 }
 
 // ProblemStatement コンポーネントの定義
@@ -40,7 +41,13 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
   explanation,       // 解説テキスト
   language,          // 現在の言語
   textResources: t,  // 言語に応じたテキストリソース（tというエイリアスで参照）
+  problemId,         // 追加: 問題IDを受け取る
 }) => {
+  // 追加: 画像を表示する問題IDのリスト (8, 9, 10, ... specified IDs)
+  const imageProblemIds = ['8', '9', '10', '12', '15', '17', '18', '19', '20', '23', '25', '26', '31', '32', '35', '37', '38'];
+  
+  // 追加: 現在の問題IDがリストに含まれているかチェック
+  const showImage = imageProblemIds.includes(problemId);
   return (
     // コンポーネントの最上位コンテナ。高さをいっぱいに使い、中身を縦方向に配置
     <div className="flex flex-col h-full">
@@ -53,6 +60,17 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
       <div className="mb-8 text-lg text-gray-800 leading-loose whitespace-pre-wrap">
         {description}
       </div>
+
+      {/* 追加: 特定の問題IDの場合のみ画像を表示するエリア */}
+      {showImage && (
+        <div className="mb-6 flex justify-center">
+          <img 
+            src={`/images/basic_b/基本B問${problemId}.png`} 
+            alt={`Problem ${problemId} image`}
+            className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+          />
+        </div>
+      )}
 
       {/* programText が空でない場合のみ表示する条件を追加 */}
       {programText && programText.trim().length > 0 && (
