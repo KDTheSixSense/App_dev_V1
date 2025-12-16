@@ -4,11 +4,19 @@ import type { User } from '@prisma/client';
 
 const MAX_HUNGER = 200; // 満腹度の最大値をここで一元管理
 
-export default async function PetStatus({user}: {user : User | null} ) {
+import { UnsubmittedAssignment } from '@/lib/data';
+
+interface PetStatusProps {
+  user: User | null;
+  assignmentCount: number;
+  nextAssignment: UnsubmittedAssignment | null;
+}
+
+export default async function PetStatus({ user, assignmentCount, nextAssignment }: PetStatusProps) {
 
   // ログインしていない場合は、デフォルトの満タン状態で表示
   if (!user) {
-    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク'/>;
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク' assignmentCount={assignmentCount} nextAssignment={nextAssignment} />;
   }
 
   // --- ここからが時間経過の計算ロジックです ---
@@ -16,11 +24,11 @@ export default async function PetStatus({user}: {user : User | null} ) {
   let petStatus = await prisma.status_Kohaku.findFirst({
     where: { user_id: user.id },
   });
-  
+
   // もしペット情報がなければ、ここで処理を中断（表示はデフォルト）
   if (!petStatus) {
     console.error(`User ID: ${user.id} のペット情報が見つかりません。`);
-    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク'/>;
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク' assignmentCount={assignmentCount} nextAssignment={nextAssignment} />;
   }
 
   // 1. 最後に更新されてからの経過時間（分）を計算
@@ -33,10 +41,10 @@ export default async function PetStatus({user}: {user : User | null} ) {
     // 10分ごとに1ポイント減少するので、経過分数を10で割って切り捨て
     const hungerPointsToDecrease = Math.floor(minutesPassed / 10);
 
- // 10分以上経過していれば（＝1ポイント以上減少する場合）、DBを更新
+    // 10分以上経過していれば（＝1ポイント以上減少する場合）、DBを更新
     if (hungerPointsToDecrease > 0) {
       const newHungerLevel = Math.max(0, petStatus.hungerlevel - hungerPointsToDecrease);
-      
+
       // 最後に更新した時刻から、経過した「10分の倍数」の時間を加算して新しい更新時刻を計算
       // これにより、9分などの端数が切り捨てられず、次回の計算に引き継がれる
       const newLastUpdate = new Date(lastUpdate.getTime() + hungerPointsToDecrease * 10 * 60 * 1000);
@@ -55,10 +63,12 @@ export default async function PetStatus({user}: {user : User | null} ) {
   // --- 計算ロジックここまで ---
 
   return (
-    <PetStatusView 
-      initialHunger={finalHungerLevel} 
-      maxHunger={MAX_HUNGER} 
+    <PetStatusView
+      initialHunger={finalHungerLevel}
+      maxHunger={MAX_HUNGER}
       petname={petStatus.name}
+      assignmentCount={assignmentCount}
+      nextAssignment={nextAssignment}
     />
   );
 }
