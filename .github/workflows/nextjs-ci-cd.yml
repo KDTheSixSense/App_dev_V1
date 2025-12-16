@@ -5,7 +5,7 @@ name: Next.js CI/CD - Build and Deploy
 # ワークフローが実行されるタイミング
 on:
   push:
-    branches: [ main ] #  preブランチにプッシュされた時に実行
+    branches: [ main ] # ★ preブランチにプッシュされた時に実行
 
 # ワークフロー全体で使う環境変数
 env:
@@ -55,35 +55,33 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
-  # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
-  # ★★★【一時停止中】マニフェストリポジトリがまだ作成されていないためコメントアウト中 ★★★
-  # update-manifest:
-  #   runs-on: ubuntu-latest
-  #   needs: build-and-push-image # build-and-push-imageジョブが終わってから実行
-  #
-  #   steps:
-  #     - name: Checkout Manifest Repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         repository: ${{ env.MANIFEST_REPO }}
-  #         token: ${{ secrets.PAT_FOR_MANIFEST_REPO }} # ★マニフェストリポジトリを書き換えるためのPAT
-  #
-  #     - name: Update Helm chart values.yaml
-  #       uses: mikefarah/yq@v4
-  #       with:
-  #         # yqコマンドを使って、values.yamlの中の image.tag の値を書き換える
-  #         # needs.build-and-push-image.outputs.IMAGE_TAG で、前のジョブで作ったタグを参照
-  #         cmd: yq -i '.image.tag = "${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"' ${{ env.MANIFEST_PATH }}
-  #
-  #     - name: Commit and push changes
-  #       run: |
-  #         git config user.name "GitHub Actions Bot"
-  #         git config user.email "actions-bot@github.com"
-  #         # 変更がなければ、コミットせずに終了する
-  #         if ! git diff --quiet ${{ env.MANIFEST_PATH }}; then
-  #           git add ${{ env.MANIFEST_PATH }}
-  #           git commit -m "Update image tag for ${{ env.IMAGE_NAME }} to ${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"
-  #           git push
-  #         else
-  #           echo "No changes to commit."
-  #         fi
+  update-manifest:
+    runs-on: ubuntu-latest
+    needs: build-and-push-image # build-and-push-imageジョブが終わってから実行
+
+    steps:
+      - name: Checkout Manifest Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.MANIFEST_REPO }}
+          token: ${{ secrets.PAT_FOR_MANIFEST_REPO }} # ★マニフェストリポジトリを書き換えるためのPAT
+
+      - name: Update Helm chart values.yaml
+        uses: mikefarah/yq@v4
+        with:
+          # yqコマンドを使って、values.yamlの中の image.tag の値を書き換える
+          # needs.build-and-push-image.outputs.IMAGE_TAG で、前のジョブで作ったタグを参照
+          cmd: yq -i '.image.tag = "${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"' ${{ env.MANIFEST_PATH }}
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions-bot@github.com"
+          # 変更がなければ、コミットせずに終了する
+          if ! git diff --quiet ${{ env.MANIFEST_PATH }}; then
+            git add ${{ env.MANIFEST_PATH }}
+            git commit -m "Update image tag for ${{ env.IMAGE_NAME }} to ${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"
+            git push
+          else
+            echo "No changes to commit."
+          fi
