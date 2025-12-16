@@ -1,26 +1,26 @@
 import Image from 'next/image';
-import type { User,Title } from '@prisma/client';
+import type { User, Title } from '@prisma/client';
 
 // Userオブジェクトに、関連するTitleも含まれるように型を拡張
 type UserWithTitle = User & {
-  selectedTitle: Title | null;
+    selectedTitle: Title | null;
 };
 
 // 親コンポーネントからuser情報を受け取るためのPropsを定義
 interface UserDetailProps {
-  user: UserWithTitle | null;
-  unsubmittedAssignmentCount: number;
+    user: UserWithTitle | null;
+    unsubmittedAssignmentCount: number;
 }
 
 export default async function UserDetail({ user, unsubmittedAssignmentCount }: UserDetailProps) {
 
- 
 
-  // 5. DBから取得したユーザーが見つからない場合も、ここで処理を中断します
-  if (!user) {
-    return <div>ユーザーが見つかりません。</div>;
-  }   
-  
+
+    // 5. DBから取得したユーザーが見つからない場合も、ここで処理を中断します
+    if (!user) {
+        return <div>ユーザーが見つかりません。</div>;
+    }
+
     const requiredXpForNextLevel = 1000;
     // 総経験値(user.xp)を1000で割った余り = 現在のレベルでの経験値
     const currentXpInLevel = (user.xp ?? 0) % requiredXpForNextLevel;
@@ -28,52 +28,65 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
     const progressPercentage = (currentXpInLevel / requiredXpForNextLevel) * 100;
 
     return (
-        <div className="flex flex-col w-full w-max-150 h-100 rounded-lg shadow-lg p-4">
-            <div className="flex items-center w-full h-50 gap-10 pl-10">
-                <div className="w-30 h-30">
-                    <Image src={user?.icon || "/images/test_icon.webp"} alt="Test Icon" width={120} height={120} className="rounded-full object-cover w-full h-full"/>
+        <div className="w-full bg-sky-50 rounded-2xl overflow-hidden shadow-sm shadow-sky-100">
+            {/* Top Section: Blue Gradient */}
+            <div className="bg-gradient-to-r from-sky-400 to-cyan-500 p-6 text-white relative">
+                <div className="flex items-start gap-4">
+                    {/* Avatar */}
+                    <div className="w-20 h-20 rounded-full border-2 border-white/50 shadow-md overflow-hidden flex-shrink-0 bg-slate-200">
+                        <Image src={user?.icon || "/images/test_icon.webp"} alt="Icon" width={80} height={80} className="w-full h-full object-cover" />
+                    </div>
+
+                    {/* User Info */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2 mb-1">
+                            <span className="text-sm font-bold opacity-90 font-mono">RANK</span>
+                            <span className="text-3xl font-bold">{user?.level ?? 1}</span>
+                        </div>
+                        <h2 className="text-xl font-bold truncate leading-tight mb-2">
+                            {user?.username || 'ゲスト'}
+                        </h2>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-black/20 h-1.5 rounded-full mb-1">
+                            <div
+                                className="bg-white h-full rounded-full opacity-90"
+                                style={{ width: `${progressPercentage}%` }}
+                            ></div>
+                        </div>
+                        <div className="text-right text-[10px] opacity-80 font-mono">
+                            {currentXpInLevel}/{requiredXpForNextLevel}
+                        </div>
+                    </div>
                 </div>
-                <div className="flex flex-col justify-center items-center h-30 gap-2">
-                    {user ? (
-                        <p className="text-2xl font-bold truncate max-w-70">{user.username}</p>
-                    ):(
-                        <p className="text-2xl font-bold">ゲスト</p>
-                    )
-                    }
-                    <p className="text-lg">{user.selectedTitle?.name || '称号なし'}</p>
+
+                {/* Title Badge (Absolute or placed) */}
+                <div className="mt-2">
+                    <span className="inline-block bg-[#00B4D8] text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm border border-white/20">
+                        {user?.selectedTitle?.name || '称号なし'}
+                    </span>
                 </div>
             </div>
-            <div className="flex flex-col w-full h-20 mt-2 px-6">
-                <div className="flex items-center h-16">
-                    <p className="text-xl">ランク：</p>
-                    {user ? (
-                        <p className="text-2xl font-bold ml-2">{user?.level ?? 1}</p>
-                    ):(
-                        <p className="text-2xl font-bold ml-2">1</p>
-                    )}
+
+            {/* Bottom Section: Stats Cards */}
+            <div className="p-4 grid grid-cols-3 gap-3">
+                <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
+                    <span className="text-[10px] text-slate-500 font-bold mb-1">連続ログイン</span>
+                    <span className="text-xl font-bold text-slate-700 block leading-none">
+                        {user?.continuouslogin ?? 0}<span className="text-xs ml-0.5 font-normal">日</span>
+                    </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-5 relative overflow-hidden mt-2">
-                    <div className="bg-gradient-to-r from-green-400 to-lime-500 rounded-full h-full absolute top-0 left-0" style={{ width: `${progressPercentage}%`}}>
-                    </div>
+                <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
+                    <span className="text-[10px] text-slate-500 font-bold mb-1">総ログイン</span>
+                    <span className="text-xl font-bold text-slate-700 block leading-none">
+                        {user?.totallogin ?? 0}<span className="text-xs ml-0.5 font-normal">日</span>
+                    </span>
                 </div>
-                <div className="text-right text-sm font-mono text-gray-500 mt-1">
-                    {currentXpInLevel} / {requiredXpForNextLevel}
-                </div>
-            </div>
-            <div className="flex justify-center items-center w-full h-50 gap-10 mt-4">
-                <div className="inline-flex bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                    <div className="flex flex-col justify-center items-center px-4 py-2 border-r border-gray-300 w-35 h-25 gap-2">
-                        <span className="text-sm text-gray-600">連続ログイン</span>
-                        <span className="text-2xl font-bold text-gray-800">{user?.continuouslogin ?? 0}日</span>
-                    </div>
-                    <div className="flex flex-col justify-center items-center px-4 py-2 border-r border-gray-300 w-35 h-25 gap-2">
-                        <span className="text-sm text-gray-600">総ログイン日数</span>
-                        <span className="text-2xl font-bold text-gray-800">{user?.totallogin ?? 0}日</span>
-                    </div>
-                    <div className="flex flex-col justify-center items-center px-4 py-2 w-30 h-25 gap-2">
-                        <span className="text-sm text-gray-600">課題</span>
-                        <span className="text-2xl font-bold text-gray-800">{unsubmittedAssignmentCount}</span> {/* ←ここ */}
-                    </div>
+                <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
+                    <span className="text-[10px] text-slate-500 font-bold mb-1">課題</span>
+                    <span className="text-xl font-bold text-slate-700 block leading-none">
+                        {unsubmittedAssignmentCount}
+                    </span>
                 </div>
             </div>
         </div>

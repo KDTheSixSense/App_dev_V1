@@ -79,7 +79,7 @@ export default async function RankingPage() {
       }));
   });
 
-  // 表示用のデータを準備
+  // 表示用のデータを準備 (スクロールさせるために10件表示)
   const allRankingsForDisplay = {
     '総合': overallRankingFull.slice(0, 10),
     ...Object.fromEntries(
@@ -96,15 +96,13 @@ export default async function RankingPage() {
   const tabs = [{ name: '総合' }, ...subjects.map(s => ({ name: s.name }))];
 
   return (
-    <div className="bg-slate-50">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md py-3 px-5">
-        <h1 className="text-2xl font-bold text-slate-800">ランキング</h1>
-        <RankingContainer
-          tabs={tabs}
-          allRankings={allRankingsForDisplay}
-          allRankingsFull={allRankingsFull}
-        />
-      </div>
+    <div className="bg-[#FFF8E1] rounded-3xl p-6 shadow-sm h-[calc(100vh-140px)] sticky top-24 flex flex-col">
+      <h1 className="text-xl font-bold text-slate-700 mb-4 text-center">ランキング</h1>
+      <RankingContainer
+        tabs={tabs}
+        allRankings={allRankingsForDisplay}
+        allRankingsFull={allRankingsFull}
+      />
     </div>
   );
 }
