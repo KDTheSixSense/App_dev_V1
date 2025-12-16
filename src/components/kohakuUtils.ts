@@ -19,6 +19,12 @@ export const getEvolvedImageSrc = (subjectProgress: SubjectProgress[] | undefine
     return '/images/Kohaku/kohaku-normal.png';
   }
 
+  // すべての科目のレベルが均等で等しい場合
+  const allLevelsEqual = subjectProgress.every((s) => s.level === subjectProgress[0].level);
+  if (subjectProgress.length > 1 && allLevelsEqual) {
+    return '/images/evolution/ALL-base.png';
+  }
+
   // 1. レベル降順でソート
   const sortedSubjects = [...subjectProgress].sort((a, b) => b.level - a.level);
   
@@ -41,5 +47,5 @@ export const getEvolvedImageSrc = (subjectProgress: SubjectProgress[] | undefine
   }
 
   // 画像ファイル名を生成
-  return `/images/evolution/${code1}-${code2}-base.jpg`;
+  return `/images/evolution/${code1}-${code2}-base.png`;
 };
