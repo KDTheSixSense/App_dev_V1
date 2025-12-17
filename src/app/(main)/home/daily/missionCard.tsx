@@ -29,25 +29,25 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission, onClaim }) => {
 
   // 報酬サークルのスタイル
   const rewardCircleClass = isAchieved
-    ? "w-14 h-14 rounded-full border-2 border-[#0097A7] flex flex-col items-center justify-center text-[#006064] bg-white shadow-sm"
-    : "w-14 h-14 rounded-full border-2 border-[#00B4D8] flex flex-col items-center justify-center text-[#00B4D8] bg-white";
+    ? "w-14 h-14 rounded-full border-3 border-[#00B4D8] flex flex-col items-center justify-center text-[#006064] bg-white shadow-sm"
+    : "w-14 h-14 rounded-full border-3 border-[#00B4D8] flex flex-col items-center justify-center text-[#00B4D8] bg-white";
 
   return (
     <div className={containerClass}>
       {/* Left: Info & Progress */}
       <div className="flex-1 pr-4">
         <h3 className={`text-base font-bold mb-1 ${isAchieved ? 'text-cyan-900' : 'text-slate-700'}`}>{mission.title}</h3>
-        <p className={`text-xs mb-3 ${isAchieved ? 'text-cyan-700' : 'text-slate-500'}`}>{mission.description}</p>
+        <p className={`text-[14px] mb-3 ${isAchieved ? 'text-cyan-700' : 'text-slate-500'}`}>{mission.description}</p>
 
         {/* Progress Bar */}
-        <div className="w-full max-w-[200px]">
+        <div className="w-full">
           <div className="w-full bg-white/50 rounded-full h-1.5 overflow-hidden">
             <div
-              className={`${isAchieved ? 'bg-[#00BCD4]' : 'bg-[#00B4D8]'} h-full rounded-full transition-all duration-500`}
+              className={`${isAchieved ? 'bg-gradient-to-r from-sky-400 to-blue-600' : 'bg-gradient-to-r from-sky-400 to-blue-600'} h-full rounded-full transition-all duration-500`}
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
-          <p className={`text-[10px] text-right mt-1 font-mono ${isAchieved ? 'text-cyan-800 font-bold' : 'text-slate-400'}`}>
+          <p className={`text-[12px] text-right mt-1 font-mono ${isAchieved ? 'text-cyan-800 font-bold' : 'text-slate-400'}`}>
             {mission.progress}/{mission.targetCount}
           </p>
         </div>
@@ -56,8 +56,8 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission, onClaim }) => {
       {/* Right: Reward Circle */}
       <div className="flex-shrink-0">
         <div className={rewardCircleClass}>
-          <span className="text-[9px] font-bold">報酬</span>
-          <span className="text-xs font-bold leading-tight">{mission.xpReward}xp</span>
+          <span className="text-[12px] text-[#3a6b8b] font-bold">報酬</span>
+          <span className="text-xs text-[#f0b084] font-bold leading-tight">{mission.xpReward}xp</span>
         </div>
       </div>
 

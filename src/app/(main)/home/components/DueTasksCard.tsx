@@ -41,7 +41,7 @@ export default function DueTasksCard({ count, nextAssignment }: DueTasksCardProp
                         </div>
                     </div>
 
-                    <Link href={linkPath} className="bg-[#009bf2] hover:bg-[#0089d6] text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors shadow-md">
+                    <Link href={linkPath} className="!no-underline bg-gradient-to-r from-sky-400 to-cyan-500 !text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors shadow-md">
                         <span>課題を解く</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="transform rotate-0">
                             <polygon points="5 3 19 12 5 21 5 3" />

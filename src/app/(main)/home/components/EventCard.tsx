@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function EventCard() {
     return (
-        <div className="bg-sky-50 rounded-2xl p-6 w-full">
+        <div className="bg-[#e0f4f9] rounded-2xl p-6 w-full">
             <h3 className="text-xl font-bold text-[#006F86] mb-4">開催が近いイベント</h3>
 
             {/* Empty State */}

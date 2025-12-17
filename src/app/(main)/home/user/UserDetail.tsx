@@ -28,7 +28,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
     const progressPercentage = (currentXpInLevel / requiredXpForNextLevel) * 100;
 
     return (
-        <div className="w-full bg-sky-50 rounded-2xl overflow-hidden shadow-sm shadow-sky-100">
+        <div className="w-full bg-[#e0f4f9] rounded-2xl overflow-hidden shadow-sm shadow-sky-100">
             {/* Top Section: Blue Gradient */}
             <div className="bg-gradient-to-r from-sky-400 to-cyan-500 p-6 text-white relative">
                 <div className="flex items-start gap-4">
@@ -54,7 +54,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
                                 style={{ width: `${progressPercentage}%` }}
                             ></div>
                         </div>
-                        <div className="text-right text-[10px] opacity-80 font-mono">
+                        <div className="text-right text-[12px] opacity-80 font-mono">
                             {currentXpInLevel}/{requiredXpForNextLevel}
                         </div>
                     </div>
@@ -71,19 +71,19 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
             {/* Bottom Section: Stats Cards */}
             <div className="p-4 grid grid-cols-3 gap-3">
                 <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[10px] text-slate-500 font-bold mb-1">連続ログイン</span>
+                    <span className="text-[12px] text-slate-500 font-bold mb-1">連続ログイン</span>
                     <span className="text-xl font-bold text-slate-700 block leading-none">
                         {user?.continuouslogin ?? 0}<span className="text-xs ml-0.5 font-normal">日</span>
                     </span>
                 </div>
                 <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[10px] text-slate-500 font-bold mb-1">総ログイン</span>
+                    <span className="text-[12px] text-slate-500 font-bold mb-1">総ログイン</span>
                     <span className="text-xl font-bold text-slate-700 block leading-none">
                         {user?.totallogin ?? 0}<span className="text-xs ml-0.5 font-normal">日</span>
                     </span>
                 </div>
                 <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[10px] text-slate-500 font-bold mb-1">課題</span>
+                    <span className="text-[12px] text-slate-500 font-bold mb-1">課題</span>
                     <span className="text-xl font-bold text-slate-700 block leading-none">
                         {unsubmittedAssignmentCount}
                     </span>

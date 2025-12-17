@@ -5,10 +5,10 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
-import { useSearchParams } from 'next/navigation';
 // Link, Image, useRouter はNext.js固有のため削除
 import { getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
+import { useSearchParams, usePathname } from 'next/navigation';
 
 type UserWithPetStatus = User & {
   status_Kohaku: Status_Kohaku | null;
@@ -56,6 +56,8 @@ const getPetDisplayState = (hungerLevel: number) => {
 export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subjectProgress }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
   const searchParams = useSearchParams();
+
+  const pathname = usePathname();
 
   // 1. ランク(level)と経験値(xp)のstate
   const [rank, setRank] = useState(() => userWithPet?.level ?? 1);
@@ -254,13 +256,12 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
     { href: '/issue_list', icon: '/images/question_list.png', label: '問題一覧' },
     { href: '/CreateProgrammingQuestion', icon: '/images/question_create.png', label: '問題作成' },
     { href: '/group', icon: '/images/group.png', label: 'グループ' },
-    //提出機能とイベント機能はまだ完成してないから一旦コメントアウトで隠しておく
     { href: '/unsubmitted-assignments', icon: '/images/assignment.png', label: '課題' },
     { href: '/event/event_list', icon: '/images/event.png', label: 'イベント' },
   ];
 
   return (
-    <header ref={headerRef} className="fixed top-0 left-0 w-full bg-[#D3F7FF] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
+    <header ref={headerRef} className="fixed top-0 left-0 w-full bg-[#e0f4f9] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
 
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0 ml-3">
@@ -279,15 +280,26 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
       {/* 中央：ナビゲーション */}
       <nav className="hidden md:flex ml-5">
         <ul className="flex items-center space-x-2">
-          {navItems.map((item) => (
-            <li key={item.label}>
-              {/* router.pushをwindow.location.hrefに変更 */}
-              <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
-                <Image src={item.icon} alt={item.label} width={40} height={40} unoptimized />
-                <span className='text-[#008391] text-xs mt-1 font-bold'>{item.label}</span>
-              </button>
-            </li>
-          ))}
+          {navItems.map((item) => {
+            // 3. 判定ロジック：現在のパスが item.href と一致するか
+            // (完全一致ではなく「前方一致」にすると、詳細ページにいてもタブが光ったままにできます)
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+            return (
+              <li key={item.label}>
+                <button 
+                  onClick={() => window.location.href = item.href} 
+                  className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg transition-colors hover:bg-[#b2ebf2]`} 
+                >
+                  <Image src={item.icon} alt={item.label} width={40} height={40} unoptimized />
+                  
+                  <span className={`text-xs mt-1 font-bold ${isActive ? 'text-[#f0b084]' : 'text-[#008391]'}`}>
+                    {item.label}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
           <li>
             <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
               <Image src="/images/logout.png" alt="ログアウト" width={40} height={40} unoptimized />
@@ -318,8 +330,27 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
       {/* 右側：ユーザー情報 */}
       <div className="flex items-center gap-4 ml-6 h-full">
+
         {/* ランクとログイン日数 */}
         <div className="flex items-center gap-6 h-full pt-1">
+          {/* Continuous Login - Image Style - Enlarged */}
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <div className="relative w-12 h-12">
+              <Image
+                src="/images/Continuous_login.png"
+                alt="Continuous Login"
+                width={48}
+                height={48}
+                className="object-contain"
+                unoptimized
+              />
+            </div>
+            <div className="flex items-baseline -mt-3">
+              <span className="text-2xl font-bold text-slate-700 leading-none">{continuousLogin}</span>
+              <span className="text-xs text-slate-500 font-bold ml-0.5">日</span>
+            </div>
+          </div>
+
           {/* Rank Circular Gauge - Enlarged */}
           <div className="relative flex flex-col items-center justify-center -mt-2">
             <div className="relative w-16 h-16">
@@ -353,25 +384,8 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
               <span className="text-[11px] font-bold text-cyan-600 whitespace-nowrap">RANK {rank}</span>
             </div>
           </div>
-
-          {/* Continuous Login - Image Style - Enlarged */}
-          <div className="flex flex-col items-center gap-1 mt-1">
-            <div className="relative w-12 h-12">
-              <Image
-                src="/images/Continuous_login.png"
-                alt="Continuous Login"
-                width={48}
-                height={48}
-                className="object-contain"
-                unoptimized
-              />
-            </div>
-            <div className="flex items-baseline -mt-3">
-              <span className="text-2xl font-bold text-slate-700 leading-none">{continuousLogin}</span>
-              <span className="text-xs text-slate-500 font-bold ml-0.5">日</span>
-            </div>
-          </div>
         </div>
+          
 
         {/* プロフィールアイコン (プルダウンメニュー付き) */}
         <div className="w-14 h-14 relative" ref={profileMenuRef}>

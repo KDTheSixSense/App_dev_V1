@@ -53,14 +53,14 @@ export default function PetStatusView({ initialHunger, maxHunger, petname }: Pet
   const fullnessPercentage = (initialHunger / maxHunger) * 100;
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-[#E0F7FA] rounded-3xl shadow-sm w-full relative overflow-hidden min-h-[400px]">
+    <div className="flex flex-col justify-center p-8 bg-[#e0f4f9] rounded-3xl shadow-sm w-full relative overflow-hidden min-h-[400px]">
       {/* Decorative background circles (optional, to match style) */}
       <div className="absolute top-10 left-10 w-20 h-20 rounded-full bg-cyan-200 blur-2xl opacity-40 pointer-events-none"></div>
       <div className="absolute bottom-10 right-10 w-32 h-32 rounded-full bg-blue-200 blur-2xl opacity-40 pointer-events-none"></div>
 
       {/* 1. Character Circle Frame */}
-      <div className="relative mb-6">
-        <div className="w-56 h-56 rounded-full bg-gradient-to-b from-cyan-300 to-blue-400 p-1.5 shadow-xl">
+      <div className="flex mx-6 justify-center items-center gap-10">
+        <div className="min-w-50 min-h-50 rounded-full bg-gradient-to-b from-cyan-300 to-blue-400 p-1.5 shadow-xl">
           <div className="w-full h-full rounded-full bg-[#1e293b] flex items-center justify-center overflow-hidden border-4 border-white relative">
             {/* Background behind pet inside circle */}
             <div className="absolute inset-0 bg-[url('/images/tech_circle_bg.png')] opacity-20 animate-spin-slow"></div>
@@ -76,38 +76,44 @@ export default function PetStatusView({ initialHunger, maxHunger, petname }: Pet
             />
           </div>
         </div>
-      </div>
+      
+        <div className='relative w-100 mx-5 justify-center'>
+          {/*満腹度ゲージ */}
+          <div className="w-full max-w-sm mb-8 text-center">
+            <h2 className="text-xl font-bold text-slate-700 mb-2">{petname}の満腹度</h2>
 
-      {/* 2. Text & Bar */}
-      <div className="w-full max-w-sm mb-8 text-center">
-        <h2 className="text-xl font-bold text-slate-700 mb-2">{petname}の満腹度</h2>
-
-        <div className="relative pt-1">
-          <div className="flex mb-2 items-center justify-center">
-            <div className="text-center w-full">
-              <span className="text-3xl font-bold inline-block text-slate-700">
-                {initialHunger} / {maxHunger}
-              </span>
+            <div className="relative pt-1">
+              <div className="flex mb-2 items-center justify-center">
+                <div className="text-center w-full">
+                  <span className="text-3xl font-bold inline-block text-slate-700">
+                    {initialHunger} / {maxHunger}
+                  </span>
+                </div>
+              </div>
+              <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-[#B2EBF2]">
+                <div
+                  style={{ width: `${fullnessPercentage}%` }}
+                  className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ease-out ${petInfo.colorClass}`}
+                ></div>
+              </div>
             </div>
           </div>
-          <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-[#B2EBF2]">
-            <div
-              style={{ width: `${fullnessPercentage}%` }}
-              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ease-out ${petInfo.colorClass}`}
-            ></div>
+
+          {/* 4. Action Button */}
+          <div className="w-full max-w-sm">
+            <button
+              className="w-full py-4 rounded-full bg-gradient-to-r from-sky-400 to-cyan-500 text-white font-bold text-xl shadow-[0_4px_14px_0_rgba(38,198,218,0.39)] hover:shadow-[0_6px_20px_rgba(38,198,218,0.23)] hover:scale-[1.02] transform transition-all active:scale-95"
+              onClick={() => router.push('/issue_list')}
+            >
+              エサを探しに行く
+            </button>
           </div>
         </div>
+
+
       </div>
 
-      {/* 4. Action Button */}
-      <div className="w-full max-w-sm">
-        <button
-          className="w-full py-4 rounded-full bg-gradient-to-r from-[#4DD0E1] to-[#26C6DA] text-white font-bold text-xl shadow-[0_4px_14px_0_rgba(38,198,218,0.39)] hover:shadow-[0_6px_20px_rgba(38,198,218,0.23)] hover:scale-[1.02] transform transition-all active:scale-95"
-          onClick={() => router.push('/issue_list')}
-        >
-          エサを探しに行く
-        </button>
-      </div>
+      
 
     </div>
   );

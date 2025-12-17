@@ -189,17 +189,17 @@ const ResponsiveHelpButton: React.FC = () => {
     <>
       {/* 画面右上に固定表示されるヘルプボタン（ヘッダーの下） - Responsive size */}
       {!isTourOpen && (
-        <div className="help-button-container fixed top-24 right-4 z-[40]">
+        <div className="help-button-container fixed top-21 right-2 z-[40]">
           <button
             onClick={handleStartTour}
             disabled={isLoading}
-            className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 bg-[#b2ebf2] hover:bg-[#D3F7FF] text-black font-bold rounded-full shadow-lg flex items-center justify-center transition duration-300 ease-in-out transform hover:scale-105"
+            className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 xl:w-10 xl:h-10 bg-[#ddd] hover:bg-[#eee] text-black font-bold rounded-full shadow-lg flex items-center justify-center transition duration-300 ease-in-out transform hover:scale-105"
             aria-label="ヘルプツアーを開始"
           >
             {isLoading ? (
               <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 border-b-2 border-black"></div>
             ) : (
-              <span className="text-lg sm:text-xl md:text-2xl font-bold">?</span>
+              <span className="text-[8px] sm:text-xl md:text-xl">?</span>
             )}
           </button>
         </div>

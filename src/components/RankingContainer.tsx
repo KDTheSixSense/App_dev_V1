@@ -117,8 +117,8 @@ export default function RankingContainer({
                 relative z-10 flex-shrink-0 whitespace-nowrap py-2 px-4 font-medium text-sm rounded-md transition-colors duration-300
                 focus:outline-none
                 ${activeTab === tab.name
-                  ? 'text-sky-600' // 選択中のテキスト色
-                  : 'text-slate-500 hover:text-slate-800' // 非選択のテキスト色
+                  ? 'text-[#f0b084]' // 選択中のテキスト色
+                  : 'text-[#5a8bab] hover:text-[#3a6b8b]' // 非選択のテキスト色
                 }
               `}
             >
@@ -140,9 +140,9 @@ export default function RankingContainer({
       {/* 「自分の順位」表示部分 (オーバーレイ - 統合されたデザイン) */}
       <div className="absolute bottom-0 left-0 w-full z-20">
         {/* フェード部分 */}
-        <div className="h-6 bg-gradient-to-t from-[#FFF8E1]/80 to-transparent w-full pointer-events-none"></div>
+        {/* <div className="h-6 bg-gradient-to-t from-[#FFF8E1]/80 to-transparent w-full pointer-events-none"></div> */}
 
-        <div className="bg-[#E0F7FA] rounded-2xl p-6 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] w-auto ml-0 mr-1 mb-2 border border-cyan-200">
+        <div className="bg-[#fff] rounded-2xl p-6 w-auto ml-0 mr-1 mb-2 border border-cyan-200">
           {isLoadingMyRank ? (
             <p className="text-sm text-center text-cyan-800 font-bold">順位読込中...</p>
           ) : currentUserId === null ? (
@@ -154,7 +154,7 @@ export default function RankingContainer({
             <div className="flex items-center justify-between">
               {/* Rank Section */}
               <div className="flex flex-col items-center justify-center mr-3 relative">
-                <span className="text-[10px] font-bold text-cyan-600 mb-0.5 absolute -top-4 w-20 text-center">Your Rank</span>
+                <span className="text-[10px] font-bold text-cyan-600 mb-0.5 absolute -top-4 w-20 text-center">あなたの順位</span>
                 <div className="relative w-12 h-12 flex items-center justify-center bg-white rounded-full border-2 border-cyan-400 shadow-sm mt-1">
                   {/* Crown Icon for top 3 */}
                   {myRankInfo.rank <= 3 && (

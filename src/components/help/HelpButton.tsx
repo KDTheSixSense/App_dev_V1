@@ -171,7 +171,7 @@ const HelpButton: React.FC = () => {
           <button
             onClick={handleStartTour}
             disabled={isLoading}
-            className="w-14 h-14 bg-[#b2ebf2] hover:bg-[#D3F7FF] text-black font-bold rounded-full shadow-lg flex items-center justify-center transition duration-300 ease-in-out transform hover:scale-105"
+            className="w-5 h-5 bg-[#fff] hover:bg-[#666] text-black font-bold rounded-full shadow-lg flex items-center justify-center transition duration-300 ease-in-out transform hover:scale-105"
             aria-label="ヘルプツアーを開始"
           >
             {isLoading ? (
