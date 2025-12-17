@@ -49,6 +49,7 @@ export default async function MainPagesLayout({
         lastlogin: true,
         continuouslogin: true,
         status_Kohaku: true,
+        isAdmin: true, // Header等でAdmin判定に使う
         // Layoutで必要な他のフィールドがあれば追加
         resetPasswordToken: false, // 明示的に除外 (selectを使うとデフォルトで除外されるが念のため意識)
         hash: false,

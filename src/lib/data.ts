@@ -79,7 +79,17 @@ function transformAlgoProblem(dbProblem: DbAlgoProblem): SerializableProblem {
     if (!str) return fallback;
     try { return JSON.parse(str); } catch { return fallback; }
   };
-  const programLinesArray = (dbProblem.programLines ?? '').split('\n');
+  let programLinesArray: string[] = [];
+  try {
+    const parsed = JSON.parse(dbProblem.programLines ?? '[]');
+    if (Array.isArray(parsed)) {
+      programLinesArray = parsed;
+    } else {
+      programLinesArray = (dbProblem.programLines ?? '').split('\n');
+    }
+  } catch {
+    programLinesArray = (dbProblem.programLines ?? '').split('\n');
+  }
   return {
     id: dbProblem.id.toString(),
     title: { ja: dbProblem.title, en: dbProblem.title },
@@ -468,5 +478,105 @@ export async function getNextDueAssignment(): Promise<UnsubmittedAssignment | nu
   } catch (error) {
     console.error("Failed to get next due assignment:", error);
     return null;
+  }
+}
+
+/**
+ * 開催が近いイベント（公開済み）を取得する
+ * 優先順位: 開催中 > 開催予定 > 終了（直近2週間以内）
+ */
+export async function getUpcomingEvents() {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) return [];
+
+  // JSTで現在時刻を取得
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const nowJST = new Date(Date.now() + jstOffset);
+
+  // 2週間前の時刻を計算
+  const twoWeeksAgo = new Date(nowJST.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  try {
+    const events = await prisma.create_event.findMany({
+      where: {
+        publicStatus: true,
+        // 開始日時が2週間前以降のものを取得（終了したイベントも直近なら含めるため）
+        startTime: {
+          gte: twoWeeksAgo
+        },
+        // 自分が参加しているイベントのみ取得
+        participants: {
+          some: {
+            userId: session.user.id
+          }
+        }
+      },
+      // いったん広めに取得してからメモリ上でソートする
+      take: 20,
+      include: {
+        creator: {
+          select: {
+            username: true,
+            icon: true,
+          },
+        },
+      },
+    });
+
+    // ソートロジック
+    // 1. 開催中 (startTime <= now <= endTime) -> 終了日時が近い順
+    // 2. 開催予定 (startTime > now) -> 開始日時が近い順
+    // 3. 終了 (endTime < now) -> 終了日時が新しい順 (降順)
+    const sortedEvents = events.sort((a, b) => {
+      const now = nowJST.getTime();
+
+      const getEventStatus = (e: typeof events[0]) => {
+        const start = e.startTime ? new Date(e.startTime).getTime() : 0;
+        const end = e.endTime ? new Date(e.endTime).getTime() : Infinity; // endTimeがない場合はずっと開催中扱い?? (要件次第だが一旦無限大)
+
+        if (start <= now && now <= end) return 1; // 開催中
+        if (start > now) return 2; // 開催予定
+        return 3; // 終了
+      };
+
+      const statusA = getEventStatus(a);
+      const statusB = getEventStatus(b);
+
+      if (statusA !== statusB) {
+        return statusA - statusB; // 優先順位順
+      }
+
+      // 同じステータス内でのソート
+      if (statusA === 1) {
+        // 開催中: 終了日時が近い順 (昇順)
+        const endA = a.endTime ? new Date(a.endTime).getTime() : Infinity;
+        const endB = b.endTime ? new Date(b.endTime).getTime() : Infinity;
+        return endA - endB;
+      } else if (statusA === 2) {
+        // 開催予定: 開始日時が近い順 (昇順)
+        const startA = a.startTime ? new Date(a.startTime).getTime() : 0;
+        const startB = b.startTime ? new Date(b.startTime).getTime() : 0;
+        return startA - startB;
+      } else {
+        // 終了: 終了日時が新しい順 (降順 = 直近がおわり)
+        const endA = a.endTime ? new Date(a.endTime).getTime() : 0;
+        const endB = b.endTime ? new Date(b.endTime).getTime() : 0;
+        return endB - endA;
+      }
+    });
+
+    return sortedEvents.map(event => ({
+      id: event.id,
+      title: event.title,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      isStarted: event.isStarted, // 追加
+      hasBeenStarted: event.hasBeenStarted, // 追加
+      creatorName: event.creator.username || '不明',
+      creatorIcon: event.creator.icon,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch upcoming events:", error);
+    return [];
   }
 }

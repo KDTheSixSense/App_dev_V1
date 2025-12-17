@@ -15,6 +15,9 @@ export default function DueTasksCard({ count, nextAssignment }: DueTasksCardProp
             linkPath = `/group/coding-page/${nextAssignment.programmingProblemId}?assignmentId=${nextAssignment.id}&hashedId=${nextAssignment.groupHashedId}`;
         } else if (nextAssignment.selectProblemId) {
             linkPath = `/group/select-page/${nextAssignment.selectProblemId}?assignmentId=${nextAssignment.id}&hashedId=${nextAssignment.groupHashedId}`;
+        } else if (nextAssignment.groupHashedId) {
+            // Problem not attached -> Go to Group Member Page
+            linkPath = `/group/${nextAssignment.groupHashedId}/member`;
         }
     }
 

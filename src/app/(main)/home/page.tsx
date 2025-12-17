@@ -3,7 +3,6 @@ import User from "./user/UserDetail";
 import Ranking from "./ranking/page";
 import Pet from "./Pet/PetStatus";
 import Daily from "./daily/page";
-import DueTasksCard from "./components/DueTasksCard";
 import EventCard from "./components/EventCard";
 
 // --- ▼▼▼ セッション取得用のライブラリをインポート ▼▼▼ ---
@@ -11,7 +10,7 @@ import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions } from '@/lib/session';
 import { prisma } from "@/lib/prisma";
-import { getUnsubmittedAssignmentCount, getNextDueAssignment } from '@/lib/data';
+import { getUnsubmittedAssignmentCount, getNextDueAssignment, getUpcomingEvents } from '@/lib/data';
 
 // セッションデータの型を定義
 interface SessionData {
@@ -32,6 +31,7 @@ export default async function HomePage({
   const userId = session.user?.id ? session.user.id : null;
   const assignmentCount = await getUnsubmittedAssignmentCount();
   const nextAssignment = await getNextDueAssignment(); // 次の課題を取得
+  const upcomingEvents = await getUpcomingEvents();
 
   // ログインユーザーの全情報を取得 (セキュリティ対策: password/hashを除外)
   const user = userId ? await prisma.user.findUnique({
@@ -51,6 +51,7 @@ export default async function HomePage({
       totallogin: true,
       selectedTitle: true,
       status_Kohaku: true, // Petコンポーネントで必要
+      isAdmin: true, // UserDetailでAdminバッジを表示するために必要
     }
   }) as any : null;
 
@@ -58,23 +59,21 @@ export default async function HomePage({
     <div className='bg-white select-none min-h-screen'>
       {/* Main Layout Grid */}
       <main className="max-w-[1920px] mx-auto p-6 md:p-8 lg:p-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
           {/* Left Column: Ranking (3 cols) */}
-          <div className="lg:col-span-3 space-y-6 order-2 lg:order-1">
+          <div className="lg:col-span-3 space-y-6 order-2 lg:order-1 h-full">
             <Ranking />
           </div>
 
           {/* Center Column: Pet, Tasks, Events (6 cols) */}
           <div className="lg:col-span-6 space-y-6 order-1 lg:order-2">
             {/* 1. Pet Status (Large) */}
-            <Pet user={user} />
+            {/* 1. Pet Status (Large) - Integrated with Tasks */}
+            <Pet user={user} assignmentCount={assignmentCount} nextAssignment={nextAssignment} />
 
-            {/* 2. Due Tasks */}
-            <DueTasksCard count={assignmentCount} nextAssignment={nextAssignment} />
-
-            {/* 3. Events */}
-            <EventCard />
+            {/* 2. Events */}
+            <EventCard events={upcomingEvents} />
           </div>
 
           {/* Right Column: Profile, Daily Missions (3 cols) */}

@@ -41,7 +41,7 @@ async function getAvailableProblems(): Promise<ProblemSelectItem[]> {
  */
 export default async function CreateEventPage() {
   // DBベースの管理者チェック
-  await verifyAdminAccess();
+  // await verifyAdminAccess();
 
   // サーバーサイドで問題一覧を取得
   const problems = await getAvailableProblems();

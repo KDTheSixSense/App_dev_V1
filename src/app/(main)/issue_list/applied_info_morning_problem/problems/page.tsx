@@ -2,43 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getAppSession } from '@/lib/auth';
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
-import { ArrowLeft } from 'lucide-react';
-
-// 問題リスト行のProps型定義
-interface ProblemListRowProps {
-  problemId: number;
-  title: string;
-  solvedStatus: 'today' | 'past' | 'none';
-}
-
-// 基本情報A問題と完全に同じ構造・クラス名にしたコンポーネント
-const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, solvedStatus }) => {
-  return (
-    <li className="border-b border-gray-200 flex-shrink-0">
-      <Link
-        href={`/issue_list/applied_info_morning_problem/${problemId}`}
-        className="block p-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer w-full"
-      >
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <span className="font-medium text-blue-600 hover:text-blue-800">
-              {title}
-            </span>
-          </div>
-          {solvedStatus === 'today' && (
-            <span className="text-sm font-semibold text-white bg-blue-500 rounded-full px-3 py-1">
-              解答済み
-            </span>
-          )}
-          {solvedStatus === 'past' && (
-            <CheckCircleIcon className="h-5 w-5 text-green-500" />
-          )}
-        </div>
-      </Link>
-    </li>
-  );
-};
+import AnimatedList, { AnimatedListItem } from '../../components/AnimatedList';
+import BackButton from '../../components/BackButton';
 
 const AppliedInfoMorningProblemsListPage = async () => {
   const session = await getAppSession();
@@ -87,34 +52,32 @@ const AppliedInfoMorningProblemsListPage = async () => {
     ]
   });
 
+  // AnimatedList用にデータを変換
+  const items: AnimatedListItem[] = problems.map((problem) => {
+    return {
+      id: problem.id,
+      title: problem.title,
+      href: `/issue_list/applied_info_morning_problem/${problem.id}`,
+      solvedStatus: solvedStatusMap.get(problem.id) || 'none',
+    };
+  });
+
   return (
     <div className="min-h-screen py-10">
       <div className="container mx-auto px-4">
-        <div className="mb-4 max-w-2xl mx-auto">
-          <Link href="/issue_list" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            問題種別一覧へ戻る
-          </Link>
+        <div className="mb-4 max-w-6xl mx-auto">
+          <BackButton />
         </div>
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           応用情報 午前問題一覧
         </h1>
-        <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-4xl mx-auto">
-          {problems.length > 0 ? (
-            <ul>
-              {problems.map((problem) => (
-                <ProblemListRow
-                  key={problem.id}
-                  problemId={problem.id}
-                  title={problem.title}
-                  solvedStatus={solvedStatusMap.get(problem.id) || 'none'}
-                />
-              ))}
-            </ul>
-          ) : (
-            <p className="p-4 text-center text-gray-500">問題が見つかりませんでした。</p>
-          )}
-        </div>
+        
+        {/* 新しいAnimatedListコンポーネントを使用 */}
+        <AnimatedList 
+          items={items} 
+          showGradients={true}
+          displayScrollbar={true}
+        />
       </div>
     </div>
   );

@@ -91,6 +91,9 @@ export async function getUserHistory(params: FetchHistoryParams = {}) {
                 applied_am_question: {
                     include: { category: true }
                 },
+                questions_algorithm: {
+                    include: { subject: true }
+                }
             },
             orderBy: {
                 answeredAt: 'desc',
@@ -144,6 +147,11 @@ export async function getUserHistory(params: FetchHistoryParams = {}) {
                 title = ua.applied_am_question.title;
                 category = ua.applied_am_question.category?.name || '応用情報午前';
                 problemId = ua.applied_am_question.id;
+            } else if (ua.questions_algorithm) {
+                type = 'basic_b';
+                title = ua.questions_algorithm.title;
+                category = ua.questions_algorithm.subject?.name || '基本情報B (アルゴリズム)';
+                problemId = ua.questions_algorithm.id;
             }
 
             return {
