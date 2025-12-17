@@ -35,7 +35,7 @@ type SerializedUser = Omit<User, 'birth' | 'lastlogin' | 'unlockedTitles'> & {
   lastlogin: string | null;
   unlockedTitles: SerializedUserUnlockedTitle[];
   selectedTitle: Title | null;
-  Status_Kohaku: Status_Kohaku[];
+  status_Kohaku: Status_Kohaku | null;
 };
 
 type UserStats = {
@@ -201,7 +201,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice, has
     }
   };
 
-  const petBirthdate = initialUser.Status_Kohaku?.[0]?.birthdate;
+  const petBirthdate = initialUser.status_Kohaku?.birthdate;
   let formattedPetBirthdate: string | null = null;
 
   if (petBirthdate) {
@@ -307,10 +307,10 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice, has
           {/* 右カラム：ペットステータスとグラフ */}
           <div className="lg:col-span-1 space-y-8">
             <PetStatusView
-              initialHunger={initialUser.Status_Kohaku?.[0].hungerlevel ?? 200}
+              initialHunger={initialUser.status_Kohaku?.hungerlevel ?? 200}
               maxHunger={200}
               adviceText={aiAdvice || ''} // Reactがエスケープするためサニタイズ不要
-              petname={initialUser.Status_Kohaku?.[0].name || 'コハク'}
+              petname={initialUser.status_Kohaku?.name || 'コハク'}
               petBirthdate={formattedPetBirthdate}
             />
           </div>

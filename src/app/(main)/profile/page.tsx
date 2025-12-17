@@ -197,7 +197,7 @@ export default async function ProfilePage() {
       ...ut,
       unlockedAt: ut.unlockedAt.toISOString(),
     })),
-    Status_Kohaku: userWithDetails.status_Kohaku ? [userWithDetails.status_Kohaku] : [],
+    status_Kohaku: userWithDetails.status_Kohaku ?? null,
   };
 
   // --- 6. 問題解答履歴を取得 (追加) ---
