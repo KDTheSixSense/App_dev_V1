@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 // @/app/data/helpData のパスは、プロジェクトのエイリアス設定に合わせて調整してください
 import { helpSteps } from "@/app/data/helpData";
+import { traceHelpSteps } from "@/app/data/traceHelpSteps";
+import { noCodeHelpSteps } from "@/app/data/noCodeHelpSteps";
+import { adminAuditHelpSteps } from "@/app/data/adminAuditHelpSteps";
 import { HelpApiResponse } from "@/types/help";
 import { getSession } from "@/lib/session";
 
@@ -72,6 +75,12 @@ export async function GET(request: Request) {
     } else if (page?.startsWith('group/coding-page')) {
       // グループコーディングページ
       filteredSteps = helpSteps.filter(step => step.page === 'group/coding-page');
+    } else if (page === 'customize_trace') {
+      filteredSteps = traceHelpSteps;
+    } else if (page === 'simulator') {
+      filteredSteps = noCodeHelpSteps;
+    } else if (page === 'admin-audit') {
+      filteredSteps = adminAuditHelpSteps;
     } else if (page) {
       filteredSteps = helpSteps.filter(step => step.page === page);
     }

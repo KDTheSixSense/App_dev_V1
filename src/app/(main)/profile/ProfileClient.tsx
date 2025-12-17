@@ -244,7 +244,14 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice, has
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <span className={`text-xl font-semibold text-gray-800 ${isEditing ? 'opacity-50' : ''}`}>{displayedTitleName}</span>
+                    <span className={`text-xl font-semibold text-gray-800 ${isEditing ? 'opacity-50' : ''}`}>
+                      {displayedTitleName}
+                      {initialUser.isAdmin && (
+                        <span className="ml-2 inline-block bg-yellow-400 text-black text-xs font-bold px-2 py-0.5 rounded-full align-middle">
+                          Admin
+                        </span>
+                      )}
+                    </span>
                     {isEditing && (
                       <button type="button" onClick={() => setIsTitleModalOpen(true)} className="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded-full">称号を切り替え</button>
                     )}
