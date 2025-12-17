@@ -10,7 +10,9 @@
     "start": "next start -H 0.0.0.0",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:prod": "prisma migrate deploy",
+    "build": "npm run prisma:migrate:prod && next build"
   },
   "dependencies": {
     "@aws-sdk/client-lambda": "^3.943.0",
