@@ -46,7 +46,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
 
   // --- 2. シーディングするユーザーの基本情報を定義 ---
   const usersToSeed = [
-    { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', icon: '/images/users/alice.png' },
+    { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', icon: '/images/users/alice.png', isAdmin: true },
     { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', icon: '/images/users/bob.png' },
     { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', icon: '/images/users/charlie.png' },
     { email: 'diana@example.com', password: 'password456', username: 'Diana Prince', icon: '/images/users/diana.png' },
@@ -128,6 +128,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
         xp: totalAccountXp,
         totallogin: getRandomInt(1, 500),
         ...userLoginData, // 神戸太郎の場合のみ、ここにデータが追加される
+        isAdmin: userData.isAdmin || false, // 管理者権限を設定
         status_Kohaku: {
           create: {
             status: '元気',

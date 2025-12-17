@@ -6,7 +6,7 @@ import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { useSearchParams } from 'next/navigation';
-// Link, Image, useRouter はNext.js固有のため削除
+import Link from 'next/link';
 import { getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
 
@@ -340,49 +340,56 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
             <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
               <div className="py-1">
                 {user?.isAdmin && (
-                  <a
+                  <Link
                     href="/admin-audit"
+                    onClick={() => setIsProfileMenuOpen(false)}
                     className="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-b border-gray-50 font-bold"
                   >
                     🔒 管理者用監査ログ
-                  </a>
+                  </Link>
                 )}
-                <a
+                <Link
                   href="/profile"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors border-b border-gray-50 font-medium"
                 >
                   プロフィール
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/profile/history"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   問題解答履歴
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/customize_trace"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   疑似言語トレース
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/simulator"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   ノーコード
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/terms"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   利用規約
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/privacypolicy"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   プライバシーポリシー
-                </a>
+                </Link>
               </div>
             </div>
           )}
