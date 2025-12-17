@@ -103,7 +103,7 @@ function transformAlgoProblem(dbProblem: DbAlgoProblem): SerializableProblem {
     correctAnswer: dbProblem.correctAnswer ?? '',
     initialVariables: dbProblem.initialVariable as AppProblem['initialVariables'] ?? {},
     logicType: dbProblem.logictype,
-    traceOptions: parseJSON(dbProblem.options as string | null, undefined),
+    traceOptions: parseJSON(dbProblem.options as string | null, undefined) || localProblems.find(p => p.id === dbProblem.id.toString())?.traceOptions,
     difficultyId: dbProblem.difficultyId ?? 7,
   };
 }
