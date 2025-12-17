@@ -2,50 +2,10 @@ import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma'; // データベース接続(Prisma)をインポート
 import { getAppSession } from '@/lib/auth';
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
-import { ArrowLeft } from 'lucide-react';
+import AnimatedList, { AnimatedListItem } from '../../components/AnimatedList';
+import BackButton from '../../components/BackButton';
 
-// 削除: ローカルファイルからのインポートは不要になります
-// import { basicInfoAProblems } from '@/lib/issue_list/basic_info_a_problem/problem';
-
-interface ProblemListRowProps {
-  problemId: number;
-  title: string;
-  solvedStatus: 'today' | 'past' | 'none';
-  //sourceText: string;
-}
-
-// Component for a single row in the problem list
-const ProblemListRow: React.FC<ProblemListRowProps> = ({ problemId, title, solvedStatus }) => {
-  return (
-    // Use li for semantic list structure, but Link handles click and navigation
-    <li className="border-b border-gray-200 flex-shrink-0"> {/* Add flex-shrink-0 */}
-      <Link 
-        href={`/issue_list/basic_info_a_problem/${problemId}`} 
-        // Apply styling directly to the Link for better click area control
-        className="block p-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer w-full"
-      >
-        <div className="flex justify-between items-center"> {/* Use flex for alignment */}
-          <div className="flex items-center">
-            <span className="font-medium text-blue-600 hover:text-blue-800">
-              {title}
-            </span>
-          </div>
-          {solvedStatus === 'today' && (
-            <span className="text-sm font-semibold text-white bg-blue-500 rounded-full px-3 py-1">
-              解答済み
-            </span>
-          )}
-          {solvedStatus === 'past' && (
-            <CheckCircleIcon className="h-5 w-5 text-green-500" />
-          )}
-        </div>
-      </Link>
-    </li>
-  );
-};
-
-// The main page component (Server Component)
+// メインページコンポーネント (Server Component)
 const ProblemsListPage = async () => {
   const session = await getAppSession();
   const userId = session.user?.id;
@@ -87,7 +47,7 @@ const ProblemsListPage = async () => {
       solvedStatusMap.set(problemId, status);
     }
   }
-  // Fetch the list of Basic Info A problems from the database
+  // データベースから基本情報A問題のリストを取得
   const problems = await prisma.basic_Info_A_Question.findMany({
     select: {
       id: true,
@@ -96,43 +56,39 @@ const ProblemsListPage = async () => {
       sourceNumber: true,
     },
     orderBy: [
-      { id: 'asc' },          // Then by ID ascending
+      { id: 'asc' },          // ID順にソート（必要に応じて変更）
     ]
+  });
+
+  // AnimatedList用にデータを変換
+  const items: AnimatedListItem[] = problems.map((problem) => {
+    return {
+      id: problem.id,
+      title: problem.title, // タイトルのみを表示
+      href: `/issue_list/basic_info_a_problem/${problem.id}`,
+      solvedStatus: solvedStatusMap.get(problem.id) || 'none', // statusを直接渡す
+    };
   });
 
   return (
     <div className="min-h-screen py-10">
       <div className="container mx-auto px-4">
-        <div className="mb-4 max-w-2xl mx-auto">
-          <Link href="/issue_list" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            問題種別一覧へ戻る
-          </Link>
+        
+        <div className="mb-4 max-w-6xl mx-auto">
+          <BackButton />
         </div>
+
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           基本情報A問題 問題一覧
         </h1>
-        {/* Container for the list with width constraint and centering */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-2xl mx-auto">
-          {problems.length > 0 ? (
-            <ul>
-              {/* Map over the fetched problems and render a row for each */}
-              {problems.map((problem) => (
-                <ProblemListRow
-                  key={problem.id}
-                  problemId={problem.id}
-                  title={problem.title}
-                  solvedStatus={solvedStatusMap.get(problem.id) || 'none'}
-                  // Combine year and number for display
-                  // sourceText={`${problem.sourceYear || '年度不明'} ${problem.sourceNumber || ''}`.trim()}
-                />
-              ))}
-            </ul>
-          ) : (
-             // Display a message if no problems are found
-             <p className="p-4 text-center text-gray-500">問題が見つかりませんでした。</p>
-          )}
-        </div>
+        
+        {/* 新しいAnimatedListコンポーネントを使用 */}
+        <AnimatedList 
+          items={items} 
+          showGradients={true}
+          displayScrollbar={true}
+          className="h-[600px]"
+        />
       </div>
     </div>
   );
