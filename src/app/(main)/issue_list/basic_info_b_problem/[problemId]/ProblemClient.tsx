@@ -26,18 +26,22 @@ const getPetDisplayState = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
       icon: '/images/Kohaku/kohaku-full.png',
+      suffix: 'smile',
     };
   } else if (hungerLevel >= 100) {
     return {
       icon: '/images/Kohaku/kohaku-normal.png',
+      suffix: 'base',
     };
   } else if (hungerLevel >= 50) {
     return {
       icon: '/images/Kohaku/kohaku-hungry.png',
+      suffix: 'cry',
     };
   } else {
     return {
       icon: '/images/Kohaku/kohaku-starving.png',
+      suffix: 'death',
     };
   }
 };
@@ -115,6 +119,10 @@ type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 interface ProblemClientProps {
   initialProblem: SerializableProblem;
   initialCredits: number;
+  initialPetStatus?: {
+    hungerlevel: number;
+    evolutionType?: string | null;
+  } | null;
 }
 
 // 履歴データの型定義を追加
@@ -123,7 +131,7 @@ type TraceHistoryItem = {
   variables: VariablesState;
 };
 
-const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits }) => {
+const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits, initialPetStatus }) => {
   const router = useRouter();
 
 
@@ -143,7 +151,17 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const startTimeRef = useRef<number | null>(null);
   const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null); // エフェクトタイプを追加
 
-  const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+  const [kohakuIcon, setKohakuIcon] = useState(() => {
+    if (initialPetStatus) {
+      const displayState = getPetDisplayState(initialPetStatus.hungerlevel);
+      if (initialPetStatus.evolutionType) {
+        return `/images/evolution/${initialPetStatus.evolutionType}-${displayState.suffix}.png`;
+      }
+      return displayState.icon;
+    }
+    return '/images/Kohaku/kohaku-normal.png';
+  });
+
   const [selectedLogicVariant, setSelectedLogicVariant] = useState<string | null>(null);
 
   const [isTraceFinished, setIsTraceFinished] = useState(false);
@@ -151,12 +169,17 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
   const refetchPetStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/pet/status');
+      const res = await fetch('/api/pet/status', { cache: 'no-store' });
       if (res.ok) {
         const { data } = await res.json();
         if (data) {
           const displayState = getPetDisplayState(data.hungerlevel);
-          setKohakuIcon(displayState.icon);
+          let icon = displayState.icon;
+
+          if (data.evolutionType) {
+            icon = `/images/evolution/${data.evolutionType}-${displayState.suffix}.png`;
+          }
+          setKohakuIcon(icon);
         }
       }
     } catch (error) {
@@ -166,12 +189,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
   // 初期ロード時とイベントリスナー設定
   useEffect(() => {
-    refetchPetStatus();
+    if (!initialPetStatus) {
+      refetchPetStatus();
+    }
     window.addEventListener('petStatusUpdated', refetchPetStatus);
     return () => {
       window.removeEventListener('petStatusUpdated', refetchPetStatus);
     };
-  }, [refetchPetStatus]);
+  }, [refetchPetStatus, initialPetStatus]);
 
   useEffect(() => {
     let problemData = initialProblem;

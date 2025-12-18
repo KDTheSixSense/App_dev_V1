@@ -42,14 +42,26 @@ const AppliedInfoProblemDetailPage = async ({ params, searchParams }: any) => {
 
   // ユーザーのクレジット情報を取得（変更なし）
   let userCredits = 0;
+  let userPetStatus = null;
+
   if (session?.user?.id) {
     try {
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { aiAdviceCredits: true }
+        select: { 
+          aiAdviceCredits: true,
+          status_Kohaku: {
+            select: {
+              hungerlevel: true,
+              evolutionType: true,
+            }
+          }
+        }
       });
       if (user) {
         userCredits = user.aiAdviceCredits;
+        userPetStatus = user.status_Kohaku;
+
       }
     } catch (error) {
       console.error("[Page] Error fetching user credits:", error);
@@ -71,6 +83,8 @@ const AppliedInfoProblemDetailPage = async ({ params, searchParams }: any) => {
         <ProblemClient
           initialProblem={problem}
           initialCredits={userCredits}
+          initialPetStatus={userPetStatus}
+
         />
       </div>
     </div>
