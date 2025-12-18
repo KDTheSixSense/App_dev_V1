@@ -71,6 +71,7 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.delete('evolution');
         router.replace(`?${newParams.toString()}`, { scroll: false });
+        router.refresh();
       }, 4000);
       return () => clearTimeout(timer);
     }

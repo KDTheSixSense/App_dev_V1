@@ -16,6 +16,7 @@ import { TitleType } from '@prisma/client';
 import { logAudit, AuditAction } from '@/lib/audit';
 import { getMissionDate } from './utils';
 import { getNowJST, getAppToday, isSameAppDay, getDaysDiff } from './dateUtils';
+import { checkAndSaveEvolution } from '@/lib/evolutionActions';
 
 interface SessionData {
   user?: {
@@ -414,9 +415,24 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
   }
 
   // 5. 経験値を付与
-  const { unlockedTitle } = await addXp(userId, subjectid, difficultyId);
+  const { unlockedTitle, updatedUser, isLevelUp, previousLevel } = await addXp(userId, subjectid, difficultyId);
   // 6. コハクの満腹度を回復
   await feedPetAction(difficultyId);
+
+  // 進化チェックと保存 (レベルアップ時かつ30の倍数をまたいだ場合)
+  if (updatedUser && isLevelUp) {
+    const currentLevel = updatedUser.level;
+    const milestone = 30;
+    // 30の倍数をまたいだか判定 (例: 29->30, 29->31, 59->60)
+    if (Math.floor(currentLevel / milestone) > Math.floor(previousLevel / milestone)) {
+      // 到達した30の倍数を計算して渡す (例: 31なら30)
+      const evolutionLevel = Math.floor(currentLevel / milestone) * milestone;
+      await checkAndSaveEvolution(userId, evolutionLevel);
+      revalidatePath('/profile');
+      revalidatePath('/home');
+      revalidatePath('/', 'layout');
+    }
+  }
 
   // 7. イベント参加者の得点を更新 (eventIdが渡された場合のみ)
   if (eventId !== undefined && xpAmount > 0) {
@@ -521,6 +537,7 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
       create: { user_id, subject_id, xp: xpAmount, level: 1 },
       update: { xp: { increment: xpAmount } },
     });
+    
     let unlockedTitle: { name: string } | null = null;
 
     const newSubjectLevel = calculateLevelFromXp(updatedProgress.xp);
@@ -560,8 +577,11 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
       where: { id: user_id },
       data: { xp: { increment: xpAmount } },
     });
+    const previousLevel = user.level; // レベル更新前の値を保持
     const newAccountLevel = calculateLevelFromXp(user.xp);
+    let isLevelUp = false;
     if (newAccountLevel > user.level) {
+      isLevelUp = true;
       user = await tx.user.update({
         where: { id: user_id },
         data: { level: newAccountLevel },
@@ -591,7 +611,7 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
       }
     }
 
-    return { updatedUser: user, updatedProgress, unlockedTitle };
+    return { updatedUser: user, updatedProgress, unlockedTitle, isLevelUp, previousLevel };
   });
 
   console.log('XP加算処理が完了しました。');
@@ -744,7 +764,7 @@ export async function grantXpToUser(userId: string, xpAmount: number) {
   }
 
   // 複数のDB操作を安全に行うためトランザクションを使用
-  const { unlockedTitle } = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const { unlockedTitle, updatedUser, isLevelUp, previousLevel } = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 
     // 1. ユーザーの総XPを加算
     let user = await tx.user.update({
@@ -753,11 +773,14 @@ export async function grantXpToUser(userId: string, xpAmount: number) {
     });
 
     let unlockedTitle: { name: string } | null = null;
+    const previousLevel = user.level; // レベル更新前の値を保持
     const oldLevel = user.level;
     const newAccountLevel = calculateLevelFromXp(user.xp);
+    let isLevelUp = false;
 
     // 2. レベルアップしたかチェック
     if (newAccountLevel > oldLevel) {
+      isLevelUp = true;
 
       // 2a. ユーザーの level を更新
       user = await tx.user.update({
@@ -791,8 +814,21 @@ export async function grantXpToUser(userId: string, xpAmount: number) {
       }
     }
 
-    return { unlockedTitle };
+    return { unlockedTitle, updatedUser: user, isLevelUp, previousLevel };
   });
+
+  // 進化チェックと保存 (レベルアップ時かつ30の倍数をまたいだ場合)
+  if (updatedUser && isLevelUp) {
+    const currentLevel = updatedUser.level;
+    const milestone = 30;
+    if (Math.floor(currentLevel / milestone) > Math.floor(previousLevel / milestone)) {
+      const evolutionLevel = Math.floor(currentLevel / milestone) * milestone;
+      await checkAndSaveEvolution(userId, evolutionLevel);
+      revalidatePath('/profile');
+      revalidatePath('/home');
+      revalidatePath('/', 'layout');
+    }
+  }
 
   console.log(`ユーザーID:${userId} に ${xpAmount}XP (ミッション報酬) を付与しました。`);
   return { unlockedTitle, xpAmount };

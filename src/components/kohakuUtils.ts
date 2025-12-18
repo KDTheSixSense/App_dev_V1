@@ -1,3 +1,5 @@
+//components/kohakuUtils.ts
+
 export type SubjectProgress = {
   subjectName: string;
   level: number;
@@ -12,17 +14,15 @@ export const getSubjectCode = (subjectName: string): string => {
   return 'A'; // デフォルト値
 };
 
-// 進化後の画像パスを取得する関数
-export const getEvolvedImageSrc = (subjectProgress: SubjectProgress[] | undefined): string => {
-  // 学習データがない場合はデフォルト（通常）画像を返す
+// 進化タイプ（例: "A-A", "P-O", "ALL"）を計算する関数
+export const calculateEvolutionType = (subjectProgress: SubjectProgress[] | undefined): string | null => {
   if (!subjectProgress || subjectProgress.length === 0) {
-    return '/images/Kohaku/kohaku-normal.png';
+    return null;
   }
 
-  // すべての科目のレベルが均等で等しい場合
   const allLevelsEqual = subjectProgress.every((s) => s.level === subjectProgress[0].level);
   if (subjectProgress.length > 1 && allLevelsEqual) {
-    return '/images/evolution/ALL-base.png';
+    return 'ALL';
   }
 
   // 1. レベル降順でソート
@@ -46,6 +46,28 @@ export const getEvolvedImageSrc = (subjectProgress: SubjectProgress[] | undefine
     }
   }
 
-  // 画像ファイル名を生成
-  return `/images/evolution/${code1}-${code2}-base.png`;
+  // 指定されたパターンのみに正規化 (順序をファイル名に合わせる)
+  const validPatterns = [
+    'A-A', 'A-O', 'A-P', 'A-B',
+    'B-B', 'B-P', 'B-O',
+    'O-O',
+    'P-O', 'P-P'
+  ];
+
+  const pattern1 = `${code1}-${code2}`;
+  const pattern2 = `${code2}-${code1}`;
+
+  // pattern1 または pattern2 が有効なリストにあれば採用
+  const finalPattern = validPatterns.includes(pattern1) ? pattern1 
+                     : validPatterns.includes(pattern2) ? pattern2 
+                     : 'A-A'; // どちらもなければデフォルト
+  
+  return finalPattern;
+};
+
+// 進化後の画像パスを取得する関数
+export const getEvolvedImageSrc = (subjectProgress: SubjectProgress[] | undefined): string => {
+  const type = calculateEvolutionType(subjectProgress);
+  if (!type) return '/images/Kohaku/kohaku-normal.png';
+  return `/images/evolution/${type}-base.png`;
 };

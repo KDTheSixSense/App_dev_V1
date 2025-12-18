@@ -577,6 +577,8 @@ model Status_Kohaku {
   birthdate           DateTime@default(now()) @db.Date // 誕生日
 
   user User @relation(fields: [user_id], references: [id])
+  evolutionType String? 
+
 }
 
 model Degree {

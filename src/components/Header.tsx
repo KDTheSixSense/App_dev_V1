@@ -12,6 +12,12 @@ import type { User, Status_Kohaku } from '@prisma/client';
 
 type UserWithPetStatus = User & {
   status_Kohaku: Status_Kohaku | null;
+  progresses?: {
+    level: number;
+    subject: {
+      name: string;
+    };
+  }[];
 };
 
 type HeaderProps = {
@@ -33,21 +39,25 @@ const getPetDisplayState = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
       icon: '/images/Kohaku/kohaku-full.png',      // 満腹の画像
+      suffix: 'smile',
       colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
     };
   } else if (hungerLevel >= 100) {
     return {
       icon: '/images/Kohaku/kohaku-normal.png',    // 普通の画像
+      suffix: 'base',
       colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
     };
   } else if (hungerLevel >= 50) {
     return {
       icon: '/images/Kohaku/kohaku-hungry.png',    // 空腹の画像
+      suffix: 'cry',
       colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
     };
   } else {
     return {
       icon: '/images/Kohaku/kohaku-starving.png',  // 死にかけの画像
+      suffix: 'death',
       colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
     };
   }
@@ -62,6 +72,18 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
   const [xp, setXp] = useState(() => userWithPet?.xp ?? 0);
   // 2. 連続ログイン日数のstate
   const [continuousLogin, setContinuousLogin] = useState(() => userWithPet?.continuouslogin ?? 0);
+
+  // userWithPet内のprogressesからSubjectProgress形式に変換する
+  // これにより、Headerが表示するユーザーごとの進化状態を正しく反映できる
+  const effectiveSubjectProgress = React.useMemo(() => {
+    if (userWithPet?.progresses && userWithPet.progresses.length > 0) {
+      return userWithPet.progresses.map((p) => ({
+        subjectName: p.subject.name,
+        level: p.level,
+      }));
+    }
+    return subjectProgress;
+  }, [userWithPet, subjectProgress]);
 
   // ランク進捗の計算
   const requiredXpForNextLevel = 1000;
@@ -104,9 +126,20 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
       const displayState = getPetDisplayState(initialStatus.hungerlevel);
 
       // レベル30以上なら進化画像を優先する（ただし進化演出中は通常画像を表示）
-      const icon = (currentLevel >= 30 && !isEvolving)
-        ? getEvolvedImageSrc(subjectProgress)
-        : displayState.icon;
+      let icon = displayState.icon;
+      // DBに保存された進化タイプがある場合
+      if ((initialStatus as any).evolutionType) {
+        icon = `/images/evolution/${(initialStatus as any).evolutionType}-${displayState.suffix}.png`;
+      } else if (currentLevel >= 30 && !isEvolving) {
+        const evolvedBase = getEvolvedImageSrc(effectiveSubjectProgress);
+        // レベル30以上なら、通常画像が返ってきても進化画像(A-A)に強制変換して維持する
+        if (evolvedBase === '/images/Kohaku/kohaku-normal.png') {
+           icon = `/images/evolution/A-A-${displayState.suffix}.png`;
+        } else 
+        if (evolvedBase !== '/images/Kohaku/kohaku-normal.png') {
+          icon = evolvedBase.replace('base.png', `${displayState.suffix}.png`);
+        }
+      }
 
       return {
         hungerlevel: initialStatus.hungerlevel,
@@ -123,6 +156,45 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
     console.log("[Header Debug] Initial petStatus (no userWithPet): null");
     return null;
   });
+
+  // Props (userWithPet, subjectProgress) が更新されたら State を同期する
+  // これにより router.refresh() 後の新しい進化画像が反映されます
+  useEffect(() => {
+    if (userWithPet?.status_Kohaku) {
+      const { hungerlevel } = userWithPet.status_Kohaku;
+      const displayState = getPetDisplayState(hungerlevel);
+      const currentLevel = userWithPet.level;
+      
+      // 進化演出中かどうかはURLパラメータで判断
+      const isEvolving = searchParams.get('evolution') === 'true';
+
+      let icon = displayState.icon;
+      // DBに保存された進化タイプがある場合
+      if ((userWithPet.status_Kohaku as any).evolutionType) {
+        icon = `/images/evolution/${(userWithPet.status_Kohaku as any).evolutionType}-${displayState.suffix}.png`;
+      } else if (currentLevel >= 30 && !isEvolving) {
+        const evolvedBase = getEvolvedImageSrc(effectiveSubjectProgress);
+        // レベル30以上なら、通常画像が返ってきても進化画像(A-A)に強制変換して維持する
+        if (evolvedBase === '/images/Kohaku/kohaku-normal.png') {
+           icon = `/images/evolution/A-A-${displayState.suffix}.png`;
+        } else 
+        if (evolvedBase !== '/images/Kohaku/kohaku-normal.png') {
+          icon = evolvedBase.replace('base.png', `${displayState.suffix}.png`);
+        }
+      }
+
+      setPetStatus({
+        hungerlevel,
+        icon,
+        colorClass: displayState.colorClass
+      });
+      
+      // 他のステータスも同期
+      setRank(userWithPet.level);
+      setXp(userWithPet.xp);
+      setContinuousLogin(userWithPet.continuouslogin ?? 0);
+    }
+  }, [userWithPet, effectiveSubjectProgress, searchParams]);
 
   // 4. ファビコンをペットのアイコンに動的に変更する処理（強化版）
   useEffect(() => {
@@ -163,7 +235,23 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
           const isEvolving = searchParams.get('evolution') === 'true';
           // APIレスポンスにsubjectProgressが含まれていると仮定、もしくはpropsの値を使用
           // ※API側もsubjectProgressを返すように修正が必要な場合があります
-          const icon = (data.level >= 30 && !isEvolving) ? getEvolvedImageSrc(subjectProgress) : displayState.icon;
+          let icon = displayState.icon;
+          // DBに保存された進化タイプがある場合
+          if (data.evolutionType) {
+            icon = `/images/evolution/${data.evolutionType}-${displayState.suffix}.png`;
+          } else if (data.level >= 30 && !isEvolving) {
+            if (!effectiveSubjectProgress || effectiveSubjectProgress.length === 0) {
+              console.warn("[Header Debug] Level is >= 30 but subjectProgress is missing. Evolution image cannot be determined.");
+            }
+            const evolvedBase = getEvolvedImageSrc(effectiveSubjectProgress);
+            // レベル30以上なら、通常画像が返ってきても進化画像(A-A)に強制変換して維持する
+            if (evolvedBase === '/images/Kohaku/kohaku-normal.png') {
+               icon = `/images/evolution/A-A-${displayState.suffix}.png`;
+            } else 
+            if (evolvedBase !== '/images/Kohaku/kohaku-normal.png') {
+              icon = evolvedBase.replace('base.png', `${displayState.suffix}.png`);
+            }
+          }
 
           let hungerLevelChanged = false;
           setPetStatus(prevStatus => {
@@ -193,11 +281,11 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
     } catch (error) {
       console.error("[Header Debug] ペット情報の再取得に失敗:", error);
     }
-  }, [subjectProgress, searchParams]); // subjectProgressが変わったら再計算できるように依存配列に追加
+  }, [effectiveSubjectProgress, searchParams]); // subjectProgressが変わったら再計算できるように依存配列に追加
 
   // レンダリング直前にpetStatus.iconの値をログ出力
   console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
-  console.log("[Header Debug] subjectProgress in Header:", subjectProgress);
+  console.log("[Header Debug] subjectProgress in Header:", effectiveSubjectProgress);
 
   useEffect(() => {
     // ページ読み込み時にも最新の情報を取得

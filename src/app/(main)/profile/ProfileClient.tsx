@@ -1,3 +1,5 @@
+//app/(main)/profile/ProfilrClient.tsx
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,11 +7,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
-import PetStatusView from '../profile/Pet/PetStatusview';
+import PetStatusView from './Pet/PetStatusView_temp';
 import { updateUserProfileAction } from './actions';
 import { changePasswordAction } from '@/lib/actions';
 import dynamic from 'next/dynamic';
 
+import { SubjectProgress } from '@/components/kohakuUtils';
 import toast from 'react-hot-toast';
 
 const DailyActivityChart = dynamic(
@@ -57,6 +60,7 @@ interface ProfileClientProps {
   aiAdvice: string;
   hasPassword: boolean;
   initialHistory: any; // Type should be inferred or imported properly, using any to avoid deep import issues for now
+  initialSubjectProgress: SubjectProgress[]; // 追加
 }
 
 const presetIcons = {
@@ -64,7 +68,7 @@ const presetIcons = {
   female: ['/images/DefaultIcons/female1.jpg', '/images/DefaultIcons/female2.jpg', '/images/DefaultIcons/female3.jpg'],
 };
 
-export default function ProfileClient({ initialUser, initialStats, aiAdvice, hasPassword, initialHistory }: ProfileClientProps) {
+export default function ProfileClient({ initialUser, initialStats, aiAdvice, hasPassword, initialHistory, initialSubjectProgress }: ProfileClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -309,6 +313,9 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice, has
             <PetStatusView
               initialHunger={initialUser.Status_Kohaku?.[0].hungerlevel ?? 200}
               maxHunger={200}
+              userLevel={initialUser.level}
+              subjectProgress={initialSubjectProgress}
+              evolutionType={(initialUser.Status_Kohaku?.[0] as any)?.evolutionType}
               adviceText={aiAdvice || ''} // Reactがエスケープするためサニタイズ不要
               petname={initialUser.Status_Kohaku?.[0].name || 'コハク'}
               petBirthdate={formattedPetBirthdate}

@@ -2,55 +2,76 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { getEvolvedImageSrc, SubjectProgress } from '../../../../components/kohakuUtils';
 
 // 親コンポーネントから渡されるPropsの型を定義
 interface PetStatusViewProps {
   initialHunger: number;
   maxHunger: number;
   petname: string;
+  subjectProgress?: SubjectProgress[]; // 進化状態を判定するために追加
+  userLevel: number; // レベル判定用に追加
 }
 
 /**
- * 満腹度に応じて、表示するコハクの画像パスとステータステキストを返すヘルパー関数
+ * 満腹度に応じて、ステータス設定（表情サフィックス、テキスト、色、旧画像）を返すヘルパー関数
  * @param hungerLevel 現在の満腹度
- * @returns { image: string, statusText: string }
  */
-const getPetDisplayInfo = (hungerLevel: number) => {
+const getStatusConfig = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
-      image: '/images/Kohaku/kohaku-full.png',      // 満腹の画像
+      suffix: 'smile',
+      legacyImage: '/images/Kohaku/kohaku-full.png', // 進化前の画像
       statusText: '満腹',
       colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
     };
   } else if (hungerLevel >= 100) {
     return {
-      image: '/images/Kohaku/kohaku-normal.png',    // 普通の画像
+      suffix: 'base',
+      legacyImage: '/images/Kohaku/kohaku-normal.png',
       statusText: '普通',
       colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
     };
   } else if (hungerLevel >= 50) {
     return {
-      image: '/images/Kohaku/kohaku-hungry.png',    // 空腹の画像
+      suffix: 'cry',
+      legacyImage: '/images/Kohaku/kohaku-hungry.png',
       statusText: '空腹',
       colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
     };
   } else {
     return {
-      image: '/images/Kohaku/kohaku-starving.png',  // 死にかけの画像
+      suffix: 'death',
+      legacyImage: '/images/Kohaku/kohaku-starving.png',
       statusText: '死にかけ…',
       colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
     };
   }
 };
 
-export default function PetStatusView({ initialHunger, maxHunger, petname }: PetStatusViewProps) {
+export default function PetStatusView({ initialHunger, maxHunger, petname, subjectProgress, userLevel }: PetStatusViewProps) {
   const router = useRouter();
 
   // ヘルパー関数を呼び出して、現在の状態を取得
-  const petInfo = getPetDisplayInfo(initialHunger);
+  const statusConfig = getStatusConfig(initialHunger);
 
   // プログレスバーのパーセンテージを計算
   const fullnessPercentage = (initialHunger / maxHunger) * 100;
+
+  // 画像パスの決定ロジック
+  let displayImage = statusConfig.legacyImage;
+
+  // レベル30以上の場合のみ進化画像を適用
+  if (userLevel >= 30) {
+    // 1. 進化のベース画像を取得 (例: .../A-A-base.png または .../kohaku-normal.png)
+    const evolvedBaseImage = getEvolvedImageSrc(subjectProgress);
+
+    // 2. 進化している場合（normal以外が返ってきた場合）、表情差分を適用
+    if (evolvedBaseImage !== '/images/Kohaku/kohaku-normal.png') {
+      // ファイル名の 'base.png' 部分を、現在の状態に応じたサフィックス（smile.pngなど）に置換
+      displayImage = evolvedBaseImage.replace('base.png', `${statusConfig.suffix}.png`);
+    }
+  }
 
   return (
     <div className="flex flex-col items-center justify-center p-8 bg-[#E0F7FA] rounded-3xl shadow-sm w-full relative overflow-hidden min-h-[400px]">
@@ -68,7 +89,7 @@ export default function PetStatusView({ initialHunger, maxHunger, petname }: Pet
             <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-slate-800"></div>
 
             <Image
-              src={petInfo.image}
+              src={displayImage}
               alt={petname}
               width={200}
               height={200}
@@ -93,7 +114,7 @@ export default function PetStatusView({ initialHunger, maxHunger, petname }: Pet
           <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-[#B2EBF2]">
             <div
               style={{ width: `${fullnessPercentage}%` }}
-              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ease-out ${petInfo.colorClass}`}
+              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ease-out ${statusConfig.colorClass}`}
             ></div>
           </div>
         </div>

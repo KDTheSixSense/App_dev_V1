@@ -1,3 +1,5 @@
+//app/(main)/profile/page.tsx
+
 import React from 'react';
 import { getAppSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -141,13 +143,22 @@ export default async function ProfilePage() {
   const uniqueLoginDates = new Set(recentLogins.map(login => login.loggedInAt.toISOString().split('T')[0]));
 
   // (ここはダミーデータのため、実際のロジックに置き換えてください)
-  const subjectProgress = {
+  const subjectProgressData = {
     basicA: 98,
     basicB: 86,
     appliedMorning: 99,
     appliedAfternoon: 85,
     programming: 65,
   };
+
+  // PetStatusView用に配列形式に変換 (kohakuUtilsのSubjectProgress型に合わせる)
+  const subjectProgressList = [
+    { subjectName: '基本A', level: subjectProgressData.basicA },
+    { subjectName: '基本B', level: subjectProgressData.basicB },
+    { subjectName: '応用午前', level: subjectProgressData.appliedMorning },
+    { subjectName: '応用午後', level: subjectProgressData.appliedAfternoon },
+    { subjectName: 'プログラム', level: subjectProgressData.programming },
+  ];
 
   const ADVICE_TIMEFRAME_DAYS = 7;
   const jstOffset = 9 * 60 * 60 * 1000;
@@ -179,7 +190,7 @@ export default async function ProfilePage() {
 
   const userStats = {
     loginDays: uniqueLoginDates.size,
-    progress: subjectProgress,
+    progress: subjectProgressData,
     totalStudyTimeMin: totalStudyTimeMin,
     totalProblemsCompleted: totalProblemsCompleted,
     timeframeDays: ADVICE_TIMEFRAME_DAYS,
@@ -211,6 +222,7 @@ export default async function ProfilePage() {
       aiAdvice={aiAdvice}
       hasPassword={hasPassword}
       initialHistory={historyData}
+      initialSubjectProgress={subjectProgressList} // 配列データを渡す
     />
   );
 }
