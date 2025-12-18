@@ -23,6 +23,9 @@ services:
       # Session Security (Fixed 500 Error)
       - SECRET_COOKIE_PASSWORD=complex_password_at_least_32_characters_long_1234567890
       - COOKIE_NAME=infopia_session_prod
+      # Google Auth
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     deploy:
       replicas: 5
     expose:

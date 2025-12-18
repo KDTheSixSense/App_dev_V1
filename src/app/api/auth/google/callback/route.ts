@@ -9,7 +9,7 @@ import { updateUserLoginStats } from '@/lib/actions';
 
 export async function GET(req: NextRequest) {
   // 必須の環境変数が設定されているかを確認
-  if (!process.env.NEXT_PUBLIC_APP_URL || !process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  if (!process.env.NEXT_PUBLIC_APP_URL || !process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     console.error('【Google OAuth Callback】: 必要な環境変数が設定されていません。');
     return NextResponse.json(
       { error: "サーバー設定が不完全です。管理者にお問い合わせください。" },
@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
     oAuth2Client.setCredentials(tokens);
 
     // 2. アクセストークンを使い、Googleからユーザー情報を取得
-    const ticket = await oAuth2Client.verifyIdToken({
-      idToken: tokens.id_token!,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    const payload = await-google-auth-library.verifyIdToken({
+      idToken: id_token,
+      audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     const email = payload.email;
     const name = payload.name;
-    const picture = null; // payload.picture || null;
+    const picture = payload.picture || null;
 
     // 3. セッションを取得
     const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
@@ -103,8 +103,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/auth/google/confirm`);
     }
 
-  } catch (error) {
-    console.error('Google callback error:', error);
+  } catch (error: any) {
+    console.error('--- Google Callback Error ---');
+    
+    // Log the basic error message and stack trace
+    console.error('Message:', error.message);
+    if (error.stack) {
+      console.error('Stack:', error.stack);
+    }
+
+    // Check if it's a Google API error from google-auth-library
+    if (error.response && error.response.data) {
+      console.error('Google API Error Response:', JSON.stringify(error.response.data, null, 2));
+    }
+    
+    // Log the full error object for deep inspection, handling circular references
+    try {
+      console.error('Full Error Object:', JSON.stringify(error, null, 2));
+    } catch (e) {
+      console.error('Full Error Object (circular reference):', error);
+    }
+    
+    console.error('-----------------------------');
+
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=google_callback_failed`
     );
