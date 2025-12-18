@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import PetStatusView from './PetStatusView';
+import PetStatusView from '../Pet/PetStatusView';
 import { SubjectProgress } from '@/components/kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
 
@@ -37,6 +37,7 @@ export default async function PetStatus({ user, assignmentCount, nextAssignment,
   const lastUpdate = petStatus.hungerLastUpdatedAt; // この値はnullの可能性がある
   let minutesPassed = 0; // 経過時間のデフォルトは0分
   let finalHungerLevel = petStatus.hungerlevel;
+  let evolutionType = petStatus.evolutionType; // 進化タイプを取得
   // 1. lastUpdateがnullでない（タイマーが開始されている）場合のみ、経過時間を計算
   if (lastUpdate) {
     minutesPassed = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60));
@@ -59,6 +60,7 @@ export default async function PetStatus({ user, assignmentCount, nextAssignment,
         },
       });
       finalHungerLevel = updatedPetStatus.hungerlevel;
+      evolutionType = updatedPetStatus.evolutionType; // 更新後の値を使用
       console.log(`${minutesPassed}分経過したため、満腹度を${hungerPointsToDecrease}ポイント減少させました。`);
     }
   }
@@ -73,6 +75,7 @@ export default async function PetStatus({ user, assignmentCount, nextAssignment,
       nextAssignment={nextAssignment}
       userLevel={user.level}
       subjectProgress={subjectProgress}
+      evolutionType={evolutionType}
     />
   );
 }

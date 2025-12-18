@@ -7,10 +7,10 @@ export type SubjectProgress = {
 
 // 科目名から画像ファイル用のコード（A, B, P, O）に変換する関数
 export const getSubjectCode = (subjectName: string): string => {
-  if (subjectName.includes('基本A')) return 'A';
-  if (subjectName.includes('基本B')) return 'B';
-  if (subjectName.includes('プログラム')) return 'P';
-  if (subjectName.includes('応用午前')) return 'O';
+  if (subjectName.includes('基本A') || subjectName.includes('基本情報A')) return 'A';
+  if (subjectName.includes('基本B') || subjectName.includes('基本情報B') || subjectName.includes('アルゴリズム')) return 'B';
+  if (subjectName.includes('プログラム') || subjectName.includes('プログラミング')) return 'P';
+  if (subjectName.includes('応用午前') || subjectName.includes('応用情報')) return 'O';
   return 'A'; // デフォルト値
 };
 
