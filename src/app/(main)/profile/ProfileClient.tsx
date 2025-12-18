@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
-import PetStatusView from './Pet/PetStatusView';
+import PetStatusView from './Pet/PetStatusview';
 import { updateUserProfileAction } from './actions';
 import { changePasswordAction } from '@/lib/actions';
 import dynamic from 'next/dynamic';
