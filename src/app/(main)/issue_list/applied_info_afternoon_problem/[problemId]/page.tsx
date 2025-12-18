@@ -9,9 +9,9 @@ import ProblemStatement from '../components/ProblemStatement';
 import KohakuChat from '../components/KohakuChat';
 
 // --- データと型のインポート ---
-import type { Problem as SerializableProblem } from '@/lib/types/index';
+import type { Problem as SerializableProblem } from '@/lib/types';
 // 基本情報 科目B の問題データを取得する関数をインポート
-import { getBasicInfoBProblemsById } from '@/lib/issue_list/basic_info_b_problem/problem';
+import { getAppliedInfoAfternoonProblemById } from '@/lib/issue_list/applied_info_afternoon_problem/problem';
 import { getNextProblemId, awardXpForCorrectAnswer } from '@/lib/actions'; // サーバーアクション
 import toast from 'react-hot-toast';
 
@@ -85,8 +85,8 @@ const ProblemDetailPage = () => {
   const params = useParams();
   const problemId = params.problemId as string;
 
-  // 基本情報 科目B の問題データを取得する
-  const initialProblemData = getBasicInfoBProblemsById(problemId);
+  // 応用情報 午後問題データを取得する
+  const initialProblemData = getAppliedInfoAfternoonProblemById(problemId);
 
   const [problem, setProblem] = useState<SerializableProblem | undefined>(initialProblemData);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -98,7 +98,7 @@ const ProblemDetailPage = () => {
 
   // problemId または language が変更されたときに状態をリセットするエフェクト
   useEffect(() => {
-    const currentProblem = getBasicInfoBProblemsById(problemId);
+    const currentProblem = getAppliedInfoAfternoonProblemById(problemId);
     setProblem(currentProblem);
     setSelectedAnswer(null);
     setIsAnswered(false);
@@ -200,7 +200,7 @@ const ProblemDetailPage = () => {
     }
 
     // 次の問題を取得するために 'basic_info_b_problem' カテゴリを指定
-    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'applied_info_afternoon_problem'); 
+    const nextProblemId = await getNextProblemId(parseInt(currentProblemId), 'applied_info_afternoon_problem');
 
     if (nextProblemId) {
       router.push(`/issue_list/basic_info_b_problem/${nextProblemId}`);

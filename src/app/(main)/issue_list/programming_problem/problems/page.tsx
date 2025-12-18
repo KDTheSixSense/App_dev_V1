@@ -9,15 +9,27 @@ const ProgrammingProblemsListPage = async () => {
   const session = await getAppSession();
   const userId = session.user?.id;
 
-  const solvedStatusMap = new Map<number, 'today' | 'past'>();
-
-  if (userId) {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-
-    // `programingProblem_id` を使って正解履歴を取得
-    const correctAnswers = await prisma.userAnswer.findMany({
+  // Promise.all で並列実行するためのPromise配列を準備
+  // TypeScriptの型推論のため、タプルとして定義するか、後でキャストする
+  const promises: [Promise<any[]>, Promise<any[]>] = [
+    // 1. 問題リスト
+    prisma.programmingProblem.findMany({
+      where: {
+        isPublished: true,
+      },
+      include: {
+        creator: {
+          select: {
+            username: true,
+          },
+        },
+      },
+      orderBy: {
+        id: 'asc',
+      },
+    }),
+    // 2. 正解履歴 (userIdがある場合のみ)
+    userId ? prisma.userAnswer.findMany({
       where: {
         userId: userId,
         isCorrect: true,
@@ -28,7 +40,17 @@ const ProgrammingProblemsListPage = async () => {
         answeredAt: true,
       },
       orderBy: { answeredAt: 'desc' },
-    });
+    }) : Promise.resolve([]) // userIdがない場合は空配列を返す
+  ];
+
+  const [problems, correctAnswers] = await Promise.all(promises);
+
+  const solvedStatusMap = new Map<number, 'today' | 'past'>();
+
+  if (userId && correctAnswers.length > 0) {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 
     for (const answer of correctAnswers) {
       const problemId = answer.programingProblem_id;
@@ -40,22 +62,6 @@ const ProgrammingProblemsListPage = async () => {
       solvedStatusMap.set(problemId, status);
     }
   }
-
-  const problems = await prisma.programmingProblem.findMany({
-    where: {
-      isPublished: true,
-    },
-    include: {
-      creator: {
-        select: {
-          username: true,
-        },
-      },
-    },
-    orderBy: {
-      id: 'asc',
-    },
-  });
 
   // AnimatedList用にデータを変換
   const items: AnimatedListItem[] = problems.map((problem) => {
@@ -76,10 +82,10 @@ const ProgrammingProblemsListPage = async () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           プログラミングコーディング問題一覧
         </h1>
-        
+
         {/* 新しいAnimatedListコンポーネントを使用 */}
-        <AnimatedList 
-          items={items} 
+        <AnimatedList
+          items={items}
           showGradients={true}
           displayScrollbar={true}
         />

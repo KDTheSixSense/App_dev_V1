@@ -5,7 +5,7 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
@@ -66,6 +66,7 @@ const getPetDisplayState = (hungerLevel: number) => {
 export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subjectProgress }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // 1. ランク(level)と経験値(xp)のstate
   const [rank, setRank] = useState(() => userWithPet?.level ?? 1);
@@ -128,10 +129,10 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
     // ユーザーはいるがペット情報がない場合 (フォールバック)
     if (userWithPet) {
       const displayState = getPetDisplayState(MAX_HUNGER);
-      console.log("[Header Debug] Initial petStatus (fallback for no status_Kohaku):", { hungerlevel: MAX_HUNGER, ...displayState });
+      // console.log("[Header Debug] Initial petStatus (fallback for no status_Kohaku):", { hungerlevel: MAX_HUNGER, ...displayState });
       return { hungerlevel: MAX_HUNGER, ...displayState };
     }
-    console.log("[Header Debug] Initial petStatus (no userWithPet): null");
+    // console.log("[Header Debug] Initial petStatus (no userWithPet): null");
     return null;
   });
 
@@ -141,7 +142,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
     if (userWithPet?.status_Kohaku) {
       const { hungerlevel } = userWithPet.status_Kohaku;
       const displayState = getPetDisplayState(hungerlevel);
-      
+
 
       let icon = displayState.icon;
       // DBに保存された進化タイプがある場合
@@ -154,13 +155,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
         icon,
         colorClass: displayState.colorClass
       });
-      
+
       // 他のステータスも同期
       setRank(userWithPet.level);
       setXp(userWithPet.xp);
       setContinuousLogin(userWithPet.continuouslogin ?? 0);
+      setContinuousLogin(userWithPet.continuouslogin ?? 0);
     }
-  }, [userWithPet, searchParams]);
+  }, [userWithPet]); // searchParamsを削除して、ページ遷移時のちらつき（状態リセット）を防止
 
   // 4. ファビコンをペットのアイコンに動的に変更する処理（強化版）
   useEffect(() => {
@@ -191,7 +193,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
   // 4. ペットのステータスをAPIから再取得して、Stateを更新する関数
   // (useCallbackでラップ)
   const refetchPetStatus = useCallback(async (isPeriodicCheck: boolean = false) => {
-    console.log("[Header Debug] refetchPetStatus called.");
+    // console.log("[Header Debug] refetchPetStatus called.");
     try {
       const res = await fetch('/api/pet/status', { cache: 'no-store' }); // キャッシュを無効化
       if (res.ok) {
@@ -228,7 +230,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
           // 定期チェックで満腹度が変わっていたら、イベントを発火
           if (isPeriodicCheck && hungerLevelChanged) {
-            console.log("[Header Debug] Hunger level changed on periodic check. Dispatching event.");
+            // console.log("[Header Debug] Hunger level changed on periodic check. Dispatching event.");
             window.dispatchEvent(new CustomEvent('petStatusUpdated'));
           }
         }
@@ -238,17 +240,18 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
     } catch (error) {
       console.error("[Header Debug] ペット情報の再取得に失敗:", error);
     }
-  }, [searchParams, userWithPet]); // userWithPetを依存配列に追加
+  }, [userWithPet]); // userWithPetを依存配列に追加 (searchParamsは削除)
 
   // レンダリング直前にpetStatus.iconの値をログ出力
-  console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
+  // console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
 
   useEffect(() => {
-    // ページ読み込み時にも最新の情報を取得
+    // ページ読み込み時の処理
     if (userWithPet) { // ログインしている場合のみ
-      const timerId = setTimeout(() => {
-        refetchPetStatus();
-      }, 500); // 500ms遅延実行
+      // NOTE: 以前はここで setTimeout を使って refetchPetStatus() を呼び出していましたが、
+      // サーバーサイドから既に最新のデータ (userWithPet) が渡されているため、
+      // クライアントサイドでの即時の再フェッチは不要（冗長）と判断し削除しました。
+      // 必要があれば、特定の条件でのみ呼び出すように復元してください。
 
       // addEventListener 用のラッパー関数を定義
       const handlePetStatusUpdate = () => {
@@ -267,13 +270,12 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
       // コンポーネントが不要になった時に、イベントリスナーとタイマーを解除
       return () => {
-        clearTimeout(timerId); // 遅延実行タイマーを解除
         // ラッパー関数を解除
         window.removeEventListener('petStatusUpdated', handlePetStatusUpdate);
         clearInterval(intervalId); // 定期実行タイマーを解除
       };
     }
-  }, [userWithPet, refetchPetStatus, searchParams]); // 依存配列に refetchPetStatus を追加
+  }, [userWithPet, refetchPetStatus]); // 依存配列に refetchPetStatus を追加 (searchParamsは削除)
 
   // ログアウト処理を行う非同期関数
   const handleLogout = async () => {
@@ -325,8 +327,8 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
         <ul className="flex items-center space-x-2">
           {navItems.map((item) => (
             <li key={item.label}>
-              {/* router.pushをwindow.location.hrefに変更 */}
-              <button onClick={() => window.location.href = item.href} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
+              {/* router.pushを使用 SPA遷移に変更 */}
+              <button onClick={() => router.push(item.href)} className="w-20 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
                 <Image src={item.icon} alt={item.label} width={40} height={40} unoptimized />
                 <span className='text-[#008391] text-xs mt-1 font-bold'>{item.label}</span>
               </button>

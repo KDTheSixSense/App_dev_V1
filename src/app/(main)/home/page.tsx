@@ -1,8 +1,10 @@
-import React from "react";
+import React, { Suspense } from "react";
 import User from "./user/UserDetail";
-import Ranking from "./ranking/page";
+// import Ranking from "./ranking/page"; // Removed
+// import Daily from "./daily/page"; // Removed
+import RankingSection from "@/components/dashboard/RankingSection";
+import DailyMissionSection from "@/components/dashboard/DailyMissionSection";
 import Pet from "./components/PetStatus";
-import Daily from "./daily/page";
 import EventCard from "./components/EventCard";
 import Evolution from "@/components/evolution";
 
@@ -24,15 +26,19 @@ interface SessionData {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: any; // 型を修正
+  searchParams: { [key: string]: string | string[] | undefined }; // 型を修正
 }) {
 
   // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? session.user.id : null;
-  const assignmentCount = await getUnsubmittedAssignmentCount();
-  const nextAssignment = await getNextDueAssignment(); // 次の課題を取得
-  const upcomingEvents = await getUpcomingEvents();
+
+  // データを並列で取得してパフォーマンスを向上
+  const [assignmentCount, nextAssignment, upcomingEvents] = await Promise.all([
+    getUnsubmittedAssignmentCount(),
+    getNextDueAssignment(), // 次の課題を取得
+    getUpcomingEvents(),
+  ]);
 
   // ログインユーザーの全情報を取得 (セキュリティ対策: password/hashを除外)
   const user = userId ? await prisma.user.findUnique({
@@ -73,6 +79,12 @@ export default async function HomePage({
     level: us.level
   })) || [];
 
+  const LoadingSkeleton = () => (
+    <div className="bg-[#FFF8E1] rounded-3xl p-6 shadow-sm min-h-[400px] h-full animate-pulse flex items-center justify-center">
+      <div className="text-gray-400">Loading...</div>
+    </div>
+  );
+
   return (
     <div className='bg-white select-none min-h-screen'>
       {/* 進化エフェクトコンポーネントを配置 */}
@@ -89,7 +101,9 @@ export default async function HomePage({
 
           {/* Left Column: Ranking (3 cols) */}
           <div className="lg:col-span-3 space-y-6 order-2 lg:order-1 h-full">
-            <Ranking />
+            <Suspense fallback={<LoadingSkeleton />}>
+              <RankingSection />
+            </Suspense>
           </div>
 
           {/* Center Column: Pet, Tasks, Events (6 cols) */}
@@ -109,7 +123,9 @@ export default async function HomePage({
 
             {/* 2. Daily Missions */}
             <div className="flex-1">
-              <Daily />
+              <Suspense fallback={<LoadingSkeleton />}>
+                <DailyMissionSection />
+              </Suspense>
             </div>
           </div>
 

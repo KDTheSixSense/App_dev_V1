@@ -9,18 +9,15 @@ export async function seedAdminUsers(prisma: PrismaClient) {
     ];
 
     for (const email of adminEmails) {
-        const user = await prisma.user.findUnique({
+        await prisma.user.upsert({
             where: { email },
+            update: { isAdmin: true },
+            create: {
+                email,
+                isAdmin: true,
+                username: email.split('@')[0], // create default username from email part
+            },
         });
-
-        if (user) {
-            await prisma.user.update({
-                where: { email },
-                data: { isAdmin: true },
-            });
-            console.log(`✅ User ${email} is now an Admin.`);
-        } else {
-            console.warn(`⚠️ User ${email} not found. Skipping Admin update.`);
-        }
+        console.log(`✅ User ${email} is ensured as Admin.`);
     }
 }

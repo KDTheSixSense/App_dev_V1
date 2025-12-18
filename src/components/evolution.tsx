@@ -27,7 +27,7 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
   const normalImageSrc = '/images/Kohaku/kohaku-normal.png';
 
   // レンダリング確認用ログ
-  console.log('[Evolution] Rendering component. Level:', userLevel);
+  // console.log('[Evolution] Rendering component. Level:', userLevel);
 
   // エフェクトの制御
   useEffect(() => {
@@ -35,7 +35,7 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
     if (hasEvolutionParam) {
       // まだ開始していない場合のみ開始
       if (phase === 'idle') {
-        console.log('[Evolution Debug] Starting evolution sequence.');
+        // console.log('[Evolution Debug] Starting evolution sequence.');
         setPhase('pre-animation');
         setDisplayImage(normalImageSrc);
       }
