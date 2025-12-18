@@ -27,6 +27,7 @@ CREATE TABLE "User" (
     "isAgreedToTerms" BOOLEAN NOT NULL DEFAULT false,
     "isAgreedToPrivacyPolicy" BOOLEAN NOT NULL DEFAULT false,
     "aiAdviceCredits" INTEGER NOT NULL DEFAULT 5,
+    "tokenVersion" INTEGER NOT NULL DEFAULT 1,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
