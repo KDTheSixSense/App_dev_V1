@@ -43,7 +43,7 @@ const questionCategories = [
   //   path: '/issue_list/applied_info_afternoon_problem/problems', image: '/images/placeholder.jpg' 
   // },
   { title: 'プログラミング', description: '様々な言語を活用できる\n実践的なコーディング問題です', path: '/issue_list/programming_problem/problems', image: '/images/issue_list/programming_problem.png' },
-  { title: '4択問題', description: '様々なジャンルの4択問題を\n手軽に解くことができます', path: '/issue_list/selects_problems', image: '/images/issue_list/selects_problems.png' },
+  { title: '選択問題', description: '様々なジャンルの4択問題を\n手軽に解くことができます', path: '/issue_list/selects_problems', image: '/images/issue_list/selects_problems.png' },
   { title: '作成した問題', description: 'あなたが作成したオリジナルの\n問題に挑戦できます', path: '/issue_list/mine_issue_list/problems', image: '/images/issue_list/mine_issue_list.png' },
 ];
 
