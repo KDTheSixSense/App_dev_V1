@@ -116,6 +116,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       username: user.username,
       isAdmin: (user as any).isAdmin, // Cast to any to avoid IDE cache issues
+      tokenVersion: user.tokenVersion || 0, // セッションにバージョンを保存
     };
     await session.save();
 

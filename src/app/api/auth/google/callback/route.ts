@@ -78,6 +78,7 @@ export async function GET(req: NextRequest) {
         username: existingUser.username,
         isAdmin: existingUser.isAdmin,
         lastlogin: existingUser.lastlogin,
+        tokenVersion: existingUser.tokenVersion || 0,
       };
       await session.save();
 
