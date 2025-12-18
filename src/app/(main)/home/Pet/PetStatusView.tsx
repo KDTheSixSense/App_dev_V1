@@ -2,6 +2,8 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { UnsubmittedAssignment } from '@/lib/data';
 import { getEvolvedImageSrc, SubjectProgress } from '../../../../components/kohakuUtils';
 
 // 親コンポーネントから渡されるPropsの型を定義
@@ -11,6 +13,8 @@ interface PetStatusViewProps {
   petname: string;
   subjectProgress?: SubjectProgress[]; // 進化状態を判定するために追加
   userLevel: number; // レベル判定用に追加
+  assignmentCount: number;
+  nextAssignment: UnsubmittedAssignment | null;
 }
 
 /**
@@ -49,7 +53,7 @@ const getStatusConfig = (hungerLevel: number) => {
   }
 };
 
-export default function PetStatusView({ initialHunger, maxHunger, petname, subjectProgress, userLevel }: PetStatusViewProps) {
+export default function PetStatusView({ initialHunger, maxHunger, petname, subjectProgress, userLevel, assignmentCount, nextAssignment }: PetStatusViewProps) {
   const router = useRouter();
 
   // ヘルパー関数を呼び出して、現在の状態を取得
@@ -70,6 +74,19 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, subje
     if (evolvedBaseImage !== '/images/Kohaku/kohaku-normal.png') {
       // ファイル名の 'base.png' 部分を、現在の状態に応じたサフィックス（smile.pngなど）に置換
       displayImage = evolvedBaseImage.replace('base.png', `${statusConfig.suffix}.png`);
+    }
+  }
+
+  // 課題リンクの生成ロジック
+  let linkPath = '/issue_list';
+  if (nextAssignment) {
+    if (nextAssignment.programmingProblemId) {
+      linkPath = `/group/coding-page/${nextAssignment.programmingProblemId}?assignmentId=${nextAssignment.id}&hashedId=${nextAssignment.groupHashedId}`;
+    } else if (nextAssignment.selectProblemId) {
+      linkPath = `/group/select-page/${nextAssignment.selectProblemId}?assignmentId=${nextAssignment.id}&hashedId=${nextAssignment.groupHashedId}`;
+    } else if (nextAssignment.groupHashedId) {
+      // Problem not attached -> Go to Group Member Page
+      linkPath = `/group/${nextAssignment.groupHashedId}/member`;
     }
   }
 
@@ -156,5 +173,7 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, subje
       </div>
 
     </div>
+
+    
   );
 }

@@ -1,6 +1,4 @@
-'use client';
-
-import { useMemo } from 'react';
+import { prisma } from '@/lib/prisma';
 import PetStatusView from './PetStatusView';
 import { SubjectProgress } from '@/components/kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
@@ -13,13 +11,14 @@ interface PetStatusProps {
   user: User | null;
   assignmentCount: number;
   nextAssignment: UnsubmittedAssignment | null;
+  subjectProgress?: SubjectProgress[];
 }
 
-export default async function PetStatus({ user, assignmentCount, nextAssignment }: PetStatusProps) {
+export default async function PetStatus({ user, assignmentCount, nextAssignment, subjectProgress }: PetStatusProps) {
 
   // ログインしていない場合は、デフォルトの満タン状態で表示
   if (!user) {
-    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク' assignmentCount={assignmentCount} nextAssignment={nextAssignment} />;
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク' assignmentCount={assignmentCount} nextAssignment={nextAssignment} userLevel={1} />;
   }
 
   // --- ここからが時間経過の計算ロジックです ---
@@ -31,7 +30,7 @@ export default async function PetStatus({ user, assignmentCount, nextAssignment 
   // もしペット情報がなければ、ここで処理を中断（表示はデフォルト）
   if (!petStatus) {
     console.error(`User ID: ${user.id} のペット情報が見つかりません。`);
-    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク' assignmentCount={assignmentCount} nextAssignment={nextAssignment} />;
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク' assignmentCount={assignmentCount} nextAssignment={nextAssignment} userLevel={user.level} subjectProgress={subjectProgress} />;
   }
 
   // 1. 最後に更新されてからの経過時間（分）を計算
@@ -72,6 +71,8 @@ export default async function PetStatus({ user, assignmentCount, nextAssignment 
       petname={petStatus.name}
       assignmentCount={assignmentCount}
       nextAssignment={nextAssignment}
+      userLevel={user.level}
+      subjectProgress={subjectProgress}
     />
   );
 }
