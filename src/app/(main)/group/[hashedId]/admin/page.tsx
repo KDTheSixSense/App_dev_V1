@@ -166,12 +166,11 @@ const GroupDetailPage: React.FC = () => {
         const { title, description, dueDate, problem } = assignmentData;
         await createAssignment(title, description, dueDate, problem);
         toast.success("課題投稿に成功しました");
-        handleAssignmentEditorCollapse();
 
         // ★ URLパラメータをクリアしてリフレッシュ（タブ状態は維持）
         if (pathname) {
             router.replace(`${pathname}?tab=課題`);
-            router.refresh();
+            // router.refresh(); // Removed: Handled by optimistic update
         }
     };
 

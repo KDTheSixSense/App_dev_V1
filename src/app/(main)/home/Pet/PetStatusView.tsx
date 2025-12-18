@@ -15,6 +15,7 @@ interface PetStatusViewProps {
   userLevel: number; // レベル判定用に追加
   assignmentCount: number;
   nextAssignment: UnsubmittedAssignment | null;
+  evolutionType?: string | null; // DB保存済みの進化タイプ
 }
 
 /**
@@ -53,7 +54,7 @@ const getStatusConfig = (hungerLevel: number) => {
   }
 };
 
-export default function PetStatusView({ initialHunger, maxHunger, petname, subjectProgress, userLevel, assignmentCount, nextAssignment }: PetStatusViewProps) {
+export default function PetStatusView({ initialHunger, maxHunger, petname, subjectProgress, userLevel, assignmentCount, nextAssignment, evolutionType }: PetStatusViewProps) {
   const router = useRouter();
 
   // ヘルパー関数を呼び出して、現在の状態を取得
@@ -68,8 +69,16 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, subje
   // レベル30以上の場合のみ進化画像を適用
   if (userLevel >= 30) {
     // 1. 進化のベース画像を取得 (例: .../A-A-base.png または .../kohaku-normal.png)
-    const evolvedBaseImage = getEvolvedImageSrc(subjectProgress);
+    let evolvedBaseImage = '/images/Kohaku/kohaku-normal.png';
 
+    if (evolutionType) {
+      // DBに保存された進化タイプがあればそれを使用 (例: "A-B" -> "/images/evolution/A-B-base.png")
+      evolvedBaseImage = `/images/evolution/${evolutionType}-base.png`;
+    } else {
+      // なければ計算 (フォールバック)
+      evolvedBaseImage = getEvolvedImageSrc(subjectProgress);
+    }
+    
     // 2. 進化している場合（normal以外が返ってきた場合）、表情差分を適用
     if (evolvedBaseImage !== '/images/Kohaku/kohaku-normal.png') {
       // ファイル名の 'base.png' 部分を、現在の状態に応じたサフィックス（smile.pngなど）に置換
