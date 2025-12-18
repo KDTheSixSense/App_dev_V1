@@ -96,13 +96,15 @@ export default async function RankingPage() {
   const tabs = [{ name: '総合' }, ...subjects.map(s => ({ name: s.name }))];
 
   return (
-    <div className="bg-[#FFF8E1] rounded-3xl p-6 shadow-sm h-[calc(100vh-140px)] sticky top-24 flex flex-col">
+    <div className="bg-[#FFF8E1] rounded-3xl p-6 shadow-sm min-h-[calc(100vh-140px)] h-full sticky top-24 flex flex-col">
       <h1 className="text-xl font-bold text-slate-700 mb-4 text-center">ランキング</h1>
-      <RankingContainer
-        tabs={tabs}
-        allRankings={allRankingsForDisplay}
-        allRankingsFull={allRankingsFull}
-      />
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <RankingContainer
+          tabs={tabs}
+          allRankings={allRankingsForDisplay}
+          allRankingsFull={allRankingsFull}
+        />
+      </div>
     </div>
   );
 }

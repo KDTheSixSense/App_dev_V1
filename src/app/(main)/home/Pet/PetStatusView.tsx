@@ -121,13 +121,38 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, subje
       </div>
 
       {/* 4. Action Button */}
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm mb-8">
         <button
           className="w-full py-4 rounded-full bg-gradient-to-r from-[#4DD0E1] to-[#26C6DA] text-white font-bold text-xl shadow-[0_4px_14px_0_rgba(38,198,218,0.39)] hover:shadow-[0_6px_20px_rgba(38,198,218,0.23)] hover:scale-[1.02] transform transition-all active:scale-95"
           onClick={() => router.push('/issue_list')}
         >
           エサを探しに行く
         </button>
+      </div>
+
+      {/* 5. Due Tasks Section (Integrated) */}
+      <div className="w-full bg-white rounded-2xl shadow-sm p-6 relative z-10">
+        <h3 className="text-lg font-bold text-slate-800 mb-4">提出期限が近い課題</h3>
+
+        {assignmentCount > 0 ? (
+          <div className="flex flex-col gap-4">
+            <div className="w-full text-center p-3 bg-slate-50 rounded-xl">
+              <p className="font-bold text-slate-700 text-lg mb-1 truncate">{nextAssignment?.title || '未提出の課題'}</p>
+              <p className="text-sm text-slate-500">残り {assignmentCount} 件</p>
+            </div>
+
+            <Link href={linkPath} className="w-full bg-[#009bf2] hover:bg-[#0089d6] text-white py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors shadow-md">
+              <span>課題を解く</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="transform rotate-0">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            </Link>
+          </div>
+        ) : (
+          <div className="text-center text-slate-500 py-4">
+            現在、提出期限が近い課題はありません
+          </div>
+        )}
       </div>
 
     </div>

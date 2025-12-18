@@ -251,6 +251,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     questions_id?: number;
     selectProblem_id?: number;
     applied_am_question_id?: number;
+    questions_algorithm_id?: number;
   } = {};
 
   const todayAppDateString = nowJST.toDateString();
@@ -287,16 +288,16 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
       alreadyCorrectToday = true;
     }
 
-  } else if (subjectid === 3) { // 3: Questions
-    const problem = await prisma.questions.findUnique({
+  } else if (subjectid === 3) { // 3: Questions_Algorithm (基本情報B問題)
+    const problem = await prisma.questions_Algorithm.findUnique({
       where: { id: problemId },
       select: { difficultyId: true }
     });
     difficultyId = problem?.difficultyId;
-    userAnswerForeignKeyData = { questions_id: problemId };
+    userAnswerForeignKeyData = { questions_algorithm_id: problemId };
 
     const lastCorrectAnswer = await prisma.userAnswer.findFirst({
-      where: { userId, isCorrect: true, questions_id: problemId },
+      where: { userId, isCorrect: true, questions_algorithm_id: problemId },
       orderBy: { answeredAt: 'desc' }
     });
     if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
@@ -496,7 +497,7 @@ export async function recordAnswerAction(problemId: number, subjectid: number, i
   let userAnswerForeignKeyData = {};
   if (subjectid === 1) userAnswerForeignKeyData = { programingProblem_id: problemId };
   else if (subjectid === 2) userAnswerForeignKeyData = { basic_A_Info_Question_id: problemId };
-  else if (subjectid === 3) userAnswerForeignKeyData = { questions_id: problemId };
+  else if (subjectid === 3) userAnswerForeignKeyData = { questions_algorithm_id: problemId }; // Use correct FK for Algo
   else if (subjectid === 4) userAnswerForeignKeyData = { selectProblem_id: problemId };
   else if (subjectid === 5) userAnswerForeignKeyData = { applied_am_question_id: problemId };
   else userAnswerForeignKeyData = { questions_id: problemId }; // Fallback

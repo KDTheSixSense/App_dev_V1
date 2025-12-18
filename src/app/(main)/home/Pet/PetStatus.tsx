@@ -5,51 +5,73 @@ import PetStatusView from './PetStatusView';
 import { SubjectProgress } from '@/components/kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
 
-type UserWithPetStatus = User & {
-  status_Kohaku: Status_Kohaku | null;
-  progresses?: {
-    level: number;
-    subject: {
-      name: string;
-    };
-  }[];
-};
+const MAX_HUNGER = 200; // 満腹度の最大値をここで一元管理
 
-// Propsの型定義を更新
+import { UnsubmittedAssignment } from '@/lib/data';
+
 interface PetStatusProps {
-  user: UserWithPetStatus | null;
-  subjectProgress?: SubjectProgress[]; // ★ subjectProgressを受け取れるように追加
+  user: User | null;
+  assignmentCount: number;
+  nextAssignment: UnsubmittedAssignment | null;
 }
 
-export default function Pet({ user, subjectProgress }: PetStatusProps) {
-  // user.progresses から subjectProgress を生成するロジックを追加
-  // これにより、Petが表示するユーザーごとの進化状態を正しく反映できる
-  const effectiveSubjectProgress = useMemo(() => {
-    if (user?.progresses && user.progresses.length > 0) {
-      return user.progresses.map((p) => ({
-        subjectName: p.subject.name,
-        level: p.level,
-      }));
-    }
-    return subjectProgress;
-  }, [user, subjectProgress]);
+export default async function PetStatus({ user, assignmentCount, nextAssignment }: PetStatusProps) {
 
-  if (!user || !user.status_Kohaku) {
-    // ユーザー情報やペット情報がない場合のフォールバック表示
-    return (
-        <div className="flex flex-col items-center justify-center p-8 bg-[#E0F7FA] rounded-3xl shadow-sm w-full relative overflow-hidden min-h-[400px]">
-            <p>ペット情報を読み込んでいます...</p>
-        </div>
-    );
+  // ログインしていない場合は、デフォルトの満タン状態で表示
+  if (!user) {
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク' assignmentCount={assignmentCount} nextAssignment={nextAssignment} />;
   }
+
+  // --- ここからが時間経過の計算ロジックです ---
+  const now = new Date();
+  let petStatus = await prisma.status_Kohaku.findFirst({
+    where: { user_id: user.id },
+  });
+
+  // もしペット情報がなければ、ここで処理を中断（表示はデフォルト）
+  if (!petStatus) {
+    console.error(`User ID: ${user.id} のペット情報が見つかりません。`);
+    return <PetStatusView initialHunger={MAX_HUNGER} maxHunger={MAX_HUNGER} petname='コハク' assignmentCount={assignmentCount} nextAssignment={nextAssignment} />;
+  }
+
+  // 1. 最後に更新されてからの経過時間（分）を計算
+  const lastUpdate = petStatus.hungerLastUpdatedAt; // この値はnullの可能性がある
+  let minutesPassed = 0; // 経過時間のデフォルトは0分
+  let finalHungerLevel = petStatus.hungerlevel;
+  // 1. lastUpdateがnullでない（タイマーが開始されている）場合のみ、経過時間を計算
+  if (lastUpdate) {
+    minutesPassed = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60));
+    // 10分ごとに1ポイント減少するので、経過分数を10で割って切り捨て
+    const hungerPointsToDecrease = Math.floor(minutesPassed / 10);
+
+    // 10分以上経過していれば（＝1ポイント以上減少する場合）、DBを更新
+    if (hungerPointsToDecrease > 0) {
+      const newHungerLevel = Math.max(0, petStatus.hungerlevel - hungerPointsToDecrease);
+
+      // 最後に更新した時刻から、経過した「10分の倍数」の時間を加算して新しい更新時刻を計算
+      // これにより、9分などの端数が切り捨てられず、次回の計算に引き継がれる
+      const newLastUpdate = new Date(lastUpdate.getTime() + hungerPointsToDecrease * 10 * 60 * 1000);
+
+      const updatedPetStatus = await prisma.status_Kohaku.update({
+        where: { id: petStatus.id },
+        data: {
+          hungerlevel: newHungerLevel,
+          hungerLastUpdatedAt: newLastUpdate,
+        },
+      });
+      finalHungerLevel = updatedPetStatus.hungerlevel;
+      console.log(`${minutesPassed}分経過したため、満腹度を${hungerPointsToDecrease}ポイント減少させました。`);
+    }
+  }
+  // --- 計算ロジックここまで ---
 
   return (
     <PetStatusView
-      initialHunger={user.status_Kohaku.hungerlevel}
-      maxHunger={200} // 仮の最大値
-      petname={user.status_Kohaku.name}
-      subjectProgress={effectiveSubjectProgress} // ★ PetStatusViewに渡す
-      userLevel={user.level} // レベルを渡す
+      initialHunger={finalHungerLevel}
+      maxHunger={MAX_HUNGER}
+      petname={petStatus.name}
+      assignmentCount={assignmentCount}
+      nextAssignment={nextAssignment}
     />
   );
 }

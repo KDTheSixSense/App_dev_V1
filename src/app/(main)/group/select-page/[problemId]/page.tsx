@@ -3,7 +3,17 @@
 import React from 'react';
 import { prisma } from '@/lib/prisma';
 import ProblemDetailClient from './ProblemDetailClient'; // これから作成するファイル
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import { sessionOptions } from '@/lib/session';
+
+interface SessionData {
+  user?: {
+    id: string;
+    email: string;
+  };
+}
 
 type ProblemDetailPageProps = {
   params: Promise<{ problemId: string }>;
@@ -12,11 +22,17 @@ type ProblemDetailPageProps = {
 
 // ページ自体をサーバー側でデータを取得する非同期関数に変更
 export default async function ProblemDetailPage({ params, searchParams }: ProblemDetailPageProps) {
+  // Authentication Check
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user?.id) {
+    redirect('/auth/login');
+  }
+
   const resolvedParams = await params;
   const id = parseInt(resolvedParams.problemId, 10);
   const resolvedSearchParams = searchParams ? await searchParams : undefined; // searchParams を await する
 
-  
+
   // IDが無効な場合は404ページを表示
   if (isNaN(id)) {
     notFound();

@@ -6,7 +6,7 @@ import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { useSearchParams } from 'next/navigation';
-// Link, Image, useRouter はNext.js固有のため削除
+import Link from 'next/link';
 import { getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
 
@@ -406,8 +406,103 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
       {/* 右側：ユーザー情報 */}
       <div className="flex items-center gap-4 ml-6 h-full">
+        {/* プロフィールアイコン (プルダウンメニュー付き) */}
+        <div className="w-14 h-14 relative" ref={profileMenuRef}>
+          {/* 元のaタグをbuttonタグに変更して開閉を制御 */}
+          <button
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="w-full h-full focus:outline-none"
+          >
+            <Image
+              src={user?.icon || "/images/test_icon.webp"}
+              alt="ユーザーアイコン"
+              width={56}
+              height={56}
+              className="rounded-full object-cover transition hover:opacity-80"
+              unoptimized
+            />
+          </button>
+
+          {/* プルダウンメニュー */}
+          {isProfileMenuOpen && (
+            <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+              <div className="py-1">
+                {user?.isAdmin && (
+                  <Link
+                    href="/admin-audit"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-b border-gray-50 font-bold"
+                  >
+                    🔒 管理者用監査ログ
+                  </Link>
+                )}
+                <Link
+                  href="/profile"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors border-b border-gray-50 font-medium"
+                >
+                  プロフィール
+                </Link>
+                <Link
+                  href="/profile/history"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  問題解答履歴
+                </Link>
+                <Link
+                  href="/customize_trace"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  疑似言語トレース
+                </Link>
+                <Link
+                  href="/simulator"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  ノーコード
+                </Link>
+                <Link
+                  href="/terms"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  利用規約
+                </Link>
+                <Link
+                  href="/privacypolicy"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  プライバシーポリシー
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* ランクとログイン日数 */}
         <div className="flex items-center gap-6 h-full pt-1">
+          {/* Continuous Login - Image Style - Enlarged */}
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <div className="relative w-12 h-12">
+              <Image
+                src="/images/Continuous_login.png"
+                alt="Continuous Login"
+                width={48}
+                height={48}
+                className="object-contain"
+                unoptimized
+              />
+            </div>
+            <div className="flex items-baseline -mt-3">
+              <span className="text-2xl font-bold text-slate-700 leading-none">{continuousLogin}</span>
+              <span className="text-xs text-slate-500 font-bold ml-0.5">日</span>
+            </div>
+          </div>
+
           {/* Rank Circular Gauge - Enlarged */}
           <div className="relative flex flex-col items-center justify-center -mt-2">
             <div className="relative w-16 h-16">
@@ -441,86 +536,6 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
               <span className="text-[11px] font-bold text-cyan-600 whitespace-nowrap">RANK {rank}</span>
             </div>
           </div>
-
-          {/* Continuous Login - Image Style - Enlarged */}
-          <div className="flex flex-col items-center gap-1 mt-1">
-            <div className="relative w-12 h-12">
-              <Image
-                src="/images/Continuous_login.png"
-                alt="Continuous Login"
-                width={48}
-                height={48}
-                className="object-contain"
-                unoptimized
-              />
-            </div>
-            <div className="flex items-baseline -mt-3">
-              <span className="text-2xl font-bold text-slate-700 leading-none">{continuousLogin}</span>
-              <span className="text-xs text-slate-500 font-bold ml-0.5">日</span>
-            </div>
-          </div>
-        </div>
-
-        {/* プロフィールアイコン (プルダウンメニュー付き) */}
-        <div className="w-14 h-14 relative" ref={profileMenuRef}>
-          {/* 元のaタグをbuttonタグに変更して開閉を制御 */}
-          <button
-            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-            className="w-full h-full focus:outline-none"
-          >
-            <Image
-              src={user?.icon || "/images/test_icon.webp"}
-              alt="ユーザーアイコン"
-              width={56}
-              height={56}
-              className="rounded-full object-cover transition hover:opacity-80"
-              unoptimized
-            />
-          </button>
-
-          {/* プルダウンメニュー */}
-          {isProfileMenuOpen && (
-            <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-              <div className="py-1">
-                <a
-                  href="/profile"
-                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors border-b border-gray-50 font-medium"
-                >
-                  プロフィール
-                </a>
-                <a
-                  href="/profile/history"
-                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
-                >
-                  問題解答履歴
-                </a>
-                <a
-                  href="/customize_trace"
-                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
-                >
-                  疑似言語トレース
-                </a>
-                <a
-                  href="/simulator"
-                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
-                >
-                  ノーコード
-                </a>
-                <a
-                  href="/terms"
-                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
-                >
-                  利用規約
-                </a>
-                <a
-                  href="/privacypolicy"
-                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
-                >
-                  プライバシーポリシー
-                </a>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </header>

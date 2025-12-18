@@ -32,21 +32,39 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   console.log('🌱 Seeding users and groups...');
 
   // --- 1. 既存データをクリア ---
-  await prisma.auditLog.deleteMany({});
-  await prisma.loginHistory.deleteMany({});
+  // 依存関係の末端から削除していく
+  await prisma.assignmentComment.deleteMany({});
+  await prisma.submissions.deleteMany({});
+  await prisma.assignment.deleteMany({});
+  await prisma.post.deleteMany({});
   await prisma.groups_User.deleteMany({});
+  await prisma.groups.deleteMany({});
+
+  await prisma.event_Submission.deleteMany({});
+  await prisma.event_Issue_List.deleteMany({});
+  await prisma.event_Participants.deleteMany({});
+  await prisma.create_event.deleteMany({});
+  
+  await prisma.userUnlockedTitle.deleteMany({});
+  await prisma.userDailyMissionProgress.deleteMany({});
+  await prisma.dailyActivitySummary.deleteMany({});
+  await prisma.userAnswer.deleteMany({});
+  await prisma.answer_Algorithm.deleteMany({});
+  await prisma.loginHistory.deleteMany({});
+  await prisma.auditLog.deleteMany({});
+  await prisma.bannedUser.deleteMany({});
+  
   await prisma.userSubjectProgress.deleteMany({});
   await prisma.status_Kohaku.deleteMany({});
-  await prisma.groups.deleteMany({});
-  await prisma.create_event.deleteMany({});
-  await prisma.userDailyMissionProgress.deleteMany({});
+
+  // 最後にユーザーを削除
   await prisma.user.deleteMany({});
-  console.log('🗑️ Cleared existing user and group data.');
+  console.log('🗑️ Cleared existing user, group, and related data.');
 
 
   // --- 2. シーディングするユーザーの基本情報を定義 ---
   const usersToSeed = [
-    { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', icon: '/images/users/alice.png' },
+    { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', icon: '/images/users/alice.png', isAdmin: true },
     { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', icon: '/images/users/bob.png' },
     { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', icon: '/images/users/charlie.png' },
     { email: 'diana@example.com', password: 'password456', username: 'Diana Prince', icon: '/images/users/diana.png' },
@@ -128,6 +146,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
         xp: totalAccountXp,
         totallogin: getRandomInt(1, 500),
         ...userLoginData, // 神戸太郎の場合のみ、ここにデータが追加される
+        isAdmin: userData.isAdmin || false, // 管理者権限を設定
         status_Kohaku: {
           create: {
             status: '元気',
