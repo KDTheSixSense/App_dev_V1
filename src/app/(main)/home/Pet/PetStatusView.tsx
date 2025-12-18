@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UnsubmittedAssignment } from '@/lib/data';
-import { getEvolvedImageSrc, SubjectProgress } from '../../../../components/kohakuUtils';
+import { SubjectProgress } from '../../../../components/kohakuUtils';
 
 // 親コンポーネントから渡されるPropsの型を定義
 interface PetStatusViewProps {
@@ -74,9 +74,6 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, subje
     if (evolutionType) {
       // DBに保存された進化タイプがあればそれを使用 (例: "A-B" -> "/images/evolution/A-B-base.png")
       evolvedBaseImage = `/images/evolution/${evolutionType}-base.png`;
-    } else {
-      // なければ計算 (フォールバック)
-      evolvedBaseImage = getEvolvedImageSrc(subjectProgress);
     }
     
     // 2. 進化している場合（normal以外が返ってきた場合）、表情差分を適用
