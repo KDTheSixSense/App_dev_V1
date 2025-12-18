@@ -54,7 +54,9 @@ model User {
   auditLogs              AuditLog[]
   createdBans            BannedUser[]          @relation("BanCreator")
   targetedBans           BannedUser[]          @relation("BannedUserAccount")
+  tokenVersion           Int                   @default(1) // セッション無効化用のバージョン
 }
+
 
 model BannedUser {
   id         Int      @id @default(autoincrement())

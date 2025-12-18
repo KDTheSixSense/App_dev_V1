@@ -34,6 +34,7 @@ declare module 'iron-session' {
             username: string | null;
             isAdmin: boolean;
             lastlogin?: Date | null;
+            tokenVersion?: number;
         };
         // Google新規登録確認用の一時データ
         googleSignupProfile?: {
