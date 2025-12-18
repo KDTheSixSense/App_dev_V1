@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
     oAuth2Client.setCredentials(tokens);
 
     // 2. アクセストークンを使い、Googleからユーザー情報を取得
-    const payload = await-google-auth-library.verifyIdToken({
-      idToken: id_token,
-      audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    const ticket = await oAuth2Client.verifyIdToken({
+      idToken: tokens.id_token!,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
 
   } catch (error: any) {
     console.error('--- Google Callback Error ---');
-    
+
     // Log the basic error message and stack trace
     console.error('Message:', error.message);
     if (error.stack) {
@@ -117,14 +117,14 @@ export async function GET(req: NextRequest) {
     if (error.response && error.response.data) {
       console.error('Google API Error Response:', JSON.stringify(error.response.data, null, 2));
     }
-    
+
     // Log the full error object for deep inspection, handling circular references
     try {
       console.error('Full Error Object:', JSON.stringify(error, null, 2));
     } catch (e) {
       console.error('Full Error Object (circular reference):', error);
     }
-    
+
     console.error('-----------------------------');
 
     return NextResponse.redirect(

@@ -64,6 +64,7 @@ export async function POST(req: Request) {
       username: user.username,
       isAdmin: user.isAdmin,
       lastlogin: user.lastlogin,
+      tokenVersion: user.tokenVersion,
     };
     await session.save();
 
