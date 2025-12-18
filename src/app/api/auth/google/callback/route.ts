@@ -9,7 +9,7 @@ import { updateUserLoginStats } from '@/lib/actions';
 
 export async function GET(req: NextRequest) {
   // 必須の環境変数が設定されているかを確認
-  if (!process.env.NEXT_PUBLIC_APP_URL || !process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  if (!process.env.NEXT_PUBLIC_APP_URL || !process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     console.error('【Google OAuth Callback】: 必要な環境変数が設定されていません。');
     return NextResponse.json(
       { error: "サーバー設定が不完全です。管理者にお問い合わせください。" },
@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
     oAuth2Client.setCredentials(tokens);
 
     // 2. アクセストークンを使い、Googleからユーザー情報を取得
-    const ticket = await oAuth2Client.verifyIdToken({
-      idToken: tokens.id_token!,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    const payload = await-google-auth-library.verifyIdToken({
+      idToken: id_token,
+      audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
