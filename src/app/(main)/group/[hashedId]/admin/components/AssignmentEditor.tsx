@@ -45,6 +45,8 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     });
     const [showCreateOptions, setShowCreateOptions] = useState(false);
     const [showProblemTypeModal, setShowProblemTypeModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false); // 送信中状態を追加
+    const isSubmittingRef = useRef(false);
     const router = useRouter();
 
     const editorRef = useRef<HTMLDivElement>(null);
@@ -150,6 +152,10 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             return;
         }
 
+        if (isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
+        setIsSubmitting(true);
+
         try {
             if (initialAssignment && onUpdateAssignment) {
                 // 更新処理
@@ -181,10 +187,22 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 sessionStorage.removeItem(STORAGE_FLAG_KEY);
             }
             handleReset();
-            router.refresh();
+            // router.refresh(); // 削除: 親コンポーネント側で適切にState更新されるため不要
         } catch (error) {
             console.error('課題保存エラー:', error);
-            toast.error(`課題の保存に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+            const errorMessage = error instanceof Error ? error.message : '不明なエラー';
+
+            // 二重送信エラーの場合は、最初の送信が成功しているためエラー表示を抑制
+            if (errorMessage.includes('この問題は既に課題として割り当てられています')) {
+                console.log('二重送信エラーを抑制しました（正常な動作です）');
+                return;
+            }
+
+            toast.error(`課題の保存に失敗しました: ${errorMessage}`);
+        } finally {
+            // 処理完了後にロック解除
+            isSubmittingRef.current = false;
+            setIsSubmitting(false);
         }
     };
 
@@ -557,13 +575,14 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 </button>
                 <button
                     onClick={handleSubmit}
+                    disabled={isSubmitting} // 送信中は無効化
                     style={{
                         padding: '8px 16px',
                         border: 'none',
-                        backgroundColor: '#1976d2',
+                        backgroundColor: isSubmitting ? '#ccc' : '#1976d2', // 送信中は色変更
                         color: '#fff',
                         borderRadius: '4px',
-                        cursor: 'pointer',
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer', // 送信中はカーソル変更
                         fontSize: '14px',
                         fontWeight: '500'
                     }}

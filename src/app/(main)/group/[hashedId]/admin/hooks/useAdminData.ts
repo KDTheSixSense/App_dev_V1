@@ -273,8 +273,10 @@ export const useAdminData = (hashedId: string) => {
             body: JSON.stringify(body),
         });
 
-        if (!response.ok) throw new Error('サーバーエラーが発生しました');
         const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.message || 'サーバーエラーが発生しました');
+        }
         if (!result.success) throw new Error(result.message);
 
         const newAssignment: Assignment = {
@@ -316,8 +318,10 @@ export const useAdminData = (hashedId: string) => {
                 body: JSON.stringify(body),
             });
 
-            if (!response.ok) throw new Error('サーバーエラーが発生しました');
             const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || 'サーバーエラーが発生しました');
+            }
             if (!result.success) throw new Error(result.message);
 
             // ローカルステート更新
