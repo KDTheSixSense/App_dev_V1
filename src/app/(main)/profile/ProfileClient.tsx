@@ -322,7 +322,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice, has
               maxHunger={200}
               userLevel={initialUser.level}
               subjectProgress={initialSubjectProgress}
-              evolutionType={(initialUser.Status_Kohaku?.[0] as any)?.evolutionType}
+              evolutionType={(initialUser.status_Kohaku as any)?.evolutionType}
               adviceText={aiAdvice || ''} // Reactがエスケープするためサニタイズ不要
               petname={initialUser.status_Kohaku?.name || 'コハク'}
               petBirthdate={formattedPetBirthdate}

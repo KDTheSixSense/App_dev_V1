@@ -233,13 +233,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: newAssignment }, { status: 201 });
   } catch (error) {
     console.error('課題作成APIエラー:', error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
-      // 外部キー制約違反
-      if (error.meta?.field_name === 'Assignment_programmingProblemId_fkey') {
-        return NextResponse.json({ success: false, message: '指定されたプログラミング問題が見つかりません。' }, { status: 404 });
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2003') {
+        // 外部キー制約違反
+        if (error.meta?.field_name === 'Assignment_programmingProblemId_fkey') {
+          return NextResponse.json({ success: false, message: '指定されたプログラミング問題が見つかりません。' }, { status: 404 });
+        }
+        if (error.meta?.field_name === 'Assignment_selectProblemId_fkey') {
+          return NextResponse.json({ success: false, message: '指定された選択問題が見つかりません。' }, { status: 404 });
+        }
       }
-      if (error.meta?.field_name === 'Assignment_selectProblemId_fkey') {
-        return NextResponse.json({ success: false, message: '指定された選択問題が見つかりません。' }, { status: 404 });
+      // ★ Unique制約違反 (P2002) - 二重送信時の重複エラーハンドリング
+      if (error.code === 'P2002') {
+        return NextResponse.json({
+          success: false,
+          message: 'この問題は既に課題として割り当てられています（二重登録の可能性があります）。'
+        }, { status: 409 });
       }
     }
     return NextResponse.json({ success: false, message: 'サーバーエラーが発生しました' }, { status: 500 });
