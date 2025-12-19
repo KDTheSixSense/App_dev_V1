@@ -41,8 +41,6 @@ RUN apk update && apk add --no-cache \
 WORKDIR /app
 
 # PrismaにはOpenSSLが必要です
-# また、lint機能のためにPython3などのランタイムも必要です
-RUN apk add --no-cache openssl python3 make g++ openjdk17-jre php
 
 # 実行に必要な最小限のユーザーを作成
 RUN addgroup --system --gid 1001 nodejs
