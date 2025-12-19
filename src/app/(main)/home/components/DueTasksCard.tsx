@@ -27,7 +27,7 @@ export default function DueTasksCard({ count, nextAssignment }: DueTasksCardProp
 
             {count > 0 ? (
                 <div className="flex items-center justify-between bg-slate-50 rounded-xl p-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 w-full">
                         <div className="p-2 bg-slate-200 rounded-lg text-slate-600">
                             {/* Icon placeholder */}
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -43,13 +43,14 @@ export default function DueTasksCard({ count, nextAssignment }: DueTasksCardProp
                             <p className="text-xs text-slate-500">残り {count} 件</p>
                         </div>
                     </div>
-
-                    <Link href={linkPath} className="!no-underline bg-gradient-to-r from-sky-400 to-cyan-500 !text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors shadow-md">
-                        <span>課題を解く</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="transform rotate-0">
-                            <polygon points="5 3 19 12 5 21 5 3" />
-                        </svg>
-                    </Link>
+                    <div className='flex justify-center items-center h-10'>
+                        <Link href={linkPath} className="!no-underline bg-gradient-to-r from-sky-400 to-cyan-500 !text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors shadow-md">
+                            <span>課題を解く</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="transform rotate-0">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                        </Link>
+                    </div>
                 </div>
             ) : (
                 <div className="text-center text-slate-500 py-4">

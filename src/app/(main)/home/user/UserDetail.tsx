@@ -52,7 +52,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
                             </h2>
 
                             {/* Progress Bar - Blue Gradient */}
-                            <div className="w-full bg-blue-500 h-2.5 rounded-full mb-1">
+                            <div className="w-full bg-white h-2.5 rounded-full mb-1">
                                 <div
                                     className="bg-gradient-to-r from-[#00BCD4] to-[#0288D1] h-full rounded-full shadow-sm"
                                     style={{ width: `${progressPercentage}%` }}
@@ -89,8 +89,8 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
                     </span>
                 </div>
                 <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[10px] text-blue-500 font-bold mb-1">課題</span>
-                    <span className="text-xl font-bold text-black block leading-none">
+                    <span className="text-[12px] text-slate-500 font-bold mb-1">課題</span>
+                    <span className="text-xl font-bold text-slate-700 block leading-none">
                         {unsubmittedAssignmentCount}
                     </span>
                 </div>

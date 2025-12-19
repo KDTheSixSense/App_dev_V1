@@ -11,6 +11,7 @@ interface UpcomingEvent {
     creatorIcon?: string | null;
     isStarted: boolean;
     hasBeenStarted: boolean;
+    description: string;
 }
 
 interface EventCardProps {
@@ -41,7 +42,7 @@ export default function EventCard({ events = [] }: EventCardProps) {
     };
 
     return (
-        <div className="bg-[#e0f4f9] rounded-2xl p-6 w-full">
+        <div className="h-full bg-[#e0f4f9] rounded-2xl p-6 w-full">
             <h3 className="text-xl font-bold text-[#006F86] mb-4">開催が近いイベント</h3>
 
             {events.length === 0 ? (
@@ -50,37 +51,45 @@ export default function EventCard({ events = [] }: EventCardProps) {
                     <p className="text-slate-500 text-sm">現在、表示できるイベントはありません</p>
                 </div>
             ) : (
-                <div className="flex gap-4 overflow-x-auto pb-2">
+                <div className="flex gap-4 overflow-x-auto mb-4 mb-2 h-[90%] custom-scrollbar">
                     {events.map((event) => (
-                        <Link key={event.id} href={`/event/event_detail/${event.id}`} className="block flex-shrink-0">
-                            <div className="flex-1 bg-white rounded-full p-4 flex items-center gap-4 shadow-sm min-w-[300px] hover:bg-slate-50 transition-colors cursor-pointer border border-slate-100">
+                        <Link key={event.id} href={`/event/event_detail/${event.id}`} className="block flex-shrink-0 !no-underline h-[90%]">
+                            <div className="flex-1 bg-white rounded-xl p-4 flex flex-col gap-4 shadow-sm h-full min-w-[300px] hover:bg-slate-50 transition-colors cursor-pointer border border-slate-100">
                                 {/* User Icon */}
-                                <div className="flex-shrink-0">
+                                <div className="flex flex-shrink-0 gap-2 items-center">
                                     <Image
                                         src={event.creatorIcon || "/images/test_icon.webp"} // デフォルト画像
                                         alt="Organizer"
-                                        width={48}
-                                        height={48}
+                                        width={40}
+                                        height={40}
                                         className="rounded-full object-cover border border-slate-200"
                                         unoptimized
                                     />
-                                    <p className="text-[10px] text-slate-500 text-center mt-1">主催</p>
+                                    <span className="text-xl font-bold text-black whitespace-nowrap">{event.creatorName}</span>
                                 </div>
 
                                 <div className="flex flex-col overflow-hidden">
-                                    {/* Organizer Name & Title */}
-                                    {/* User requested: OrganizerName (left) Title (right/main) */}
-                                    <div className="flex items-baseline gap-2 mb-1">
-                                        <span className="text-xs font-bold text-slate-500 whitespace-nowrap">{event.creatorName}</span>
-                                        <span className="font-bold text-slate-700 text-lg border-b-2 border-slate-200 truncate leading-tight">
-                                            {event.title}
-                                        </span>
-                                    </div>
-
                                     {/* Date / Status */}
                                     <p className="text-[10px] text-slate-500">
                                         {formatDate(event.startTime, event.endTime, event.isStarted, event.hasBeenStarted)}
                                     </p>
+                                    {/* Organizer Name & Title */}
+                                    {/* User requested: OrganizerName (left) Title (right/main) */}
+                                    <div className="flex items-baseline gap-2 mb-1">
+                                        
+                                        <span className="font-bold text-black text-lg border-b-2 border-slate-200 truncate leading-tight">
+                                            {event.title}
+                                        </span>
+                                        
+                                    </div>
+                                    <div className="text-sm text-slate-600 overflow-hidden text-ellipsis max-h-12">
+                                        <span className="ml-auto text-sm text-slate-500">
+                                            {event.description}
+                                        </span>
+                                    </div>
+
+                                    
+                                    
                                 </div>
                             </div>
                         </Link>

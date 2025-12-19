@@ -28,7 +28,7 @@ export default function RankingListItem({ user, isCurrentUser = false }: Props) 
         </span>
       </div>
 
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center flex-shrink-0">
         <Image
           src={user.iconUrl}
           alt={`${user.name}のアイコン`}
@@ -38,14 +38,15 @@ export default function RankingListItem({ user, isCurrentUser = false }: Props) 
         />
       </div>
 
-      <div className="ml-4 font-semibold text-slate-800">
-        <p className="truncate max-w-[150px] block">
+      <div className="ml-4 font-semibold text-slate-800 flex-1 min-w-0">
+        <p className="truncate max-full block">
           {user.name}
         </p>
       </div>
 
-      <div className="ml-auto text-right">
-        <p className="text-sm font-bold text-[#00BCD4]">ランク{user.score}</p>
+      <div className="ml-auto text-right whitespace-nowrap flex-shrink-0">
+        <span className="text-[10px] text-blue-400">ランク</span>
+        <span className="text-sm font-bold text-blue-400">{user.score}</span>
       </div>
     </li>
   );

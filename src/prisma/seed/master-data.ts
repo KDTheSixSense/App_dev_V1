@@ -12,7 +12,7 @@ export async function seedMasterData(prisma: PrismaClient) {
   console.log('✅ Difficulties seeded.');
 
   console.log('Seeding subjects...');
-  const subjectsToSeed = [ { id: 1, name: 'プログラミング' }, { id: 2, name: '基本情報A問題'}, { id: 3, name: '基本情報B問題'},{ id: 4, name: '選択問題' }, { id: 5, name: '応用情報午前問題' }];
+  const subjectsToSeed = [ { id: 1, name: 'プログラミング' }, { id: 2, name: '基本情報A問題'}, { id: 3, name: '基本情報B問題'},{ id: 4, name: '四択問題' }, { id: 5, name: '応用情報午前問題' }];
   for (const s of subjectsToSeed) { await prisma.subject.upsert({ where: { id: s.id }, update: {}, create: s }); }
   console.log('✅ Subjects seeded.');
   

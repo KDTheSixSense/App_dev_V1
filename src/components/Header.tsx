@@ -330,6 +330,65 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
       {/* 右側：ユーザー情報 */}
       <div className="flex items-center gap-4 ml-6 h-full">
+        
+
+        {/* ランクとログイン日数 */}
+        <div className="flex items-center gap-6 h-full pt-1">
+          {/* Continuous Login - Image Style - Enlarged */}
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <div className="relative w-12 h-12">
+              <Image
+                src="/images/Continuous_login.png"
+                alt="Continuous Login"
+                width={48}
+                height={48}
+                className="object-contain"
+                unoptimized
+              />
+            </div>
+            <div className="flex items-baseline -mt-3">
+              <span className="text-2xl font-bold text-slate-700 leading-none">{continuousLogin}</span>
+              <span className="text-xs text-slate-500 font-bold ml-0.5">日</span>
+            </div>
+          </div>
+
+          {/* Rank Circular Gauge - Enlarged */}
+          <div className="relative flex flex-col items-center justify-center -mt-2">
+            <div className="relative w-16 h-16">
+              <svg className="w-full h-full transform -rotate-90">
+                {/* Background Circle */}
+                <circle
+                  cx="32" cy="32" r="26"
+                  fill="transparent"
+                  stroke="#E2E8F0"
+                  strokeWidth="5"
+                />
+                {/* Progress Circle */}
+                <circle
+                  cx="32" cy="32" r="26"
+                  fill="transparent"
+                  stroke="#0EA5E9" // Sky blue
+                  strokeWidth="5"
+                  strokeDasharray={`${2 * Math.PI * 26}`}
+                  strokeDashoffset={`${2 * Math.PI * 26 * (1 - ((Number.isNaN(progressPercentage) ? 0 : progressPercentage) / 100))}`}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center pb-1">
+                <span className="text-sm font-bold text-sky-600">
+                  {Number.isNaN(progressPercentage) ? 0 : Math.floor(progressPercentage)}%
+                </span>
+              </div>
+            </div>
+            <div className="absolute -bottom-2 bg-white px-2 rounded-full border border-sky-100 shadow-sm z-10">
+              <span className="text-[11px] font-bold text-cyan-600 whitespace-nowrap">RANK {rank}</span>
+            </div>
+          </div>
+
+          
+        </div>
+
         {/* プロフィールアイコン (プルダウンメニュー付き) */}
         <div className="w-14 h-14 relative" ref={profileMenuRef}>
           {/* 元のaタグをbuttonタグに変更して開閉を制御 */}
@@ -400,60 +459,6 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
           )}
         </div>
 
-        {/* ランクとログイン日数 */}
-        <div className="flex items-center gap-6 h-full pt-1">
-          {/* Continuous Login - Image Style - Enlarged */}
-          <div className="flex flex-col items-center gap-1 mt-1">
-            <div className="relative w-12 h-12">
-              <Image
-                src="/images/Continuous_login.png"
-                alt="Continuous Login"
-                width={48}
-                height={48}
-                className="object-contain"
-                unoptimized
-              />
-            </div>
-            <div className="flex items-baseline -mt-3">
-              <span className="text-2xl font-bold text-slate-700 leading-none">{continuousLogin}</span>
-              <span className="text-xs text-slate-500 font-bold ml-0.5">日</span>
-            </div>
-          </div>
-
-          {/* Rank Circular Gauge - Enlarged */}
-          <div className="relative flex flex-col items-center justify-center -mt-2">
-            <div className="relative w-16 h-16">
-              <svg className="w-full h-full transform -rotate-90">
-                {/* Background Circle */}
-                <circle
-                  cx="32" cy="32" r="26"
-                  fill="transparent"
-                  stroke="#E2E8F0"
-                  strokeWidth="5"
-                />
-                {/* Progress Circle */}
-                <circle
-                  cx="32" cy="32" r="26"
-                  fill="transparent"
-                  stroke="#0EA5E9" // Sky blue
-                  strokeWidth="5"
-                  strokeDasharray={`${2 * Math.PI * 26}`}
-                  strokeDashoffset={`${2 * Math.PI * 26 * (1 - ((Number.isNaN(progressPercentage) ? 0 : progressPercentage) / 100))}`}
-                  strokeLinecap="round"
-                  className="transition-all duration-1000 ease-out"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center pb-1">
-                <span className="text-sm font-bold text-sky-600">
-                  {Number.isNaN(progressPercentage) ? 0 : Math.floor(progressPercentage)}%
-                </span>
-              </div>
-            </div>
-            <div className="absolute -bottom-2 bg-white px-2 rounded-full border border-sky-100 shadow-sm z-10">
-              <span className="text-[11px] font-bold text-cyan-600 whitespace-nowrap">RANK {rank}</span>
-            </div>
-          </div>
-        </div>
       </div>
     </header>
   );

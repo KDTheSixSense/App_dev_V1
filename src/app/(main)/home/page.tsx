@@ -67,13 +67,15 @@ export default async function HomePage({
           </div>
 
           {/* Center Column: Pet, Tasks, Events (6 cols) */}
-          <div className="lg:col-span-6 space-y-6 order-1 lg:order-2">
+          <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col h-full gap-6">
             {/* 1. Pet Status (Large) */}
-            {/* 1. Pet Status (Large) - Integrated with Tasks */}
-            <Pet user={user} assignmentCount={assignmentCount} nextAssignment={nextAssignment} />
-
+            <div className="shrink-0">
+              <Pet user={user} assignmentCount={assignmentCount} nextAssignment={nextAssignment} />
+            </div>
             {/* 2. Events */}
-            <EventCard events={upcomingEvents} />
+            <div className="flex-1 min-h-0">
+                <EventCard events={upcomingEvents}  /> 
+            </div>          
           </div>
 
           {/* Right Column: Profile, Daily Missions (3 cols) */}

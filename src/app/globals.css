@@ -130,3 +130,26 @@ body {
     padding-bottom: 0; /* Remove padding on desktop */
   }
 }
+
+/* Chrome, Safari, Edge, Opera 用 */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* カスタムスクロールバー（細くて丸い） */
+.custom-scrollbar::-webkit-scrollbar {
+    height: 12px; /* 横スクロールバーの太さ */
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent; /* 背景透明 */
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1; /* スクロールバーの色 (slate-300相当) */
+    border-radius: 10px; /* 丸み */
+    border: 2px solid transparent; /* 余白を作るテクニック */
+    background-clip: content-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8; /* ホバー時の色 (slate-400相当) */
+}

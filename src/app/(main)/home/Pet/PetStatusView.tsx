@@ -76,13 +76,13 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, assig
       <div className="absolute bottom-10 right-10 w-32 h-32 rounded-full bg-blue-200 blur-2xl opacity-40 pointer-events-none"></div>
 
       {/* 1. Character Circle Frame */}
-      <div className="flex mx-6 justify-center items-center gap-10">
-        <div className="min-w-50 min-h-50 rounded-full bg-gradient-to-b from-cyan-300 to-blue-400 p-1.5 shadow-xl">
-          <div className="w-full h-full rounded-full bg-[#1e293b] flex items-center justify-center overflow-hidden border-4 border-white relative">
+      <div className="flex mx-6 justify-center items-center gap-10 mb-5">
+        <div className="min-w-50 min-h-50 rounded-full bg-white p-1.5 shadow-xl">
+          <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden border-4 border-white relative">
             {/* Background behind pet inside circle */}
             <div className="absolute inset-0 bg-[url('/images/tech_circle_bg.png')] opacity-20 animate-spin-slow"></div>
             {/* Note: User didn't provide tech_circle_bg.png, so we use a dark gradient or similar */}
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-slate-800"></div>
+            <div className="absolute inset-0"></div>
 
             <Image
               src={petInfo.image}
@@ -126,8 +126,6 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, assig
             </button>
           </div>
         </div>
-
-
       </div>
 
       
@@ -137,18 +135,23 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, assig
         <h3 className="text-lg font-bold text-slate-800 mb-4">提出期限が近い課題</h3>
 
         {assignmentCount > 0 ? (
-          <div className="flex flex-col gap-4">
-            <div className="w-full text-center p-3 bg-slate-50 rounded-xl">
-              <p className="font-bold text-slate-700 text-lg mb-1 truncate">{nextAssignment?.title || '未提出の課題'}</p>
-              <p className="text-sm text-slate-500">残り {assignmentCount} 件</p>
+          <div className='flex items-center'>
+            <div className="flex flex-col w-full">
+              <div className="w-full text-left p-3 bg-slate-50 rounded-xl">
+                <p className="font-bold text-slate-700 text-lg mb-1 truncate">{nextAssignment?.title || '未提出の課題'}</p>
+              </div>
+              <div className='text-center'>
+                <p className="text-sm text-slate-500">他 {assignmentCount - 1} 件</p>
+              </div>
             </div>
-
-            <Link href={linkPath} className="w-full bg-[#009bf2] hover:bg-[#0089d6] text-white py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors shadow-md">
-              <span>課題を解く</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="transform rotate-0">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-            </Link>
+            <div className='flex justify-center items-center w-50 h-10'>
+              <Link href={linkPath} className="!no-underline bg-gradient-to-r from-sky-400 to-cyan-500 !text-white px-5 rounded-full font-bold flex items-center gap-2 transition-colors shadow-md w-full h-full">
+                <span>課題を解く</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="transform rotate-0">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="text-center text-slate-500 py-4">

@@ -55,6 +55,28 @@ export default function RankingContainer({
     return fullList.find(user => user.id === currentUserId) || null;
   }, [currentUserId, activeTab, allRankingsFull]);
 
+  const scoreToNextRank = useMemo(() => {
+    if (!myRankInfo || !currentUserId) return null;
+    const fullList = allRankingsFull[activeTab] || [];
+    
+    // 現在のユーザーのインデックスを見つける
+    const myIndex = fullList.findIndex(user => user.id === currentUserId);
+    if (myIndex === -1) return null;
+
+    // 自分より上の順位の人を探す (リストはランク順に並んでいる前提)
+    for (let i = myIndex - 1; i >= 0; i--) {
+      const user = fullList[i];
+      // 自分のランクより数値が小さい（＝順位が高い）ユーザーを見つけたら、そのスコアとの差を返す
+      if (user.rank < myRankInfo.rank) {
+        return {
+          diff: user.score - myRankInfo.score,
+          targetRank: user.rank
+        };
+      }
+    }
+    return null; // 上に誰もいない（1位）
+  }, [myRankInfo, allRankingsFull, activeTab, currentUserId]);
+
   const navRef = useRef<HTMLElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [sliderStyle, setSliderStyle] = useState({});
@@ -131,7 +153,7 @@ export default function RankingContainer({
       {/* トップ100ランキングリスト (スクロール可能) */}
       {/* 下部に自分のランク表示スペース(約80px)を確保するために padding-bottom を設定 */}
       <div className="flex-1 overflow-hidden relative">
-        <div className="h-full overflow-y-auto pb-24 custom-scrollbar">
+        <div className="h-full overflow-y-auto pb-25 custom-scrollbar">
           <RankingList users={displayedUsers} myRankInfo={myRankInfo} />
         </div>
       </div>
@@ -142,7 +164,7 @@ export default function RankingContainer({
         {/* フェード部分 */}
         {/* <div className="h-6 bg-gradient-to-t from-[#FFF8E1]/80 to-transparent w-full pointer-events-none"></div> */}
 
-        <div className="bg-[#fff] rounded-2xl p-6 w-auto ml-0 mr-1 mb-2 border border-cyan-200">
+        <div className="bg-[#fff] rounded-2xl py-4 w-auto ml-0 mr-1 border border-cyan-200">
           {isLoadingMyRank ? (
             <p className="text-sm text-center text-cyan-800 font-bold">順位読込中...</p>
           ) : currentUserId === null ? (
@@ -151,38 +173,56 @@ export default function RankingContainer({
               <p className="text-xs text-cyan-600">ログインして順位を表示</p>
             </div>
           ) : myRankInfo ? (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between w-full">
               {/* Rank Section */}
-              <div className="flex flex-col items-center justify-center mr-3 relative">
-                <span className="text-[10px] font-bold text-cyan-600 mb-0.5 absolute -top-4 w-20 text-center">あなたの順位</span>
-                <div className="relative w-12 h-12 flex items-center justify-center bg-white rounded-full border-2 border-cyan-400 shadow-sm mt-1">
-                  {/* Crown Icon for top 3 */}
-                  {myRankInfo.rank <= 3 && (
-                    <img
-                      src={`/images/rank${myRankInfo.rank}_icon.png`}
-                      alt="Rank"
-                      className="absolute top-2 -left-8 w-9 h-9 object-contain"
-                    />
+              <div className='flex flex-col items-center justify-center w-full'>
+
+                <div className="flex w-full">
+                  <div className="flex flex-col justify-center -items-end pl-4">
+                    <span className="text-[14px] font-bold text-cyan-600 mb-0.5 -top-4 w-22 ">あなたの順位</span>
+                  </div>
+                  {scoreToNextRank && (
+                    <div className="flex items-center justify-center ml-auto px-4 py-0.5 rounded-full">
+                      <span className="text-[12px] text-slate-500 mr-1">{scoreToNextRank.targetRank}位まで</span>
+                      <span className="text-[14px] text-orange-500 font-bold">{scoreToNextRank.diff}ランク</span>
+                    </div>
                   )}
-                  <span className="text-cyan-600 font-black text-xl">{myRankInfo.rank}</span>
                 </div>
-              </div>
 
-              {/* User Info */}
-              <div className="flex flex-1 items-center gap-3 overflow-hidden">
-                <img
-                  src={myRankInfo.iconUrl}
-                  alt={myRankInfo.name}
-                  className="w-10 h-10 rounded-full object-cover border border-white shadow-sm flex-shrink-0"
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="font-bold text-slate-700 text-sm truncate">{myRankInfo.name}</span>
+                <div className="flex items-center w-full px-4">
+                  <div className="flex flex-col items-center justify-center mr-3 relative">
+                    <div className="relative w-12 h-12 flex items-center justify-center bg-white rounded-full border-2 border-cyan-400 shadow-sm mt-1">
+                      {/* Crown Icon for top 3 */}
+                      {myRankInfo.rank <= 3 && (
+                        <img
+                          src={`/images/rank${myRankInfo.rank}_icon.png`}
+                          alt="Rank"
+                          className="absolute top-2 -left-8 w-9 h-9 object-contain"
+                        />
+                      )}
+                      <span className="text-cyan-600 font-black text-xl">{myRankInfo.rank}</span>
+                    </div>
+                  </div>
+
+                  {/* User Info */}
+                  <div className="flex flex-1 items-center gap-3 overflow-hidden">
+                    <img
+                      src={myRankInfo.iconUrl}
+                      alt={myRankInfo.name}
+                      className="w-10 h-10 rounded-full object-cover border border-white shadow-sm flex-shrink-0"
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-bold text-slate-700 text-sm truncate block">{myRankInfo.name}</span>
+                    </div>
+                  </div>
+
+                  {/* Score/Label */}
+                  <div className="text-right flex-shrink-0 ml-auto pr-2 whitespace-nowrap">
+                    <span className="text-blue-400 text-[12px] leading-tight">ランク</span>
+                    <span className="text-blue-400 font-bold text-[14px] leading-tight">{myRankInfo.score}</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Score/Label */}
-              <div className="text-right flex-shrink-0 ml-2">
-                <span className="text-[#00BCD4] font-bold text-sm">ランク{myRankInfo.score}</span>
               </div>
             </div>
           ) : (
