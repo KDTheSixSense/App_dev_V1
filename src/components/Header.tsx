@@ -5,11 +5,10 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
-import { useSearchParams, usePathname } from 'next/navigation';
 
 type UserWithPetStatus = User & {
   status_Kohaku: Status_Kohaku | null;

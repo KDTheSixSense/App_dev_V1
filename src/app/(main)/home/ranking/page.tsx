@@ -1,6 +1,7 @@
-
-import RankingSection from "@/components/dashboard/RankingSection";
-
+import { prisma } from "@/lib/prisma";
+import RankingContainer from "@/components/RankingContainer";
+import { assignRanks } from "@/lib/ranking";
+import { Prisma } from '@prisma/client'; // Prisma.sql を使うためにインポート
 export const revalidate = 300; // 5分間キャッシュ
 
 export default async function RankingPage() {

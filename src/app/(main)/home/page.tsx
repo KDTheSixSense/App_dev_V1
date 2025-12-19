@@ -80,7 +80,7 @@ export default async function HomePage({
   })) || [];
 
   const LoadingSkeleton = () => (
-    <div className="bg-[#FFF8E1] rounded-3xl p-6 shadow-sm min-h-[400px] h-full animate-pulse flex items-center justify-center">
+    <div className="bg-[#e0f4f9] rounded-3xl p-6 shadow-sm min-h-[400px] h-full animate-pulse flex items-center justify-center">
       <div className="text-gray-400">Loading...</div>
     </div>
   );
