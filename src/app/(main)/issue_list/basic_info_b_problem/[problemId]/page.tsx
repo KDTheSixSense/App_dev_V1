@@ -56,13 +56,24 @@ const BasicInfoBProblemDetailPage = async (props: PageProps) => {
 
   // ログインしているユーザーの現在のクレジット数を取得
   let userCredits = 0; // デフォルトは0回
+  let userPetStatus = null;
+
   if (session.user) {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { aiAdviceCredits: true }
+      select: { 
+        aiAdviceCredits: true,
+        status_Kohaku: {
+          select: {
+            hungerlevel: true,
+            evolutionType: true,
+          }
+        }
+      }
     });
     if (user) {
       userCredits = user.aiAdviceCredits;
+      userPetStatus = user.status_Kohaku;
     }
   }
 
@@ -75,7 +86,7 @@ const BasicInfoBProblemDetailPage = async (props: PageProps) => {
             一覧へ戻る
           </Link>
         </div>
-        <ProblemClient initialProblem={problem} initialCredits={userCredits} />
+        <ProblemClient initialProblem={problem} initialCredits={userCredits} initialPetStatus={userPetStatus} />
       </div>
     </div>
   );

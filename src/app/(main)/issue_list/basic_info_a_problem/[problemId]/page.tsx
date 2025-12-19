@@ -44,14 +44,25 @@ const BasicInfoAProblemDetailPage = async ({ params, searchParams }: any) => {
   }
 
   let userCredits = 0;
+  let userPetStatus = null;
+
   if (session?.user?.id) {
     try {
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { aiAdviceCredits: true }
+        select: { 
+          aiAdviceCredits: true,
+          status_Kohaku: {
+            select: {
+              hungerlevel: true,
+              evolutionType: true,
+            }
+          }
+        }
       });
       if (user) {
         userCredits = user.aiAdviceCredits;
+        userPetStatus = user.status_Kohaku;
       }
     } catch (error) {
       console.error("[Page] Error fetching user credits:", error);
@@ -72,6 +83,7 @@ const BasicInfoAProblemDetailPage = async ({ params, searchParams }: any) => {
         <ProblemClient
           initialProblem={problem} // problem is guaranteed not null here
           initialCredits={userCredits}
+          initialPetStatus={userPetStatus}
         />
       </div>
     </div>

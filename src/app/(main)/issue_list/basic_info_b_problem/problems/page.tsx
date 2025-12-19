@@ -11,43 +11,75 @@ const BasicInfoBProblemsListPage = async () => {
   const session = await getAppSession();
   const userId = session.user?.id;
 
+  // Promise.all で並列実行するためのPromise配列を準備
+  const promises: Promise<any>[] = [
+    // 1. 問題リスト (Questions)
+    prisma.questions.findMany({
+      orderBy: { id: 'asc' },
+      select: { id: true, title: true }
+    }),
+    // 2. 問題リスト (Algorithm)
+    prisma.questions_Algorithm.findMany({
+      where: { subject: { name: '基本情報B問題' } }, // 科目Bの問題に絞り込む
+      orderBy: { id: 'asc' },
+      select: { id: true, title: true }
+    })
+  ];
+
+  // ログインしている場合のみ、解答履歴の取得Promiseを追加
+  if (userId) {
+    // 3. 基本情報A/Bなどの解答履歴
+    promises.push(
+      prisma.userAnswer.findMany({
+        where: {
+          userId: userId,
+          isCorrect: true,
+          OR: [
+            { questions_id: { not: null } },
+            { questions_algorithm_id: { not: null } }
+          ]
+        },
+        select: {
+          questions_id: true,
+          questions_algorithm_id: true,
+          answeredAt: true,
+        },
+        orderBy: { answeredAt: 'desc' },
+      })
+    );
+    // 4. Algorithm専用テーブルの解答履歴
+    promises.push(
+      prisma.answer_Algorithm.findMany({
+        where: {
+          userId: userId,
+          isCorrect: true,
+        },
+        select: {
+          questionId: true,
+          answeredAt: true,
+        },
+        orderBy: { answeredAt: 'desc' },
+      })
+    );
+  }
+
+  // Promise.all で一括実行
+  const results = await Promise.all(promises);
+
+  // 結果の分割代入
+  const staticProblems = results[0] as { id: number; title: string }[];
+  const algoProblems = results[1] as { id: number; title: string }[];
+
+  // ユーザーIDがある場合のみ履歴データを取り出す
+  const correctAnswers = userId ? (results[2] as any[]) : [];
+  const algoAnswers = userId ? (results[3] as any[]) : [];
+
   const solvedStatusMap = new Map<number, 'today' | 'past'>();
 
   if (userId) {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-
-    // `questions_id` または `questions_algorithm_id` を使って正解履歴を取得
-    const correctAnswers = await prisma.userAnswer.findMany({
-      where: {
-        userId: userId,
-        isCorrect: true,
-        OR: [
-          { questions_id: { not: null } },
-          { questions_algorithm_id: { not: null } }
-        ]
-      },
-      select: {
-        questions_id: true,
-        questions_algorithm_id: true,
-        answeredAt: true,
-      },
-      orderBy: { answeredAt: 'desc' },
-    });
-
-    // Answer_Algorithm テーブルからも正解履歴を取得
-    const algoAnswers = await prisma.answer_Algorithm.findMany({
-      where: {
-        userId: userId,
-        isCorrect: true,
-      },
-      select: {
-        questionId: true,
-        answeredAt: true,
-      },
-      orderBy: { answeredAt: 'desc' },
-    });
 
     // UserAnswer からの履歴をマップに追加
     for (const answer of correctAnswers) {
@@ -72,23 +104,10 @@ const BasicInfoBProblemsListPage = async () => {
     }
   }
 
-  // 1. 両方のテーブルからデータを同時に取得します
-  const [staticProblems, algoProblems] = await Promise.all([
-    prisma.questions.findMany({
-      orderBy: { id: 'asc' },
-      select: { id: true, title: true }
-    }),
-    prisma.questions_Algorithm.findMany({
-      where: { subject: { name: '基本情報B問題' } }, // 科目Bの問題に絞り込む
-      orderBy: { id: 'asc' },
-      select: { id: true, title: true }
-    })
-  ]);
-
-  // 2. 取得した2つの配列を1つに結合します
+  // 取得した2つの配列を1つに結合します
   const allProblems = [...staticProblems, ...algoProblems];
 
-  // 3. ID順に並び替えます
+  // ID順に並び替えます
   allProblems.sort((a, b) => a.id - b.id);
 
   // AnimatedList用にデータを変換

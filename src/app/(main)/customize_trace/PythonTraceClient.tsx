@@ -1,9 +1,13 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { recordStudyTimeAction, updateLoginStreakAction } from '@/lib/actions';
 import { generatePythonCodeFromAI, runPythonTraceAction } from '@/lib/actions/traceActions';
-import AceEditorWrapper from '@/components/AceEditorWrapper';
+const AceEditorWrapper = dynamic(() => import('@/components/AceEditorWrapper'), {
+    ssr: false,
+    loading: () => <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-500">エディタを読み込み中...</div>
+});
 import toast from 'react-hot-toast';
 import { lintCode, Annotation } from '@/lib/lint';
 

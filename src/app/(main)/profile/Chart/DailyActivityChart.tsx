@@ -30,17 +30,48 @@ const metricsConfig = {
   '完了問題数': { dataKey: '完了問題数', label: '問題数', stroke: '#ff7300' },
 };
 
-export default function DailyActivityChart() {
+// ... types ...
+
+interface DailyActivityChartProps {
+  initialData?: ChartData[];
+}
+
+export default function DailyActivityChart({ initialData }: DailyActivityChartProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>(7);
   const [activeMetric, setActiveMetric] = useState<ActiveMetric>('獲得XP');
-  const [chartData, setChartData] = useState<ChartData[]>([]);
+  // Use initialData if provided and valid for default timeframe (7 days)
+  const [chartData, setChartData] = useState<ChartData[]>(initialData || []);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // --- Data Fetching useEffect (unchanged) ---
+  // Flag to track if we've used initial data
+  // Basically, if timeframe changes from 7, we fetch.
+  // If we mount with 7 and have initialData, we don't fetch.
+
   useEffect(() => {
+    // If we have data for the current timeframe already (e.g. from initialData and timeframe is 7), skip fetch?
+    // A simple way: check if chartData is populated and we match the initial condition.
+    // Better: explicit logic.
+
+    if (timeframe === 7 && initialData && chartData === initialData) {
+      // Already have data from props, do nothing
+      return;
+    }
+
     startTransition(async () => {
       setError(null);
+      // If we switched back to 7 and have initialData, use it?
+      // Maybe simpler to just fetch always on change, EXCEPT on mount if initialData is present and matches default.
+      // But `useEffect` with dependency `[timeframe]` runs on mount too.
+      // We can use a ref to track if it's the first run?
+
+      if (timeframe === 7 && initialData) {
+        // Optimization: If the user selects 7 days, and we have initial data (which is 7 days), usage it.
+        // Note: If real-time updates happen, this might be stale, but usually acceptable.
+        setChartData(initialData);
+        return;
+      }
+
       const result = await getDailyActivityAction(timeframe);
       if (result.error) {
         setError(result.error);
@@ -48,7 +79,7 @@ export default function DailyActivityChart() {
         setChartData(result.data);
       }
     });
-  }, [timeframe]);
+  }, [timeframe, initialData]); // Include initialData in deps if we use it inside
 
   const currentMetricConfig = metricsConfig[activeMetric];
 
@@ -62,11 +93,10 @@ export default function DailyActivityChart() {
             <button
               key={days}
               onClick={() => setTimeframe(days as Timeframe)}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                timeframe === days
+              className={`px-3 py-1 text-sm rounded-md transition-colors ${timeframe === days
                   ? 'bg-blue-500 text-white font-bold'
                   : 'bg-gray-200 hover:bg-gray-300'
-              }`}
+                }`}
             >
               {days === 30 ? '1ヶ月' : `${days}日間`}
             </button>
@@ -80,11 +110,10 @@ export default function DailyActivityChart() {
           <button
             key={metricName}
             onClick={() => setActiveMetric(metricName)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeMetric === metricName
+            className={`px-4 py-2 text-sm font-medium transition-colors ${activeMetric === metricName
                 ? 'border-b-2 border-blue-500 text-blue-500'
                 : 'text-gray-500 hover:text-gray-800'
-            }`}
+              }`}
           >
             {metricName}
           </button>

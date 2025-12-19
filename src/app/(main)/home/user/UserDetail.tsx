@@ -65,10 +65,16 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
                     </div>
 
                     {/* Title Badge (Absolute or placed) - pointer-events-none to let click pass through */}
-                    <div className="mt-2 pointer-events-none">
+                    <div className="mt-2 pointer-events-none flex gap-2">
                         <span className="inline-block bg-[#00B4D8] text-black text-xs font-bold px-3 py-1 rounded-full shadow-sm border border-white/20">
                             {user?.selectedTitle?.name || '称号なし'}
                         </span>
+                        {/* Admin Badge */}
+                        {user?.isAdmin && (
+                            <span className="inline-block bg-yellow-400 text-black text-xs font-bold px-3 py-1 rounded-full shadow-sm border border-white/20">
+                                Admin
+                            </span>
+                        )}
                     </div>
                 </div>
             </Link>

@@ -60,9 +60,15 @@ const EventListPage = async () => {
         take: 20, // 取得件数を20件に制限
       });
 
-      // 取得したデータをクライアントコンポーネントの期待する形式に変換
+      // 取得したデータをクライアントコンポーネントの期待する形式に変換（手動シリアライズ）
+      // Date型を文字列またはnullに変換してJSON.parse/stringifyのオーバーヘッドを削減
       initialEvents = eventsFromDb.map(event => ({
-        ...event,
+        id: event.id,
+        title: event.title,
+        publicStatus: event.publicStatus,
+        startTime: event.startTime ? event.startTime.toISOString() : null,
+        endTime: event.endTime ? event.endTime.toISOString() : null,
+        isStarted: event.isStarted,
         participantsCount: event._count.participants,
       }));
     }
@@ -70,11 +76,7 @@ const EventListPage = async () => {
     console.error("初期イベントの取得に失敗しました:", error);
   }
 
-  // サーバーコンポーネントからクライアントコンポーネントへ渡すデータはシリアライズ可能である必要があります。
-  // Dateオブジェクトなどが含まれている可能性があるため、JSONを経由してプレーンなオブジェクトに変換します。
-  const serializableEvents = JSON.parse(JSON.stringify(initialEvents));
-
-  return <ProblemClient initialEvents={serializableEvents} />;
+  return <ProblemClient initialEvents={initialEvents} />;
 };
 
 export default EventListPage;

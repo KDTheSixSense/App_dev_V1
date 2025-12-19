@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getAppSession } from '@/lib/auth'; 
+import { getAppSession } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 export async function POST() {
   try {
@@ -7,6 +8,12 @@ export async function POST() {
     const session = await getAppSession();
 
     // セッションを破棄します
+    if (session.user?.id) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { tokenVersion: { increment: 1 } },
+      });
+    }
     session.destroy();
 
     return NextResponse.json({ message: 'ログアウトしました' });

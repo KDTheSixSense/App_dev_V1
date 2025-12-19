@@ -1,10 +1,12 @@
-import React from 'react';
+//app/(main)/profile/page.tsx
+
+import React, { Suspense } from 'react';
 import { getAppSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ProfileClient from './ProfileClient';
 import { User } from '@prisma/client';
-import { getUserHistory } from './history/actions';
+import ProfileHistorySection from '@/components/profile/ProfileHistorySection';
 
 // AIアドバイスを生成するヘルパー関数
 type SubjectProgressStats = {
@@ -81,67 +83,92 @@ const generateAdvice = (stats: ActivityStats, user: User): string => {
 /**
  * プロフィールページのサーバーコンポーネント。
  */
+import { getDailyActivityStats } from "@/lib/data";
+
+// ... (existing imports, but remove direct aggregate usage if possible or keep logic clean)
+
+// ...
+
 export default async function ProfilePage() {
   const session = await getAppSession();
+  // ... check session ...
   if (!session?.user) {
     redirect("/auth/login");
   }
-
   const userId = session.user.id;
 
-  // --- 1. ユーザー、称号、ペット情報を一括取得 ---
-  // セキュリティ対策: password/hashを含めないようにselectを使用
-  const userWithDetails = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      level: true,
-      xp: true,
-      icon: true,
-      class: true,
-      year: true,
-      birth: true,
-      lastlogin: true,
-      continuouslogin: true,
-      isAgreedToTerms: true,
-      isAgreedToPrivacyPolicy: true,
-      unlockedTitles: { include: { title: true } },
-      selectedTitle: true,
-      status_Kohaku: true,
-      password: true, // パスワードの有無を確認するために取得 (後で削除)
-    },
-  }) as any; // セキュリティのためフィールドを制限した結果、型定義(User)と不一致になるためキャスト
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const ADVICE_TIMEFRAME_DAYS = 7;
+
+  // --- 並列取得 ---
+  // activityStatsData (array) を取得
+  const [userWithDetails, recentLogins, activityStatsData] = await Promise.all([
+    // 1. ユーザー情報
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        level: true,
+        xp: true,
+        icon: true,
+        class: true,
+        year: true,
+        birth: true,
+        lastlogin: true,
+        continuouslogin: true,
+        isAgreedToTerms: true,
+        isAgreedToPrivacyPolicy: true,
+        unlockedTitles: { include: { title: true } },
+        selectedTitle: true,
+        status_Kohaku: true,
+        password: true,
+      },
+    }) as Promise<any>,
+
+    // 2. 直近のログイン履歴
+    prisma.loginHistory.findMany({
+      where: { userId: userId, loggedInAt: { gte: sevenDaysAgo } },
+    }),
+
+    // 3. 活動詳細データ (7日間) -> チャートの初期データと集計用
+    getDailyActivityStats(userId, ADVICE_TIMEFRAME_DAYS),
+  ]);
 
   if (!userWithDetails) {
     redirect("/auth/login");
   }
 
-  // パスワードが存在するかどうか（Googleログイン等の場合はnull/undefined想定）
-  // 空文字の場合も「パスワードなし」とみなす
+  // --- データ処理 ---
+
+  // パスワードチェック
   const hasPassword = userWithDetails.password !== null &&
     userWithDetails.password !== undefined &&
     userWithDetails.password !== '';
 
-  console.log(`[ProfilePage] UserID: ${userId}, hasPassword: ${hasPassword} (Value: ${userWithDetails.password === null ? 'null' : typeof userWithDetails.password})`);
-
-
-  // クライアントに渡す前にpasswordフィールドを削除（セキュリティ対策）
+  // セキュリティ対策: パスワード削除
   delete userWithDetails.password;
 
-  // --- 2. チャート用の統計データを取得・計算 ---
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  sevenDaysAgo.setHours(0, 0, 0, 0);
-
-  const recentLogins = await prisma.loginHistory.findMany({
-    where: { userId: userId, loggedInAt: { gte: sevenDaysAgo } },
-  });
+  // ログイン日数計算
   const uniqueLoginDates = new Set(recentLogins.map(login => login.loggedInAt.toISOString().split('T')[0]));
 
-  // (ここはダミーデータのため、実際のロジックに置き換えてください)
-  const subjectProgress = {
+  // 学習時間・完了数計算 (ChartData配列から合算)
+  let totalStudyTimeMin = 0;
+  let totalProblemsCompleted = 0;
+
+  if (activityStatsData && Array.isArray(activityStatsData)) {
+    activityStatsData.forEach(day => {
+      totalStudyTimeMin += day['学習時間 (分)'] || 0;
+      totalProblemsCompleted += day['完了問題数'] || 0;
+    });
+  }
+
+  // ... (dummy subjectProgressData) ...
+  const subjectProgressData = {
     basicA: 98,
     basicB: 86,
     appliedMorning: 99,
@@ -149,46 +176,25 @@ export default async function ProfilePage() {
     programming: 65,
   };
 
-  const ADVICE_TIMEFRAME_DAYS = 7;
-  const jstOffset = 9 * 60 * 60 * 1000;
-  const endDate = new Date(Date.now() + jstOffset);
-  const startDate = new Date(endDate);
-  startDate.setDate(endDate.getDate() - (ADVICE_TIMEFRAME_DAYS - 1));
-
-  const startDateQuery = new Date(startDate.toISOString().split('T')[0]);
-  const endDateQuery = new Date(endDate.toISOString().split('T')[0]);
-
-  // 直近7日間の活動を集計
-  const activitySummary = await prisma.dailyActivitySummary.aggregate({
-    where: {
-      userId: userId,
-      date: {
-        gte: startDateQuery,
-        lte: endDateQuery,
-      },
-    },
-    _sum: {
-      totalTimeSpentMs: true,  // 合計学習時間 (BigInt)
-      problemsCompleted: true, // 合計完了問題数 (Int)
-    },
-  });
-
-  // BigIntを数値(分)に変換
-  const totalStudyTimeMin = Math.floor(Number(activitySummary._sum.totalTimeSpentMs || 0) / 60000);
-  const totalProblemsCompleted = activitySummary._sum.problemsCompleted || 0;
+  // ... (subjectProgressList) ...
+  const subjectProgressList = [
+    { subjectName: '基本A', level: subjectProgressData.basicA },
+    { subjectName: '基本B', level: subjectProgressData.basicB },
+    { subjectName: '応用午前', level: subjectProgressData.appliedMorning },
+    { subjectName: '応用午後', level: subjectProgressData.appliedAfternoon },
+    { subjectName: 'プログラム', level: subjectProgressData.programming },
+  ];
 
   const userStats = {
     loginDays: uniqueLoginDates.size,
-    progress: subjectProgress,
+    progress: subjectProgressData,
     totalStudyTimeMin: totalStudyTimeMin,
     totalProblemsCompleted: totalProblemsCompleted,
     timeframeDays: ADVICE_TIMEFRAME_DAYS,
   };
 
-  // --- 3. AIからのアドバイスを生成 ---
   const aiAdvice = generateAdvice(userStats, userWithDetails);
 
-  // --- 4. 日付型等をシリアライズ（文字列に変換） ---
   const serializedUser = {
     ...userWithDetails,
     birth: userWithDetails.birth?.toISOString() ?? null,
@@ -197,20 +203,32 @@ export default async function ProfilePage() {
       ...ut,
       unlockedAt: ut.unlockedAt.toISOString(),
     })),
-    Status_Kohaku: userWithDetails.status_Kohaku ? [userWithDetails.status_Kohaku] : [],
+    status_Kohaku: userWithDetails.status_Kohaku ?? null,
   };
 
-  // --- 6. 問題解答履歴を取得 (追加) ---
-  const historyData = await getUserHistory();
-
-  // --- 5. すべてのデータをクライアントコンポーネントに渡す ---
   return (
     <ProfileClient
       initialUser={serializedUser}
       initialStats={userStats}
       aiAdvice={aiAdvice}
       hasPassword={hasPassword}
-      initialHistory={historyData}
-    />
+      initialSubjectProgress={subjectProgressList}
+      initialChartData={activityStatsData}
+    >
+      <div className="lg:col-span-3">
+        <Suspense fallback={
+          <div className="bg-white p-6 rounded-lg shadow-lg animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        }>
+          <ProfileHistorySection />
+        </Suspense>
+      </div>
+    </ProfileClient>
   );
 }

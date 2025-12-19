@@ -6,33 +6,90 @@ import { useRouter } from 'next/navigation';
 import { Lightbulb, Edit3, Check, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { updatePetName } from '@/lib/actions'; // 👈 後で作成するサーバーアクション
+import { getEvolvedImageSrc, SubjectProgress } from '@/components/kohakuUtils';
 
 
 // Props に adviceText を追加
 interface PetStatusViewProps {
   initialHunger: number; // 画像表示のために残す
+  userLevel: number; // 進化判定用に追加
+  subjectProgress: SubjectProgress[]; // 進化分岐判定用に追加
+  evolutionType?: string | null; // DB保存された進化タイプ
   adviceText?: string | null; // AIアドバイスを受け取る (オプショナル)
   maxHunger: number; // Props としては受け取るが今回は表示に使わない
   petname: string; // ペットの名前を受け取る
   petBirthdate: string | null; // ペットの誕生日 
 }
 
-// 満腹度に応じた画像パスを返すヘルパー関数 (変更なし)
-const getPetDisplayInfo = (hungerLevel: number) => {
+// 空腹度に応じた設定を返すヘルパー関数
+const getStatusConfig = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
-    return { image: '/images/Kohaku/kohaku-full.png' };
+    return {
+      suffix: 'smile',
+      legacyImage: '/images/Kohaku/kohaku-full.png', // 進化前の画像
+      statusText: '満腹',
+      colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
+    };
   } else if (hungerLevel >= 100) {
-    return { image: '/images/Kohaku/kohaku-normal.png' };
+    return {
+      suffix: 'base',
+      legacyImage: '/images/Kohaku/kohaku-normal.png',
+      statusText: '普通',
+      colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
+    };
   } else if (hungerLevel >= 50) {
-    return { image: '/images/Kohaku/kohaku-hungry.png' };
+    return {
+      suffix: 'cry',
+      legacyImage: '/images/Kohaku/kohaku-hungry.png',
+      statusText: '空腹',
+      colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
+    };
   } else {
-    return { image: '/images/Kohaku/kohaku-starving.png' };
+    return {
+      suffix: 'death',
+      legacyImage: '/images/Kohaku/kohaku-starving.png',
+      statusText: '死にかけ…',
+      colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
+    };
   }
 };
 
-export default function PetStatusView({ initialHunger, maxHunger, adviceText, petname, petBirthdate }: PetStatusViewProps) {
+// 満腹度、ユーザーレベル、学習進捗に応じた画像パスを返すヘルパー関数
+const getPetDisplayInfo = (hungerLevel: number, userLevel: number, subjectProgress: SubjectProgress[], evolutionType?: string | null) => {
+  // 1. 設定を取得
+  const config = getStatusConfig(hungerLevel);
+
+  // 2. DBに保存された進化タイプがある場合は、それを優先して表示
+  if (evolutionType) {
+    return { image: `/images/evolution/${evolutionType}-${config.suffix}.png` };
+  }
+
+  // 3. ユーザーレベルが30以上の場合は、進化ロジックを適用し続ける（引き継ぎ表示 - フォールバック）
+  if (userLevel >= 30) {
+    // 進化後のベース画像パスを取得 (例: /images/evolution/A-A-base.png)
+    let evolvedBaseSrc = getEvolvedImageSrc(subjectProgress);
+
+    // 学習データがない場合でも、レベル30以上ならデフォルトの進化画像(A-A)を適用して状態を維持する
+    if (!evolvedBaseSrc.includes('/images/evolution/')) {
+      evolvedBaseSrc = '/images/evolution/A-A-base.png';
+    }
+
+    // 進化画像 (/images/evolution/...) が返ってきた場合のみ、表情差分を適用
+    // (学習データ不足などでデフォルトのコハク画像が返ってきた場合は、下の通常処理へ流す)
+    if (evolvedBaseSrc.includes('/images/evolution/')) {
+      // 'base.png' を suffix (smile, base, cry, death) に置換して表情差分を適用
+      // 例: /images/evolution/A-A-base.png -> /images/evolution/A-A-smile.png
+      return { image: evolvedBaseSrc.replace('base.png', `${config.suffix}.png`) };
+    }
+  }
+
+  // 4. 通常画像 (Lv29以下、または進化データ不足時)
+  return { image: config.legacyImage };
+};
+
+export default function PetStatusView({ initialHunger, userLevel, subjectProgress = [], evolutionType, maxHunger, adviceText, petname, petBirthdate }: PetStatusViewProps) {
   const router = useRouter();
-  const petInfo = getPetDisplayInfo(initialHunger);
+  const petInfo = getPetDisplayInfo(initialHunger, userLevel, subjectProgress, evolutionType);
 
   // --- [追加] 編集モードと名前を管理する State ---
   const [isEditing, setIsEditing] = useState(false);

@@ -4,57 +4,84 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UnsubmittedAssignment } from '@/lib/data';
+import { SubjectProgress } from '../../../../components/kohakuUtils';
 
 // 親コンポーネントから渡されるPropsの型を定義
 interface PetStatusViewProps {
   initialHunger: number;
   maxHunger: number;
   petname: string;
+  subjectProgress?: SubjectProgress[]; // 進化状態を判定するために追加
+  userLevel: number; // レベル判定用に追加
   assignmentCount: number;
   nextAssignment: UnsubmittedAssignment | null;
+  evolutionType?: string | null; // DB保存済みの進化タイプ
 }
 
 /**
- * 満腹度に応じて、表示するコハクの画像パスとステータステキストを返すヘルパー関数
+ * 満腹度に応じて、ステータス設定（表情サフィックス、テキスト、色、旧画像）を返すヘルパー関数
  * @param hungerLevel 現在の満腹度
- * @returns { image: string, statusText: string }
  */
-const getPetDisplayInfo = (hungerLevel: number) => {
+const getStatusConfig = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
-      image: '/images/Kohaku/kohaku-full.png',      // 満腹の画像
+      suffix: 'smile',
+      legacyImage: '/images/Kohaku/kohaku-full.png', // 進化前の画像
       statusText: '満腹',
       colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
     };
   } else if (hungerLevel >= 100) {
     return {
-      image: '/images/Kohaku/kohaku-normal.png',    // 普通の画像
+      suffix: 'base',
+      legacyImage: '/images/Kohaku/kohaku-normal.png',
       statusText: '普通',
       colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
     };
   } else if (hungerLevel >= 50) {
     return {
-      image: '/images/Kohaku/kohaku-hungry.png',    // 空腹の画像
+      suffix: 'cry',
+      legacyImage: '/images/Kohaku/kohaku-hungry.png',
       statusText: '空腹',
       colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
     };
   } else {
     return {
-      image: '/images/Kohaku/kohaku-starving.png',  // 死にかけの画像
+      suffix: 'death',
+      legacyImage: '/images/Kohaku/kohaku-starving.png',
       statusText: '死にかけ…',
       colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
     };
   }
 };
 
-export default function PetStatusView({ initialHunger, maxHunger, petname, assignmentCount, nextAssignment }: PetStatusViewProps) {
+export default function PetStatusView({ initialHunger, maxHunger, petname, subjectProgress, userLevel, assignmentCount, nextAssignment, evolutionType }: PetStatusViewProps) {
   const router = useRouter();
 
   // ヘルパー関数を呼び出して、現在の状態を取得
-  const petInfo = getPetDisplayInfo(initialHunger);
+  const statusConfig = getStatusConfig(initialHunger);
 
   // プログレスバーのパーセンテージを計算
   const fullnessPercentage = (initialHunger / maxHunger) * 100;
+
+  // 画像パスの決定ロジック
+  let displayImage = statusConfig.legacyImage;
+
+  // レベル30以上の場合のみ進化画像を適用
+  if (userLevel >= 30) {
+    // 1. 進化のベース画像を取得 (例: .../A-A-base.png または .../kohaku-normal.png)
+    let evolvedBaseImage = '/images/Kohaku/kohaku-normal.png';
+
+    if (evolutionType) {
+      // DBに保存された進化タイプがあればそれを使用 (例: "A-B" -> "/images/evolution/A-B-base.png")
+      evolvedBaseImage = `/images/evolution/${evolutionType}-base.png`;
+    }
+    
+    // 2. 進化している場合（normal以外が返ってきた場合）、表情差分を適用
+    if (evolvedBaseImage !== '/images/Kohaku/kohaku-normal.png') {
+      // ファイル名の 'base.png' 部分を、現在の状態に応じたサフィックス（smile.pngなど）に置換
+      displayImage = evolvedBaseImage.replace('base.png', `${statusConfig.suffix}.png`);
+    }
+  }
 
   // 課題リンクの生成ロジック
   let linkPath = '/issue_list';
@@ -85,7 +112,7 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, assig
             <div className="absolute inset-0"></div>
 
             <Image
-              src={petInfo.image}
+              src={displayImage}
               alt={petname}
               width={200}
               height={200}
@@ -99,22 +126,22 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, assig
           <div className="w-full max-w-sm mb-8 text-center">
             <h2 className="text-xl font-bold text-slate-700 mb-2">{petname}の満腹度</h2>
 
-            <div className="relative pt-1">
-              <div className="flex mb-2 items-center justify-center">
-                <div className="text-center w-full">
-                  <span className="text-3xl font-bold inline-block text-slate-700">
-                    {initialHunger} / {maxHunger}
-                  </span>
-                </div>
-              </div>
-              <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-[#B2EBF2]">
-                <div
-                  style={{ width: `${fullnessPercentage}%` }}
-                  className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ease-out ${petInfo.colorClass}`}
-                ></div>
-              </div>
+        <div className="relative pt-1">
+          <div className="flex mb-2 items-center justify-center">
+            <div className="text-center w-full">
+              <span className="text-3xl font-bold inline-block text-slate-700">
+                {initialHunger} / {maxHunger}
+              </span>
             </div>
           </div>
+          <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-[#B2EBF2]">
+            <div
+              style={{ width: `${fullnessPercentage}%` }}
+              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ease-out ${statusConfig.colorClass}`}
+            ></div>
+          </div>
+        </div>
+      </div>
 
           {/* 4. Action Button */}
           <div className="w-full max-w-sm">
@@ -161,5 +188,7 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, assig
       </div>
 
     </div>
+
+    
   );
 }

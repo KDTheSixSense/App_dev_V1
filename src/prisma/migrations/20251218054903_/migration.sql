@@ -27,6 +27,7 @@ CREATE TABLE "User" (
     "isAgreedToTerms" BOOLEAN NOT NULL DEFAULT false,
     "isAgreedToPrivacyPolicy" BOOLEAN NOT NULL DEFAULT false,
     "aiAdviceCredits" INTEGER NOT NULL DEFAULT 5,
+    "tokenVersion" INTEGER NOT NULL DEFAULT 1,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -428,6 +429,7 @@ CREATE TABLE "Status_Kohaku" (
     "hungerlevel" INTEGER NOT NULL DEFAULT 1000,
     "hungerLastUpdatedAt" TIMESTAMP(3),
     "birthdate" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "evolutionType" TEXT,
 
     CONSTRAINT "Status_Kohaku_pkey" PRIMARY KEY ("id")
 );
