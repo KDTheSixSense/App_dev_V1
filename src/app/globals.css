@@ -102,18 +102,6 @@
   font-size: 1.2em; /* 記号を少し大きく */
 }
 
-.answer-effect-text {
-  /* テキストのスタイル */
-}
-
-.correct-effect {
-  /* colorはcontainerで設定 */
-}
-
-.incorrect-effect {
-  /* colorはcontainerで設定 */
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
