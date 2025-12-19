@@ -1,5 +1,8 @@
 
-import RankingSection from "@/components/dashboard/RankingSection";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { assignRanks } from "@/lib/ranking";
+import RankingContainer from "@/components/RankingContainer";
 
 export const revalidate = 300; // 5分間キャッシュ
 
