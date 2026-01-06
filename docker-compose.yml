@@ -29,7 +29,7 @@ services:
   # サンドボックスコンテナ (Code Execution) - Added for dev parity
   sandbox:
     build:
-      context: .devcontainer/sandbox
+      context: ./sandbox
     expose:
       - "4000"
     restart: always
