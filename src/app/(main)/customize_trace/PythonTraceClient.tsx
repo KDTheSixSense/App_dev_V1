@@ -197,10 +197,16 @@ const PythonTraceClient = () => {
             recordStudyTime();
             setIsTraceStarted(true);
 
-            const steps = await runPythonTraceAction(code) as TraceStepData[];
+            const result = await runPythonTraceAction(code);
 
-            if (!steps || steps.length === 0) {
-                throw new Error("トレース結果が取得できませんでした。");
+            if (!result.success || !result.steps) {
+                throw new Error(result.error || "トレース結果が取得できませんでした。");
+            }
+
+            const steps = result.steps as TraceStepData[];
+
+            if (steps.length === 0) {
+                throw new Error("トレース結果が空でした。"); // Logicとしてはあり得ないが念のため
             }
 
             setTraceSteps(steps);
@@ -211,10 +217,12 @@ const PythonTraceClient = () => {
             hasRecordedTime.current = false;
 
         } catch (e: any) {
+            // エラーメッセージの表示 (改行コードを <br/> に変換するなどUIで見やすくする工夫も可だが、まずはそのまま)
             setError(`実行エラー: ${e.message}`);
             setIsTraceStarted(false);
         }
     };
+
 
     const updateDisplay = (step: TraceStepData) => {
         setCurrentLine(step.line);

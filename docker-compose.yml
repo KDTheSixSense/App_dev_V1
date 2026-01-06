@@ -25,6 +25,20 @@ services:
       - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-      
+
+  # サンドボックスコンテナ (Code Execution) - Added for dev parity
+  sandbox:
+    build:
+      context: .devcontainer/sandbox
+    expose:
+      - "4000"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "4000:4000"
+
 volumes:
   db_data:

@@ -9,6 +9,7 @@ services:
         - DATABASE_URL=postgresql://user:password@db:5432/mydatabase
         - NEXT_PUBLIC_APP_URL=http://localhost
         - NEXTAUTH_URL=http://localhost
+        - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     restart: always
     env_file:
       - .env.local
