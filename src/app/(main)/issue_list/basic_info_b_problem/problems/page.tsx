@@ -5,9 +5,14 @@ import { prisma } from '@/lib/prisma';
 import { getAppSession } from '@/lib/auth';
 import AnimatedList, { AnimatedListItem } from '../../components/AnimatedList';
 import BackButton from '../../components/BackButton';
+import StatusFilter from './StatusFilter';
 
 // ページコンポーネントを非同期関数に変更
-const BasicInfoBProblemsListPage = async () => {
+const BasicInfoBProblemsListPage = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) => {
   const session = await getAppSession();
   const userId = session.user?.id;
 
@@ -110,8 +115,19 @@ const BasicInfoBProblemsListPage = async () => {
   // ID順に並び替えます
   allProblems.sort((a, b) => a.id - b.id);
 
+  // フィルタリング処理
+  const resolvedSearchParams = await searchParams;
+  const statusParam = resolvedSearchParams?.status;
+
+  let filteredProblems = allProblems;
+  if (statusParam === 'today') {
+    filteredProblems = allProblems.filter((p) => solvedStatusMap.get(p.id) === 'today');
+  } else if (statusParam === 'past') {
+    filteredProblems = allProblems.filter((p) => solvedStatusMap.get(p.id) === 'past');
+  }
+
   // AnimatedList用にデータを変換
-  const items: AnimatedListItem[] = allProblems.map((problem) => {
+  const items: AnimatedListItem[] = filteredProblems.map((problem) => {
     return {
       id: problem.id,
       title: `問${problem.id}: ${problem.title}`, // タイトルに問題番号を含める
@@ -129,6 +145,8 @@ const BasicInfoBProblemsListPage = async () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           基本情報技術者試験 科目B 問題一覧
         </h1>
+
+        <StatusFilter />
 
         {/* 新しいAnimatedListコンポーネントを使用 */}
         <AnimatedList

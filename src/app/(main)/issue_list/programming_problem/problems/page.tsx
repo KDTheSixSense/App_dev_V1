@@ -4,8 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { getAppSession } from '@/lib/auth';
 import AnimatedList, { AnimatedListItem } from '../../components/AnimatedList';
 import BackButton from '../../components/BackButton';
+import StatusFilter from './StatusFilter';
 
-const ProgrammingProblemsListPage = async () => {
+const ProgrammingProblemsListPage = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) => {
   const session = await getAppSession();
   const userId = session.user?.id;
 
@@ -63,8 +68,19 @@ const ProgrammingProblemsListPage = async () => {
     }
   }
 
+  // フィルタリング処理
+  const resolvedSearchParams = await searchParams;
+  const statusParam = resolvedSearchParams?.status;
+
+  let filteredProblems = problems;
+  if (statusParam === 'today') {
+    filteredProblems = problems.filter((p) => solvedStatusMap.get(p.id) === 'today');
+  } else if (statusParam === 'past') {
+    filteredProblems = problems.filter((p) => solvedStatusMap.get(p.id) === 'past');
+  }
+
   // AnimatedList用にデータを変換
-  const items: AnimatedListItem[] = problems.map((problem) => {
+  const items: AnimatedListItem[] = filteredProblems.map((problem) => {
     return {
       id: problem.id,
       title: `問${problem.id}: ${problem.title}`, // タイトルに問題番号を含める
@@ -82,6 +98,8 @@ const ProgrammingProblemsListPage = async () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           プログラミングコーディング問題一覧
         </h1>
+
+        <StatusFilter />
 
         {/* 新しいAnimatedListコンポーネントを使用 */}
         <AnimatedList
