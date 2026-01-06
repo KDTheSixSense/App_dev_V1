@@ -41,9 +41,9 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission, onClaim }) => {
 
         {/* Progress Bar */}
         <div className="w-full">
-          <div className="w-full bg-white/50 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-gray-300 rounded-full h-1.5 overflow-hidden">
             <div
-              className={`${isAchieved ? 'bg-gradient-to-r from-sky-400 to-blue-600' : 'bg-gradient-to-r from-sky-400 to-blue-600'} h-full rounded-full transition-all duration-500`}
+              className={`${isAchieved ? 'bg-gradient-to-r from-sky-400 to-blue-600' : 'bg-gradient-to-r from-sky-400 to-blue-600'} h-full rounded-full transition-all duration-500 `}
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>

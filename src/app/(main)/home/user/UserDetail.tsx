@@ -43,7 +43,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
                         {/* User Info */}
                         <div className="flex-1 min-w-0">
                             <div className="flex items-baseline gap-2 mb-1 text-cyan-800">
-                                <span className="text-sm font-bold opacity-90 font-mono">RANK</span>
+                                <span className="text-3xl font-bold opacity-90 font-mono">RANK</span>
                                 <span className="text-3xl font-bold">{user?.level ?? 1}</span>
                             </div>
 

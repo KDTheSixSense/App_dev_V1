@@ -333,7 +333,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
         
 
         {/* ランクとログイン日数 */}
-        <div className="flex items-center gap-6 h-full pt-1">
+        <div className="flex items-center gap-4 h-full pt-1 w-35">
           {/* Continuous Login - Image Style - Enlarged */}
           <div className="flex flex-col items-center gap-1 mt-1">
             <div className="relative w-12 h-12">
@@ -353,7 +353,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
           </div>
 
           {/* Rank Circular Gauge - Enlarged */}
-          <div className="relative flex flex-col items-center justify-center -mt-2">
+          <div className="relative flex flex-col items-center justify-center -mt-2 h-full flex-1">
             <div className="relative w-16 h-16">
               <svg className="w-full h-full transform -rotate-90">
                 {/* Background Circle */}
@@ -381,12 +381,10 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
                 </span>
               </div>
             </div>
-            <div className="absolute -bottom-2 bg-white px-2 rounded-full border border-sky-100 shadow-sm z-10">
-              <span className="text-[11px] font-bold text-cyan-600 whitespace-nowrap">RANK {rank}</span>
+            <div className="absolute -bottom-1 rounded-full z-10 inline-flex items-center h-6">
+              <p className="inline-flex justify-end items-end text-[12px] font-bold text-cyan-600 whitespace-nowrap mt-auto">RANK {rank}</p>
             </div>
-          </div>
-
-          
+          </div>          
         </div>
 
         {/* プロフィールアイコン (プルダウンメニュー付き) */}

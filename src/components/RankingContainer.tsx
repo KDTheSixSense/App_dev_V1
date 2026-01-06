@@ -183,7 +183,7 @@ export default function RankingContainer({
                   </div>
                   {scoreToNextRank && (
                     <div className="flex items-center justify-center ml-auto px-4 py-0.5 rounded-full">
-                      <span className="text-[12px] text-slate-500 mr-1">{scoreToNextRank.targetRank}位まで</span>
+                      <span className="text-[12px] text-slate-500 mr-1">次の順位まであと</span>
                       <span className="text-[14px] text-orange-500 font-bold">{scoreToNextRank.diff}ランク</span>
                     </div>
                   )}
