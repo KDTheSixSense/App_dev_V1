@@ -4,8 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { getAppSession } from '@/lib/auth';
 import AnimatedList, { AnimatedListItem } from '../../components/AnimatedList';
 import BackButton from '../../components/BackButton';
+import CategoryFilter from './CategoryFilter';
 
-const AppliedInfoMorningProblemsListPage = async () => {
+const AppliedInfoMorningProblemsListPage = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) => {
   const session = await getAppSession();
   const userId = session.user?.id;
 
@@ -42,7 +47,32 @@ const AppliedInfoMorningProblemsListPage = async () => {
     }
   }
 
+  const resolvedSearchParams = await searchParams;
+  const categoryParam = resolvedSearchParams?.category;
+  const statusParam = resolvedSearchParams?.status;
+  const categoryId = typeof categoryParam === 'string' ? parseInt(categoryParam, 10) : undefined;
+
+  // フィルタ条件の構築
+  const where: any = {};
+
+  if (categoryId) {
+    where.categoryId = categoryId;
+  }
+
+  if (statusParam === 'today') {
+    const todayIds = Array.from(solvedStatusMap.entries())
+      .filter(([_, status]) => status === 'today')
+      .map(([id]) => id);
+    where.id = { in: todayIds };
+  } else if (statusParam === 'past') {
+    const pastIds = Array.from(solvedStatusMap.entries())
+      .filter(([_, status]) => status === 'past')
+      .map(([id]) => id);
+    where.id = { in: pastIds };
+  }
+
   const problems = await prisma.applied_am_Question.findMany({
+    where,
     select: {
       id: true,
       title: true,
@@ -71,6 +101,8 @@ const AppliedInfoMorningProblemsListPage = async () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           応用情報 午前問題一覧
         </h1>
+
+        <CategoryFilter />
         
         {/* 新しいAnimatedListコンポーネントを使用 */}
         <AnimatedList 

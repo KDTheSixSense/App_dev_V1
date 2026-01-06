@@ -5,13 +5,19 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
-// Link, Image, useRouter はNext.js固有のため削除
-import { getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import {getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
-import { useSearchParams, usePathname } from 'next/navigation';
 
 type UserWithPetStatus = User & {
   status_Kohaku: Status_Kohaku | null;
+  progresses?: {
+    level: number;
+    subject: {
+      name: string;
+    };
+  }[];
 };
 
 type HeaderProps = {
@@ -33,21 +39,25 @@ const getPetDisplayState = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
       icon: '/images/Kohaku/kohaku-full.png',      // 満腹の画像
+      suffix: 'smile',
       colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
     };
   } else if (hungerLevel >= 100) {
     return {
       icon: '/images/Kohaku/kohaku-normal.png',    // 普通の画像
+      suffix: 'base',
       colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
     };
   } else if (hungerLevel >= 50) {
     return {
       icon: '/images/Kohaku/kohaku-hungry.png',    // 空腹の画像
+      suffix: 'cry',
       colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
     };
   } else {
     return {
       icon: '/images/Kohaku/kohaku-starving.png',  // 死にかけの画像
+      suffix: 'death',
       colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
     };
   }
@@ -56,7 +66,7 @@ const getPetDisplayState = (hungerLevel: number) => {
 export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subjectProgress }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
   const searchParams = useSearchParams();
-
+  const router = useRouter();
   const pathname = usePathname();
 
   // 1. ランク(level)と経験値(xp)のstate
@@ -64,6 +74,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
   const [xp, setXp] = useState(() => userWithPet?.xp ?? 0);
   // 2. 連続ログイン日数のstate
   const [continuousLogin, setContinuousLogin] = useState(() => userWithPet?.continuouslogin ?? 0);
+
 
   // ランク進捗の計算
   const requiredXpForNextLevel = 1000;
@@ -99,16 +110,16 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
   // 3. ペット情報のstate
   const [petStatus, setPetStatus] = useState<PetDisplayStatus | null>(() => {
     const initialStatus = userWithPet?.status_Kohaku;
-    const currentLevel = userWithPet?.level ?? 1;
-    const isEvolving = searchParams.get('evolution') === 'true';
 
     if (initialStatus) {
       const displayState = getPetDisplayState(initialStatus.hungerlevel);
 
       // レベル30以上なら進化画像を優先する（ただし進化演出中は通常画像を表示）
-      const icon = (currentLevel >= 30 && !isEvolving)
-        ? getEvolvedImageSrc(subjectProgress)
-        : displayState.icon;
+      let icon = displayState.icon;
+      // DBに保存された進化タイプがある場合
+      if ((initialStatus as any).evolutionType) {
+        icon = `/images/evolution/${(initialStatus as any).evolutionType}-${displayState.suffix}.png`;
+      }
 
       return {
         hungerlevel: initialStatus.hungerlevel,
@@ -119,12 +130,40 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
     // ユーザーはいるがペット情報がない場合 (フォールバック)
     if (userWithPet) {
       const displayState = getPetDisplayState(MAX_HUNGER);
-      console.log("[Header Debug] Initial petStatus (fallback for no status_Kohaku):", { hungerlevel: MAX_HUNGER, ...displayState });
+      // console.log("[Header Debug] Initial petStatus (fallback for no status_Kohaku):", { hungerlevel: MAX_HUNGER, ...displayState });
       return { hungerlevel: MAX_HUNGER, ...displayState };
     }
-    console.log("[Header Debug] Initial petStatus (no userWithPet): null");
+    // console.log("[Header Debug] Initial petStatus (no userWithPet): null");
     return null;
   });
+
+  // Props (userWithPet, subjectProgress) が更新されたら State を同期する
+  // これにより router.refresh() 後の新しい進化画像が反映されます
+  useEffect(() => {
+    if (userWithPet?.status_Kohaku) {
+      const { hungerlevel } = userWithPet.status_Kohaku;
+      const displayState = getPetDisplayState(hungerlevel);
+
+
+      let icon = displayState.icon;
+      // DBに保存された進化タイプがある場合
+      if ((userWithPet.status_Kohaku as any).evolutionType) {
+        icon = `/images/evolution/${(userWithPet.status_Kohaku as any).evolutionType}-${displayState.suffix}.png`;
+      }
+
+      setPetStatus({
+        hungerlevel,
+        icon,
+        colorClass: displayState.colorClass
+      });
+
+      // 他のステータスも同期
+      setRank(userWithPet.level);
+      setXp(userWithPet.xp);
+      setContinuousLogin(userWithPet.continuouslogin ?? 0);
+      setContinuousLogin(userWithPet.continuouslogin ?? 0);
+    }
+  }, [userWithPet]); // searchParamsを削除して、ページ遷移時のちらつき（状態リセット）を防止
 
   // 4. ファビコンをペットのアイコンに動的に変更する処理（強化版）
   useEffect(() => {
@@ -155,17 +194,24 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
   // 4. ペットのステータスをAPIから再取得して、Stateを更新する関数
   // (useCallbackでラップ)
   const refetchPetStatus = useCallback(async (isPeriodicCheck: boolean = false) => {
-    console.log("[Header Debug] refetchPetStatus called.");
+    // console.log("[Header Debug] refetchPetStatus called.");
     try {
       const res = await fetch('/api/pet/status', { cache: 'no-store' }); // キャッシュを無効化
       if (res.ok) {
         const { data } = await res.json();
         if (data) {
           const displayState = getPetDisplayState(data.hungerlevel);
-          const isEvolving = searchParams.get('evolution') === 'true';
           // APIレスポンスにsubjectProgressが含まれていると仮定、もしくはpropsの値を使用
           // ※API側もsubjectProgressを返すように修正が必要な場合があります
-          const icon = (data.level >= 30 && !isEvolving) ? getEvolvedImageSrc(subjectProgress) : displayState.icon;
+          let icon = displayState.icon;
+
+          // 進化タイプを取得（APIレスポンス優先、なければPropsからフォールバック）
+          const evolutionType = data.evolutionType || (userWithPet?.status_Kohaku as any)?.evolutionType;
+
+          // DBに保存された進化タイプがある場合
+          if (evolutionType) {
+            icon = `/images/evolution/${evolutionType}-${displayState.suffix}.png`;
+          }
 
           let hungerLevelChanged = false;
           setPetStatus(prevStatus => {
@@ -185,7 +231,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
           // 定期チェックで満腹度が変わっていたら、イベントを発火
           if (isPeriodicCheck && hungerLevelChanged) {
-            console.log("[Header Debug] Hunger level changed on periodic check. Dispatching event.");
+            // console.log("[Header Debug] Hunger level changed on periodic check. Dispatching event.");
             window.dispatchEvent(new CustomEvent('petStatusUpdated'));
           }
         }
@@ -195,18 +241,18 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
     } catch (error) {
       console.error("[Header Debug] ペット情報の再取得に失敗:", error);
     }
-  }, [subjectProgress, searchParams]); // subjectProgressが変わったら再計算できるように依存配列に追加
+  }, [userWithPet]); // userWithPetを依存配列に追加 (searchParamsは削除)
 
   // レンダリング直前にpetStatus.iconの値をログ出力
-  console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
-  console.log("[Header Debug] subjectProgress in Header:", subjectProgress);
+  // console.log("[Header Debug] petStatus.icon before img tag:", petStatus?.icon);
 
   useEffect(() => {
-    // ページ読み込み時にも最新の情報を取得
+    // ページ読み込み時の処理
     if (userWithPet) { // ログインしている場合のみ
-      const timerId = setTimeout(() => {
-        refetchPetStatus();
-      }, 500); // 500ms遅延実行
+      // NOTE: 以前はここで setTimeout を使って refetchPetStatus() を呼び出していましたが、
+      // サーバーサイドから既に最新のデータ (userWithPet) が渡されているため、
+      // クライアントサイドでの即時の再フェッチは不要（冗長）と判断し削除しました。
+      // 必要があれば、特定の条件でのみ呼び出すように復元してください。
 
       // addEventListener 用のラッパー関数を定義
       const handlePetStatusUpdate = () => {
@@ -225,13 +271,12 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
       // コンポーネントが不要になった時に、イベントリスナーとタイマーを解除
       return () => {
-        clearTimeout(timerId); // 遅延実行タイマーを解除
         // ラッパー関数を解除
         window.removeEventListener('petStatusUpdated', handlePetStatusUpdate);
         clearInterval(intervalId); // 定期実行タイマーを解除
       };
     }
-  }, [userWithPet, refetchPetStatus, searchParams]); // 依存配列に refetchPetStatus を追加
+  }, [userWithPet, refetchPetStatus]); // 依存配列に refetchPetStatus を追加 (searchParamsは削除)
 
   // ログアウト処理を行う非同期関数
   const handleLogout = async () => {
@@ -409,54 +454,60 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
             <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
               <div className="py-1">
                 {user?.isAdmin && (
-                  <a
+                  <Link
                     href="/admin-audit"
+                    onClick={() => setIsProfileMenuOpen(false)}
                     className="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-b border-gray-50 font-bold"
                   >
                     🔒 管理者用監査ログ
-                  </a>
+                  </Link>
                 )}
-                <a
+                <Link
                   href="/profile"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors border-b border-gray-50 font-medium"
                 >
                   プロフィール
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/profile/history"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   問題解答履歴
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/customize_trace"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   疑似言語トレース
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/simulator"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   ノーコード
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/terms"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   利用規約
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/privacypolicy"
+                  onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   プライバシーポリシー
-                </a>
+                </Link>
               </div>
             </div>
           )}
         </div>
-
       </div>
     </header>
   );

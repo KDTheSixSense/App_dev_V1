@@ -31,13 +31,23 @@ export default async function ProblemDetailPage({ params }: ProblemDetailPagePro
   // 2. ユーザーのクレジット情報の取得
   const session = await getAppSession();
   let initialCredits = 0;
+  let userPetStatus = null;
 
   if (session?.user?.id) {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { aiAdviceCredits: true },
+      select: { 
+        aiAdviceCredits: true,
+        status_Kohaku: {
+          select: {
+            hungerlevel: true,
+            evolutionType: true,
+          }
+        }
+      },
     });
     initialCredits = user?.aiAdviceCredits ?? 0;
+    userPetStatus = user?.status_Kohaku;
   }
 
   // ※ 選択問題の画像パスに関する補足
@@ -84,7 +94,7 @@ export default async function ProblemDetailPage({ params }: ProblemDetailPagePro
             一覧へ戻る
           </Link>
         </div>
-        <ProblemDetailClient problem={plainProblem} initialCredits={initialCredits} />
+        <ProblemDetailClient problem={plainProblem} initialCredits={initialCredits} initialPetStatus={userPetStatus} />
       </div>
     </div>
   );

@@ -218,8 +218,8 @@ export default function RankingContainer({
 
                   {/* Score/Label */}
                   <div className="text-right flex-shrink-0 ml-auto pr-2 whitespace-nowrap">
-                    <span className="text-blue-400 text-[12px] leading-tight">ランク</span>
-                    <span className="text-blue-400 font-bold text-[14px] leading-tight">{myRankInfo.score}</span>
+                    <span className="text-blue-400 text-[16px] leading-tight">ランク</span>
+                    <span className="text-blue-400 font-bold text-[18px] leading-tight">{myRankInfo.score}</span>
                   </div>
                 </div>
 

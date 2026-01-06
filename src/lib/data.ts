@@ -103,7 +103,7 @@ function transformAlgoProblem(dbProblem: DbAlgoProblem): SerializableProblem {
     correctAnswer: dbProblem.correctAnswer ?? '',
     initialVariables: dbProblem.initialVariable as AppProblem['initialVariables'] ?? {},
     logicType: dbProblem.logictype,
-    traceOptions: parseJSON(dbProblem.options as string | null, undefined),
+    traceOptions: parseJSON(dbProblem.options as string | null, undefined) || localProblems.find(p => p.id === dbProblem.id.toString())?.traceOptions,
     difficultyId: dbProblem.difficultyId ?? 7,
   };
 }
@@ -116,14 +116,16 @@ function transformAlgoProblem(dbProblem: DbAlgoProblem): SerializableProblem {
  */
 export async function getProblemForClient(id: number): Promise<SerializableProblem | null> {
   try {
-    // まず、静的な問題テーブル(Questions)を探します
-    const staticProblem = await prisma.questions.findUnique({ where: { id } });
+    // 静的な問題とアルゴリズム問題を並列に検索してレイテンシを削減
+    const [staticProblem, algoProblem] = await Promise.all([
+      prisma.questions.findUnique({ where: { id } }),
+      prisma.questions_Algorithm.findUnique({ where: { id } })
+    ]);
+
     if (staticProblem) {
       return transformStaticProblem(staticProblem);
     }
 
-    // 見つからなければ、アルゴリズム問題テーブル(Questions_Algorithm)を探します
-    const algoProblem = await prisma.questions_Algorithm.findUnique({ where: { id } });
     if (algoProblem) {
       return transformAlgoProblem(algoProblem);
     }
@@ -511,6 +513,10 @@ export async function getUpcomingEvents() {
           }
         }
       },
+      // DB側で開始日が近い順にソートして、直近のものを優先的に取得する
+      orderBy: {
+        startTime: 'asc',
+      },
       // いったん広めに取得してからメモリ上でソートする
       take: 20,
       include: {
@@ -578,6 +584,85 @@ export async function getUpcomingEvents() {
     }));
   } catch (error) {
     console.error("Failed to fetch upcoming events:", error);
+    return [];
+  }
+}
+
+/**
+ * 指定された期間の日次活動サマリーを取得する
+ * (データがない日は0埋めする)
+ * @param userId - ユーザーID
+ * @param timeframeDays - 期間（日数）
+ */
+export async function getDailyActivityStats(userId: string, timeframeDays: number) {
+  try {
+    // 1. 期間の開始日と終了日をJSTで計算
+    const jstOffset = 9 * 60 * 60 * 1000;
+    const endDate = new Date(Date.now() + jstOffset);
+    const startDate = new Date(endDate);
+    startDate.setDate(endDate.getDate() - (timeframeDays - 1)); // (例: 7日なら6日前から当日まで)
+
+    // DB検索用にUTCの「日付」オブジェクトに変換
+    const startDateQuery = new Date(startDate.toISOString().split('T')[0]);
+    const endDateQuery = new Date(endDate.toISOString().split('T')[0]);
+
+    // 2. DBから取得
+    const dbData = await prisma.dailyActivitySummary.findMany({
+      where: {
+        userId: userId,
+        date: {
+          gte: startDateQuery,
+          lte: endDateQuery,
+        },
+      },
+      select: {
+        date: true,
+        totalXpGained: true,
+        totalTimeSpentMs: true,
+        problemsCompleted: true,
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+
+    // 3. データを「日付文字列」をキーにしたMapに変換
+    const activityMap = new Map(
+      dbData.map((d) => [
+        d.date.toISOString().split('T')[0],
+        {
+          totalXpGained: d.totalXpGained,
+          totalTimeSpentMin: Number(d.totalTimeSpentMs / BigInt(60000)),
+          problemsCompleted: d.problemsCompleted,
+        },
+      ])
+    );
+
+    // 4. 0埋めデータ作成
+    const chartData = [];
+    for (let i = 0; i < timeframeDays; i++) {
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + i);
+      const dateString = currentDate.toISOString().split('T')[0];
+
+      const data = activityMap.get(dateString) || {
+        totalXpGained: 0,
+        totalTimeSpentMin: 0,
+        problemsCompleted: 0,
+      };
+
+      chartData.push({
+        date: `${currentDate.getMonth() + 1}/${currentDate.getDate()}`,
+        '獲得XP': data.totalXpGained,
+        '学習時間 (分)': data.totalTimeSpentMin,
+        '完了問題数': data.problemsCompleted,
+      });
+    }
+
+    return chartData;
+
+  } catch (error) {
+    console.error('Failed to get daily activity stats:', error);
     return [];
   }
 }

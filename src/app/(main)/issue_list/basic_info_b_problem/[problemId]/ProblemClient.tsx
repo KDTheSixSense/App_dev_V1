@@ -1,3 +1,5 @@
+// /workspaces/my-next-app/src/app/(main)/issue_list/basic_info_b_problem/[problemId]/ProblemClient.tsx
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -7,37 +9,39 @@ import Link from 'next/link';
 // --- コンポーネントとロジック ---
 import ProblemStatement from '../components/ProblemStatement';
 import TraceScreen from '../components/TraceScreen';
-import VariableTraceControl from '../components/VariableTraceControl';
+import VariableTraceControl from '@/components/common/VariableTraceControl';
 import KohakuChat from '@/components/KohakuChat'; // KohakuChat コンポーネントをインポート
 import { getHintFromAI } from '@/lib/actions/hintactions';
 import { getNextProblemId, awardXpForCorrectAnswer, recordStudyTimeAction, recordAnswerAction } from '@/lib/actions';
 import toast from 'react-hot-toast';
-import { problemLogicsMap } from '../data/problem-logics';
 import AnswerEffect from '@/components/AnswerEffect'; // AnswerEffect コンポーネントをインポート
 
 // --- 型定義 ---
 import type { SerializableProblem } from '@/lib/data';
-import type { VariablesState, TraceStep } from '../data/problems';
+import type { VariablesState } from '../data/problems';
+import { useTraceProblem } from '@/hooks/useTraceProblem';
 
-
-const MAX_HUNGER = 200;
 
 const getPetDisplayState = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
       icon: '/images/Kohaku/kohaku-full.png',
+      suffix: 'smile',
     };
   } else if (hungerLevel >= 100) {
     return {
       icon: '/images/Kohaku/kohaku-normal.png',
+      suffix: 'base',
     };
   } else if (hungerLevel >= 50) {
     return {
       icon: '/images/Kohaku/kohaku-hungry.png',
+      suffix: 'cry',
     };
   } else {
     return {
       icon: '/images/Kohaku/kohaku-starving.png',
+      suffix: 'death',
     };
   }
 };
@@ -115,6 +119,10 @@ type ChatMessage = { sender: 'user' | 'kohaku'; text: string };
 interface ProblemClientProps {
   initialProblem: SerializableProblem;
   initialCredits: number;
+  initialPetStatus?: {
+    hungerlevel: number;
+    evolutionType?: string | null;
+  } | null;
 }
 
 // 履歴データの型定義を追加
@@ -123,7 +131,7 @@ type TraceHistoryItem = {
   variables: VariablesState;
 };
 
-const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits }) => {
+const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits, initialPetStatus }) => {
   const router = useRouter();
 
 
@@ -131,32 +139,61 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [currentTraceLine, setCurrentTraceLine] = useState(0);
-  const [variables, setVariables] = useState<VariablesState>(initialProblem.initialVariables);
-  const [traceHistory, setTraceHistory] = useState<TraceHistoryItem[]>([]);　// 履歴管理用のStateを追加
+
+  // Hook usage
+  const {
+    currentTraceLine,
+    variables,
+    traceHistory,
+    isPresetSelected,
+    selectedPresetLabel,
+    handleNextTrace,
+    handlePrevTrace,
+    handleResetTrace: hookResetTrace,
+    handleSetLogicVariant,
+    handleSetData,
+    handleSetNum,
+    setVariables,
+    setCurrentTraceLine,
+    setTraceHistory,
+    setIsPresetSelected
+  } = useTraceProblem({ problem: problem, language: 'ja' }); // language state is defined below
+
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
-  const [isPresetSelected, setIsPresetSelected] = useState<boolean>(false);
   const [credits, setCredits] = useState(initialCredits);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const startTimeRef = useRef<number | null>(null);
   const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null); // エフェクトタイプを追加
 
-  const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+  const [kohakuIcon, setKohakuIcon] = useState(() => {
+    if (initialPetStatus) {
+      const displayState = getPetDisplayState(initialPetStatus.hungerlevel);
+      if (initialPetStatus.evolutionType) {
+        return `/images/evolution/${initialPetStatus.evolutionType}-${displayState.suffix}.png`;
+      }
+      return displayState.icon;
+    }
+    return '/images/Kohaku/kohaku-normal.png';
+  });
+
   const [selectedLogicVariant, setSelectedLogicVariant] = useState<string | null>(null);
 
-  const [isTraceFinished, setIsTraceFinished] = useState(false);
-  const [selectedPresetLabel, setSelectedPresetLabel] = useState<string | null>(null);
   // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
   const refetchPetStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/pet/status');
+      const res = await fetch('/api/pet/status', { cache: 'no-store' });
       if (res.ok) {
         const { data } = await res.json();
         if (data) {
           const displayState = getPetDisplayState(data.hungerlevel);
-          setKohakuIcon(displayState.icon);
+          let icon = displayState.icon;
+
+          if (data.evolutionType) {
+            icon = `/images/evolution/${data.evolutionType}-${displayState.suffix}.png`;
+          }
+          setKohakuIcon(icon);
         }
       }
     } catch (error) {
@@ -166,12 +203,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
   // 初期ロード時とイベントリスナー設定
   useEffect(() => {
-    refetchPetStatus();
+    if (!initialPetStatus) {
+      refetchPetStatus();
+    }
     window.addEventListener('petStatusUpdated', refetchPetStatus);
     return () => {
       window.removeEventListener('petStatusUpdated', refetchPetStatus);
     };
-  }, [refetchPetStatus]);
+  }, [refetchPetStatus, initialPetStatus]);
 
   useEffect(() => {
     let problemData = initialProblem;
@@ -227,7 +266,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setVariables(initialVarsWithId);
     setCurrentTraceLine(0);
     setTraceHistory([]);
-    setVariables(problemData.initialVariables);
+    setVariables(problemData.initialVariables); // This seems redundant with setVariables(initialVarsWithId) but keeping as is per logic flow
     setSelectedAnswer(null);
     setIsAnswered(false);
     setIsPresetSelected(false);
@@ -275,23 +314,33 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     if (correct) {
       try {
         const problemId = parseInt(problem.id, 10);
-        const result = await awardXpForCorrectAnswer(problemId, undefined, 3); // 科目Bの問題なのでsubjectidに3を渡す
-        // 処理が成功し、エラーでなければヘッダーのペットゲージを更新する
+        
+        // 【追加】経験値付与前のレベルを取得
+        let previousLevel = 0;
+        const preRes = await fetch('/api/pet/status', { cache: 'no-store' });
+        if (preRes.ok) {
+          const { data } = await preRes.json();
+          previousLevel = data?.level || 0;
+        }
+
+        const result = await awardXpForCorrectAnswer(problemId, undefined, 3); 
         if (result.message === '経験値を獲得しました！') {
           window.dispatchEvent(new CustomEvent('petStatusUpdated'));
 
           // レベルアップチェック (30の倍数)
-          const res = await fetch('/api/pet/status');
+          const res = await fetch('/api/pet/status', { cache: 'no-store' });
           if (res.ok) {
             const { data } = await res.json();
-            if (data?.level && data.level > 0 && data.level % 30 === 0) {
+            // 【変更】レベルが前回と異なり（上昇しており）、かつ30の倍数になった場合のみ遷移
+            if (data?.level && data.level > 0 && data.level % 30 === 0 && data.level !== previousLevel) {
               // 30の倍数に到達した場合、ホーム画面へ強制遷移
               setTimeout(() => {
                 router.push('/home?evolution=true');
               }, 1500);
             }
           }
-        } console.log(result.message); // "経験値を獲得しました！" or "既に正解済みです。"
+        }
+        console.log(result.message); // "経験値を獲得しました！" or "既に正解済みです。"
         if (result.unlockedTitle) {
           toast.success(`称号【${result.unlockedTitle.name}】を獲得しました！`);
         }
@@ -315,134 +364,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setAnswerEffectType(null); // アニメーション終了後にエフェクトを非表示にする
   }, []);
 
-  const handleNextTrace = () => {
-    if (!problem || !problem.programLines) return;
-
-    // 1. 最初にトレースが終了しているかチェック
-    const traceFinished = currentTraceLine >= 99 || (currentTraceLine >= (problem.programLines[language]?.length || 99));
-
-    if (!traceFinished) { // トレースが終了していない場合のみ実行
-      // 1. 現在の状態を履歴に保存 (ディープコピーで保存してバグを防ぐ)
-      // 配列やオブジェクトが参照渡しにならないように JSON.parse(JSON.stringify(...)) を使用
-      const currentSnapshot: TraceHistoryItem = {
-        line: currentTraceLine,
-        variables: JSON.parse(JSON.stringify(variables))
-      };
-      setTraceHistory(prev => [...prev, currentSnapshot]);
-      const logic = problemLogicsMap[problem.logicType as keyof typeof problemLogicsMap];
-      if (!logic) return;
-
-      // 2. 次にジャンプすべき行番号(nextLine)を決定
-      let nextLine = currentTraceLine + 1; // デフォルトは次の行
-      if ('calculateNextLine' in logic && logic.calculateNextLine) {
-        nextLine = logic.calculateNextLine(currentTraceLine, variables, selectedLogicVariant);
-      }
-
-      // 3. 現在の行(currentTraceLine)の実行内容(traceStepFunction)を取得
-      let traceStepFunction: TraceStep | undefined = undefined;
-
-      if ('getTraceStep' in logic && typeof (logic as any).getTraceStep === 'function') {
-        // --- (A) getTraceStep を持つロジック (問6: ビット反転) ---
-        traceStepFunction = (logic as any).getTraceStep(currentTraceLine, selectedLogicVariant);
-
-      } else if ('traceLogic' in logic) {
-        // --- (B) 従来の traceLogic 配列を持つロジック (問4など) ---
-        traceStepFunction = (logic as any).traceLogic[currentTraceLine];
-
-      } else {
-        // --- (C) どちらも持たない場合 (エラー) ---
-        console.error(`Logic for ${problem.logicType} has neither getTraceStep nor traceLogic.`);
-        traceStepFunction = (vars) => vars; // 何もしない
-      }
-
-      const varsWithContext = { ...variables, currentLine: currentTraceLine, problemId: problem.id };
-      const nextVariables = traceStepFunction ? traceStepFunction(varsWithContext) : { ...variables };
-
-      setVariables(nextVariables); // 状態を更新
-      setCurrentTraceLine(nextLine); // 次の行番号をセット
-    } else {
-      console.warn("Trace attempted beyond program lines length.");
-    }
-  };
-
-
-  // 前のトレースに戻る関数
-  const handlePrevTrace = () => {
-    if (traceHistory.length === 0) return;
-
-    // 履歴の最後（1つ前の状態）を取得
-    const prevStep = traceHistory[traceHistory.length - 1];
-
-    // 状態を復元
-    setVariables(prevStep.variables);
-    setCurrentTraceLine(prevStep.line);
-
-    // 履歴から削除
-    setTraceHistory(prev => prev.slice(0, -1));
-  };
-
   // リセット時の処理（修正）
   const handleResetTrace = () => {
-    const cleanVariables = JSON.parse(JSON.stringify(problem.initialVariables));
-
-    setVariables({
-      ...problem.initialVariables,
-      problemId: problem.id,
-      initialized: false
-    });
-
-    const initialLine = problem.id === '28' ? 4 : 0;
-
-    setCurrentTraceLine(initialLine);
-    setTraceHistory([]); // 履歴もクリア
-    setIsPresetSelected(false);
-    setSelectedLogicVariant(null);
+    hookResetTrace();
     setChatMessages(prev => [...prev, { sender: 'kohaku', text: "トレースをリセットしました。" }]);
-  };
-
-  const handleSetLogicVariant = (variantId: string) => {
-    // 1. UIの選択状態を更新
-    setSelectedLogicVariant(variantId);
-
-    // 2. ロジック側が参照できるように variables._variant にも注入する
-    setVariables((prev) => ({
-      ...prev,
-      _variant: variantId,
-    }));
-
-    // (オプション) ロジックを変えたらトレースをリセットする場合
-    setCurrentTraceLine(0);
-    setIsTraceFinished(false);
-  };
-
-  const handleSetData = (dataToSet: Record<string, any>, label: string = "") => {
-    const cleanVariables = JSON.parse(JSON.stringify(problem.initialVariables));
-
-    setVariables((prev) => ({
-      ...cleanVariables, // まず初期状態に戻す
-      ...dataToSet,                // 選択されたデータを上書き
-
-      // ★重要: 現在選択中のロジック(variant)を維持してセットする
-      // これをしないと、データを変えた瞬間にロジック判定が消えてしまいます
-      _variant: selectedLogicVariant,
-
-      initialized: false,
-      problemId: problem.id
-    }));
-    setCurrentTraceLine(0);
-    setTraceHistory([]);
-    setIsPresetSelected(true);
-    // setSelectedLogicVariant(null); //入力データを選択する度にロジックがリセットされていたのでコメントアウト化
-    setSelectedPresetLabel(label);
-  };
-
-  const handleSetNum = (num: number) => {
-    setVariables({ ...problem.initialVariables, num: num, initialized: false, problemId: problem.id }); // initializedをfalseにリセット
-    setCurrentTraceLine(0); // トレース行をリセット
-    setTraceHistory([]);
-    setIsPresetSelected(true); // プリセットが選択されたことを示すフラグを立てる
-    setSelectedLogicVariant(null);
-    setSelectedPresetLabel(String(num));
   };
 
   const handleNextProblem = async () => {
@@ -596,7 +521,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
                   onSetNum={handleSetNum}
                   selectedPresetLabel={selectedPresetLabel}
                   selectedLogicVariant={selectedLogicVariant}
-                  onSetLogicVariant={setSelectedLogicVariant}
+                  onSetLogicVariant={handleSetLogicVariant}
                 />
               </div>
             )}

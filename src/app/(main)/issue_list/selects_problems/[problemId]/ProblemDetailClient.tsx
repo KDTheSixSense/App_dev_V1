@@ -1,3 +1,5 @@
+//app/(main)/issue_list/selects_problems/[problemId]/ProblemDetailClient.tsx
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useTransition } from 'react';
@@ -16,13 +18,25 @@ const MAX_HUNGER = 200;
 
 const getPetDisplayState = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
-    return { icon: '/images/Kohaku/kohaku-full.png' };
+    return {
+      icon: '/images/Kohaku/kohaku-full.png',
+      suffix: 'smile',
+    };
   } else if (hungerLevel >= 100) {
-    return { icon: '/images/Kohaku/kohaku-normal.png' };
+    return {
+      icon: '/images/Kohaku/kohaku-normal.png',
+      suffix: 'base',
+    };
   } else if (hungerLevel >= 50) {
-    return { icon: '/images/Kohaku/kohaku-hungry.png' };
+    return {
+      icon: '/images/Kohaku/kohaku-hungry.png',
+      suffix: 'cry',
+    };
   } else {
-    return { icon: '/images/Kohaku/kohaku-starving.png' };
+    return {
+      icon: '/images/Kohaku/kohaku-starving.png',
+      suffix: 'death',
+    };
   }
 };
 
@@ -30,6 +44,10 @@ const getPetDisplayState = (hungerLevel: number) => {
 interface ProblemDetailClientProps {
   problem: SelectProblem & { imagePath?: string }; // 画像パスを含めるよう拡張
   initialCredits: number; // クレジット数を追加
+  initialPetStatus?: {
+    hungerlevel: number;
+    evolutionType?: string | null;
+  } | null;
 }
 
 // 多言語リソース
@@ -78,7 +96,7 @@ const isCorrectAnswer = (selected: string | null, correct: string): boolean => {
   return selected.trim() === correct.trim();
 };
 
-const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: initialProblem, initialCredits }) => {
+const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: initialProblem, initialCredits, initialPetStatus }) => {
   const router = useRouter();
 
 
@@ -124,7 +142,17 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   const [language, setLanguage] = useState<Language>('ja');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [kohakuIcon, setKohakuIcon] = useState('/images/Kohaku/kohaku-normal.png');
+  
+  const [kohakuIcon, setKohakuIcon] = useState(() => {
+    if (initialPetStatus) {
+      const displayState = getPetDisplayState(initialPetStatus.hungerlevel);
+      if (initialPetStatus.evolutionType) {
+        return `/images/evolution/${initialPetStatus.evolutionType}-${displayState.suffix}.png`;
+      }
+      return displayState.icon;
+    }
+    return '/images/Kohaku/kohaku-normal.png';
+  });
   const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null);
 
   // 問題の表示開始時刻を保存
@@ -133,12 +161,17 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   // ペット情報の取得ロジック
   const refetchPetStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/pet/status');
+      const res = await fetch('/api/pet/status', { cache: 'no-store' });
       if (res.ok) {
         const { data } = await res.json();
         if (data) {
           const displayState = getPetDisplayState(data.hungerlevel);
-          setKohakuIcon(displayState.icon);
+          let icon = displayState.icon;
+
+          if (data.evolutionType) {
+            icon = `/images/evolution/${data.evolutionType}-${displayState.suffix}.png`;
+          }
+          setKohakuIcon(icon);
         }
       }
     } catch (error) {
@@ -147,12 +180,14 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   }, []);
 
   useEffect(() => {
-    refetchPetStatus();
+    if (!initialPetStatus) {
+      refetchPetStatus();
+    }
     window.addEventListener('petStatusUpdated', refetchPetStatus);
     return () => {
       window.removeEventListener('petStatusUpdated', refetchPetStatus);
     };
-  }, [refetchPetStatus]);
+  }, [refetchPetStatus, initialPetStatus]);
 
   useEffect(() => {
     // ページ遷移時に状態をリセット
@@ -234,6 +269,12 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
             if (res.ok) {
               const { data } = await res.json();
               if (data?.level && data.level > 0 && data.level % 30 === 0) {
+                // 既に演出を見たレベルなら遷移しない
+                const seenLevel = localStorage.getItem('evolution_seen_level');
+                if (seenLevel && parseInt(seenLevel, 10) === data.level) {
+                  return;
+                }
+
                 // 30の倍数に到達した場合、ホーム画面へ強制遷移
                 setTimeout(() => {
                   router.push('/home?evolution=true');

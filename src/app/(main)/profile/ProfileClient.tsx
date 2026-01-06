@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { Title, User, UserUnlockedTitle, Status_Kohaku } from '@prisma/client';
-import PetStatusView from '../profile/Pet/PetStatusview';
+import PetStatusView from './Pet/PetStatusview';
 import { updateUserProfileAction } from './actions';
 import { changePasswordAction } from '@/lib/actions';
 import dynamic from 'next/dynamic';
 
+import { SubjectProgress } from '@/components/kohakuUtils';
 import toast from 'react-hot-toast';
 
 const DailyActivityChart = dynamic(
@@ -35,7 +36,7 @@ type SerializedUser = Omit<User, 'birth' | 'lastlogin' | 'unlockedTitles'> & {
   lastlogin: string | null;
   unlockedTitles: SerializedUserUnlockedTitle[];
   selectedTitle: Title | null;
-  Status_Kohaku: Status_Kohaku[];
+  status_Kohaku: Status_Kohaku | null;
 };
 
 type UserStats = {
@@ -49,14 +50,14 @@ type UserStats = {
   };
 };
 
-import HistoryClient from './history/components/HistoryClient';
-
 interface ProfileClientProps {
   initialUser: SerializedUser;
   initialStats: UserStats;
   aiAdvice: string;
   hasPassword: boolean;
-  initialHistory: any; // Type should be inferred or imported properly, using any to avoid deep import issues for now
+  initialSubjectProgress: SubjectProgress[]; // 追加
+  initialChartData?: any[]; // Chart data type
+  children?: React.ReactNode;
 }
 
 const presetIcons = {
@@ -64,7 +65,7 @@ const presetIcons = {
   female: ['/images/DefaultIcons/female1.jpg', '/images/DefaultIcons/female2.jpg', '/images/DefaultIcons/female3.jpg'],
 };
 
-export default function ProfileClient({ initialUser, initialStats, aiAdvice, hasPassword, initialHistory }: ProfileClientProps) {
+export default function ProfileClient({ initialUser, initialStats, aiAdvice, hasPassword, initialSubjectProgress, initialChartData, children }: ProfileClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -201,7 +202,7 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice, has
     }
   };
 
-  const petBirthdate = initialUser.Status_Kohaku?.[0]?.birthdate;
+  const petBirthdate = initialUser.status_Kohaku?.birthdate;
   let formattedPetBirthdate: string | null = null;
 
   if (petBirthdate) {
@@ -244,7 +245,14 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice, has
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <span className={`text-xl font-semibold text-gray-800 ${isEditing ? 'opacity-50' : ''}`}>{displayedTitleName}</span>
+                    <span className={`text-xl font-semibold text-gray-800 ${isEditing ? 'opacity-50' : ''}`}>
+                      {displayedTitleName}
+                      {initialUser.isAdmin && (
+                        <span className="ml-2 inline-block bg-yellow-400 text-black text-xs font-bold px-2 py-0.5 rounded-full align-middle">
+                          Admin
+                        </span>
+                      )}
+                    </span>
                     {isEditing && (
                       <button type="button" onClick={() => setIsTitleModalOpen(true)} className="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded-full">称号を切り替え</button>
                     )}
@@ -304,33 +312,26 @@ export default function ProfileClient({ initialUser, initialStats, aiAdvice, has
             </div>
           </div>
 
-          {/* 右カラム：ペットステータスとグラフ */}
+          {/* 右カラム：ペットステータス */}
           <div className="lg:col-span-1 space-y-8">
             <PetStatusView
-              initialHunger={initialUser.Status_Kohaku?.[0].hungerlevel ?? 200}
+              initialHunger={initialUser.status_Kohaku?.hungerlevel ?? 200}
               maxHunger={200}
-              adviceText={aiAdvice || ''} // Reactがエスケープするためサニタイズ不要
-              petname={initialUser.Status_Kohaku?.[0].name || 'コハク'}
+              userLevel={initialUser.level}
+              subjectProgress={initialSubjectProgress}
+              evolutionType={(initialUser.status_Kohaku as any)?.evolutionType}
+              adviceText={aiAdvice || ''}
+              petname={initialUser.status_Kohaku?.name || 'コハク'}
               petBirthdate={formattedPetBirthdate}
             />
           </div>
 
-          {/* ---  新しい行：問題解答履歴  --- */}
-          <div className="lg:col-span-3">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <div className="flex justify-between items-center mb-6">
-                <Link href="/profile/history" className="text-2xl font-semibold text-gray-800 hover:text-blue-600 hover:underline flex items-center gap-2">
-                  問題解答履歴
-                </Link>
-              </div>
-              <HistoryClient initialData={initialHistory} showTable={false} />
-            </div>
-          </div>
+          {/* ---  History, Chart, etc passed as children --- */}
+          {children}
 
-          {/* ---  新しい行：中央に配置するグラフ  --- */}
+          {/* ---  中央に配置するグラフ: クライアントコンポーネントとしても保持 --- */}
           <div className="lg:col-span-3">
-            {/*  新しいチャートコンポーネントを配置  */}
-            <DailyActivityChart />
+            <DailyActivityChart initialData={initialChartData} />
           </div>
         </div>
       </div>

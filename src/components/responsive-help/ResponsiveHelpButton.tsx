@@ -51,9 +51,9 @@ const ResponsiveHelpButton: React.FC = () => {
   }
 
   // Special handling for group admin and member pages (only if not event pages)
-  if (!pathname.startsWith('/event') && pathname.includes('/admin')) {
+  if (pathname.startsWith('/group') && pathname.includes('/admin')) {
     page = 'group/admin';
-  } else if (!pathname.startsWith('/event') && pathname.includes('/member')) {
+  } else if (pathname.startsWith('/group') && pathname.includes('/member')) {
     page = 'group/member';
   }
 
@@ -95,7 +95,7 @@ const ResponsiveHelpButton: React.FC = () => {
         setIs404(false);
       }
     };
-    
+
     // 即時チェック
     check404();
 
@@ -156,12 +156,12 @@ const ResponsiveHelpButton: React.FC = () => {
 
   // 1: 表示除外条件に '/terms' と '/privacypolicy' を追加
   if (
-    !isClient || 
-    pathname === '/auth/login' || 
-    pathname === '/auth/register' || 
-    pathname === '/auth/google/confirm' || 
-    pathname === '/' || 
-    pathname === '/terms' || 
+    !isClient ||
+    pathname === '/auth/login' ||
+    pathname === '/auth/register' ||
+    pathname === '/auth/google/confirm' ||
+    pathname === '/' ||
+    pathname === '/terms' ||
     pathname === '/privacypolicy' ||
     is404 ||
     (isModalOpen && page !== 'group_assignments_create_programming')

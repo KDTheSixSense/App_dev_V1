@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { detectThreatType } from '@/lib/waf';
 import AnimatedList, { AnimatedListItem } from '../components/AnimatedList';
 import BackButton from '../components/BackButton';
+import StatusFilter from './StatusFilter';
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -77,8 +78,17 @@ const SelectProblemsListPage = async (props: PageProps) => {
     }
   });
 
+  // フィルタリング処理
+  const statusParam = searchParams?.status;
+  let filteredProblems = problems;
+  if (statusParam === 'today') {
+    filteredProblems = problems.filter((p) => solvedStatusMap.get(p.id) === 'today');
+  } else if (statusParam === 'past') {
+    filteredProblems = problems.filter((p) => solvedStatusMap.get(p.id) === 'past');
+  }
+
   // AnimatedList用にデータを変換
-  const items: AnimatedListItem[] = problems.map((problem) => {
+  const items: AnimatedListItem[] = filteredProblems.map((problem) => {
     return {
       id: problem.id,
       title: `問${problem.id}: ${problem.title}`,
@@ -94,6 +104,8 @@ const SelectProblemsListPage = async (props: PageProps) => {
           <BackButton />
         </div>
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">選択問題一覧</h1>
+        
+        <StatusFilter />
         
         {/* 新しいAnimatedListコンポーネントを使用 */}
         <AnimatedList 

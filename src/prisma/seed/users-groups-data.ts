@@ -32,21 +32,39 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   console.log('🌱 Seeding users and groups...');
 
   // --- 1. 既存データをクリア ---
-  await prisma.auditLog.deleteMany({});
-  await prisma.loginHistory.deleteMany({});
+  // 依存関係の末端から削除していく
+  await prisma.assignmentComment.deleteMany({});
+  await prisma.submissions.deleteMany({});
+  await prisma.assignment.deleteMany({});
+  await prisma.post.deleteMany({});
   await prisma.groups_User.deleteMany({});
+  await prisma.groups.deleteMany({});
+
+  await prisma.event_Submission.deleteMany({});
+  await prisma.event_Issue_List.deleteMany({});
+  await prisma.event_Participants.deleteMany({});
+  await prisma.create_event.deleteMany({});
+  
+  await prisma.userUnlockedTitle.deleteMany({});
+  await prisma.userDailyMissionProgress.deleteMany({});
+  await prisma.dailyActivitySummary.deleteMany({});
+  await prisma.userAnswer.deleteMany({});
+  await prisma.answer_Algorithm.deleteMany({});
+  await prisma.loginHistory.deleteMany({});
+  await prisma.auditLog.deleteMany({});
+  await prisma.bannedUser.deleteMany({});
+  
   await prisma.userSubjectProgress.deleteMany({});
   await prisma.status_Kohaku.deleteMany({});
-  await prisma.groups.deleteMany({});
-  await prisma.create_event.deleteMany({});
-  await prisma.userDailyMissionProgress.deleteMany({});
+
+  // 最後にユーザーを削除
   await prisma.user.deleteMany({});
-  console.log('🗑️ Cleared existing user and group data.');
+  console.log('🗑️ Cleared existing user, group, and related data.');
 
 
   // --- 2. シーディングするユーザーの基本情報を定義 ---
   const usersToSeed = [
-    { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', icon: '/images/users/alice.png' },
+    { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', icon: '/images/users/alice.png', isAdmin: true },
     { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', icon: '/images/users/bob.png' },
     { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', icon: '/images/users/charlie.png' },
     { email: 'diana@example.com', password: 'password456', username: 'Diana Prince', icon: '/images/users/diana.png' },
@@ -62,6 +80,15 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     { email: 'evo@example3.com', password: 'password123', username: 'Evolution Test3', icon: '/images/users/alice.png' },
     { email: 'evo@example4.com', password: 'password123', username: 'Evolution Test4', icon: '/images/users/alice.png' },
     { email: 'evo@example5.com', password: 'password123', username: 'Evolution Test5', icon: '/images/users/alice.png' },
+    // 複合属性確認用アカウント
+    { email: 'evo_mix_ab@example.com', password: 'password123', username: 'Evolution Mix AB', icon: '/images/users/alice.png' },
+    { email: 'evo_mix_ap@example.com', password: 'password123', username: 'Evolution Mix AP', icon: '/images/users/alice.png' },
+    { email: 'evo_mix_ao@example.com', password: 'password123', username: 'Evolution Mix AO', icon: '/images/users/alice.png' },
+    { email: 'evo_mix_bp@example.com', password: 'password123', username: 'Evolution Mix BP', icon: '/images/users/alice.png' },
+    { email: 'evo_mix_bo@example.com', password: 'password123', username: 'Evolution Mix BO', icon: '/images/users/alice.png' },
+    { email: 'evo_mix_po@example.com', password: 'password123', username: 'Evolution Mix PO', icon: '/images/users/alice.png' },
+    { email: 'evo_mix_all@example.com', password: 'password123', username: 'Evolution Mix ALL', icon: '/images/users/alice.png' },
+    { email: 'evo_60_check@example.com', password: 'password123', username: 'Evolution Check 60', icon: '/images/users/alice.png' },
 
   ];
 
@@ -80,8 +107,41 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
       if (userData.username === '神戸太郎') {
         subjectXp = 8999;
       } else if (userData.email.startsWith('evo@example')) {
-        // レベル29 (XP 28950) に設定。あと50XPでレベル30になる。
-        subjectXp = subjectId === 1 ? 28950 : 0;
+        // ユーザーごとに特定の科目をレベル29 (XP 28950) に設定
+        let targetSubjectId = 1;
+        if (userData.email === 'evo@example1.com') targetSubjectId = 2; // 基本A
+        else if (userData.email === 'evo@example2.com') targetSubjectId = 3; // 基本B
+        else if (userData.email === 'evo@example3.com') targetSubjectId = 1; // プログラミング
+        else if (userData.email === 'evo@example4.com') targetSubjectId = 5; // 応用
+        else if (userData.email === 'evo@example5.com') targetSubjectId = 4; // 選択問題
+
+        subjectXp = subjectId === targetSubjectId ? 28950 : 0;
+      } else if (userData.email.startsWith('evo_mix_')) {
+        // 複合属性確認用: アカウントレベルが29 (XP 28950) になるように、対象科目にXPを分配する
+        const totalTargetXp = 28950;
+        // 科目IDマッピング: 1=Prog(P), 2=BasicA(A), 3=BasicB(B), 4=Select(A), 5=Applied(O)
+        
+        if (userData.email === 'evo_mix_ab@example.com') {
+           if (subjectId === 2 || subjectId === 3) subjectXp = Math.floor(totalTargetXp / 2); // A & B
+        } else if (userData.email === 'evo_mix_ap@example.com') {
+           if (subjectId === 2 || subjectId === 1) subjectXp = Math.floor(totalTargetXp / 2); // A & P
+        } else if (userData.email === 'evo_mix_ao@example.com') {
+           if (subjectId === 2 || subjectId === 5) subjectXp = Math.floor(totalTargetXp / 2); // A & O
+        } else if (userData.email === 'evo_mix_bp@example.com') {
+           if (subjectId === 3 || subjectId === 1) subjectXp = Math.floor(totalTargetXp / 2); // B & P
+        } else if (userData.email === 'evo_mix_bo@example.com') {
+           if (subjectId === 3 || subjectId === 5) subjectXp = Math.floor(totalTargetXp / 2); // B & O
+        } else if (userData.email === 'evo_mix_po@example.com') {
+           if (subjectId === 1 || subjectId === 5) subjectXp = Math.floor(totalTargetXp / 2); // P & O
+        } else if (userData.email === 'evo_mix_all@example.com') {
+           subjectXp = Math.floor(totalTargetXp / 5); // 全科目
+        }
+      } else if (userData.email === 'evo_60_check@example.com') {
+        // レベル59 (XP 58900) に設定。あと100XPでレベル60になる。
+        // B-B進化条件 (Bレベル - 10 >= Aレベル) を満たすように設定
+        if (subjectId === 2) subjectXp = 15000; // 基本A (Lv16)
+        else if (subjectId === 3) subjectXp = 43900; // 基本B (Lv44)
+        else subjectXp = 0;
       } else if (['Frank Castle', 'Grace Hopper'].includes(userData.username!)) {
         subjectXp = getRandomInt(10000, 50000);
       } else if (['Alice Smith', '鈴木 一郎'].includes(userData.username!)) {
@@ -128,10 +188,12 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
         xp: totalAccountXp,
         totallogin: getRandomInt(1, 500),
         ...userLoginData, // 神戸太郎の場合のみ、ここにデータが追加される
+        isAdmin: userData.isAdmin || false, // 管理者権限を設定
         status_Kohaku: {
           create: {
             status: '元気',
             hungerlevel: hungerLevel,
+            evolutionType: userData.email === 'evo_60_check@example.com' ? 'A-A' : undefined,
           },
         },
         progresses: {

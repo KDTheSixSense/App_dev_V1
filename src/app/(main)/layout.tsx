@@ -1,5 +1,6 @@
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { sessionOptions } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import type { User, Status_Kohaku } from '@prisma/client';
@@ -31,9 +32,12 @@ export default async function MainPagesLayout({
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? session.user.id : null;
 
+  if (!userId) {
+    redirect('/auth/login');
+  }
+
   let userWithPet: UserWithPetStatus | null = null;
   if (userId) {
-    await ensureDailyMissionProgress(userId);
     userWithPet = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -56,6 +60,10 @@ export default async function MainPagesLayout({
         password: false,
       }
     }) as any; // Type mismatch回避のため一時的にanyキャスト (本来は型定義を更新すべき)
+
+    if (userWithPet) {
+      await ensureDailyMissionProgress(userWithPet);
+    }
   }
 
   return (

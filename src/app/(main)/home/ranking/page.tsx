@@ -1,9 +1,8 @@
 
-
 import { prisma } from "@/lib/prisma";
-import RankingContainer from "@/components/RankingContainer";
+import { Prisma } from "@prisma/client";
 import { assignRanks } from "@/lib/ranking";
-import { Prisma } from '@prisma/client'; // Prisma.sql を使うためにインポート
+import RankingContainer from "@/components/RankingContainer";
 
 export const revalidate = 300; // 5分間キャッシュ
 
