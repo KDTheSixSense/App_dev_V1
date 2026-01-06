@@ -1,120 +1,102 @@
-'use client';
-
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { 
-  deleteProblemAction, 
-  getMineProblems, 
-  deleteSelectProblemAction,
-  getMineSelectProblems
-} from '@/lib/actions';
-import { ProgrammingProblem, SelectProblem, User } from '@prisma/client';
-
-// --- 型定義 ---
-type ProgrammingProblemWithCreator = ProgrammingProblem & {
-  creator: { username: string | null } | null;
-};
-type SelectProblemWithCreator = SelectProblem & {
-  creator: { username: string | null } | null;
-};
-
-// --- コンポーネント定義 ---
-
-const ProgrammingProblemListRow: React.FC<{ problem: ProgrammingProblemWithCreator }> = ({ problem }) => {
-  return (
-    <li className="flex justify-between items-center p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
-      <div className="flex items-center space-x-4 flex-grow">
-        <div className="flex items-center space-x-2">
-          <Link href={`/CreateProgrammingQuestion?id=${problem.id}`} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md text-sm transition-colors duration-200">
-            編集
-          </Link>
-          <form action={deleteProblemAction}>
-            <input type="hidden" name="problemId" value={problem.id} />
-            <button type="submit" className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm transition-colors duration-200" onClick={(e) => { if (!confirm('本当にこの問題を削除しますか？')) { e.preventDefault(); }}}>
-              削除
-            </button>
-          </form>
-        </div>
-        <Link href={`/issue_list/programming_problem/${problem.id}`} className="block">
-          <span className="font-medium text-blue-600 hover:text-blue-800">
-            問{problem.id}: {problem.title}
-          </span>
-        </Link>
-      </div>
-      <span className="text-sm text-gray-500 flex-shrink-0">
-        作成者: {problem.creator?.username ?? '不明'} / {problem.difficulty}
-      </span>
-    </li>
-  );
-};
-
-const SelectProblemListRow: React.FC<{ problem: SelectProblemWithCreator }> = ({ problem }) => {
-  return (
-    <li className="flex justify-between items-center p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
-      <div className="flex items-center space-x-4 flex-grow">
-        <div className="flex items-center space-x-2">
-          <Link href={`/group/cmfd7zu390000sfnudcy6b4ld/assignments/create-programming?id=${problem.id}&type=select`} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md text-sm transition-colors duration-200">
-            編集
-          </Link>
-          <form action={deleteSelectProblemAction}>
-            <input type="hidden" name="problemId" value={problem.id} />
-            <button type="submit" className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm transition-colors duration-200" onClick={(e) => { if (!confirm('本当にこの問題を削除しますか？')) { e.preventDefault(); }}}>
-              削除
-            </button>
-          </form>
-        </div>
-        <Link href={`/issue_list/selects_problems/${problem.id}`} className="block">
-          <span className="font-medium text-blue-600 hover:text-blue-800">
-            問{problem.id}: {problem.title}
-          </span>
-        </Link>
-      </div>
-      <span className="text-sm text-gray-500 flex-shrink-0">
-        作成者: {problem.creator?.username ?? '不明'} / {problem.difficultyId}
-      </span>
-    </li>
-  );
-};
+import { prisma } from '@/lib/prisma';
+import { getAppSession } from '@/lib/auth';
+import StatusFilter from './StatusFilter';
+import { ProgrammingProblemListRow, SelectProblemListRow } from './RowComponents';
 
 // ページ全体のメインコンポーネント
-const MineProblemsListPage = () => {
-  const [programmingProblems, setProgrammingProblems] = React.useState<ProgrammingProblemWithCreator[]>([]);
-  const [selectProblems, setSelectProblems] = React.useState<SelectProblemWithCreator[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+const MineProblemsListPage = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) => {
+  const session = await getAppSession();
+  const userId = session.user?.id;
 
-  React.useEffect(() => {
-    const fetchProblems = async () => {
-      try {
-        const [progResult, selectResult] = await Promise.all([
-          getMineProblems(),
-          getMineSelectProblems()
-        ]);
-
-        if (progResult.error || selectResult.error) {
-          setError(progResult.error || selectResult.error || '不明なエラーが発生しました。');
-        } else {
-          if (progResult.data) setProgrammingProblems(progResult.data);
-          if (selectResult.data) setSelectProblems(selectResult.data);
-        }
-
-      } catch (e) {
-        setError('データの取得に失敗しました。');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProblems();
-  }, []);
-
-  if (isLoading) {
-    return <div className="p-8 text-center">読み込み中...</div>;
+  if (!userId) {
+    return <div className="p-8 text-center text-red-500">ログインが必要です。</div>;
   }
 
-  if (error) {
-    return <div className="p-8 text-center text-red-500">{error}</div>;
+  // 1. 自分が作成した問題を取得
+  const [programmingProblems, selectProblems] = await Promise.all([
+    prisma.programmingProblem.findMany({
+      where: { creator: { id: userId } },
+      include: {
+        creator: { select: { username: true } },
+      },
+      orderBy: { id: 'desc' },
+    }),
+    prisma.selectProblem.findMany({
+      where: { creator: { id: userId } },
+      include: {
+        creator: { select: { username: true } },
+      },
+      orderBy: { id: 'desc' },
+    }),
+  ]);
+
+  // 2. 解答状況の取得
+  const solvedStatusMap = new Map<string, 'today' | 'past'>();
+  
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+  const correctAnswers = await prisma.userAnswer.findMany({
+    where: {
+      userId: userId,
+      isCorrect: true,
+      OR: [
+        { programingProblem_id: { not: null } },
+        { selectProblem_id: { not: null } },
+      ],
+    },
+    select: {
+      programingProblem_id: true,
+      selectProblem_id: true,
+      answeredAt: true,
+    },
+    orderBy: { answeredAt: 'desc' },
+  });
+
+  for (const answer of correctAnswers) {
+    let key = '';
+    if (answer.programingProblem_id) {
+      key = `prog_${answer.programingProblem_id}`;
+    } else if (answer.selectProblem_id) {
+      key = `select_${answer.selectProblem_id}`;
+    }
+
+    if (!key || solvedStatusMap.has(key)) continue;
+
+    const answeredDate = answer.answeredAt;
+    const status = answeredDate >= todayStart && answeredDate < todayEnd ? 'today' : 'past';
+    solvedStatusMap.set(key, status);
+  }
+
+  // 3. フィルタリング処理
+  const resolvedSearchParams = await searchParams;
+  const statusParam = resolvedSearchParams?.status;
+
+  let filteredProgrammingProblems = programmingProblems;
+  let filteredSelectProblems = selectProblems;
+
+  if (statusParam === 'today') {
+    filteredProgrammingProblems = programmingProblems.filter(
+      (p) => solvedStatusMap.get(`prog_${p.id}`) === 'today'
+    );
+    filteredSelectProblems = selectProblems.filter(
+      (p) => solvedStatusMap.get(`select_${p.id}`) === 'today'
+    );
+  } else if (statusParam === 'past') {
+    filteredProgrammingProblems = programmingProblems.filter(
+      (p) => solvedStatusMap.get(`prog_${p.id}`) === 'past'
+    );
+    filteredSelectProblems = selectProblems.filter(
+      (p) => solvedStatusMap.get(`select_${p.id}`) === 'past'
+    );
   }
 
   return (
@@ -131,6 +113,8 @@ const MineProblemsListPage = () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           作成した問題一覧
         </h1>
+
+        <StatusFilter />
         
         <div className="flex flex-col lg:flex-row lg:space-x-8 space-y-12 lg:space-y-0">
 
@@ -139,11 +123,15 @@ const MineProblemsListPage = () => {
               プログラミング問題
             </h2>
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              {programmingProblems.length === 0 ? (
-                <p className="p-8 text-center text-gray-500">作成したプログラミング問題はまだありません。</p>
+              {filteredProgrammingProblems.length === 0 ? (
+                <p className="p-8 text-center text-gray-500">
+                  {statusParam && statusParam !== 'all' 
+                    ? '条件に一致するプログラミング問題はありません。' 
+                    : '作成したプログラミング問題はまだありません。'}
+                </p>
               ) : (
                 <ul>
-                  {programmingProblems.map((problem) => (
+                  {filteredProgrammingProblems.map((problem) => (
                     <ProgrammingProblemListRow key={problem.id} problem={problem} />
                   ))}
                 </ul>
@@ -156,11 +144,15 @@ const MineProblemsListPage = () => {
               選択問題
             </h2>
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              {selectProblems.length === 0 ? (
-                <p className="p-8 text-center text-gray-500">作成した選択問題はまだありません。</p>
+              {filteredSelectProblems.length === 0 ? (
+                <p className="p-8 text-center text-gray-500">
+                  {statusParam && statusParam !== 'all' 
+                    ? '条件に一致する選択問題はありません。' 
+                    : '作成した選択問題はまだありません。'}
+                </p>
               ) : (
                 <ul>
-                  {selectProblems.map((problem) => (
+                  {filteredSelectProblems.map((problem) => (
                     <SelectProblemListRow key={problem.id} problem={problem} />
                   ))}
                 </ul>
