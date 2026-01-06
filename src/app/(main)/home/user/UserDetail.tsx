@@ -31,7 +31,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
             {/* Top Section: Blue Gradient - Now completely clickable */}
             {/* Background adjusted to be 'lighter' while keeping white text readable - used slightly softer gradient */}
             <Link href="/profile" className="block relative group cursor-pointer !no-underline decoration-0">
-                <div className="bg-gradient-to-r from-sky-100 to-cyan-100 p-6 text-white relative transition-opacity hover:opacity-95">
+                <div className="bg-gradient-to-r from-sky-100 to-cyan-100 px-6 py-4 text-white relative transition-opacity hover:opacity-95">
                     <div className="flex items-start gap-4 pointer-events-none">
                         {/* Avatar */}
                         <div className="flex-shrink-0">
@@ -76,20 +76,20 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
             {/* Bottom Section: Stats Cards */}
             {/* Stats text colors updated to match Blue theme */}
             <div className="p-4 grid grid-cols-3 gap-3">
-                <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[12px] text-slate-500 font-bold mb-1">連続ログイン</span>
+                <div className="bg-white rounded-xl p-2 py-5 flex flex-col items-center justify-center shadow-sm text-center">
+                    <span className="text-[14px] text-slate-500 font-bold mb-1">連続ログイン</span>
                     <span className="text-xl font-bold text-slate-700 block leading-none">
                         {user?.continuouslogin ?? 0}<span className="text-xs ml-0.5 font-normal">日</span>
                     </span>
                 </div>
-                <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[12px] text-slate-500 font-bold mb-1">総ログイン</span>
+                <div className="bg-white rounded-xl p-2 py-5 flex flex-col items-center justify-center shadow-sm text-center">
+                    <span className="text-[14px] text-slate-500 font-bold mb-1">総ログイン</span>
                     <span className="text-xl font-bold text-slate-700 block leading-none">
                         {user?.totallogin ?? 0}<span className="text-xs ml-0.5 font-normal">日</span>
                     </span>
                 </div>
-                <div className="bg-white rounded-xl p-2 py-3 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[12px] text-slate-500 font-bold mb-1">課題</span>
+                <div className="bg-white rounded-xl p-2 py-5 flex flex-col items-center justify-center shadow-sm text-center">
+                    <span className="text-[14px] text-slate-500 font-bold mb-1">課題</span>
                     <span className="text-xl font-bold text-slate-700 block leading-none">
                         {unsubmittedAssignmentCount}
                     </span>
