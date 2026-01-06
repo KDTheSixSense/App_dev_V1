@@ -1,3 +1,5 @@
+//app/(main)/issue_list/programming_problem/[problemId]/ProblemClient.tsx
+
 'use client';
 
 import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
@@ -494,14 +496,21 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
                     success: true,
                     message: '正解です！おめでとうございます！'
                 });
+                let previousLevel = 0;
+                const preRes = await fetch('/api/pet/status', { cache: 'no-store' });
+                if (preRes.ok) {
+                    const { data } = await preRes.json();
+                    previousLevel = data?.level || 0;
+                }
+
                 const xpResult = await awardXpForCorrectAnswer(parseInt(problemId), undefined, 1);
                 window.dispatchEvent(new CustomEvent('petStatusUpdated'));
 
                 if (xpResult.message === '経験値を獲得しました！') {
-                    const res = await fetch('/api/pet/status');
+                    const res = await fetch('/api/pet/status', { cache: 'no-store' });
                     if (res.ok) {
                         const { data: statusData } = await res.json();
-                        if (statusData?.level && statusData.level > 0 && statusData.level % 30 === 0) {
+                        if (statusData?.level && statusData.level > 0 && statusData.level % 30 === 0 && statusData.level !== previousLevel) {
                             setTimeout(() => {
                                 router.push('/home?evolution=true');
                             }, 1500);

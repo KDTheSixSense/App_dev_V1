@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useMemo, Suspense, useRef } from 'react';
 import Image from 'next/image';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 
 type EvolutionProps = {
@@ -18,6 +18,7 @@ type EvolutionPhase = 'idle' | 'pre-animation' | 'front-video' | 'post-evolution
 function EvolutionContent({ userLevel, subjectProgress, className = '' }: EvolutionProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const hasEvolutionParam = searchParams.get('evolution') === 'true';
   const [phase, setPhase] = useState<EvolutionPhase>('idle');
   const [displayImage, setDisplayImage] = useState('/images/Kohaku/kohaku-normal.png');
@@ -49,7 +50,7 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
         setDisplayImage(normalImageSrc);
       }
     }
-  }, [userLevel, evolvedImageSrc, hasEvolutionParam, normalImageSrc, phase]);
+  }, [userLevel, evolvedImageSrc, hasEvolutionParam, normalImageSrc, phase, router, searchParams, pathname]);
 
   // フェーズ遷移の制御
   useEffect(() => {
@@ -66,16 +67,19 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
       // 進化後画像が表示されている状態
       // 数秒後に演出終了
       const timer = setTimeout(() => {
+        // 演出完了を記録
+        localStorage.setItem('evolution_seen_level', userLevel.toString());
+
         // setPhase('idle'); // URLパラメータ削除検知による自動遷移に任せることで、一瞬進化前に戻るのを防ぐ
         // エフェクト終了後、URLからクエリパラメータを削除
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.delete('evolution');
-        router.replace(`?${newParams.toString()}`, { scroll: false });
+        router.replace(`${pathname}?${newParams.toString()}`, { scroll: false });
         router.refresh();
       }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [phase, evolvedImageSrc, router, searchParams]);
+  }, [phase, evolvedImageSrc, router, searchParams, userLevel, pathname]);
 
   // Front動画の再生を確実に行うための制御
   useEffect(() => {
@@ -92,8 +96,9 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
     }
   }, [phase]);
 
-  // エフェクト表示中でなく、かつ進化パラメータもない場合は何も表示しない（オーバーレイを消す）
-  if (phase === 'idle' && !hasEvolutionParam) {
+  // phaseがidleの場合は表示しない
+  // パラメータがある場合でも、useEffectでのチェックを経てphaseが変わるまでは表示しないことで、既読時の黒背景表示を防ぐ
+  if (phase === 'idle') {
     return null;
   }
 

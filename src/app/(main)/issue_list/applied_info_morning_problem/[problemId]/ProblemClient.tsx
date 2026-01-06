@@ -199,6 +199,12 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             if (res.ok) {
               const { data } = await res.json();
               if (data?.level && data.level > 0 && data.level % 30 === 0) {
+                // 既に演出を見たレベルなら遷移しない
+                const seenLevel = localStorage.getItem('evolution_seen_level');
+                if (seenLevel && parseInt(seenLevel, 10) === data.level) {
+                  return;
+                }
+
                 // 30の倍数に到達した場合、ホーム画面へ強制遷移
                 setTimeout(() => {
                   router.push('/home?evolution=true');

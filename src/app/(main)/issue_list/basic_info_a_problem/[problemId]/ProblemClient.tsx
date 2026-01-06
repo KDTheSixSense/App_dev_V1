@@ -1,3 +1,5 @@
+//app/(main)/issue_list/basic_info_a_problem/[problemId]/ProblemClient.tsx
+
 'use client';
 
 import React, { useState, useEffect, useTransition, useRef, useCallback } from 'react'; // useTransition をインポート
@@ -218,15 +220,24 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     if (!isNaN(numericId)) {
       if (correct) {
         try {
+          // 【追加】経験値付与前のレベルを取得
+          let previousLevel = 0;
+          const preRes = await fetch('/api/pet/status', { cache: 'no-store' });
+          if (preRes.ok) {
+            const { data } = await preRes.json();
+            previousLevel = data?.level || 0;
+          }
+
           const result = await awardXpForCorrectAnswer(numericId, undefined, 2);
           if (result.message === '経験値を獲得しました！') {
             window.dispatchEvent(new CustomEvent('petStatusUpdated'));
 
             // レベルアップチェック (30の倍数)
-            const res = await fetch('/api/pet/status');
+            const res = await fetch('/api/pet/status', { cache: 'no-store' });
             if (res.ok) {
               const { data } = await res.json();
-              if (data?.level && data.level > 0 && data.level % 30 === 0) {
+              // 【変更】レベルが前回と異なり（上昇しており）、かつ30の倍数になった場合のみ遷移
+              if (data?.level && data.level > 0 && data.level % 30 === 0 && data.level !== previousLevel) {
                 // 30の倍数に到達した場合、ホーム画面へ強制遷移
                 setTimeout(() => {
                   router.push('/home?evolution=true');
