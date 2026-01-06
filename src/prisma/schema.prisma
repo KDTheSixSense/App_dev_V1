@@ -259,6 +259,7 @@ model Questions_Algorithm {
   image           String?
   subjectId       Int
   difficultyId    Int
+  problemType     String             @default("algorithm") // アルゴリズムと情報セキュリティの区別用
   answers         Answer_Algorithm[]
 
   // --- リレーション定義 ---
@@ -832,5 +833,3 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
 }
-
-

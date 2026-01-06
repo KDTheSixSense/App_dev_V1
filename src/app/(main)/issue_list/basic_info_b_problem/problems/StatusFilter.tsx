@@ -9,19 +9,32 @@ const statuses = [
   { id: 'past', name: '過去に解答済み' },
 ];
 
+const problemTypes = [
+  { id: 'all', name: 'すべての種類' },
+  { id: 'algorithm', name: 'アルゴリズム' },
+  { id: 'security', name: '情報セキュリティ' },
+];
+
 export default function StatusFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentStatus = searchParams.get('status') || 'all';
+  const currentType = searchParams.get('type') || 'all';
 
   useEffect(() => {
     const savedStatus = localStorage.getItem('basic_info_b_filter_status');
+    const savedType = localStorage.getItem('basic_info_b_filter_type');
 
     const params = new URLSearchParams(searchParams.toString());
     let shouldUpdate = false;
 
     if (!searchParams.has('status') && savedStatus && savedStatus !== 'all') {
       params.set('status', savedStatus);
+      shouldUpdate = true;
+    }
+
+    if (!searchParams.has('type') && savedType && savedType !== 'all') {
+      params.set('type', savedType);
       shouldUpdate = true;
     }
 
@@ -42,7 +55,25 @@ export default function StatusFilter() {
   };
 
   return (
-    <div className="mb-6 flex justify-end max-w-6xl mx-auto">
+    <div className="mb-6 flex justify-end max-w-6xl mx-auto gap-4">
+      <div className="relative">
+        <select
+          value={currentType}
+          onChange={(e) => updateParams('type', e.target.value)}
+          className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer font-medium"
+        >
+          {problemTypes.map((type) => (
+            <option key={type.id} value={type.id}>
+              {type.name}
+            </option>
+          ))}
+        </select>
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+          <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+          </svg>
+        </div>
+      </div>
       <div className="relative">
         <select
           value={currentStatus}

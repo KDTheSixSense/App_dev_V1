@@ -27,7 +27,7 @@ const BasicInfoBProblemsListPage = async ({
     prisma.questions_Algorithm.findMany({
       where: { subject: { name: '基本情報B問題' } }, // 科目Bの問題に絞り込む
       orderBy: { id: 'asc' },
-      select: { id: true, title: true }
+      select: { id: true, title: true, problemType: true }
     })
   ];
 
@@ -73,7 +73,7 @@ const BasicInfoBProblemsListPage = async ({
 
   // 結果の分割代入
   const staticProblems = results[0] as { id: number; title: string }[];
-  const algoProblems = results[1] as { id: number; title: string }[];
+  const algoProblems = results[1] as { id: number; title: string; problemType: string }[];
 
   // ユーザーIDがある場合のみ履歴データを取り出す
   const correctAnswers = userId ? (results[2] as any[]) : [];
@@ -110,20 +110,37 @@ const BasicInfoBProblemsListPage = async ({
   }
 
   // 取得した2つの配列を1つに結合します
-  const allProblems = [...staticProblems, ...algoProblems];
+  const allProblems = [
+    ...staticProblems.map(p => ({ ...p, problemType: 'others' })),
+    ...algoProblems
+  ];
 
-  // ID順に並び替えます
-  allProblems.sort((a, b) => a.id - b.id);
+  // problemTypeでソートし、その中でID順に並び替えます
+  allProblems.sort((a, b) => {
+    if (a.problemType !== b.problemType) {
+      // アルゴリズム(algorithm) -> 情報セキュリティ(information_security) -> その他(others) の順になります
+      return a.problemType.localeCompare(b.problemType);
+    }
+    return a.id - b.id;
+  });
 
   // フィルタリング処理
   const resolvedSearchParams = await searchParams;
   const statusParam = resolvedSearchParams?.status;
+  const typeParam = resolvedSearchParams?.type;
 
   let filteredProblems = allProblems;
+
+  if (typeParam === 'algorithm') {
+    filteredProblems = filteredProblems.filter((p) => p.problemType === 'algorithm');
+  } else if (typeParam === 'security') {
+    filteredProblems = filteredProblems.filter((p) => p.problemType === 'security');
+  }
+
   if (statusParam === 'today') {
-    filteredProblems = allProblems.filter((p) => solvedStatusMap.get(p.id) === 'today');
+    filteredProblems = filteredProblems.filter((p) => solvedStatusMap.get(p.id) === 'today');
   } else if (statusParam === 'past') {
-    filteredProblems = allProblems.filter((p) => solvedStatusMap.get(p.id) === 'past');
+    filteredProblems = filteredProblems.filter((p) => solvedStatusMap.get(p.id) === 'past');
   }
 
   // AnimatedList用にデータを変換
