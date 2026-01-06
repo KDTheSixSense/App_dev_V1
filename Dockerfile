@@ -39,7 +39,9 @@ RUN apk update && apk add --no-cache \
     openssl \
     curl \
     postgresql-client \
-    python3
+    python3 \
+    openjdk21 \
+    && npm install -g typescript @types/node
 
 WORKDIR /app
 

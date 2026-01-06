@@ -3,9 +3,17 @@ FROM mcr.microsoft.com/devcontainers/javascript-node:20-bookworm
 # Install compilers and interpreters
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
+    wget \
+    gnupg \
+    apt-transport-https \
+    && mkdir -p /etc/apt/keyrings \
+    && wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc \
+    && echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb bookworm main" | tee /etc/apt/sources.list.d/adoptium.list \
+    && apt-get update \
+    && apt-get -y install --no-install-recommends \
+    temurin-21-jdk \
     python3 \
     python3-pip \
-    openjdk-17-jdk \
     build-essential \
     mono-mcs \
     php-cli \

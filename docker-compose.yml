@@ -2,6 +2,7 @@ services:
   app:
     build:
       context: .
+      target: runner
     tty: true
     volumes:
       - ./src:/app
