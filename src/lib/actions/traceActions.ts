@@ -2,6 +2,7 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { spawn } from 'child_process';
 
 import { executeCodeSchema } from '../validations';
 
@@ -700,17 +701,16 @@ print(sum_val)
  * ユーザーのPythonコードをサーバー側で実行し、トレース結果を取得する
  * (Security Update: Execute via Sandbox Service)
  */
-export async function runPythonTraceAction(code: string) {
+export async function runPythonTraceAction(code: string): Promise<{ success: boolean, steps?: any[], error?: string }> {
   // console.log("--- [Debug] runPythonTraceAction Started (Sandbox Mode) ---");
 
   // 1. Zod Validation
   const validationResult = executeCodeSchema.safeParse({ source_code: code, language: 'python' });
   if (!validationResult.success) {
-    throw new Error(`Validation Error: ${(validationResult.error as any).errors.map((e: any) => e.message).join(', ')}`);
+    return { success: false, error: `Validation Error: ${(validationResult.error as any).errors.map((e: any) => e.message).join(', ')}` };
   }
 
   // 2. Keyword Blocking (Client-side pre-check)
-  // Note: This is a basic filter. The real security is provided by the Sandbox container.
   const forbiddenKeywords = [
     'import os', 'from os', 'import sys', 'from sys', 'import subprocess', 'from subprocess',
     'import shutil', 'from shutil', 'import pathlib', 'from pathlib',
@@ -718,7 +718,7 @@ export async function runPythonTraceAction(code: string) {
   ];
   for (const keyword of forbiddenKeywords) {
     if (code.includes(keyword)) {
-      throw new Error(`Security Error: Forbidden keyword "${keyword}" detected.`);
+      return { success: false, error: `Security Error: Forbidden keyword "${keyword}" detected.` };
     }
   }
 
@@ -726,7 +726,6 @@ export async function runPythonTraceAction(code: string) {
     const cwd = process.cwd();
 
     // Tracerのパス解決
-    // 複数の候補をチェックする (Prod/Dev/Standaloneでパスが異なるため)
     const candidates = [
       path.join(cwd, 'src/lib/python_tracer.py'), // Default / Standalone (manually copied)
       path.join(cwd, 'lib/python_tracer.py'),     // Fallback
@@ -747,13 +746,11 @@ export async function runPythonTraceAction(code: string) {
 
     if (!tracerCode) {
       console.error("[TraceAction] Tracer file NOT found in candidates:", candidates);
-      throw new Error(`Tracer file not found. Checked: ${candidates.join(', ')}`);
+      return { success: false, error: `Tracer file not found. Checked: ${candidates.join(', ')}` };
     }
 
     // Sandbox URL (Env var or default)
     const sandboxUrl = process.env.SANDBOX_URL || 'http://sandbox:4000/execute';
-
-    // console.log(`[Debug] Sending request to Sandbox: ${sandboxUrl}`);
 
     // Sandboxへリクエスト
     const response = await fetch(sandboxUrl, {
@@ -769,12 +766,13 @@ export async function runPythonTraceAction(code: string) {
     });
 
     if (!response.ok) {
+      // Sandbox自体がエラーを返した場合（500など）
+      // ただし接続エラー(fetch throw)はcatchブロックに行く
       const errorText = await response.text();
       throw new Error(`Sandbox service error (${response.status}): ${errorText}`);
     }
 
     const result = await response.json();
-    // console.log("[Debug] Sandbox Response received.");
 
     // 結果の解析
     const programStdout = result.program_output?.stdout || result.stdout || "";
@@ -783,39 +781,121 @@ export async function runPythonTraceAction(code: string) {
 
     if (buildStderr) {
       console.error("[Debug] Build Stderr:", buildStderr);
-      throw new Error(`Build Error: ${buildStderr}`);
+      return { success: false, error: `Build Error: ${buildStderr}` };
     }
 
     if (!programStdout.trim()) {
       console.error("[Debug] Empty stdout from sandbox.");
-      console.error("[Debug] Sandbox Result Dump:", JSON.stringify(result, null, 2));
 
       if (programStderr) {
-        throw new Error(`Runtime Error: ${programStderr}`);
+        return { success: false, error: `Runtime Error: ${programStderr}` };
       }
-      throw new Error("Tracer produced no output.");
+      return { success: false, error: "Tracer produced no output." };
     }
 
     // JSONパース
     const jsonMatch = programStdout.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      console.error("[Debug] No JSON found in output:", programStdout);
-      console.error("[Debug] Sandbox Result Dump:", JSON.stringify(result, null, 2));
-      throw new Error("Invalid output format from tracer.");
+    let steps: any[] = [];
+    if (jsonMatch) {
+      steps = JSON.parse(jsonMatch[0]);
+    } else {
+      console.warn("[TraceAction] No JSON found in output.");
+      return { success: false, error: "Invalid output format from tracer." };
     }
 
-    let traceData;
-    try {
-      traceData = JSON.parse(jsonMatch[0]);
-    } catch (e) {
-      console.error("[Debug] JSON Parse Error. Output was:", programStdout);
-      throw new Error("Failed to parse trace results.");
-    }
-
-    return traceData;
+    return { success: true, steps };
 
   } catch (error: any) {
-    console.error("runPythonTraceAction Error:", error);
-    throw error;
+    console.error("Trace execution failed:", error);
+
+    // --- Local Fallback (Dev Mode Only) ---
+    // もしサンドボックス接続などが失敗し、かつ開発環境であればローカルPythonを試す
+    if (process.env.NODE_ENV === 'development') {
+      console.log("--- [TraceAction] Attempting Local Fallback ---");
+      try {
+        const result = await runLocalPythonFallback(code);
+        return result;
+      } catch (localError: any) {
+        console.error("Local fallback also failed:", localError);
+        return { success: false, error: `Sandbox Error: ${error.message}\nLocal Fallback Error: ${localError.message}` };
+      }
+    }
+
+    return { success: false, error: `Trace execution failed: ${error.message}` };
   }
+}
+
+/**
+ * ローカル環境（開発機またはコンテナ内）のPythonを使ってトレースを実行するフォールバック関数
+ */
+async function runLocalPythonFallback(code: string): Promise<{ success: boolean, steps?: any[], error?: string }> {
+  const cwd = process.cwd();
+  // Tracerのパス解決
+  const candidates = [
+    path.join(cwd, 'src/lib/python_tracer.py'),
+    path.join(cwd, 'lib/python_tracer.py'),
+  ];
+
+  let tracerPath = '';
+  for (const p of candidates) {
+    try {
+      await fs.access(p);
+      tracerPath = p;
+      break;
+    } catch (e) { }
+  }
+
+  if (!tracerPath) {
+    throw new Error("Tracer file not found locally.");
+  }
+
+  return new Promise((resolve, reject) => {
+    // python3 コマンドを想定 (環境によっては python)
+    const pythonProcess = spawn('python3', [tracerPath]);
+
+    // inputとしてコードをstdinに流し込む
+    pythonProcess.stdin.write(code);
+    pythonProcess.stdin.end();
+
+    let stdoutData = '';
+    let stderrData = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+      stdoutData += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      stderrData += data.toString();
+    });
+
+    pythonProcess.on('close', (code) => {
+      if (code !== 0 && stderrData) {
+        // エラー終了
+        resolve({ success: false, error: `Local Python Error: ${stderrData}` });
+        return;
+      }
+
+      // 出力解析
+      const jsonMatch = stdoutData.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        try {
+          const steps = JSON.parse(jsonMatch[0]);
+          resolve({ success: true, steps });
+        } catch (parseError) {
+          resolve({ success: false, error: "Failed to parse local tracer output JSON." });
+        }
+      } else {
+        if (stderrData) {
+          resolve({ success: false, error: `Runtime Error (Local): ${stderrData}` });
+        } else {
+          // 空の配列として返す（出力なし）
+          resolve({ success: true, steps: [] });
+        }
+      }
+    });
+
+    pythonProcess.on('error', (err) => {
+      resolve({ success: false, error: `Failed to spawn python3: ${err.message}` });
+    });
+  });
 }

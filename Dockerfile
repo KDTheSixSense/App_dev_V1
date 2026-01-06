@@ -6,10 +6,12 @@ FROM node:20-alpine3.20 AS builder
 ARG DATABASE_URL
 ARG NEXT_PUBLIC_APP_URL
 ARG NEXTAUTH_URL
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
 ENV DATABASE_URL=$DATABASE_URL
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXTAUTH_URL=$NEXTAUTH_URL
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
 WORKDIR /app
 
@@ -25,7 +27,7 @@ RUN npm install
 # プロジェクトのソースコードを全部コピー
 COPY src/ .
 RUN npx prisma generate
-RUN npm run build
+RUN SKIP_ENV_VALIDATION=1 npm run build
 
 # --------------------------------------------------------------------
 # ステージ2: ランナー (Runner / アプリ用のお弁当箱)
@@ -36,7 +38,10 @@ FROM node:20-alpine3.20 AS runner
 RUN apk update && apk add --no-cache \
     openssl \
     curl \
-    postgresql-client
+    postgresql-client \
+    python3 \
+    openjdk21 \
+    && npm install -g typescript @types/node
 
 WORKDIR /app
 

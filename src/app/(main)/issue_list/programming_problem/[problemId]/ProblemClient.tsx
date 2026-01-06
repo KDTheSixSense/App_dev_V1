@@ -44,6 +44,66 @@ const getPetDisplayState = (hungerLevel: number) => {
     }
 };
 
+const JAVA_DEFAULT_CODE = `public class Main{
+    public static void main(String[] args){
+        
+    }
+}`;
+
+const PYTHON_DEFAULT_CODE = ``;
+
+const JAVASCRIPT_DEFAULT_CODE = `const fs = require("fs");
+
+const input = fs.readFileSync(0, "utf8").trim();
+const i = parseInt(input);
+
+console.log(i);`;
+
+const TYPESCRIPT_DEFAULT_CODE = `const fs = require("fs");
+
+const input = fs.readFileSync(0, "utf8").trim();
+const i = parseInt(input);
+
+console.log(i);`;
+
+const C_DEFAULT_CODE = `#include <stdio.h>
+
+int main() {
+    
+    return 0;
+}`;
+
+const CPP_DEFAULT_CODE = `#include <iostream>
+
+int main() {
+    
+    return 0;
+}`;
+
+const CSHARP_DEFAULT_CODE = `using System;
+
+public class Hello {
+    public static void Main() {
+        
+    }
+}`;
+
+const PHP_DEFAULT_CODE = `<?php
+    
+?>`;
+
+const DEFAULT_CODES: { [key: string]: string } = {
+    'java': JAVA_DEFAULT_CODE,
+    'python': PYTHON_DEFAULT_CODE,
+    'python3': PYTHON_DEFAULT_CODE,
+    'javascript': JAVASCRIPT_DEFAULT_CODE,
+    'typescript': TYPESCRIPT_DEFAULT_CODE,
+    'c': C_DEFAULT_CODE,
+    'cpp': CPP_DEFAULT_CODE,
+    'csharp': CSHARP_DEFAULT_CODE,
+    'php': PHP_DEFAULT_CODE,
+};
+
 const DynamicAceEditor = dynamic(
     () => import('@/components/AceEditorWrapper'),
     {
@@ -577,6 +637,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     if (isLoading) return <div className="flex justify-center items-center h-screen bg-gray-100">読み込んでいます...</div>;
     if (!problem) return <div className="flex justify-center items-center h-screen bg-gray-100">問題が見つかりませんでした。</div>;
 
+    const handleLanguageChange = (lang: string) => {
+        setSelectedLanguage(lang);
+        const defaultCode = DEFAULT_CODES[lang];
+        if (defaultCode !== undefined) {
+            setUserCode(defaultCode);
+        }
+    };
+
     return (
         <div className="h-screen p-4 overflow-hidden">
             <TestCaseResultModal
@@ -615,7 +683,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
                                 onExecute={handleExecute} onSubmit={handleSubmit}
                                 isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
                                 selectedLanguage={selectedLanguage} languages={languages}
-                                onLanguageSelect={setSelectedLanguage}
+                                onLanguageSelect={handleLanguageChange}
                                 selectedTheme={selectedTheme} themes={themes}
                                 onThemeSelect={setSelectedTheme}
                                 annotations={annotations}

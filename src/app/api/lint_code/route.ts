@@ -258,8 +258,8 @@ async function lintPython(code: string): Promise<Annotation[]> {
 async function lintTypeScriptOrJavaScript(code: string, language: 'javascript' | 'typescript'): Promise<Annotation[]> {
     const extension = language === 'typescript' ? '.ts' : '.js';
 
-    // 開発環境と本番環境でパスが異なる可能性があるため調整が必要だが、今回はworkspace前提
-    const tscPath = path.join(process.cwd(), 'node_modules', 'typescript', 'bin', 'tsc');
+    // グローバルインストールされたtscコマンドを使用
+    const tscCommand = 'tsc';
 
     const tsArgs = [
         '--noEmit',          // 出力を生成しない
@@ -268,20 +268,21 @@ async function lintTypeScriptOrJavaScript(code: string, language: 'javascript' |
         '--target', 'esnext',
         '--module', 'commonjs',
         // '--jsx', 'preserve',
-        '--lib', 'es2020,dom'
+        '--lib', 'es2020,dom',
+        '--typeRoots', '/usr/local/lib/node_modules/@types' // グローバル型定義を参照
     ];
 
     if (language === 'javascript') {
         tsArgs.push('--checkJs', '--allowJs');
     }
 
-    // `node /path/to/tsc.js [args] [tempfile]` という形で実行
+    // `tsc [args] [tempfile]` という形で直接実行
     const { stdout, stderr, tempFile } = await runLintProcess(
-        tscPath,
+        tscCommand,
         tsArgs,
         code,
         extension,
-        true // Node.jsで実行するフラグ
+        false // 直接実行
     );
     await cleanupTempFile(tempFile);
 
