@@ -269,25 +269,30 @@ async function lintPython(code: string): Promise<Annotation[]> {
 
     // 2. pyflakes の出力形式を解析する正規表現
     // 例: <stdin>:4: invalid syntax
-    // 例: <stdin>:13: invalid syntax
-    const regex = /^(.*?):(\d+):(?:\d+:)? (.*)$/gm;
+    // 例: <stdin>:13:5: invalid syntax (column info present)
+    const regex = /^(.*?):(\d+):(?:(\d+):)? (.*)$/gm;
     let match;
 
     while ((match = regex.exec(output)) !== null) {
         // match[2] = 行番号 (1-based)
-        // match[3] = エラーメッセージ (例: "invalid syntax")
+        // match[3] = 列番号 (1-based, Optional)
+        // match[4] = エラーメッセージ (例: "invalid syntax")
 
         const row = parseInt(match[2], 10) - 1; // 0-basedに変換
-        let text = match[3];
+        const col = match[3] ? parseInt(match[3], 10) - 1 : 0; // 0-basedに変換 (なければ0)
+        let text = match[4];
 
         // "invalid syntax" の場合は、より分かりやすいメッセージに補足する
-        if (text.includes('invalid syntax')) {
-            text = '構文エラー (コロン ":" やインデントなどを確認してください)';
+        if (text.includes('invalid syntax') || text.includes('was never closed')) {
+            // 'was never closed' なども構文エラーの一種として補足
+            if (text.includes('invalid syntax')) {
+                text = '構文エラー (コロン ":" やインデントなどを確認してください)';
+            }
         }
 
         annotations.push({
             row: row,
-            column: 0, // pyflakesは正確な列番号を返さないため、行頭(0)に設定
+            column: col,
             text: appendLocalizedMessage(text),
             type: 'error',
         });
@@ -313,7 +318,8 @@ async function lintTypeScriptOrJavaScript(code: string, language: 'javascript' |
         '--module', 'commonjs',
         // '--jsx', 'preserve',
         '--lib', 'es2020,dom',
-        '--typeRoots', '/usr/local/lib/node_modules/@types' // グローバル型定義を参照
+        '--typeRoots', '/usr/local/lib/node_modules/@types', // グローバル型定義を参照
+        '--types', 'node' // Node.jsの型定義を明示的に読み込む
     ];
 
     if (language === 'javascript') {

@@ -2,10 +2,11 @@ services:
   app:
     build:
       context: .
-      target: runner
+      target: dev
     tty: true
     volumes:
       - ./src:/app
+      - /app/node_modules
     environment:
       - WATCHPACK_POLLING=true
 
