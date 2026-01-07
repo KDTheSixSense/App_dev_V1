@@ -156,7 +156,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setVariables,
     setCurrentTraceLine,
     setTraceHistory,
-    setIsPresetSelected
+    setIsPresetSelected,
+    selectedLogicVariant // Hookから受け取る
   } = useTraceProblem({ problem: problem, language: 'ja' }); // language state is defined below
 
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -178,7 +179,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     return '/images/Kohaku/kohaku-normal.png';
   });
 
-  const [selectedLogicVariant, setSelectedLogicVariant] = useState<string | null>(null);
+  // const [selectedLogicVariant, setSelectedLogicVariant] = useState<string | null>(null); // 削除: HookのStateを使用するため重複している
 
   // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
   const refetchPetStatus = useCallback(async () => {
@@ -314,7 +315,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     if (correct) {
       try {
         const problemId = parseInt(problem.id, 10);
-        
+
         // 【追加】経験値付与前のレベルを取得
         let previousLevel = 0;
         const preRes = await fetch('/api/pet/status', { cache: 'no-store' });
@@ -323,7 +324,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           previousLevel = data?.level || 0;
         }
 
-        const result = await awardXpForCorrectAnswer(problemId, undefined, 3); 
+        const result = await awardXpForCorrectAnswer(problemId, undefined, 3);
         if (result.message === '経験値を獲得しました！') {
           window.dispatchEvent(new CustomEvent('petStatusUpdated'));
 

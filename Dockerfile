@@ -30,6 +30,38 @@ RUN npx prisma generate
 RUN SKIP_ENV_VALIDATION=1 npm run build
 
 # --------------------------------------------------------------------
+# ステージ1.5: 開発用 (Development / 開発環境用のフルセット)
+# --------------------------------------------------------------------
+FROM node:20-alpine3.20 AS dev
+
+WORKDIR /app
+
+# Native modules build dependencies and Linting tools
+# runnerと同じツール群に加えて、make g++なども入れておく
+RUN apk update && apk add --no-cache \
+    python3 make g++ \
+    openssl \
+    curl \
+    postgresql-client \
+    openjdk21 \
+    php py3-pyflakes dotnet8-sdk \
+    && npm install -g typescript @types/node
+
+# 依存関係のファイルをコピー
+COPY src/package.json src/package-lock.json* ./
+
+# 全依存関係をインストール (devDependencies含む)
+RUN npm install
+
+# ソースコードをコピー
+COPY src/ .
+
+# Prisma Generate
+RUN npx prisma generate
+
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
+# --------------------------------------------------------------------
 # ステージ2: ランナー (Runner / アプリ用のお弁当箱)
 # --------------------------------------------------------------------
 FROM node:20-alpine3.20 AS runner
