@@ -41,6 +41,8 @@ RUN apk update && apk add --no-cache \
     postgresql-client \
     python3 \
     openjdk21 \
+    gcc g++ musl-dev \
+    php py3-pyflakes dotnet8-sdk \
     && npm install -g typescript @types/node
 
 WORKDIR /app

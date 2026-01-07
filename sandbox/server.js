@@ -93,7 +93,7 @@ async function executeCode(language, sourceCode, input) {
             case 'cpp':
                 fileName = 'main.cpp';
                 compiledFile = 'app';
-                compileCmd = `g++ "${fileName}" -o ${compiledFile}`;
+                compileCmd = `g++ "${fileName}" -o ${compiledFile} -std=c++17`;
                 runCmd = `./${compiledFile}`;
                 runArgs = [];
                 break;
@@ -108,10 +108,35 @@ async function executeCode(language, sourceCode, input) {
 
             case 'csharp':
                 fileName = 'Program.cs';
-                compiledFile = 'app.exe';
-                compileCmd = `mcs "${fileName}" -out:${compiledFile}`;
-                runCmd = 'mono';
-                runArgs = [compiledFile];
+                compiledFile = 'bin/Debug/net8.0/app'; // Output path depends on csproj content usually, but we run with 'dotnet run' in execution or 'dotnet bin/...'
+                // For simplified execution:
+                // 1. Create .csproj
+                const csproj = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>app</AssemblyName>
+  </PropertyGroup>
+</Project>`;
+                fs.writeFileSync(path.join(tempDir, 'app.csproj'), csproj);
+
+                compileCmd = 'dotnet build -c Debug';
+                // We can run the built binary. 
+                // The binary will be at: bin/Debug/net8.0/app (no extension on Linux usually?) or app.dll
+                // Actually 'dotnet run' is easier but might be slower due to restore/build check.
+                // 'dotnet build' is compileCmd.
+                // runCmd should be the binary.
+
+                // Let's use 'dotnet run --no-build' if we compiled? 
+                // OR: 
+                // compileCmd: dotnet build
+                // runCmd: ./bin/Debug/net8.0/app 
+                // Verify binary name. <AssemblyName>app</AssemblyName> -> app.dll (and app host executable)
+
+                runCmd = './bin/Debug/net8.0/app';
+                runArgs = [];
                 break;
 
             default:

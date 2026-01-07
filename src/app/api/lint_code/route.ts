@@ -59,6 +59,50 @@ function sanitizeOutput(output: string): string {
     return sanitized;
 }
 
+// --- 共通のエラーメッセージ辞書（日本語補足） ---
+const ADDITIONAL_ERROR_MESSAGES: Record<string, string> = {
+    // PHP
+    "syntax error, unexpected end of file": "構文エラー: ファイルの末尾が予期せず終了しました。閉じ括弧 '}' やセミコロン ';' が不足している可能性があります。",
+    "expecting \",\" or \";\"": "構文エラー: カンマ ',' または セミコロン ';' が期待されています。",
+    "syntax error, unexpected token": "構文エラー: 予期しないトークンです。記述ミスがないか確認してください。",
+    "syntax error, unexpected": "構文エラー: 予期しない記述です。",
+
+    // C#
+    "; expected": "';' (セミコロン) が必要です。",
+    "} expected": "'}' (閉じ中括弧) が必要です。",
+    "Invalid token": "無効なトークンです。",
+    "Identifier expected": "識別子が必要です。",
+
+    // Python
+    "invalid syntax": "構文エラーです。コロン ':' やインデント、括弧の対応などを確認してください。",
+    "expected ':'": "コロン ':' が期待されています。",
+    "IndentationError": "インデント(字下げ)が正しくありません。",
+
+    // C/C++
+    "expected ';' before": "';' (セミコロン) が必要です。",
+
+    // Common
+    "No such file or directory": "ファイルまたはディレクトリが見つかりません。",
+    "command not found": "コマンドが見つかりません。",
+};
+
+function appendLocalizedMessage(originalMessage: string): string {
+    let localizedMatch = "";
+    // 辞書の部分一致検索
+    for (const [key, value] of Object.entries(ADDITIONAL_ERROR_MESSAGES)) {
+        if (originalMessage.includes(key)) {
+            // マッチした場合、補足を付与。複数マッチの考慮が必要ならここで連結または優先度判定を行う
+            localizedMatch = value;
+            break;
+        }
+    }
+
+    if (localizedMatch) {
+        return `${originalMessage} | (${localizedMatch})`;
+    }
+    return originalMessage;
+}
+
 // --- ヘルパー関数: プロセスの実行 ---
 /**
  * 外部コマンドを実行し、標準出力と標準エラーを取得します。
@@ -201,8 +245,8 @@ async function lintPython(code: string): Promise<Annotation[]> {
 
     // 1. `pyflakes` を実行し、複数のエラーをリストアップする
     const { stdout, stderr, tempFile } = await runLintProcess(
-        'python3',           // コマンド
-        ['-m', 'pyflakes'],  // 引数で '-m pyflakes' を指定
+        'pyflakes',          // コマンド (py3-pyflakesにより/usr/bin/pyflakesに配置される)
+        [],                  // 引数なし (ファイルパスはrunLintProcessで追加される)
         code,
         '.py'
     );
@@ -244,7 +288,7 @@ async function lintPython(code: string): Promise<Annotation[]> {
         annotations.push({
             row: row,
             column: 0, // pyflakesは正確な列番号を返さないため、行頭(0)に設定
-            text: text,
+            text: appendLocalizedMessage(text),
             type: 'error',
         });
     }
@@ -307,7 +351,7 @@ async function lintTypeScriptOrJavaScript(code: string, language: 'javascript' |
         annotations.push({
             row: parseInt(match[2], 10) - 1,    // 1-indexed -> 0-indexed
             column: parseInt(match[3], 10) - 1, // 1-indexed -> 0-indexed
-            text: `(${match[5]}) ${match[6]}`, // エラーメッセージにコードを含める
+            text: appendLocalizedMessage(`(${match[5]}) ${match[6]}`), // エラーメッセージにコードを含める
             type: match[4] === 'warning' ? 'warning' : 'error',
         });
     }
@@ -389,7 +433,7 @@ async function lintJava(code: string): Promise<Annotation[]> {
         annotations.push({
             row: parseInt(match[2], 10) - 1,
             column: column > 0 ? column - 1 : 0,
-            text: match[4],
+            text: appendLocalizedMessage(match[4]),
             type: 'error',
         });
     }
@@ -416,7 +460,7 @@ async function lintJava(code: string): Promise<Annotation[]> {
 async function lintCpp(code: string): Promise<Annotation[]> {
     const { stderr, tempFile } = await runLintProcess(
         'g++',
-        ['-finput-charset=UTF-8', '-fsyntax-only', '-pedantic-errors', '-std=c++11'],
+        ['-finput-charset=UTF-8', '-fsyntax-only', '-pedantic-errors', '-std=c++17'],
         code,
         '.cpp'
     );
@@ -458,7 +502,7 @@ async function lintC(code: string): Promise<Annotation[]> {
         annotations.push({
             row: parseInt(match[2], 10) - 1,
             column: parseInt(match[3], 10) - 1,
-            text: match[4],
+            text: appendLocalizedMessage(match[4]),
             type: 'error',
         });
     }
@@ -466,55 +510,67 @@ async function lintC(code: string): Promise<Annotation[]> {
 }
 
 async function lintCsharp(code: string): Promise<Annotation[]> {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lint-csharp-'));
+    const projectFile = path.join(tempDir, 'LintCheck.csproj');
+    const programFile = path.join(tempDir, 'Program.cs');
 
-    const wrappedCode = `
-        using System;
-        using System.Collections.Generic;
-        using System.Linq;
-        using System.Text;
-        
-        public class LintCheck
-        {
-            public static void Main(string[] args)
-            {
-        ${code} 
-            }
-        }
-        `;
-    const lineOffset = 10;
+    const csprojContent = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>`;
 
-    const { stdout, stderr, tempFile } = await runLintProcess(
-        'csc',
-        ['-nologo', `-out:${os.devNull}`],
-        wrappedCode,
-        '.cs'
-    );
-    await cleanupTempFile(tempFile);
+    try {
+        await fs.writeFile(projectFile, csprojContent);
+        await fs.writeFile(programFile, code);
 
-    const output = sanitizeOutput(stdout + stderr);
+        // dotnet build を実行
+        const process = spawn('dotnet', ['build', '--nologo', '-v', 'q', tempDir], { cwd: tempDir });
 
-    if (!output) return [];
+        let stdout = '';
+        let stderr = '';
 
-    if (output.includes('Lint command') || output.includes('Linter')) {
-        return [{ row: 0, column: 0, text: output, type: 'error' }];
-    }
+        process.stdout.on('data', (data) => (stdout += data.toString()));
+        process.stderr.on('data', (data) => (stderr += data.toString()));
 
-    const annotations: Annotation[] = [];
-    const regex = /^(.*?)\((\d+),(\d+)\): error (\w+): (.*)$/gm;
-    let match;
-    while ((match = regex.exec(output)) !== null) {
-        const originalLine = parseInt(match[2], 10) - 1;
-
-        if (originalLine < lineOffset) continue;
-
-        annotations.push({
-            row: originalLine - lineOffset,
-            column: parseInt(match[3], 10) - 1,
-            text: `${match[4]}: ${match[5]}`,
-            type: 'error',
+        await new Promise((resolve) => {
+            process.on('close', resolve);
         });
+
+        const output = sanitizeOutput(stdout + stderr);
+
+        // クリーンアップ
+        await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
+
+        if (!output) return [];
+
+        const annotations: Annotation[] = [];
+        // dotnet build output format: Program.cs(line,column): error Code: Message [Path]
+        const regex = /^(.*?)\((\d+),(\d+)\): error (.*?): (.*?) \[.*?\]$/gm;
+        let match;
+
+        // Output example:
+        // /tmp/lint-csharp-xxxxx/Program.cs(6,33): error CS1002: ; expected [/tmp/lint-csharp-xxxxx/LintCheck.csproj]
+
+        while ((match = regex.exec(output)) !== null) {
+            annotations.push({
+                row: parseInt(match[2], 10) - 1,
+                column: parseInt(match[3], 10) - 1,
+                text: appendLocalizedMessage(`${match[4]}: ${match[5]}`),
+                type: 'error',
+            });
+        }
+
+        return annotations;
+
+    } catch (e) {
+        console.error("C# lint error:", e);
+        try { await fs.rm(tempDir, { recursive: true, force: true }); } catch { }
+        return [];
     }
-    return annotations;
 }
 
 async function lintPhp(code: string): Promise<Annotation[]> {
@@ -539,7 +595,7 @@ async function lintPhp(code: string): Promise<Annotation[]> {
         return [{ row: 0, column: 0, text: output, type: 'error' }];
     }
 
-    const regex = /^Parse error: (.*?) in .*? on line (\d+)$/m;
+    const regex = /^(?:PHP )?Parse error: (.*?) in .*? on line (\d+)$/m;
     const match = output.match(regex);
     if (match) {
         const errorLine = parseInt(match[2], 10) - 1;
@@ -551,7 +607,7 @@ async function lintPhp(code: string): Promise<Annotation[]> {
         return [{
             row: adjustedLine < 0 ? 0 : adjustedLine,
             column: 0,
-            text: match[1],
+            text: appendLocalizedMessage(match[1]),
             type: 'error',
         }];
     }

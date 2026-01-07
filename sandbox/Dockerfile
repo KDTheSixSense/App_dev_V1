@@ -9,14 +9,17 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && mkdir -p /etc/apt/keyrings \
     && wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc \
     && echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb bookworm main" | tee /etc/apt/sources.list.d/adoptium.list \
+    && wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb \
     && apt-get update \
     && apt-get -y install --no-install-recommends \
     temurin-21-jdk \
     python3 \
     python3-pip \
     build-essential \
-    mono-mcs \
     php-cli \
+    dotnet-sdk-8.0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
