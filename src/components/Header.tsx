@@ -306,7 +306,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
   ];
 
   return (
-    <header ref={headerRef} className="fixed top-0 left-0 w-full bg-[#e0f4f9] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
+    <header ref={headerRef} className="fixed top-0 left-0 w-full bg-gradient-to-r from-[#e0f4f9] to-cyan-100 text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
 
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0 ml-3">

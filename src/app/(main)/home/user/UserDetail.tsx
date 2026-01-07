@@ -27,7 +27,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
     const progressPercentage = (currentXpInLevel / requiredXpForNextLevel) * 100;
 
     return (
-        <div className="w-full bg-[#e0f4f9] rounded-2xl overflow-hidden shadow-sm shadow-sky-100">
+        <div className="w-full bg-gradient-to-r from-[#e0f4f9] to-cyan-100 rounded-2xl overflow-hidden shadow-sm shadow-sky-100">
             {/* Top Section: Blue Gradient - Now completely clickable */}
             {/* Background adjusted to be 'lighter' while keeping white text readable - used slightly softer gradient */}
             <Link href="/profile" className="block relative group cursor-pointer !no-underline decoration-0">

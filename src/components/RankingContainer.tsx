@@ -152,7 +152,7 @@ export default function RankingContainer({
 
       {/* トップ100ランキングリスト (スクロール可能) */}
       {/* 下部に自分のランク表示スペース(約80px)を確保するために padding-bottom を設定 */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-hidden relative min-h-0">
         <div className="h-full overflow-y-auto pb-25 custom-scrollbar">
           <RankingList users={displayedUsers} myRankInfo={myRankInfo} />
         </div>

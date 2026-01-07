@@ -58,7 +58,7 @@ const DailyMissionPage = async () => {
 
     // 7. 画面を描画
     return (
-      <div className="bg-[#e0f4f9] rounded-3xl p-6 shadow-sm h-full">
+      <div className="bg-gradient-to-r from-[#e0f4f9] to-cyan-100 rounded-3xl p-6 shadow-sm h-full">
         <h2 className="text-xl font-bold text-slate-700 mb-6">
           デイリーミッション
         </h2>
