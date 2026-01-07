@@ -299,3 +299,39 @@ export async function deleteEventAction(eventId: number) {
     revalidatePath('/event/event_list');
     return { success: true };
 }
+
+export async function acceptEventAction(eventId: number, userId: string) {
+    'use server';
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (!session.user?.id) {
+        return { error: 'ログインしていません。' };
+    }
+    
+    // session.user.id can be compared with userId or we can just use session.user.id to be safe
+    const currentUserId = session.user.id;
+    if (currentUserId !== userId) {
+         return { error: 'ユーザーIDが一致しません。' };
+    }
+
+    try {
+        const result = await prisma.event_Participants.updateMany({
+            where: {
+                eventId: eventId,
+                userId: userId,
+            },
+            data: {
+                hasAccepted: true,
+            },
+        });
+
+        if (result.count === 0) {
+            return { error: '参加者情報が見つかりません。' };
+        }
+
+        revalidatePath(`/event/event_detail/${eventId}`);
+        return { success: true };
+    } catch (error) {
+        console.error('参加承認エラー:', error);
+        return { error: '参加承認に失敗しました。' };
+    }
+}
