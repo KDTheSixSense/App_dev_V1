@@ -26,7 +26,7 @@ interface SessionData {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }; // 型を修正
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>; // 型を修正
 }) {
 
   // --- ▼▼▼ ここでセッションからユーザーIDを取得する ▼▼▼ ---
@@ -114,8 +114,8 @@ export default async function HomePage({
             </div>
             {/* 2. Events */}
             <div className="flex-1 min-h-0">
-                <EventCard events={upcomingEvents}  /> 
-            </div>          
+              <EventCard events={upcomingEvents} />
+            </div>
           </div>
 
           {/* Right Column: Profile, Daily Missions (3 cols) */}

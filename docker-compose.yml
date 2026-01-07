@@ -11,6 +11,7 @@ services:
 
     env_file:
       - .env.local
+      - .env
 
     command: sh -c "npm run dev"
     ports:

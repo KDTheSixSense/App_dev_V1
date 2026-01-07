@@ -26,6 +26,22 @@ if (skipValidation) {
     console.warn('⚠️ Skipping environment validation for build process.');
     envData = runtimeEnv;
 } else {
+    // In development mode, if variables are missing, we can provide dummy values to prevent crash
+    if (process.env.NODE_ENV === 'development') {
+        if (!runtimeEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+            console.warn('⚠️ Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID in development. Using dummy value.');
+            runtimeEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID = "dummy-google-client-id-dev";
+        }
+        if (!runtimeEnv.GOOGLE_CLIENT_SECRET) {
+            console.warn('⚠️ Missing GOOGLE_CLIENT_SECRET in development. Using dummy value.');
+            runtimeEnv.GOOGLE_CLIENT_SECRET = "dummy-google-client-secret-dev";
+        }
+        // Ensure app url has default
+        if (!runtimeEnv.NEXT_PUBLIC_APP_URL) {
+            runtimeEnv.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+        }
+    }
+
     const parsedClient = clientSchema.safeParse(runtimeEnv);
     const parsedServer = serverSchema.safeParse(runtimeEnv);
 
