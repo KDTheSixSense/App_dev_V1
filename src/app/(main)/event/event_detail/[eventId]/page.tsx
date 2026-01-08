@@ -13,7 +13,7 @@ import MemberView, { type MemberViewEvent } from './MemberView'; // member用ビ
 type EventWithDetailsForPage = Prisma.Create_eventGetPayload<{
   include: {
     creator: { // Include creator info
-      select: { username: true };
+      select: { username: true, icon: true };
     };
     participants: {
       include: {
@@ -34,7 +34,7 @@ type EventWithDetailsForPage = Prisma.Create_eventGetPayload<{
 
 // AdminView/MemberViewに渡すために、currentUserParticipantプロパティを追加した拡張型
 type EventForView = MemberViewEvent & { // MemberViewの型を拡張元にする
-  creator: { username: string | null }; // Manually add creator compatible shape if MemberViewEvent doesn't have it yet
+  creator: { username: string | null; icon: string | null }; // Manually add creator compatible shape if MemberViewEvent doesn't have it yet
   currentUserParticipant?: Prisma.Event_ParticipantsGetPayload<{
     include: {
       user: {
@@ -56,7 +56,7 @@ async function getEventAndUserRole(eventId: number, userId: string | null) {
     where: { id: eventId },
     include: {
       creator: { // Fetch creator
-        select: { username: true },
+        select: { username: true, icon: true },
       },
       // 参加者一覧や問題一覧など、必要な情報をここで取得
       participants: {

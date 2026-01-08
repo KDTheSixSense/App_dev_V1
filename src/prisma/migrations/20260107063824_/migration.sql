@@ -417,6 +417,7 @@ CREATE TABLE "Submissions" (
     "file_path" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "language" TEXT,
 
     CONSTRAINT "Submissions_pkey" PRIMARY KEY ("id")
 );
