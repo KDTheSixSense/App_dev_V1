@@ -37,7 +37,7 @@ const 参加モーダル = ({ 表示中, 閉じる処理, 参加処理 }: {
       set処理中(false);
     }
   };
-  
+
   const 閉じる = () => {
     if (処理中) return;
     setエラー('');
@@ -167,10 +167,10 @@ const ProblemClient = ({ initialEvents }: ProblemClientProps) => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 h-full">
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-4">イベント</h1>
-        
+
         <EventActions onJoinClick={() => setモーダル表示中(true)} />
         {/* isStartedがtrueのイベントのみをリストに表示するようにフィルタリング */}
         <EventList events={initialEvents.filter(event => event.isStarted)} />

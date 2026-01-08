@@ -29,6 +29,7 @@ import { eventHelpSteps } from "./eventHelpSteps";
 import { eventDetailProblemHelpSteps } from "./eventDetailProblemHelpSteps";
 import { createEventHelpSteps } from "./createEventHelpSteps";
 import { profileHelpSteps } from "./profileHelpSteps";
+import { webCodeHelpSteps } from "./webCodeHelpSteps";
 
 /**
  * ヘルプデータの統合配列
@@ -54,5 +55,7 @@ export const helpSteps: HelpStep[] = [
   ...eventHelpSteps,
   ...eventDetailProblemHelpSteps,
   ...createEventHelpSteps,
+  ...createEventHelpSteps,
   ...profileHelpSteps,
+  ...webCodeHelpSteps,
 ];
