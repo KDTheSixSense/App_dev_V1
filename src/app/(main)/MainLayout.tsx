@@ -15,10 +15,9 @@ export default function MainLayout({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <>
+    <div className="flex flex-col h-screen w-full overflow-hidden">
       <Header userWithPet={userWithPet} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-      <main className={`flex-grow w-full transition-all duration-300 ease-out mt-20`}>
-
+      <main className="flex-1 w-full mt-20 overflow-y-auto transition-all duration-300 ease-out relative">
         <style jsx global>{`
           main a {
             color: #1a0dab;
@@ -31,6 +30,6 @@ export default function MainLayout({
         {children}
       </main>
       <MobileFooter userWithPet={userWithPet} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-    </>
+    </div>
   );
 }
