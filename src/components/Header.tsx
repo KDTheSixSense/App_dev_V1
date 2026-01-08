@@ -398,19 +398,19 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
           </div>
 
           {/* Rank Circular Gauge - Enlarged */}
-          <div className="relative flex flex-col items-center justify-center -mt-2 h-full flex-1">
+          <div className="relative flex flex-col items-center -mt-2 h-full flex-1">
             <div className="relative w-16 h-16">
               <svg className="w-full h-full transform -rotate-90">
                 {/* Background Circle */}
                 <circle
-                  cx="32" cy="32" r="26"
+                  cx="28" cy="28" r="26"
                   fill="transparent"
                   stroke="#E2E8F0"
                   strokeWidth="5"
                 />
                 {/* Progress Circle */}
                 <circle
-                  cx="32" cy="32" r="26"
+                  cx="28" cy="28" r="26"
                   fill="transparent"
                   stroke="#0EA5E9" // Sky blue
                   strokeWidth="5"
@@ -420,14 +420,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
                   className="transition-all duration-1000 ease-out"
                 />
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center pb-1">
+              <div className="absolute inset-0 flex items-center justify-center pb-1 mr-2 mt-2">
                 <span className="text-sm font-bold text-sky-600">
                   {Number.isNaN(progressPercentage) ? 0 : Math.floor(progressPercentage)}%
                 </span>
               </div>
             </div>
             <div className="absolute -bottom-1 rounded-full z-10 inline-flex items-center h-6">
-              <p className="inline-flex justify-end items-end text-[12px] font-bold text-cyan-600 whitespace-nowrap mt-auto">RANK {rank}</p>
+              <p className="inline-flex justify-end items-end text-[12px] font-bold text-[#1f758b] whitespace-nowrap mt-auto">RANK {rank}</p>
             </div>
           </div>          
         </div>

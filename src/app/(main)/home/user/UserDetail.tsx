@@ -95,7 +95,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
                     </span>
                 </div>
                 <div className="bg-white rounded-xl p-2 py-5 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[14px] text-slate-500 font-bold mb-1">課題</span>
+                    <span className="text-[14px] text-slate-500 font-bold mb-1">残課題</span>
                     <span className="text-xl font-bold text-slate-700 block leading-none">
                         {unsubmittedAssignmentCount}
                     </span>

@@ -10,7 +10,7 @@ type Props = {
 export default function RankingList({ users, myRankInfo }: Props) {
   return (
     <div className="mt-4 flex-1 overflow-hidden bg-[#fff] rounded-2xl">
-      <ul className="space-y-2 h-full overflow-y-auto pr-2 custom-scrollbar">
+      <ul className="space-y-2 h-full overflow-y-auto custom-scrollbar">
         {users.map((user) => (
           <RankingListItem
             key={user.id}

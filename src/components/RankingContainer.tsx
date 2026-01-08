@@ -191,13 +191,13 @@ export default function RankingContainer({
 
                 <div className="flex items-center w-full px-4">
                   <div className="flex flex-col items-center justify-center mr-3 relative">
-                    <div className="relative w-12 h-12 flex items-center justify-center bg-white rounded-full border-2 border-cyan-400 shadow-sm mt-1">
+                    <div className="relative w-12 h-12 flex items-center justify-center bg-white rounded-full mt-1">
                       {/* Crown Icon for top 3 */}
                       {myRankInfo.rank <= 3 && (
                         <img
                           src={`/images/rank${myRankInfo.rank}_icon.png`}
                           alt="Rank"
-                          className="absolute top-2 -left-8 w-9 h-9 object-contain"
+                          className="top-2 w-9 h-9 object-contain"
                         />
                       )}
                       <span className="text-cyan-600 font-black text-xl">{myRankInfo.rank}</span>
