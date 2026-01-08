@@ -654,7 +654,7 @@ model Event_Participants {
   isAdmin Boolean @default(false)
 
   // 将来的に使用する可能性があるためコメントアウト
-  // joinedAt  DateTime @default(now())
+  joinedAt  DateTime @default(now())
   // status    String?
 
   // --- リレーション ---
