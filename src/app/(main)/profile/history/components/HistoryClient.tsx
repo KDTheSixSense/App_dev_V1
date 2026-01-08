@@ -73,9 +73,12 @@ export default function HistoryClient({ initialData, showTable = true }: Props) 
     };
 
     const handleCustomDateChange = async (start: Date | null, end: Date | null) => {
-        setCustomDateRange({ start, end });
-        if (start && end) {
-            const data = await getUserHistory({ startDate: start, endDate: end });
+        // Ensure end date includes the full day (23:59:59.999)
+        const effectiveEnd = end ? endOfDay(end) : null;
+        setCustomDateRange({ start, end }); // Keep UI state as selected (midnight)
+
+        if (start && effectiveEnd) {
+            const data = await getUserHistory({ startDate: start, endDate: effectiveEnd });
             setItems(data.items);
         }
     };

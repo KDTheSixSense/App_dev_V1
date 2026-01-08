@@ -6,6 +6,7 @@ import * as Blockly from 'blockly';
 import { javascriptGenerator } from 'blockly/javascript';
 import 'blockly/blocks';
 import * as locale from 'blockly/msg/ja';
+import VariablePromptModal from './VariablePromptModal';
 
 // Blocklyの言語設定
 Blockly.setLocale(locale as any);
@@ -62,9 +63,25 @@ const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange 
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
   const lastCategoryIndexRef = useRef<number>(0);
 
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [modalTitle, setModalTitle] = React.useState('');
+  const [modalCallback, setModalCallback] = React.useState<((value: string | null) => void) | null>(null);
+  const [modalDefaultValue, setModalDefaultValue] = React.useState('');
+  const [modalColor, setModalColor] = React.useState('#3b82f6');
+
   useEffect(() => {
     if (!blocklyDiv.current) return;
     if (workspaceRef.current) return;
+
+    // Override Blockly's prompt dialog
+    Blockly.dialog.setPrompt(function (message, defaultValue, callback) {
+      setModalTitle(message);
+      setModalDefaultValue(defaultValue);
+      setModalCallback(() => callback);
+      setModalColor('#1ae0ffff'); // Variable color
+      setIsModalOpen(true);
+    });
 
     // ワークスペースの注入
     const workspace = Blockly.inject(blocklyDiv.current, {
@@ -237,6 +254,7 @@ const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange 
             </block>
           </category>
           <category name="リスト" categoryStyle="list_category">
+            <button text="リストの作成..." callbackKey="CREATE_LIST"></button>
             <block type="lists_create_with">
               <mutation items="0"></mutation>
             </block>
@@ -288,7 +306,7 @@ const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange 
           </category>
           <sep></sep>
           <category name="変数" categoryStyle="variable_category" custom="VARIABLE"></category>
-          <category name="関数" categoryStyle="procedure_category" custom="PROCEDURE"></category>
+          <category name="関数" categoryStyle="procedure_category" custom="MY_PROCEDURE"></category>
         </xml>
       `,
       scrollbars: true,
@@ -351,6 +369,77 @@ const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange 
       }
     };
     workspace.addChangeListener(handleToolboxSelection);
+
+    // --- Custom Callbacks for Lists and Functions ---
+
+    // リスト作成ボタンのコールバック
+    workspace.registerButtonCallback('CREATE_LIST', () => {
+      setModalTitle('新しいリストの名前:');
+      setModalDefaultValue('');
+      setModalColor('#1ae0ffff'); // List color
+      setModalCallback(() => (name: string | null) => {
+        if (name) {
+          workspace.createVariable(name, 'Array'); // 'Array' type is often used for lists, or empty string for dynamic
+          // In basic Blockly, lists are just variables. Specifying type might separate them in UI if typed variables are used.
+          // Let's use '' to match default variable block behavior if not strict.
+          // However, standard variables are often type null or ''.
+          // Let's check if we want to distinguish. The user just said "create list".
+          // If we use simple variables, workspace.createVariable(name) is enough.
+        }
+      });
+      setIsModalOpen(true);
+    });
+
+    // 関数カテゴリのカスタム定義
+    workspace.registerToolboxCategoryCallback('MY_PROCEDURE', (workspace: Blockly.Workspace) => {
+      const xmlList: Element[] = [];
+
+      // 「関数の作成」ボタン
+      const btn = document.createElement('button');
+      btn.setAttribute('text', '関数の作成...');
+      btn.setAttribute('callbackKey', 'CREATE_PROCEDURE');
+      xmlList.push(btn);
+
+      // 標準の関数ブロックを取得して追加
+      // @ts-ignore
+      const standardItems = Blockly.Procedures.flyoutCategory(workspace);
+      xmlList.push(...standardItems);
+
+      return xmlList;
+    });
+
+    // 関数作成ボタンのコールバック
+    workspace.registerButtonCallback('CREATE_PROCEDURE', () => {
+      setModalTitle('新しい関数の名前:');
+      setModalDefaultValue('');
+      setModalColor('#1ae0ffff'); // Procedure color
+      setModalCallback(() => (name: string | null) => {
+        if (name) {
+          // 関数定義ブロックを作成
+          // 'procedures_defnoreturn' is the standard "to do something" block
+          const block = workspace.newBlock('procedures_defnoreturn');
+          block.setFieldValue(name, 'NAME');
+          block.initSvg();
+
+          // 配置場所を計算 (適当に見える位置へ)
+          // 既存のブロックと重ならないように...とりあえず中心付近か、スクロール位置考慮
+          // シンプルに(20, 20)や、他のブロックの下などに配置
+          const metrics = workspace.getMetrics();
+          // @ts-ignore
+          const scrollX = workspace.scrollX;
+          // @ts-ignore
+          const scrollY = workspace.scrollY;
+
+          // A safe spot
+          block.moveBy(100 - (scrollX || 0), 100 - (scrollY || 0));
+
+          block.render();
+        }
+      });
+      setIsModalOpen(true);
+    });
+
+    // ----------------------------------------------
 
     // コード生成処理
     const updateCode = () => {
@@ -457,6 +546,20 @@ const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange 
         ref={blocklyDiv}
         style={{ width: '100%', height: '100%' }}
         className="rounded-lg overflow-hidden border border-gray-300 shadow-inner bg-white"
+      />
+      <VariablePromptModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          if (modalCallback) modalCallback(null);
+        }}
+        onConfirm={(value) => {
+          setIsModalOpen(false);
+          if (modalCallback) modalCallback(value);
+        }}
+        defaultValue={modalDefaultValue}
+        title={modalTitle}
+        confirmColor={modalColor}
       />
     </>
   );
