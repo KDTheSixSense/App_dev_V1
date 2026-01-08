@@ -49,7 +49,9 @@ RUN apt-get update && apt-get install -y dos2unix && dos2unix entrypoint.sh && c
 # [Security] Restrict access to sensitive system files
 # Remove read permission for 'others' on /etc/passwd and /etc/group
 # Note: This might cause issues with some tools, but requested by user.
-RUN chmod o-r /etc/passwd /etc/group
+# Note: This might cause issues with some tools, but requested by user.
+# [FIX] Restored read permission for C# dotnet runtime which requires user lookup
+# RUN chmod o-r /etc/passwd /etc/group
 
 # We need to run as root initially to set iptables, then switch to user in entrypoint
 USER root

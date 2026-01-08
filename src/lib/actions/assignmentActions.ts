@@ -8,7 +8,8 @@ const UPLOAD_DIR = path.join(process.cwd(), 'public/uploads');
 export async function submitAssignment(
   userId: string,
   assignmentId: string,
-  formData: FormData
+  formData: FormData,
+  language?: string // Added language parameter
 ): Promise<{ success: true; message: string } | { success: false; message: string; status: number }> {
   try {
     await fs.mkdir(UPLOAD_DIR, { recursive: true });
@@ -47,6 +48,7 @@ export async function submitAssignment(
         description: 'ファイルが再提出されました。',
         codingid: 0,
         submitted_at: new Date(),
+        language: language || null, // Update language if provided
       },
       create: {
         assignment_id: Number(assignmentId),
@@ -55,6 +57,7 @@ export async function submitAssignment(
         description: 'ファイルが提出されました。',
         codingid: 0,
         file_path: filePath,
+        language: language || null, // Save language
       },
     });
 
