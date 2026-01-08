@@ -375,9 +375,10 @@ interface ProblemClientProps {
         hungerlevel: number;
         evolutionType?: string | null;
     } | null;
+    isFromMine?: boolean;
 }
 
-const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCredits, initialPetStatus }) => {
+const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, /* initialCredits, */ initialPetStatus, isFromMine }) => {
     const router = useRouter();
     const problemId = initialProblem.id.toString();
 
@@ -589,7 +590,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
         if (!problem) return;
         recordStudyTime();
         const nextId = await getNextProgrammingProblemId(parseInt(problem.id));
-        if (nextId) { router.push(`/issue_list/programming_problem/${nextId}`); }
+        if (nextId) {
+            const query = isFromMine ? '?from=mine' : '';
+            router.push(`/issue_list/programming_problem/${nextId}${query}`);
+        }
         else { toast.success("これが最後の問題です！お疲れ様でした。"); }
     };
 
@@ -656,9 +660,12 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             />
 
             <div className="mb-2">
-                <Link href="/issue_list/programming_problem/problems" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                <Link 
+                    href={isFromMine ? "/issue_list/mine_issue_list/problems" : "/issue_list/programming_problem/problems"} 
+                    className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+                >
                     <ArrowLeft className="h-4 w-4" />
-                    一覧へ戻る
+                    {isFromMine ? "作成した問題一覧へ戻る" : "一覧へ戻る"}
                 </Link>
             </div>
 
