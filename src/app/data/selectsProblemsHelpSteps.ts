@@ -8,8 +8,8 @@ export const selectsProblemsHelpSteps: HelpStep[] = [
   // 4択問題詳細ページ
   {
     id: "selects_problems_overview",
-    title: "4択問題詳細",
-    description: "このページでは、4つの選択肢から正解を選ぶ問題に挑戦できます。問題文を読んで回答してください。",
+    title: "選択問題詳細",
+    description: "このページでは、選択肢の中から正解を選ぶ問題に挑戦できます。\n正解だと思う選択肢を選んで回答してください。",
     imagePath: "/images/help/4taku.png",
     targetSelector: ".container",
     order: 1,
@@ -27,7 +27,7 @@ export const selectsProblemsHelpSteps: HelpStep[] = [
   {
     id: "problem_statement_selects",
     title: "AIチャット (コハク)",
-    description: "コハクに対してチャット形式で投げかけることができ、あなたの質問に対しコハクがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。",
+    description: "コハクに対して質問をすることができ、あなたの質問に対してコハクがヒントをくれます。\n正解に近づくようにヒントをもらいながら学習を進めましょう。",
     imagePath: "/images/help/kihongA3.png",
     targetSelector: ".container",
     order: 3,

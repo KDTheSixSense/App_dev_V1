@@ -9,7 +9,7 @@ export const createProgrammingQuestionHelpSteps: HelpStep[] = [
   {
     id: "create_programming_question_overview",
     title: "プログラミング問題作成画面の概要",
-    description: "このページでは、新しいプログラミング問題を作成できます。基本情報欄では問題タイトル、問題タイプ、難易度、トピック、タグを挿入することができます。",
+    description: "このページでは、新しいプログラミング問題を作成できます。\n基本情報欄では問題タイトル、問題タイプ、難易度、トピック、タグを挿入することができます。",
     imagePath: "/images/help/create_programming_question_overview.png",
     targetSelector: ".question-form",
     order: 1,
@@ -36,7 +36,7 @@ export const createProgrammingQuestionHelpSteps: HelpStep[] = [
   {
     id: "create_programming_question_overview",
     title: "プログラミング問題作成画面の概要",
-    description: "このページでは、新しいプログラミング問題を作成できます。問題文、テストケース、解答例などを入力してください。",
+    description: "このページでは、テストケースを作成できます。コードが正しく記述されているかを確認するためのテストケースを作成してください。",
     imagePath: "/images/help/create_programming_question_overview3.png",
     targetSelector: ".question-form",
     order: 4,

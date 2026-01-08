@@ -9,7 +9,7 @@ export const appliedInfoMorningHelpSteps: HelpStep[] = [
   {
     id: "applied_info_morning_problem_overview",
     title: "応用情報技術者試験 午前問題詳細",
-    description: "このページでは、応用情報技術者試験の午前問題を解くことができます。問題文を読んで、正解の選択肢を選んでください。",
+    description: "このページでは、応用情報技術者試験の午前問題を解くことができます。\n問題文を読んで、正解だと思う選択肢を選んでください。",
     imagePath: "/images/help/oyo1.png",
     targetSelector: ".container",
     order: 1,
@@ -27,8 +27,8 @@ export const appliedInfoMorningHelpSteps: HelpStep[] = [
   {
     id: "applied_info_morning_problem_overview",
     title: "AIチャット (コハク)",
-    description: "コハクに対してチャット形式で投げかけることができ、あなたの質問に対しコハクがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。",
-    imagePath: "/images/help/oyo3.png",
+    description: "コハクに対してチャット形式で質問ができ、あなたの質問に対しコハクがヒントをくれます。\n正解に近づくようにヒントをもらいながら学習を進めましょう。",
+    imagePath: "/images/help/hint.png",
     targetSelector: ".container",
     order: 3,
     page: "issue_list/applied_info_morning_problem",

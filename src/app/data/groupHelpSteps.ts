@@ -9,7 +9,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview",
     title: "グループ画面の概要",
-    description: "こちらはグループ画面です。グループ内では課題投稿することができ、課題に対し問題を解くこと、提出状況を把握することができます。",
+    description: "こちらはグループ画面です。グループ内ではメンバーの管理や、お知らせ、課題の投稿ができます。",
     imagePath: "/images/help/grup1.png",
     targetSelector: ".group-list",
     order: 1,
@@ -18,7 +18,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview",
     title: "グループ画面の概要",
-    description: "＋ボタンを押すことにより、グループを作成したり、グループに参加することができます。",
+    description: "右下の＋ボタンを押すことにより、グループを作成したり、グループに参加することができます。",
     imagePath: "/images/help/grup.png",
     targetSelector: ".group-list",
     order: 2,
@@ -28,7 +28,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview",
     title: "お知らせの投稿",
-    description: "お知らせタブでは、グループの管理者がメンバーに対しお知らせの掲示板をここで投稿することができます。メンバー側では管理者が送信したお知らせを確認することができます。",
+    description: "お知らせタブでは、グループメンバーに対してお知らせを投稿することができます。\nメンバーに知らせたい内容を入力し、「投稿」ボタンを押してお知らせを共有しましょう。",
     imagePath: "/images/help/admin1.png",
     targetSelector: ".group-list",
     order: 1,
@@ -38,7 +38,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview",
     title: "課題の作成",
-    description: "課題タブでは、グループの管理者がメンバーに対し課題を作成することができます。課題タイトル、課題のサブタイトル(課題についての詳細説明)、課題の期限を選択し、「追加または作成」ボタンでプログラミング問題、選択問題の課題を新規作成、既存問題を課題投稿に対し問題挿入し、投稿することができます。",
+    description: "課題タブでは、グループメンバーに対して課題を作成することができます。\n課題タイトル、課題についての説明、課題の期限を選択し、「追加または作成」ボタンで課題にする問題を選択します。プログラミング問題、選択問題を新規作成、または既存問題を選択し、課題を投稿しましょう。",
     imagePath: "/images/help/admin2.png",
     targetSelector: ".group-list",
     order: 2,
@@ -48,7 +48,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview",
     title: "メンバーの管理と招待",
-    description: "「メンバー」タブでは、クラスに参加している全メンバーの確認、新しいメンバーの招待、招待コードの共有ができます。また管理者を複数人渡したい場合、権限付与することも可能です。",
+    description: "メンバータブでは、クラスに参加している全メンバーの確認、新しいメンバーの招待、招待コードの共有ができます。\nまた管理者を複数人渡したい場合、権限付与することも可能です。",
     imagePath: "/images/help/admin4.png",
     targetSelector: ".group-list",
     order: 3,
@@ -58,7 +58,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview",
     title: "グループ画面の概要",
-    description: "提出状況一覧ではグループの管理者が課題を作成した後、この画面で各ユーザの提出状況を「提出済み」、「未提出」、「差し戻し」の三つの項目があり、目視でチェックすることが可能です。もし課題に対し、解答内容が不正であれば差し戻しすることにより、メンバー側に対し再提出を促せます。",
+    description: "提出状況一覧ではメンバーの各課題の提出状況を確認できます。もし課題に対し、解答内容が不正であれば差し戻しすることにより、メンバーに対して再提出を促せます。",
     imagePath: "/images/help/admin3.png",
     targetSelector: ".group-list",
     order: 4,
@@ -79,7 +79,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview",
     title:  "既存の問題から選択",
-    description:  "「既存から選択」を選ぶと、過去に作成した問題の一覧が表示されます。ここから過去に作成した問題を課題として作成することも可能です。",
+    description:  "「新規作成」を選ぶと、問題を一から作成することができます。\nプログラミング問題と選択問題の2つから選択可能です。",
     imagePath: "/images/help/admin6.png",
     targetSelector: ".group-list",
     order: 6,
@@ -89,7 +89,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview",
     title: "グループ画面の概要",
-    description: "「既存から選択」を選ぶと、以下の画像のように開くことができます。",
+    description: "「既存から選択」を選ぶと、以下の画像のようになり、既存の問題を課題に追加することができます。",
     imagePath: "/images/help/admin7.png",
     targetSelector: ".group-list",
     order: 7,
@@ -111,7 +111,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview_member1",
     title: "お知らせの確認",
-    description: "「お知らせ」タブでは、先生や管理者からの連絡を確認できます。クラスに入ったら、まずここをチェックしましょう。",
+    description: "「お知らせ」タブでは、管理者からの連絡を確認できます。クラスに入ったら、まずここをチェックしましょう。",
     imagePath: "/images/help/member1.png",
     targetSelector: ".group-list",
     order: 1,
@@ -121,7 +121,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview_member2",
     title: "課題の確認と提出",
-    description: "「課題」タブで、先生から出された課題を確認できます。赤の × マークは未提出を示しています。",
+    description: "「課題」タブでは、与えられた課題を確認できます。赤の × マークは未提出を示しています。",
     imagePath: "/images/help/member2-1.png",
     targetSelector: ".group-list",
     order: 2,
@@ -131,7 +131,7 @@ export const groupHelpSteps: HelpStep[] = [
   {
     id: "group_overview_member2",
     title: "課題の確認と提出",
-    description: "「課題」タブで、先生から出された課題を確認できます。緑のチェックマーク（✅）は、提出済みの課題を示しています。",
+    description: "緑のチェックマーク（✅）は、提出済みの課題を示しています。",
     imagePath: "/images/help/member2.png",
     targetSelector: ".group-list",
     order: 3,

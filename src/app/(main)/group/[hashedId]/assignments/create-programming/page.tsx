@@ -150,7 +150,7 @@ export default function CreateProgrammingQuestionPage() {
           if (!response.ok) throw new Error(`問題データの読み込みに失敗しました`);
           const data = await response.json();
 
-          if (isSelectApi || data.category === '4択問題' || data.problemType === '選択問題') {
+          if (isSelectApi || data.category === '選択問題' || data.problemType === '選択問題') {
             // Select Problem Data Loaded
             setSelectedCategory('itpassport');
             setFormData({
@@ -158,7 +158,7 @@ export default function CreateProgrammingQuestionPage() {
               description: data.description || '',
               difficulty: data.difficultyId || 1,
               problemType: '選択問題',
-              category: '4択問題',
+              category: '選択問題',
               timeLimit: 0,
               topic: '',
               tags: [],
@@ -231,7 +231,7 @@ export default function CreateProgrammingQuestionPage() {
       setProblemId(null);
       if (typeFromQuery === 'select') {
         setSelectedCategory('itpassport');
-        setFormData(prev => ({ ...prev, problemType: '選択問題', category: '4択問題' }));
+        setFormData(prev => ({ ...prev, problemType: '選択問題', category: '選択問題' }));
       } else {
         setSelectedCategory('programming');
         setFormData(prev => ({ ...prev, problemType: 'コーディング問題', category: 'プログラミング基礎' }));
@@ -267,7 +267,7 @@ export default function CreateProgrammingQuestionPage() {
     // カテゴリ切り替え時にフォームをリセットするかどうかは要件次第だが、
     // ここでは単純に切り替えるだけにする（データは保持される可能性があるため注意）
     if (categoryId === 'itpassport') {
-      setFormData(prev => ({ ...prev, problemType: '選択問題', category: '4択問題' }));
+      setFormData(prev => ({ ...prev, problemType: '選択問題', category: '選択問題' }));
     } else {
       setFormData(prev => ({ ...prev, problemType: 'コーディング問題', category: 'プログラミング基礎' }));
     }
@@ -320,7 +320,7 @@ export default function CreateProgrammingQuestionPage() {
         problemType: selectedCategory === 'itpassport' ? '選択問題' : 'コーディング問題',
         difficulty: 4,
         timeLimit: 10,
-        category: selectedCategory === 'itpassport' ? '4択問題' : 'プログラミング基礎',
+        category: selectedCategory === 'itpassport' ? '選択問題' : 'プログラミング基礎',
         topic: '標準入力',
         tags: [],
         description: '',
