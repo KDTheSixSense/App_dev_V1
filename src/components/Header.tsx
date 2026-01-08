@@ -491,14 +491,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
                   ノーコード
                 </Link>
                 <Link
-                  href="/terms"
+                  href="/terms_account"
                   onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   利用規約
                 </Link>
                 <Link
-                  href="/privacypolicy"
+                  href="/privacypolicy_account"
                   onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
