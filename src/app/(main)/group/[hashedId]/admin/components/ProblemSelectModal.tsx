@@ -24,7 +24,6 @@ export const ProblemSelectModal: React.FC<ProblemSelectModalProps> = ({
 }) => {
     const [activeFilter, setActiveFilter] = React.useState<'programming' | 'selection'>('programming');
     if (!isOpen) return null;
-
     return (
         <div style={{
             position: 'fixed',
@@ -239,89 +238,100 @@ export const ProblemSelectModal: React.FC<ProblemSelectModalProps> = ({
                                         flexDirection: 'column',
                                         gap: '8px'
                                     }}>
-                                        {currentProblems.map(problem => (
-                                            <div
-                                                key={problem.id}
-                                                style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    padding: '12px 16px',
-                                                    border: '1px solid #e0e0e0',
-                                                    borderRadius: '8px',
-                                                    backgroundColor: '#fff',
-                                                    transition: 'background-color 0.2s, border-color 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.backgroundColor = '#f8f9fa';
-                                                    e.currentTarget.style.borderColor = '#1976d2';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.backgroundColor = '#fff';
-                                                    e.currentTarget.style.borderColor = '#e0e0e0';
-                                                }}
-                                            >
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{
-                                                        fontSize: '16px',
-                                                        fontWeight: '500',
-                                                        color: '#3c4043',
-                                                        marginBottom: '4px'
-                                                    }}>
-                                                        {problem.title}
-                                                    </div>
-                                                    <div style={{
-                                                        fontSize: '14px',
-                                                        color: '#5f6368',
+                                        {currentProblems.map(problem => {
+                                            // 1. まず元の難易度を取得
+                                            const rawDifficulty = typeof (problem.difficulty || problem.difficultyId) === 'object'
+                                                ? (problem.difficulty?.id || problem.difficultyId?.id || 1)
+                                                : (problem.difficulty || problem.difficultyId || 1);
+
+                                            // 2. 6以上の時は3にするロジックを適用
+                                            const displayDifficulty = rawDifficulty >= 6 ? 3 : rawDifficulty;
+
+                                            return (
+                                                <div
+                                                    key={problem.id}
+                                                    style={{
                                                         display: 'flex',
+                                                        justifyContent: 'space-between',
                                                         alignItems: 'center',
-                                                        gap: '8px'
-                                                    }}>
-                                                        <span>難易度:</span>
+                                                        padding: '12px 16px',
+                                                        border: '1px solid #e0e0e0',
+                                                        borderRadius: '8px',
+                                                        backgroundColor: '#fff',
+                                                        transition: 'background-color 0.2s, border-color 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.backgroundColor = '#f8f9fa';
+                                                        e.currentTarget.style.borderColor = '#1976d2';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.backgroundColor = '#fff';
+                                                        e.currentTarget.style.borderColor = '#e0e0e0';
+                                                    }}
+                                                >
+                                                    <div style={{ flex: 1 }}>
                                                         <div style={{
+                                                            fontSize: '16px',
+                                                            fontWeight: '500',
+                                                            color: '#3c4043',
+                                                            marginBottom: '4px'
+                                                        }}>
+                                                            {problem.title}
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '14px',
+                                                            color: '#5f6368',
                                                             display: 'flex',
                                                             alignItems: 'center',
-                                                            gap: '4px'
+                                                            gap: '8px'
                                                         }}>
-                                                            {[...Array(5)].map((_, index) => (
-                                                                <div
-                                                                    key={index}
-                                                                    style={{
-                                                                        width: '12px',
-                                                                        height: '12px',
-                                                                        borderRadius: '50%',
-                                                                        backgroundColor: index < (problem.difficulty || problem.difficultyId || 1) ? '#ff9800' : '#e0e0e0'
-                                                                    }}
-                                                                />
-                                                            ))}
-                                                            <span style={{ marginLeft: '4px' }}>
-                                                                ({typeof (problem.difficulty || problem.difficultyId) === 'object' 
-                                                                    ? (problem.difficulty?.id || problem.difficultyId?.id || 1)
-                                                                    : (problem.difficulty || problem.difficultyId || 1)}/5)
-                                                            </span>
+                                                            <span>難易度:</span>
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px'
+                                                            }}>
+                                                                {/* 3. 表示用難易度を使って星(丸)を描画 */}
+                                                                {[...Array(5)].map((_, index) => (
+                                                                    <div
+                                                                        key={index}
+                                                                        style={{
+                                                                            width: '12px',
+                                                                            height: '12px',
+                                                                            borderRadius: '50%',
+                                                                            // ここで displayDifficulty を使用して判定
+                                                                            backgroundColor: index < displayDifficulty ? '#ff9800' : '#e0e0e0'
+                                                                        }}
+                                                                    />
+                                                                ))}
+                                                                <span style={{ marginLeft: '4px' }}>
+                                                                    {/* 4. テキストも3/5に合わせる（必要に応じて rawDifficulty に戻してもOK） */}
+                                                                    ({displayDifficulty}/5)
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </div>
+                                                    <button
+                                                        onClick={() => currentHandler(problem)}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            border: '1px solid #1976d2',
+                                                            background: '#1976d2',
+                                                            color: 'white',
+                                                            borderRadius: '4px',
+                                                            cursor: 'pointer',
+                                                            fontSize: '14px',
+                                                            fontWeight: '500',
+                                                            transition: 'background-color 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1976d2'}
+                                                    >
+                                                        選択
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={() => currentHandler(problem)}
-                                                    style={{
-                                                        padding: '8px 16px',
-                                                        border: '1px solid #1976d2',
-                                                        background: '#1976d2',
-                                                        color: 'white',
-                                                        borderRadius: '4px',
-                                                        cursor: 'pointer',
-                                                        fontSize: '14px',
-                                                        fontWeight: '500',
-                                                        transition: 'background-color 0.2s'
-                                                    }}
-                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1976d2'}
-                                                >
-                                                    選択
-                                                </button>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 ) : (
                                     <div style={{
