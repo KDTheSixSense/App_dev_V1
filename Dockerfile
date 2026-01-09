@@ -6,10 +6,12 @@ FROM node:20-alpine3.20 AS builder
 ARG DATABASE_URL
 ARG NEXT_PUBLIC_APP_URL
 ARG NEXTAUTH_URL
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
 ENV DATABASE_URL=$DATABASE_URL
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXTAUTH_URL=$NEXTAUTH_URL
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
 WORKDIR /app
 
@@ -25,8 +27,40 @@ RUN npm install
 # プロジェクトのソースコードを全部コピー
 COPY src/ .
 RUN npx prisma generate
-RUN npm run build
+RUN SKIP_ENV_VALIDATION=1 npm run build
 
+# --------------------------------------------------------------------
+# ステージ1.5: 開発用 (Development / 開発環境用のフルセット)
+# --------------------------------------------------------------------
+FROM node:20-alpine3.20 AS dev
+
+WORKDIR /app
+
+# Native modules build dependencies and Linting tools
+# runnerと同じツール群に加えて、make g++なども入れておく
+RUN apk update && apk add --no-cache \
+    python3 make g++ \
+    openssl \
+    curl \
+    postgresql-client \
+    openjdk21 \
+    php py3-pyflakes dotnet8-sdk \
+    && npm install -g typescript @types/node
+
+# 依存関係のファイルをコピー
+COPY src/package.json src/package-lock.json* ./
+
+# 全依存関係をインストール (devDependencies含む)
+RUN npm install
+
+# ソースコードをコピー
+COPY src/ .
+
+# Prisma Generate
+RUN npx prisma generate
+
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
 # --------------------------------------------------------------------
 # ステージ2: ランナー (Runner / アプリ用のお弁当箱)
 # --------------------------------------------------------------------
@@ -36,7 +70,12 @@ FROM node:20-alpine3.20 AS runner
 RUN apk update && apk add --no-cache \
     openssl \
     curl \
-    postgresql-client
+    postgresql-client \
+    python3 \
+    openjdk21 \
+    gcc g++ musl-dev \
+    php py3-pyflakes dotnet8-sdk \
+    && npm install -g typescript @types/node
 
 WORKDIR /app
 
@@ -83,12 +122,23 @@ FROM node:20-bookworm AS sandbox-env
 #    (iptablesはNetworkPolicyで代用するため除外しました)
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
+    wget \
+    gnupg \
+    apt-transport-https \
+    && mkdir -p /etc/apt/keyrings \
+    && wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc \
+    && echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb bookworm main" | tee /etc/apt/sources.list.d/adoptium.list \
+    && wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb \
+    && apt-get update \
+    && apt-get -y install --no-install-recommends \
+    temurin-21-jdk \
     python3 \
     python3-pip \
-    openjdk-17-jdk \
     build-essential \
-    mono-mcs \
     php-cli \
+    dotnet-sdk-8.0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

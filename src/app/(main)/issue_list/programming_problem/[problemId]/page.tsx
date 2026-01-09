@@ -41,6 +41,8 @@ const ProblemSolverPage = async (props: PageProps) => {
         notFound();
     }
 
+    const isFromMine = searchParams?.from === 'mine';
+
     let userCredits = 0;
     let userPetStatus = null;
 
@@ -68,6 +70,7 @@ const ProblemSolverPage = async (props: PageProps) => {
             initialProblem={problem}
             initialCredits={userCredits}
             initialPetStatus={userPetStatus}
+            isFromMine={isFromMine}
         />
     );
 };

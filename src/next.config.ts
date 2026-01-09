@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   /* config options here */
 
   output: 'standalone',
+
+  // Environment variable mapping for development (and fallback)
+  env: {
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
+  },
+
   reactStrictMode: false,
   transpilePackages: ['three', 'three-stdlib', '@react-three/drei', 'troika-three-text', 'troika-worker-utils'],
   images: {

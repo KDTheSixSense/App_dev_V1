@@ -2,11 +2,11 @@ import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { detectThreatType } from "@/lib/waf";
 
-export { default } from "next-auth/middleware";
+// export { default } from "next-auth/middleware";
 
 const secret = process.env.NEXTAUTH_SECRET;
 
-export async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const session = await getToken({ req, secret });
   const { pathname, searchParams } = req.nextUrl;
 
@@ -67,3 +67,5 @@ export const config = {
     "/group/select-page/:path*",
   ],
 };
+
+

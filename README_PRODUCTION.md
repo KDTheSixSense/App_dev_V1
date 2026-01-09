@@ -26,6 +26,9 @@ cd src
 # 2. 接続先URLを設定（PowerShell用）
 $env:DATABASE_URL="postgresql://user:password@localhost:6543/mydatabase"
 
+# 2.0 以下のコマンドが実行できなかった場合
+npm install
+
 # 3. Seedコマンドを実行
 npx prisma db seed
 

@@ -135,7 +135,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   };
 
   const [problem, setProblem] = useState<SerializableProblem>(() => formatProblem(initialProblem));
-  const [credits, setCredits] = useState(initialCredits);
+  // const [credits, setCredits] = useState(initialCredits);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
@@ -192,7 +192,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   useEffect(() => {
     // ページ遷移時に状態をリセット
     setProblem(formatProblem(initialProblem));
-    setCredits(initialCredits);
+    // setCredits(initialCredits);
     setSelectedAnswer(null);
     setIsAnswered(false);
     setChatMessages([{ sender: 'kohaku', text: textResources.ja.problemStatement.hintInit }]);
@@ -316,20 +316,20 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   }, []);
 
   const handleUserMessage = async (message: string) => {
-    if (credits <= 0) {
-      setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
-      return;
-    }
+    // if (credits <= 0) {
+    //   setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
+    //   return;
+    // }
 
     setChatMessages((prev) => [...prev, { sender: 'user', text: message }]);
     setIsAiLoading(true);
 
     try {
       // クレジット消費
-      const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
-      setCredits(data.newCredits);
+      // const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
+      // const data = await res.json();
+      // if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
+      // setCredits(data.newCredits);
 
       // AIへ質問
       const context = {
@@ -387,7 +387,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
 
         {/* 右カラム：コハクチャット & クレジット */}
         <div className="lg:w-1/3 w-full lg:sticky lg:top-10 mt-8 lg:mt-0">
-          <div className="bg-white p-3 rounded-t-lg shadow-lg border-b text-center">
+          {/* <div className="bg-white p-3 rounded-t-lg shadow-lg border-b text-center">
             <p className="text-sm text-gray-600">
               AIアドバイス残り回数: <span className="font-bold text-lg text-blue-600">{credits}</span> 回
             </p>
@@ -396,14 +396,14 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
                 (XPを消費して増やす)
               </Link>
             )}
-          </div>
+          </div> */}
           <KohakuChat
             messages={chatMessages}
             onSendMessage={handleUserMessage}
             language={language}
-            textResources={{ ...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder }}
+            textResources={{ ...t, chatInputPlaceholder: t.chatInputPlaceholder }}
             isLoading={isPending || isAiLoading}
-            isDisabled={credits <= 0 || isPending || isAiLoading}
+            isDisabled={isPending || isAiLoading}
             kohakuIcon={kohakuIcon}
           />
         </div>

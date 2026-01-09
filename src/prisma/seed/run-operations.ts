@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { seedKobeTaroData } from './kobe-taro-data';
 // 注意: actions.ts はサーバーコンポーネントの機能('use server')に依存しているため、
 // seedスクリプトから直接インポートするとエラーになる可能性があります。
 // そのため、ロジックをこのファイルに再実装するか、actions.tsから'use server'を含まないヘルパー関数として
@@ -65,9 +66,11 @@ export async function runOperations(prisma: PrismaClient) {
     // --- 課題データを作成 ---
     assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-10-30T23:59:59Z') });
 
-    if (problemFizzBuzz) {
-      assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '[アルゴリズム] FizzBuzz問題', description: '添付の問題を解き、プログラミングの基本的なループと条件分岐の理解を深めましょう。', due_date: new Date('2025-11-20T23:59:59Z'), programmingProblemId: problemFizzBuzz.id });
-    }
+    // Constraint violation fix: This assignment conflicts with kobe-taro-data.ts which also uses problemFizzBuzz.id.
+    // Since programmingProblemId is unique in Assignment, we cannot create it here if we want kobe-taro-data.ts to succeed.
+    // if (problemFizzBuzz) {
+    //   assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '[アルゴリズム] FizzBuzz問題', description: '添付の問題を解き、プログラミングの基本的なループと条件分岐の理解を深めましょう。', due_date: new Date('2025-11-20T23:59:59Z'), programmingProblemId: problemFizzBuzz.id });
+    // }
     if (problemPythonVar) {
       // ユーザーが以前アクセスしていたID 9に合わせて、この課題をID 9にする
       assignmentsToCreate.push({ id: 9, groupid: kditGroup.id, title: '[Python基礎] 変数宣言の基本', description: '添付の選択問題を解いて、Pythonにおける正しい変数宣言の方法を理解しましょう。', due_date: new Date('2025-10-31T23:59:59Z'), selectProblemId: problemPythonVar.id });
@@ -88,6 +91,15 @@ export async function runOperations(prisma: PrismaClient) {
       }
     }
     console.log(`✅ Created ${assignmentsToCreate.length} assignments.`);
+
+    // 3.5. 手動ID指定によるシーケンスの不整合を修正 (PostgreSQL固有)
+    // ID=9などを手動で挿入した後、シーケンスが遅れていると次のauto-incrementで衝突するため
+    try {
+      await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"Assignment"', 'id'), (SELECT MAX(id) FROM "Assignment"))`);
+      console.log('✅ Sequence for Assignment ID reset to match max ID.');
+    } catch (e) {
+      console.warn('⚠️ Failed to reset sequence (Not PostgreSQL?):', e);
+    }
 
     // 4. 作成した課題をメンバーに配布 (Submissions作成)
     console.log('🌱 Distributing assignments to members...');
@@ -196,6 +208,10 @@ export async function runOperations(prisma: PrismaClient) {
 
   // 5. ダミーのデイリーアクティビティサマリーを生成
   await seedDailyActivities(prisma);
+
+  // 6. 神戸太郎専用の追加シードを実行
+  await seedKobeTaroData(prisma);
+
   console.log('✅ Post-seeding operations completed.');
 }
 

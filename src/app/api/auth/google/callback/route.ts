@@ -6,31 +6,23 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { sessionOptions } from '@/lib/session';
 import { updateUserLoginStats } from '@/lib/actions';
+import { env } from '@/lib/env';
 
 export async function GET(req: NextRequest) {
-  // 必須の環境変数が設定されているかを確認
-  if (!process.env.NEXT_PUBLIC_APP_URL || !process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    console.error('【Google OAuth Callback】: 必要な環境変数が設定されていません。');
-    return NextResponse.json(
-      { error: "サーバー設定が不完全です。管理者にお問い合わせください。" },
-      { status: 500 }
-    );
-  }
-
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
 
   if (!code) {
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=google_auth_failed`
+      `${env.NEXT_PUBLIC_APP_URL}/auth/login?error=google_auth_failed`
     );
   }
 
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
+  const redirectUri = `${env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
 
   const oAuth2Client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
+    env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    env.GOOGLE_CLIENT_SECRET,
     redirectUri
   );
 
@@ -42,7 +34,7 @@ export async function GET(req: NextRequest) {
     // 2. アクセストークンを使い、Googleからユーザー情報を取得
     const ticket = await oAuth2Client.verifyIdToken({
       idToken: tokens.id_token!,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
@@ -88,7 +80,7 @@ export async function GET(req: NextRequest) {
       // console.log(`Google Callback: 既存ユーザー ${email} (ID: ${existingUser.id}) でログインしました。`);
 
       // ホーム画面にリダイレクト
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/home`);
+      return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/home`);
     } else {
       // 5b. 新規ユーザー: 一時セッションに保存し、確認画面へリダイレクト
       session.googleSignupProfile = {
@@ -101,7 +93,7 @@ export async function GET(req: NextRequest) {
       // console.log(`Google Callback: 新規ユーザー ${email} を確認待ちセッションに保存しました。`);
 
       // 新規登録確認ページにリダイレクト
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/auth/google/confirm`);
+      return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/auth/google/confirm`);
     }
 
   } catch (error: any) {
@@ -128,7 +120,7 @@ export async function GET(req: NextRequest) {
     console.error('-----------------------------');
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=google_callback_failed`
+      `${env.NEXT_PUBLIC_APP_URL}/auth/login?error=google_callback_failed`
     );
   }
 }

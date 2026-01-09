@@ -119,7 +119,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   const [isAiLoading, setIsAiLoading] = useState(false);
 
   const [problem, setProblem] = useState<SerializableProblem | null>(initialProblem);
-  const [credits, setCredits] = useState(initialCredits);
+  // const [credits, setCredits] = useState(initialCredits);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
@@ -175,7 +175,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   useEffect(() => {
     if (initialProblem) {
       setProblem(initialProblem);
-      setCredits(initialCredits);
+      // setCredits(initialCredits);
       setSelectedAnswer(null);
       setIsAnswered(false);
       setChatMessages([{ sender: 'kohaku', text: textResources[language].problemStatement.hintInit }]);
@@ -281,10 +281,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
   };
 
   const handleUserMessage = async (message: string) => {
-    if (credits <= 0) {
-      setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
-      return;
-    }
+    // if (credits <= 0) {
+    //   setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
+    //   return;
+    // }
     if (!problem) {
       setChatMessages(prev => [...prev, { sender: 'kohaku', text: '問題データが読み込まれていません。' }]);
       return;
@@ -296,13 +296,13 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
     try {
       // クレジット消費API呼び出し (パスを確認)
-      const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'クレジットの更新に失敗しました。');
-      }
-      const data = await res.json();
-      setCredits(data.newCredits); // 新しいクレジット数で更新
+      // const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
+      // if (!res.ok) {
+      //   const data = await res.json();
+      //   throw new Error(data.error || 'クレジットの更新に失敗しました。');
+      // }
+      // const data = await res.json();
+      // setCredits(data.newCredits); // 新しいクレジット数で更新
 
       // AIに渡すコンテキスト情報 (A問題用に調整)
       const context = {
@@ -365,7 +365,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
 
         {/*  右側: コハクチャットエリア */}
         <div className="lg:w-1/2 w-full lg:sticky lg:top-10"> {/* 追従させる */}
-          <div className="bg-white p-3 rounded-t-lg shadow-lg border-b text-center">
+          {/* <div className="bg-white p-3 rounded-t-lg shadow-lg border-b text-center">
             <p className="text-sm text-gray-600">
               AIアドバイス残り回数: <span className="font-bold text-lg text-blue-600">{credits}</span> 回
             </p>
@@ -376,7 +376,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
               </Link>
             )}
 
-          </div>
+          </div> */}
           {/* KohakuChat コンポーネントを表示 */}
           <KohakuChat
             messages={chatMessages}

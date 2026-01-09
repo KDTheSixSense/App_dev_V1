@@ -19,7 +19,7 @@ export async function GET(request: Request, context: { params: Promise<{ problem
             where: { id: problemId },
             include: {
                 sampleCases: true,
-                // testCases: true, // セキュリティ対策: テストケース（正解データ）はクライアントに返さない
+                testCases: true,
                 files: true,
             },
         });

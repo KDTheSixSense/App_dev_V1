@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    console.log('[API] Submit Assignment Body:', JSON.stringify(body, null, 2));
 
     // Validate request body
     const validationResult = submissionSchema.safeParse(body);
@@ -111,6 +112,7 @@ export async function POST(req: NextRequest) {
             description: description || '',
             ...(codingId !== undefined && { codingid: Number(codingId) }),
             submitted_at: new Date(),
+            language: language,
           },
         });
       } else {
@@ -123,6 +125,7 @@ export async function POST(req: NextRequest) {
             description: description || '',
             codingid: codingId ? Number(codingId) : 0,
             submitted_at: new Date(),
+            language: language,
           },
         });
       }

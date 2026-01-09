@@ -156,13 +156,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setVariables,
     setCurrentTraceLine,
     setTraceHistory,
-    setIsPresetSelected
+    setIsPresetSelected,
+    selectedLogicVariant // Hookから受け取る
   } = useTraceProblem({ problem: problem, language: 'ja' }); // language state is defined below
 
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('ja');
-  const [credits, setCredits] = useState(initialCredits);
+  // const [credits, setCredits] = useState(initialCredits);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const startTimeRef = useRef<number | null>(null);
   const [answerEffectType, setAnswerEffectType] = useState<'correct' | 'incorrect' | null>(null); // エフェクトタイプを追加
@@ -178,7 +179,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     return '/images/Kohaku/kohaku-normal.png';
   });
 
-  const [selectedLogicVariant, setSelectedLogicVariant] = useState<string | null>(null);
+  // const [selectedLogicVariant, setSelectedLogicVariant] = useState<string | null>(null); // 削除: HookのStateを使用するため重複している
 
   // ペット情報の取得ロジック (ProblemSolverPage.tsxと同様)
   const refetchPetStatus = useCallback(async () => {
@@ -273,7 +274,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     setChatMessages([
       { sender: 'kohaku', text: textResources[language].problemStatement.hintInit },
     ]);
-    setCredits(initialCredits);
+    // setCredits(initialCredits);
     // コンポーネントマウント時に開始時刻を記録
     startTimeRef.current = Date.now();
     console.log(`Problem ${problemData.id} mounted at: ${startTimeRef.current}`);
@@ -314,7 +315,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     if (correct) {
       try {
         const problemId = parseInt(problem.id, 10);
-        
+
         // 【追加】経験値付与前のレベルを取得
         let previousLevel = 0;
         const preRes = await fetch('/api/pet/status', { cache: 'no-store' });
@@ -323,7 +324,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
           previousLevel = data?.level || 0;
         }
 
-        const result = await awardXpForCorrectAnswer(problemId, undefined, 3); 
+        const result = await awardXpForCorrectAnswer(problemId, undefined, 3);
         if (result.message === '経験値を獲得しました！') {
           window.dispatchEvent(new CustomEvent('petStatusUpdated'));
 
@@ -384,18 +385,18 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
     // ユーザーのメッセージは常にチャット履歴に追加
     setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
 
-    if (credits <= 0) {
-      setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
-      return;
-    }
+    // if (credits <= 0) {
+    //   setChatMessages(prev => [...prev, { sender: 'kohaku', text: t.noCreditsMessage }]);
+    //   return;
+    // }
 
     setIsAiLoading(true);
 
     try {
-      const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
-      setCredits(data.newCredits);
+      // const res = await fetch('/api/User/decrement-credit', { method: 'POST' });
+      // const data = await res.json();
+      // if (!res.ok) throw new Error(data.error || 'クレジットの更新に失敗しました。');
+      // setCredits(data.newCredits);
 
       const context = {
         problemTitle: problem.title[currentLang],
@@ -427,14 +428,14 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
       >
         <span className="font-semibold text-gray-700 text-sm">{t.kohakuChatTitle}</span>
         <div className="text-xs text-gray-600 flex items-center gap-1">
-          {t.creditsLabel}
+          {/* {t.creditsLabel}
           <span className="font-bold text-base text-blue-600">{credits}</span>
           {t.creditsUnit}
           {credits <= 0 && (
             <Link href="/profile" className="text-xs text-blue-500 hover:underline ml-1">
               {t.increaseCreditsLink}
             </Link>
-          )}
+          )} */}
         </div>
         <span className={`transform transition-transform duration-200 ${isChatOpen ? 'rotate-180' : 'rotate-0'}`}>▼</span>
       </button>
@@ -445,9 +446,9 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, initialCr
             messages={chatMessages}
             onSendMessage={handleUserMessage}
             language={language}
-            textResources={{ ...t, chatInputPlaceholder: credits > 0 ? t.chatInputPlaceholder : t.noCreditsPlaceholder }}
+            textResources={{ ...t, chatInputPlaceholder: t.chatInputPlaceholder }}
             isLoading={isAiLoading}
-            isDisabled={isAiLoading || credits <= 0}
+            isDisabled={isAiLoading}
             kohakuIcon={kohakuIcon}
           />
         </div>

@@ -50,11 +50,14 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }} # 例: rnagashiro/my-nextjs-app:d65b5c1
           labels: ${{ steps.meta.outputs.labels }}
+          # ★★★ ここに変数を追加して焼き込みます ★★★
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            NEXT_PUBLIC_APP_URL=https://infopia.nqg1t0.com
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+            NEXTAUTH_URL=https://infopia.nqg1t0.com
           no-cache: true
-          # ★★★ 修正点 ★★★
           # "runner" ステージをビルド対象として指定
           target: runner
 
@@ -67,13 +70,17 @@ jobs:
           # タグの末尾に '-migrator' をつける
           tags: ${{ steps.meta.outputs.tags }}-migrator # 例: rnagashiro/my-nextjs-app:d65b5c1-migrator
           labels: ${{ steps.meta.outputs.labels }}
+          # ★ Migratorも同じbuilderステージを使うので、キャッシュヒットのために同じ引数を渡すのが無難
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
+            NEXT_PUBLIC_APP_URL=https://infopia.nqg1t0.com
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+            NEXTAUTH_URL=https://infopia.nqg1t0.com
           no-cache: true
           # ビルド対象として 'migrator' ステージを指定
           target: migrator
+
       # --- Sandbox (コード実行環境) イメージのビルド ---
-      # ★★★ ここを追加 ★★★
       - name: Build and push Sandbox image
         uses: docker/build-push-action@v6
         with:
@@ -85,6 +92,7 @@ jobs:
           no-cache: true
           # ★ Dockerfile内の 'sandbox-env' ステージを指定
           target: sandbox-env
+
   # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
   update-manifest:
     runs-on: ubuntu-latest

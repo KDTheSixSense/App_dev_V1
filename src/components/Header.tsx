@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import {getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
+import { getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
 
 type UserWithPetStatus = User & {
@@ -332,12 +332,12 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
             return (
               <li key={item.label}>
-                <button 
-                  onClick={() => window.location.href = item.href} 
-                  className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg transition-colors hover:bg-[#b2ebf2]`} 
+                <button
+                  onClick={() => window.location.href = item.href}
+                  className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg transition-colors hover:bg-[#b2ebf2]`}
                 >
                   <Image src={item.icon} alt={item.label} width={40} height={40} unoptimized />
-                  
+
                   <span className={`text-xs mt-1 font-bold ${isActive ? 'text-[#f0b084]' : 'text-[#008391]'}`}>
                     {item.label}
                   </span>
@@ -375,7 +375,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
       {/* 右側：ユーザー情報 */}
       <div className="flex items-center gap-4 ml-6 h-full">
-        
+
 
         {/* ランクとログイン日数 */}
         <div className="flex items-center gap-4 h-full pt-1 w-35">
@@ -430,7 +430,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
               <span className="inline-flex justify-end items-end text-[12px] font-bold text-[#1f758b] whitespace-nowrap mt-auto">RANK </span>
               <span className="inline-flex justify-end items-end text-lg font-bold text-[#1f758b] ml-1 mt-auto">{rank}</span>
             </div>
-          </div>          
+          </div>
         </div>
 
         {/* プロフィールアイコン (プルダウンメニュー付き) */}
@@ -478,6 +478,13 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
                   問題解答履歴
                 </Link>
                 <Link
+                  href="/web_code"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  Web版コード
+                </Link>
+                <Link
                   href="/customize_trace"
                   onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
@@ -492,14 +499,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
                   ノーコード
                 </Link>
                 <Link
-                  href="/terms"
+                  href="/terms_account"
                   onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   利用規約
                 </Link>
                 <Link
-                  href="/privacypolicy"
+                  href="/privacypolicy_account"
                   onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >

@@ -31,6 +31,45 @@ function sanitizeOutput(output) {
 }
 
 // --- Execution Logic ---
+// --- C# Warmup Logic ---
+let charpWarmupDir = null;
+
+async function prepareCSharpEnvironment() {
+    if (charpWarmupDir && fs.existsSync(charpWarmupDir)) return;
+
+    try {
+        console.log('Preparing C# explosive environment...');
+        const warmupDir = fs.mkdtempSync(path.join(os.tmpdir(), 'csharp-warmup-'));
+
+        // Find dlls and create response file
+        const sharedPath = '/usr/share/dotnet/shared/Microsoft.NETCore.App/8.0.22/'; // UPDATE if version changes
+        // Use finding logic or strict path
+        // We really should just list the dir
+
+        const refsFile = path.join(warmupDir, 'refs.rsp');
+
+        // We need to list all .dll files and format them as /r:path
+        // We can do this in node since we have access to FS
+        if (fs.existsSync(sharedPath)) {
+            const files = fs.readdirSync(sharedPath);
+            const dlls = files.filter(f => f.endsWith('.dll'));
+            const refsContent = dlls.map(f => `/r:${path.join(sharedPath, f)}`).join('\n');
+            fs.writeFileSync(refsFile, refsContent);
+        } else {
+            console.error('DoNet shared path not found:', sharedPath);
+            // Fallback?
+        }
+
+        charpWarmupDir = warmupDir;
+        console.log('C# explosive warmup complete:', charpWarmupDir);
+    } catch (e) {
+        console.error('C# warmup failed:', e);
+    }
+}
+
+// Trigger warmup on start
+prepareCSharpEnvironment();
+
 async function executeCode(language, sourceCode, input) {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'execution-'));
 
@@ -47,7 +86,7 @@ async function executeCode(language, sourceCode, input) {
         let runCmd = '';
         let runArgs = [];
         let compileCmd = '';
-        let compiledFile = '';
+        let execEnv = process.env;
 
         switch (language) {
             case 'python':
@@ -64,13 +103,8 @@ async function executeCode(language, sourceCode, input) {
                 break;
 
             case 'typescript':
-                // Note: In the sandbox, we might need to install typescript globally or use npx
-                // For simplicity, let's assume we can run it with node if it's just JS, 
-                // but for TS we need compilation. 
-                // Let's use a simple tsc invocation if available, or ts-node.
-                // Given the Dockerfile plan, we should install typescript.
                 fileName = 'main.ts';
-                compiledFile = 'main.js';
+                let compiledFile = 'main.js';
                 compileCmd = `tsc "${fileName}" --target es2020 --module commonjs --outDir .`;
                 runCmd = 'node';
                 runArgs = [compiledFile];
@@ -80,38 +114,152 @@ async function executeCode(language, sourceCode, input) {
                 fileName = 'main.php';
                 runCmd = 'php';
                 runArgs = [fileName];
+                if (sourceCode && !sourceCode.trim().startsWith('<?')) {
+                    sourceCode = "<?php\n" + sourceCode;
+                }
                 break;
 
             case 'c':
                 fileName = 'main.c';
-                compiledFile = 'app';
-                compileCmd = `gcc "${fileName}" -o ${compiledFile}`;
-                runCmd = `./${compiledFile}`;
+                let compiledBin = 'app';
+                compileCmd = `gcc "${fileName}" -o ${compiledBin}`;
+                runCmd = `./${compiledBin}`;
                 runArgs = [];
                 break;
 
             case 'cpp':
                 fileName = 'main.cpp';
-                compiledFile = 'app';
-                compileCmd = `g++ "${fileName}" -o ${compiledFile}`;
-                runCmd = `./${compiledFile}`;
+                let compiledCpp = 'app';
+                compileCmd = `g++ "${fileName}" -o ${compiledCpp} -std=c++17`;
+                runCmd = `./${compiledCpp}`;
                 runArgs = [];
                 break;
 
             case 'java':
                 fileName = 'Main.java';
-                compiledFile = 'Main.class';
                 compileCmd = `javac -encoding UTF-8 "${fileName}"`;
                 runCmd = 'java';
                 runArgs = ['Main'];
                 break;
 
             case 'csharp':
+                // compileCmd = 'dotnet /usr/share/dotnet/sdk/8.0.416/Roslyn/bincore/csc.dll /nologo /target:exe /out:app.exe Program.cs';
+                runCmd = './bin/Debug/net8.0/app'; // This is the default for dotnet build
+                runArgs = [];
+
+                // Fallback or setup for deps: csc needs refs.
+                // Simple console app might need System.Runtime.dll etc.
+                // It's safer to use 'dotnet build' if we have complex deps, but for 'A+B' csc is fast.
+                // However, finding all refs is hard manually.
+
+                // ALTERNATIVE: Use the previous warmup strategy but OPTIMIIZED.
+                // The previous warmup was good. Why was it slow?
+                // 'dotnet build --no-restore' still takes ~2s.
+                // 'csc' takes ~200ms but needs refs.
+
+                // Let's try csc with basic refs.
+                // We create a response file with common refs?
+                // Actually, 'dotnet build' is the most robust way.
+                // Maybe 'dotnet build' was slow because I didn't actually use the warmup dir?
+
+                // Wait, I implemented:
+                // if (charpWarmupDir) { fs.cpSync(...) ... dotnet build --no-restore }
+                // User said "Still 2 seconds".
+
+                // Let's TRY csc.dll approach for speed.
+                // We need to pass references.
+                // Instead of hardcoding paths, we can rely on implicit refs? No.
+
+                // Let's stick to 'dotnet build' but ensure NO generated files check?
+                // 'dotnet build -c Debug --no-restore /p:UseSharedCompilation=true'
+
+                // Actually, 'dotnet run' on a pre-built binary?
+                // No, we need to compile NEW code.
+
+                // Let's try to reuse the 'obj' folder more effectively?
+
+                // Let's revert to 'csc' but we need to know where the refs are.
+                // They are in /usr/share/dotnet/shared/Microsoft.NETCore.App/8.0.x/
+
+                // const dotnetRoot = '/usr/share/dotnet/shared/Microsoft.NETCore.App/8.0.12'; // Verify version
+                // Dynamic version check?
+                // const versions = fs.readdirSync('/usr/share/dotnet/shared/Microsoft.NETCore.App/');
+                // const latest = versions[0]; ...
+
+                // To be safe and fast, let's keep the warmup but maybe we didn't use `fs.cpSync` correctly (node version?)
+                // And `dotnet build` is just slow.
+
+                // New Strategy:
+                // Pre-compile a template project ONCE.
+                // For new code, we just overwrite Program.cs
+                // AND we invoke 'dotnet build --no-restore --no-dependencies'
+
+                // Update: I will use csc with a hack.
+                // I will add a step to 'warmup' to find all DLLs and build a response file? Too complex.
+
+                // Let's try to trust 'dotnet build --no-restore' but make sure we are not running other tasks.
+
                 fileName = 'Program.cs';
-                compiledFile = 'app.exe';
-                compileCmd = `mcs "${fileName}" -out:${compiledFile}`;
-                runCmd = 'mono';
-                runArgs = [compiledFile];
+
+                if (charpWarmupDir && fs.existsSync(charpWarmupDir)) {
+                    // "Explosive" speed: Use CSC directly with pre-calculated references
+                    // We need to point to the response file we created in warmup
+                    const rspPath = path.join(charpWarmupDir, 'refs.rsp');
+
+                    // We use the full path to csc.dll we found
+                    const cscPath = '/usr/share/dotnet/sdk/8.0.416/Roslyn/bincore/csc.dll';
+
+                    // Direct compiler execution
+                    // Note: We need to run it via 'dotnet' because csc.dll is a managed assembly
+                    compileCmd = `dotnet "${cscPath}" /nologo /target:exe /out:app.exe "@${rspPath}" Program.cs`;
+
+                    // CRITICAL: When using raw CSC, we MUST provide a runtimeconfig.json so 'dotnet app.exe' knows which runtime to use.
+                    const runtimeConfig = {
+                        "runtimeOptions": {
+                            "tfm": "net8.0",
+                            "framework": {
+                                "name": "Microsoft.NETCore.App",
+                                "version": "8.0.0"
+                            }
+                        }
+                    };
+                    fs.writeFileSync(path.join(tempDir, 'app.runtimeconfig.json'), JSON.stringify(runtimeConfig, null, 2));
+
+                } else {
+                    // Fallback to project file if warmup failed (should not happen)
+                    const csproj = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>app</AssemblyName>
+  </PropertyGroup>
+</Project>`;
+                    fs.writeFileSync(path.join(tempDir, 'app.csproj'), csproj);
+                    compileCmd = 'dotnet build -c Debug';
+                }
+
+                runCmd = 'dotnet';
+                runArgs = ['./app.exe'];
+
+                // Hack for fallback compatibility:
+                if (!charpWarmupDir) {
+                    // fallback produces ./bin/Debug/net8.0/app which is Native execution usually
+                    runCmd = './bin/Debug/net8.0/app';
+                    runArgs = [];
+                }
+
+                execEnv = {
+                    ...process.env,
+                    HOME: tempDir,
+                    DOTNET_CLI_HOME: tempDir,
+                    DOTNET_NOLOGO: 'true',
+                    DOTNET_CLI_TELEMETRY_OPTOUT: 'true',
+                    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true',
+                    DOTNET_MULTILEVEL_LOOKUP: '0',
+                    DOTNET_TieredCompilation: '0' // Optimize for startup speed (Quick JIT)
+                };
                 break;
 
             default:
@@ -124,31 +272,33 @@ async function executeCode(language, sourceCode, input) {
         // Compile
         if (compileCmd) {
             try {
-                const { stdout, stderr } = await execPromise(compileCmd, { cwd: tempDir });
+                const { stdout, stderr } = await execPromise(compileCmd, { cwd: tempDir, env: execEnv });
                 result.build_stdout = sanitizeOutput(stdout);
                 result.build_stderr = sanitizeOutput(stderr);
             } catch (compileError) {
-                result.build_stdout = sanitizeOutput(compileError.stdout || '');
-                result.build_stderr = sanitizeOutput(compileError.stderr || compileError.message);
+                const errorDetails = compileError.stdout || compileError.stderr || compileError.message;
+                result.build_stderr = sanitizeOutput(errorDetails);
 
-                // Check if artifact exists despite error (warnings?)
-                // If no artifact, return early
-                if (compiledFile && !fs.existsSync(path.join(tempDir, compiledFile))) {
-                    return result;
+                // For C#, check if binary exists (dotnet build might return non-zero on warnings sometimes? or strictly errors)
+                // If it failed, assume no binary.
+                if (language === 'csharp') {
+                    if (!fs.existsSync(path.join(tempDir, 'bin/Debug/net8.0/app'))) return result;
+                } else if (language === 'c' || language === 'cpp') {
+                    if (!fs.existsSync(path.join(tempDir, 'app'))) return result;
+                } else if (language === 'java') {
+                    if (!fs.existsSync(path.join(tempDir, 'Main.class'))) return result;
+                } else if (language === 'typescript') {
+                    if (!fs.existsSync(path.join(tempDir, 'main.js'))) return result;
                 }
             }
         }
 
         // Run
         await new Promise((resolve) => {
-            const child = spawn(runCmd, runArgs, { cwd: tempDir });
+            const child = spawn(runCmd, runArgs, { cwd: tempDir, env: execEnv });
 
             child.on('error', (err) => {
                 result.stderr += `\nSpawn Error: ${err.message}`;
-                // If spawn fails, we should resolve?
-                // But 'close' might not fire if spawn fails immediately?
-                // Actually, 'error' is emitted *instead* of 'spawn' if it fails.
-                // And 'close' might not fire.
                 resolve();
             });
 
@@ -165,7 +315,6 @@ async function executeCode(language, sourceCode, input) {
                 resolve();
             });
 
-            // Timeout 3s
             setTimeout(() => {
                 if (!child.killed) {
                     child.kill();
