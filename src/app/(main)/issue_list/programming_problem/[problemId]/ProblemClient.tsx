@@ -336,32 +336,69 @@ const AiChatPanel: React.FC<{
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
     const handleSend = () => { if (input.trim() && !isLoading) { onSendMessage(input); setInput(''); } };
     return (
-        <div className="flex flex-col h-full bg-white">
-            <div className="p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg text-gray-800 flex items-center gap-2"><Sparkles className="h-5 w-5 text-cyan-500" />コハクに質問</h3></div>
-            <div className="flex-grow p-4 overflow-y-scroll space-y-4">
+        <div className="flex flex-col h-full bg-gray-50/50">
+            <div className="p-4 border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm flex-shrink-0">
+                <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-cyan-500" />
+                    <span className="bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">コハクに質問</span>
+                </h3>
+            </div>
+
+            <div className="flex-grow p-4 overflow-y-scroll space-y-6">
                 {messages.map((msg, index) => (
-                    <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.sender === 'kohaku' && (
-                            <Image
-                                src={kohakuIcon}
-                                alt="コハク"
-                                width={128}
-                                height={128}
-                                className="w-14 h-14 rounded-full flex-shrink-0 object-cover"
-                            />
+                            <div className="flex-shrink-0 relative group">
+                                <div className="absolute inset-0 bg-blue-100 rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                                <Image
+                                    src={kohakuIcon}
+                                    alt="コハク"
+                                    width={128}
+                                    height={128}
+                                    className="w-16 h-16 rounded-2xl border-2 border-white shadow-md object-cover relative z-10"
+                                />
+                            </div>
                         )}
-                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-xl shadow-sm ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white border'}`}>
-                            <p className="text-sm">{msg.text}</p>
+                        <div className={`max-w-[85%] lg:max-w-[75%] px-5 py-3 shadow-sm ${msg.sender === 'user'
+                            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-tr-sm'
+                            : 'bg-white border-gray-100 border text-gray-800 rounded-2xl rounded-tl-sm'
+                            }`}>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                         </div>
                     </div>
                 ))}
-                {isLoading && <div className="text-center text-gray-500 text-sm">コハクが考えています...</div>}
+
+                {isLoading && (
+                    <div className="flex items-center gap-3 justify-start animate-pulse">
+                        <div className="w-16 h-16 bg-gray-200 rounded-2xl flex-shrink-0"></div>
+                        <div className="flex gap-1 bg-white px-4 py-3 rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm">
+                            <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                            <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                            <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+                        </div>
+                    </div>
+                )}
                 <div ref={messagesEndRef} />
             </div>
-            <div className="p-4 bg-white border-t flex-shrink-0">
+
+            <div className="p-4 bg-white border-t flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                 <div className="flex gap-2">
-                    <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder={isLoading ? "コハクが応答中です..." : "ヒントを求める..."} disabled={isLoading} className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:bg-gray-100" />
-                    <button onClick={handleSend} disabled={isLoading} className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors disabled:bg-cyan-300 disabled:cursor-not-allowed"><Send className="h-5 w-5" /></button>
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                        placeholder={isLoading ? "コハクが応答中です..." : "ヒントを求める..."}
+                        disabled={isLoading}
+                        className="flex-grow px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+                    />
+                    <button
+                        onClick={handleSend}
+                        disabled={isLoading}
+                        className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl hover:from-cyan-600 hover:to-blue-600 transition-all shadow-sm hover:shadow active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[3rem]"
+                    >
+                        <Send className="h-5 w-5" />
+                    </button>
                 </div>
             </div>
         </div>
@@ -660,8 +697,8 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, /* initia
             />
 
             <div className="mb-2">
-                <Link 
-                    href={isFromMine ? "/issue_list/mine_issue_list/problems" : "/issue_list/programming_problem/problems"} 
+                <Link
+                    href={isFromMine ? "/issue_list/mine_issue_list/problems" : "/issue_list/programming_problem/problems"}
                     className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
                 >
                     <ArrowLeft className="h-4 w-4" />
@@ -683,7 +720,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, /* initia
 
                     <PanelGroup direction="vertical">
 
-                        <Panel defaultSize={70} minSize={25}>
+                        <Panel defaultSize={50} minSize={25}>
                             <CodeEditorPanel
                                 userCode={userCode} setUserCode={setUserCode}
                                 stdin={stdin} setStdin={setStdin}
@@ -701,7 +738,7 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, /* initia
                             <GripVertical className="h-4 w-4 text-gray-600 rotate-90" />
                         </PanelResizeHandle>
 
-                        <Panel defaultSize={30} minSize={20}>
+                        <Panel defaultSize={50} minSize={20}>
                             <ExecutionPanel
                                 stdin={stdin} setStdin={setStdin}
                                 onExecute={handleExecute} onSubmit={handleSubmit}
