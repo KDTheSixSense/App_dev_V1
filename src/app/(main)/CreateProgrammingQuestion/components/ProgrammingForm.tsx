@@ -170,20 +170,6 @@ const ProgrammingForm: React.FC<ProgrammingFormProps> = ({
                             <label className="checkbox">
                                 <input
                                     type="checkbox"
-                                    checked={formData.isPublic}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
-                                />
-                                <div className="checkbox-custom"></div>
-                            </label>
-                            <span className="checkbox-label" onClick={() => setFormData(prev => ({ ...prev, isPublic: !prev.isPublic }))}>
-                                問題を公開する
-                            </span>
-                        </div>
-
-                        <div className="checkbox-group">
-                            <label className="checkbox">
-                                <input
-                                    type="checkbox"
                                     checked={formData.allowTestCaseView}
                                     onChange={(e) => setFormData(prev => ({ ...prev, allowTestCaseView: e.target.checked }))}
                                 />

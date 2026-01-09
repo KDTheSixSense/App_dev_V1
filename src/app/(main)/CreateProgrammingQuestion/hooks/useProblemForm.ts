@@ -107,6 +107,7 @@ export const useProblemForm = () => {
                     const response = await fetch(apiUrl);
                     if (!response.ok) throw new Error(`問題データの読み込みに失敗しました (Status: ${response.status})`);
                     const data = await response.json();
+                    console.log('Fetched Problem Data:', data); // データ構造確認用ログ
 
                     if (isSelectProblem) {
                         setFormData({
@@ -155,8 +156,24 @@ export const useProblemForm = () => {
                             isPublic: data.isPublic || false,
                             allowTestCaseView: data.allowTestCaseView || false,
                         });
-                        setSampleCases(data.sampleCases?.length > 0 ? data.sampleCases : [{ id: null, input: '', expectedOutput: '', description: '' }]);
-                        setTestCases(data.testCases?.length > 0 ? data.testCases : [{ id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' }]);
+                        setSampleCases(data.sampleCases?.length > 0 ? data.sampleCases.map((sc: any) => ({
+                            id: sc.id,
+                            input: sc.input,
+                            expectedOutput: sc.expectedOutput || sc.output || '',
+                            description: sc.description
+                        })) : [{ id: null, input: '', expectedOutput: '', description: '' }]);
+                        
+                        const rawTestCases = data.testCases || data.TestCases || [];
+                        setTestCases(rawTestCases.length > 0 ? rawTestCases.map((tc: any) => {
+                            const testCase = tc.testCase || tc.TestCase || tc;
+                            return {
+                                id: testCase.id,
+                                name: testCase.name || 'ケース',
+                                input: testCase.input || testCase.Input || '',
+                                expectedOutput: testCase.expectedOutput || testCase.ExpectedOutput || testCase.output || testCase.Output || '',
+                                description: testCase.description || testCase.Description || ''
+                            };
+                        }) : [{ id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' }]);
                     }
                 } catch (error: any) {
                     toast.error(`データ読み込みエラー: ${error.message}`);
