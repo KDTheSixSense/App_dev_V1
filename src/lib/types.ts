@@ -30,4 +30,7 @@ export interface Problem {
   // sampleCasesプロパティを追加し、オプショナル（?）に設定
   sampleCases?: SampleCase[];
   imagePath?: string; // 画像パスをオプショナルで追加
+  tags?: string[]; // タグ情報を追加
+  category?: string;
+  topic?: string;
 }
