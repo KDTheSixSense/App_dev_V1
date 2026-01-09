@@ -3,6 +3,7 @@
 
 import React from 'react';
 import type { Mission } from './missionList'; // Missionの型をインポート
+import { int } from 'zod';
 
 interface MissionCardProps {
   mission: Mission;
@@ -15,6 +16,11 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission, onClaim }) => {
     (mission.progress / mission.targetCount) * 100,
     100
   );
+
+  let max_progress = mission.progress;
+  if(mission.progress >= mission.targetCount){
+    max_progress = mission.targetCount;
+  }
 
   // 達成（進捗が目標以上）しているかどうか
   const isAchieved = mission.progress >= mission.targetCount;
@@ -48,7 +54,7 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission, onClaim }) => {
             ></div>
           </div>
           <p className={`text-[12px] text-right mt-1 font-mono ${isAchieved ? 'text-cyan-800 font-bold' : 'text-slate-400'}`}>
-            {mission.progress}/{mission.targetCount}
+            {max_progress}/{mission.targetCount}
           </p>
         </div>
       </div>
