@@ -3,9 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 // 内部API呼び出し用のシークレットヘッダーキー
-// 本番環境では環境変数で管理すべきですが、今回は簡易的に定義します。
 // MiddlewareとこのAPIルート間で共有します。
-export const INTERNAL_API_KEY = 'internal-secure-ban-key-v1';
+export const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || 'internal-secure-ban-key-v1-fallback-dev';
 
 const BanDeviceSchema = z.object({
     deviceId: z.string().min(1),

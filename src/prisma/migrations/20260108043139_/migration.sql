@@ -488,6 +488,7 @@ CREATE TABLE "Create_event" (
 CREATE TABLE "Event_Participants" (
     "id" SERIAL NOT NULL,
     "isAdmin" BOOLEAN NOT NULL DEFAULT false,
+    "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "eventId" INTEGER NOT NULL,
     "userId" TEXT NOT NULL,
     "hasAccepted" BOOLEAN NOT NULL DEFAULT false,

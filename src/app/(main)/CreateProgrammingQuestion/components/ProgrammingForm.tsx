@@ -191,6 +191,10 @@ const ProgrammingForm: React.FC<ProgrammingFormProps> = ({
                     </div>
                     <div className="card-body">
                         <div className="form-group">
+                            <label className="form-label">
+                                <span className="required-badge">必須</span>
+                                問題文
+                            </label>
                             <div className="markdown-toolbar">
                                 <button type="button" className="toolbar-btn">B</button>
                                 <button type="button" className="toolbar-btn">I</button>
@@ -324,7 +328,10 @@ const ProgrammingForm: React.FC<ProgrammingFormProps> = ({
                                 </div>
                                 <div className="case-fields">
                                     <div className="form-group">
-                                        <label className="form-label">入力</label>
+                                        <label className="form-label">
+                                            <span className="required-badge">必須</span>
+                                            入力
+                                        </label>
                                         <textarea
                                             className="form-textarea"
                                             value={caseItem.input}
@@ -340,7 +347,10 @@ const ProgrammingForm: React.FC<ProgrammingFormProps> = ({
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label className="form-label">期待される出力</label>
+                                        <label className="form-label">
+                                            <span className="required-badge">必須</span>
+                                            期待される出力
+                                        </label>
                                         <textarea
                                             className="form-textarea"
                                             value={caseItem.expectedOutput}

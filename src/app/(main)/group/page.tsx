@@ -441,8 +441,7 @@ const ClassroomApp: React.FC = () => {
         <div style={{
             fontFamily: "'Hiragino Sans', 'ヒラギノ角ゴシック', 'Yu Gothic', 'メイリオ', sans-serif",
             backgroundColor: '#ffffff',
-            minHeight: '100vh',
-            paddingTop: '80px',
+            height: '100%',
             margin: 0,
             padding: 0,
             boxSizing: 'border-box'
@@ -450,7 +449,7 @@ const ClassroomApp: React.FC = () => {
             {/* レイアウトコンテナ */}
             <div style={{
                 position: 'relative',
-                minHeight: 'calc(100vh - 80px)'
+                height: '100%'
             }}>
                 {/* メインコンテンツ */}
                 <main style={{
@@ -458,9 +457,10 @@ const ClassroomApp: React.FC = () => {
                     padding: '24px',
                     transition: 'margin-left 0.3s ease',
                     backgroundColor: '#ffffff',
-                    minHeight: 'calc(100vh - 80px)',
+                    height: '100%',
                     boxSizing: 'border-box',
-                    maxWidth: '100%'
+                    maxWidth: '100%',
+                    overflowY: 'auto'
                 }}>
                     {/* 初期状態（グループなし） */}
                     {currentView === 'empty' && (

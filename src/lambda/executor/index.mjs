@@ -15,7 +15,9 @@ export const handler = async (event) => {
     try {
         fs.writeFileSync(filePath, code);
 
-        const runCmd = `node "${filePath}"`;
+        // Security Hardening: Use Node.js Permission Model (v20+)
+        // Block all FS access except for the temporary directory
+        const runCmd = `node --no-warnings --experimental-permission --allow-fs-read="${tempDir}" --allow-fs-write="${tempDir}" "${filePath}"`;
 
         // Execute
         const child = await new Promise((resolve) => {

@@ -61,6 +61,7 @@
     "server-only": "^0.0.1",
     "swiper": "^12.0.3",
     "three": "^0.181.2",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz",
     "zod": "^4.1.13"
   },
   "devDependencies": {
@@ -92,8 +93,7 @@
     "tailwindcss": "^4",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5",
-    "xlsx": "^0.18.5"
+    "typescript": "^5"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
