@@ -403,19 +403,19 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
               <svg className="w-full h-full transform -rotate-90">
                 {/* Background Circle */}
                 <circle
-                  cx="28" cy="28" r="26"
+                  cx="28" cy="28" r="22"
                   fill="transparent"
                   stroke="#E2E8F0"
                   strokeWidth="5"
                 />
                 {/* Progress Circle */}
                 <circle
-                  cx="28" cy="28" r="26"
+                  cx="28" cy="28" r="22"
                   fill="transparent"
                   stroke="#0EA5E9" // Sky blue
                   strokeWidth="5"
-                  strokeDasharray={`${2 * Math.PI * 26}`}
-                  strokeDashoffset={`${2 * Math.PI * 26 * (1 - ((Number.isNaN(progressPercentage) ? 0 : progressPercentage) / 100))}`}
+                  strokeDasharray={`${2 * Math.PI * 21}`}
+                  strokeDashoffset={`${2 * Math.PI * 21 * (1 - ((Number.isNaN(progressPercentage) ? 0 : progressPercentage) / 100))}`}
                   strokeLinecap="round"
                   className="transition-all duration-1000 ease-out"
                 />
@@ -427,7 +427,8 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
               </div>
             </div>
             <div className="absolute -bottom-1 rounded-full z-10 inline-flex items-center h-6">
-              <p className="inline-flex justify-end items-end text-[12px] font-bold text-[#1f758b] whitespace-nowrap mt-auto">RANK {rank}</p>
+              <span className="inline-flex justify-end items-end text-[12px] font-bold text-[#1f758b] whitespace-nowrap mt-auto">RANK </span>
+              <span className="inline-flex justify-end items-end text-lg font-bold text-[#1f758b] ml-1 mt-auto">{rank}</span>
             </div>
           </div>          
         </div>
