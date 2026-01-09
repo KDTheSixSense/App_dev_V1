@@ -21,6 +21,7 @@ const ProgrammingProblemsListPage = async ({
     prisma.programmingProblem.findMany({
       where: {
         isPublished: true,
+        isPublic: true,
       },
       include: {
         creator: {
