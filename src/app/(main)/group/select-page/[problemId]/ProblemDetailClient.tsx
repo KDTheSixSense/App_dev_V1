@@ -72,8 +72,19 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
   }), [searchParams]);
 
 
-  const formatProblem = (p: SelectProblem): SerializableProblem => {
+  const formatProblem = (p: SelectProblem & { imagePath?: string }): SerializableProblem => {
     const answerOptionsArray = Array.isArray(p.answerOptions) ? p.answerOptions.map(String) : [];
+    const imgRegex = /!\[.*?\]\((.*?)\)/;
+    const match = p.description.match(imgRegex);
+    
+    let displayImagePath = p.imagePath;
+    let cleanDescription = p.description;
+
+    if (match && match[1]) {
+      displayImagePath = match[1]; // 画像パスを抽出
+      // 説明文から画像タグを削除して整形
+      cleanDescription = p.description.replace(imgRegex, '').trim();
+    }
     return {
       id: String(p.id),
       logicType: 'TYPE_A',
@@ -88,6 +99,7 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
       explanationText: { ja: p.explanation || '', en: p.explanation || '' },
       initialVariables: {},
       traceLogic: [],
+      imagePath: displayImagePath
     };
   };
 
@@ -236,11 +248,12 @@ const ProblemDetailClient: React.FC<ProblemDetailClientProps> = ({ problem: init
         <div className="flex-1 bg-white p-8 rounded-lg shadow-md min-h-[800px] flex flex-col">
           <>
             <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-              問{problem.id}: {problem.title[language]}
+              {problem.title[language]}
             </h1>
             <ProblemStatement
-              description={problem.description[language]}
-              programText={problem.programLines?.[language]?.join('\n') || ''}
+              description={problem.imagePath ? "" : problem.description[language]}
+              imagePath={problem.imagePath}
+              programText=""
               answerOptions={problem.answerOptions?.[language] || []}
               onSelectAnswer={handleSelectAnswer}
               selectedAnswer={selectedAnswer}
