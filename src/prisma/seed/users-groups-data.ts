@@ -44,7 +44,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   await prisma.event_Issue_List.deleteMany({});
   await prisma.event_Participants.deleteMany({});
   await prisma.create_event.deleteMany({});
-  
+
   await prisma.userUnlockedTitle.deleteMany({});
   await prisma.userDailyMissionProgress.deleteMany({});
   await prisma.dailyActivitySummary.deleteMany({});
@@ -53,7 +53,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   await prisma.loginHistory.deleteMany({});
   await prisma.auditLog.deleteMany({});
   await prisma.bannedUser.deleteMany({});
-  
+
   await prisma.userSubjectProgress.deleteMany({});
   await prisma.status_Kohaku.deleteMany({});
 
@@ -120,21 +120,21 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
         // 複合属性確認用: アカウントレベルが29 (XP 28950) になるように、対象科目にXPを分配する
         const totalTargetXp = 28950;
         // 科目IDマッピング: 1=Prog(P), 2=BasicA(A), 3=BasicB(B), 4=Select(A), 5=Applied(O)
-        
+
         if (userData.email === 'evo_mix_ab@example.com') {
-           if (subjectId === 2 || subjectId === 3) subjectXp = Math.floor(totalTargetXp / 2); // A & B
+          if (subjectId === 2 || subjectId === 3) subjectXp = Math.floor(totalTargetXp / 2); // A & B
         } else if (userData.email === 'evo_mix_ap@example.com') {
-           if (subjectId === 2 || subjectId === 1) subjectXp = Math.floor(totalTargetXp / 2); // A & P
+          if (subjectId === 2 || subjectId === 1) subjectXp = Math.floor(totalTargetXp / 2); // A & P
         } else if (userData.email === 'evo_mix_ao@example.com') {
-           if (subjectId === 2 || subjectId === 5) subjectXp = Math.floor(totalTargetXp / 2); // A & O
+          if (subjectId === 2 || subjectId === 5) subjectXp = Math.floor(totalTargetXp / 2); // A & O
         } else if (userData.email === 'evo_mix_bp@example.com') {
-           if (subjectId === 3 || subjectId === 1) subjectXp = Math.floor(totalTargetXp / 2); // B & P
+          if (subjectId === 3 || subjectId === 1) subjectXp = Math.floor(totalTargetXp / 2); // B & P
         } else if (userData.email === 'evo_mix_bo@example.com') {
-           if (subjectId === 3 || subjectId === 5) subjectXp = Math.floor(totalTargetXp / 2); // B & O
+          if (subjectId === 3 || subjectId === 5) subjectXp = Math.floor(totalTargetXp / 2); // B & O
         } else if (userData.email === 'evo_mix_po@example.com') {
-           if (subjectId === 1 || subjectId === 5) subjectXp = Math.floor(totalTargetXp / 2); // P & O
+          if (subjectId === 1 || subjectId === 5) subjectXp = Math.floor(totalTargetXp / 2); // P & O
         } else if (userData.email === 'evo_mix_all@example.com') {
-           subjectXp = Math.floor(totalTargetXp / 5); // 全科目
+          subjectXp = Math.floor(totalTargetXp / 5); // 全科目
         }
       } else if (userData.email === 'evo_60_check@example.com') {
         // レベル59 (XP 58900) に設定。あと100XPでレベル60になる。
@@ -255,9 +255,9 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     // God以外の全ユーザーを取得
     const allUsersExceptGod = await prisma.user.findMany({
       where: {
-        email: {
-          not: 'kobe_taro@example.com'
-        }
+        // email: {
+        //   not: 'kobe_taro@example.com'
+        // }
       }
     });
 

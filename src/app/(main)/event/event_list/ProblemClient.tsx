@@ -172,8 +172,8 @@ const ProblemClient = ({ initialEvents }: ProblemClientProps) => {
         <h1 className="text-4xl font-extrabold text-gray-900 mb-4">イベント</h1>
 
         <EventActions onJoinClick={() => setモーダル表示中(true)} />
-        {/* isStartedがtrueのイベントのみをリストに表示するようにフィルタリング */}
-        <EventList events={initialEvents.filter(event => event.isStarted)} />
+        {/* すべてのイベントを表示 (フィルタリング解除) */}
+        <EventList events={initialEvents} />
 
         <参加モーダル
           表示中={モーダル表示中}

@@ -87,12 +87,87 @@ interface ProblemSolverClientProps {
 }
 
 // テキストリソースを定義
+// Text resources
 const textResources = {
     ja: {
         problemStatement: {
             nextProblemButton: '次の問題へ'
         }
     }
+};
+
+// Default Codes
+const JAVA_DEFAULT_CODE = `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        String input = scanner.next();
+        System.out.println(input);
+    }
+}`;
+
+const PYTHON_DEFAULT_CODE = `i = int(input())
+print(i)`;
+
+const JAVASCRIPT_DEFAULT_CODE = `const fs = require("fs");
+
+const input = fs.readFileSync(0, "utf8").trim();
+const i = parseInt(input);
+
+console.log(i);`;
+
+const TYPESCRIPT_DEFAULT_CODE = `const fs = require("fs");
+
+const input = fs.readFileSync(0, "utf8").trim();
+const i = parseInt(input);
+
+console.log(i);`;
+
+const C_DEFAULT_CODE = `#include <stdio.h>
+
+int main() {
+    char buffer[100];
+    scanf("%s", buffer);
+    printf("%s\\n", buffer);
+    return 0;
+}`;
+
+const CPP_DEFAULT_CODE = `#include <iostream>
+#include <string>
+
+using namespace std;
+
+int main() {
+    string input;
+    cin >> input;
+    cout << input << endl;
+    return 0;
+}`;
+
+const CSHARP_DEFAULT_CODE = `using System;
+
+public class Hello {
+    public static void Main() {
+        var line = Console.ReadLine();
+        Console.WriteLine(line);
+    }
+}`;
+
+const PHP_DEFAULT_CODE = `<?php
+    $input = trim(fgets(STDIN));
+    echo $input;
+?>`;
+
+const DEFAULT_CODES: { [key: string]: string } = {
+    'java': JAVA_DEFAULT_CODE,
+    'python': PYTHON_DEFAULT_CODE,
+    'javascript': JAVASCRIPT_DEFAULT_CODE,
+    'typescript': TYPESCRIPT_DEFAULT_CODE,
+    'c': C_DEFAULT_CODE,
+    'cpp': CPP_DEFAULT_CODE,
+    'csharp': CSHARP_DEFAULT_CODE,
+    'php': PHP_DEFAULT_CODE,
 };
 
 const CustomAlertModal: React.FC<{
@@ -434,6 +509,14 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         { value: 'php', label: 'PHP' }
     ];
 
+    const handleLanguageChange = (lang: string) => {
+        setSelectedLanguage(lang);
+        const defaultCode = DEFAULT_CODES[lang];
+        if (defaultCode !== undefined) {
+            setUserCode(defaultCode);
+        }
+    };
+
     // 利用可能なテーマのリスト
     const themes = [
         // --- 黒系 (Dark) テーマ ---
@@ -705,7 +788,7 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
                                 onExecute={handleExecute} onSubmit={handleSubmit}
                                 isSubmitting={isSubmitting} executionResult={executionResult} submitResult={submitResult}
                                 selectedLanguage={selectedLanguage} languages={languages}
-                                onLanguageSelect={setSelectedLanguage}
+                                onLanguageSelect={handleLanguageChange}
                                 selectedTheme={selectedTheme} themes={themes}
                                 onThemeSelect={setSelectedTheme}
                                 annotations={annotations}

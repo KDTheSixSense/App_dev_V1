@@ -44,13 +44,18 @@ const getPetDisplayState = (hungerLevel: number) => {
     }
 };
 
-const JAVA_DEFAULT_CODE = `public class Main{
-    public static void main(String[] args){
-        
+const JAVA_DEFAULT_CODE = `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        String input = scanner.next();
+        System.out.println(input);
     }
 }`;
 
-const PYTHON_DEFAULT_CODE = ``;
+const PYTHON_DEFAULT_CODE = `i = int(input())
+print(i)`;
 
 const JAVASCRIPT_DEFAULT_CODE = `const fs = require("fs");
 
@@ -69,14 +74,21 @@ console.log(i);`;
 const C_DEFAULT_CODE = `#include <stdio.h>
 
 int main() {
-    
+    char buffer[100];
+    scanf("%s", buffer);
+    printf("%s\\n", buffer);
     return 0;
 }`;
 
 const CPP_DEFAULT_CODE = `#include <iostream>
+#include <string>
+
+using namespace std;
 
 int main() {
-    
+    string input;
+    cin >> input;
+    cout << input << endl;
     return 0;
 }`;
 
@@ -84,12 +96,14 @@ const CSHARP_DEFAULT_CODE = `using System;
 
 public class Hello {
     public static void Main() {
-        
+        var line = Console.ReadLine();
+        Console.WriteLine(line);
     }
 }`;
 
 const PHP_DEFAULT_CODE = `<?php
-    
+    $input = trim(fgets(STDIN));
+    echo $input;
 ?>`;
 
 const DEFAULT_CODES: { [key: string]: string } = {
