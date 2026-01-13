@@ -92,9 +92,9 @@ export default async function RankingSection() {
     const tabs = [{ name: '総合' }, ...subjects.map(s => ({ name: s.name }))];
 
     return (
-        <div className="bg-[#e0f4f9] rounded-3xl p-6 shadow-sm min-h-[calc(100vh-140px)] h-full sticky top-24 flex flex-col">
+        <div className="bg-gradient-to-r from-[#e0f4f9] to-cyan-100 rounded-3xl p-6 shadow-sm h-[calc(100vh-95px)] top-24 flex flex-col">
             <h1 className="text-xl font-bold text-slate-700 mb-4 text-center">ランキング</h1>
-            <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
                 <RankingContainer
                     tabs={tabs}
                     allRankings={allRankingsForDisplay}

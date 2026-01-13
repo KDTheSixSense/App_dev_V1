@@ -152,7 +152,7 @@ export default function RankingContainer({
 
       {/* トップ100ランキングリスト (スクロール可能) */}
       {/* 下部に自分のランク表示スペース(約80px)を確保するために padding-bottom を設定 */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-hidden relative min-h-0">
         <div className="h-full overflow-y-auto pb-25 custom-scrollbar">
           <RankingList users={displayedUsers} myRankInfo={myRankInfo} />
         </div>
@@ -191,13 +191,13 @@ export default function RankingContainer({
 
                 <div className="flex items-center w-full px-4">
                   <div className="flex flex-col items-center justify-center mr-3 relative">
-                    <div className="relative w-12 h-12 flex items-center justify-center bg-white rounded-full border-2 border-cyan-400 shadow-sm mt-1">
+                    <div className="relative w-12 h-12 flex items-center justify-center bg-white rounded-full mt-1">
                       {/* Crown Icon for top 3 */}
                       {myRankInfo.rank <= 3 && (
                         <img
                           src={`/images/rank${myRankInfo.rank}_icon.png`}
                           alt="Rank"
-                          className="absolute top-2 -left-8 w-9 h-9 object-contain"
+                          className="top-2 w-9 h-9 object-contain"
                         />
                       )}
                       <span className="text-cyan-600 font-black text-xl">{myRankInfo.rank}</span>

@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { seedMasterData } from './seed/master-data';
 import { seedUsersAndGroups } from './seed/users-groups-data';
 import { seedProblems } from './seed/questions';
+import { seedEventProblems } from './seed/event-problems';
 import { runOperations } from './seed/run-operations';
 import { seedEventDifficulty } from './seed/event-difficulty-data';
 import { seedHistoryDummy } from './seed/history-dummy';
@@ -17,6 +18,7 @@ async function main() {
   await seedEventDifficulty(prisma);
   await seedProblems(prisma);
   await seedUsersAndGroups(prisma);
+  await seedEventProblems(prisma);
   await seedAdminUsers(prisma);
 
   // 3. 作成者となるユーザーを取得

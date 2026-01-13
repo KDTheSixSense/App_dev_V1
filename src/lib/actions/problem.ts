@@ -38,6 +38,7 @@ const convertToSerializableProblem = (dbProblem: any): SerializableProblem | und
         sampleCases: dbProblem.sampleCases || [],
         initialVariables: {},
         traceLogic: [],
+        tags: JSON.parse(dbProblem.tags || '[]'),
     };
 };
 
@@ -129,14 +130,20 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     let difficultyId: number | undefined;
     let alreadyCorrectToday = false;
     let userAnswerForeignKeyData: any = {};
+    let createdByUser = false;
 
     if (subjectid === 1) {
         const problem = await prisma.programmingProblem.findUnique({
             where: { id: problemId },
-            select: { difficulty: true }
+            select: { difficulty: true, createdBy: true }
         });
         difficultyId = problem?.difficulty;
         userAnswerForeignKeyData = { programingProblem_id: problemId };
+
+        //作成した問題の場合の分岐
+        if (problem?.createdBy) {
+            createdByUser = true;
+        }
 
         const lastCorrectAnswer = await prisma.userAnswer.findFirst({
             where: { userId, isCorrect: true, programingProblem_id: problemId },
@@ -181,11 +188,15 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     } else if (subjectid === 4) {
         const problem = await prisma.selectProblem.findUnique({
             where: { id: problemId },
-            select: { difficultyId: true }
+            select: { difficultyId: true, createdBy: true }
         });
         difficultyId = problem?.difficultyId;
         userAnswerForeignKeyData = { selectProblem_id: problemId };
 
+        //作成した問題の場合の分岐
+        if (problem?.createdBy) {
+            createdByUser = true;
+        }
         const lastCorrectAnswer = await prisma.userAnswer.findFirst({
             where: { userId, isCorrect: true, selectProblem_id: problemId },
             orderBy: { answeredAt: 'desc' }
@@ -275,18 +286,27 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         subjectid = 0;
     }
 
-    const { unlockedTitle, updatedUser, isLevelUp, previousLevel } = await addXp(userId, subjectid, difficultyId);
-    await feedPetAction(difficultyId);
+    let unlockedTitle = undefined;
 
-    if (updatedUser && isLevelUp) {
-        const currentLevel = updatedUser.level;
-        const milestone = 30;
-        if (Math.floor(currentLevel / milestone) > Math.floor(previousLevel / milestone)) {
-            const evolutionLevel = Math.floor(currentLevel / milestone) * milestone;
-            await checkAndSaveEvolution(userId, evolutionLevel);
-            revalidatePath('/profile');
-            revalidatePath('/home');
-            revalidatePath('/', 'layout');
+    if (!createdByUser) {
+        const result = await addXp(userId, subjectid, difficultyId);
+        unlockedTitle = result.unlockedTitle;
+        const updatedUser = result.updatedUser;
+        const isLevelUp = result.isLevelUp;
+        const previousLevel = result.previousLevel;
+
+        await feedPetAction(difficultyId);
+
+        if (updatedUser && isLevelUp) {
+            const currentLevel = updatedUser.level;
+            const milestone = 30;
+            if (Math.floor(currentLevel / milestone) > Math.floor(previousLevel / milestone)) {
+                const evolutionLevel = Math.floor(currentLevel / milestone) * milestone;
+                await checkAndSaveEvolution(userId, evolutionLevel);
+                revalidatePath('/profile');
+                revalidatePath('/home');
+                revalidatePath('/', 'layout');
+            }
         }
     }
 

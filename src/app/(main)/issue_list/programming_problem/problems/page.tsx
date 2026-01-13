@@ -21,6 +21,7 @@ const ProgrammingProblemsListPage = async ({
     prisma.programmingProblem.findMany({
       where: {
         isPublished: true,
+        isPublic: true,
       },
       include: {
         creator: {
@@ -96,7 +97,7 @@ const ProgrammingProblemsListPage = async ({
           <BackButton />
         </div>
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-          プログラミングコーディング問題一覧
+          プログラミング問題一覧
         </h1>
 
         <StatusFilter />

@@ -8,7 +8,7 @@ export const createEventHelpSteps: HelpStep[] = [
   {
     id: "basic_settings_tab",
     title: "基本設定タブ",
-    description: "イベントのタイトル、説明、開始日時、終了日時、公開日時を入力してください。すべての必須項目を埋めてください。",
+    description: "イベントのタイトル、説明、開始日時、終了日時、公開日時を入力してください。\nその次に、イベントで使用するプログラミング問題を選択してください",
     imagePath: "/images/help/event2.png",
     targetSelector: ".tabButton",
     order: 2,
@@ -26,7 +26,7 @@ export const createEventHelpSteps: HelpStep[] = [
   {
     id: "problems_selection_tab",
     title: "プログラミング問題タブ",
-    description: "イベントで使用するプログラミング問題を1つ以上選択してください。チェックボックスで問題を選んでください。",
+    description: "イベントで使用するプログラミング問題を1つ以上選択してください。チェックボックスで問題を選択することができます。",
     imagePath: "/images/help/event4.png",
     targetSelector: ".tabButton",
     order: 4,

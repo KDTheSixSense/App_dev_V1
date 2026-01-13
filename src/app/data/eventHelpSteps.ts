@@ -10,7 +10,7 @@ export const eventHelpSteps: HelpStep[] = [
   {
     id: "event_overview_participant",
     title: "イベント画面の概要",
-    description: "このページでは、参加可能なイベントを確認できます。イベントに参加し能力を競い合いましょう。",
+    description: "このページでは、イベントの作成と参加ができ、画面下部で参加可能なイベントを確認できます。\nイベントに参加し能力を競い合いましょう。",
     imagePath: "/images/help/event3.png",
     targetSelector: ".event-list",
     order: 1,
@@ -21,7 +21,7 @@ export const eventHelpSteps: HelpStep[] = [
   {
     id: "event_create",
     title: "イベントを作成する",
-    description: "新しいイベントを作成して、他のユーザーを招待しましょう。この画面ではイベントの開始、終了することができます",
+    description: "新しいイベントを作成して、他のユーザーを招待しましょう。\nこの画面ではイベントの開始、終了の操作ができます",
     imagePath: "/images/help/eventadmin.png",
     targetSelector: ".create_event",
     order: 1,
@@ -32,7 +32,7 @@ export const eventHelpSteps: HelpStep[] = [
   {
     id: "event_detail",
     title: "イベント詳細の確認",
-    description: "イベントのスタートする前の待機状態画面です。管理者がスタートをするのを少々お待ちください。開始するとイベントで使用する問題一覧が全て表示されます。問題に遷移してからタイマーが起動し、点数をつけるための計算が始まります。なるべく早く解けれるように頑張りましょう!",
+    description: "イベントのスタートする前の待機状態画面です。管理者がスタートをするのをお待ちください。\n開始するとイベントで使用する問題一覧が全て表示されます。\n問題に遷移するとタイマーが起動します。なるべく早く解いて高得点を目指しましょう!",
     imagePath: "/images/help/eventuser.png",
     targetSelector: ".event-list",
     order: 1,

@@ -67,7 +67,7 @@ export default function EventCard({ events = [] }: EventCardProps) {
     };
 
     return (
-        <div className="h-full bg-[#e0f4f9] rounded-2xl p-6 w-full">
+        <div className="h-full bg-gradient-to-r from-[#e0f4f9] to-cyan-100 rounded-2xl p-6 w-full">
             <h3 className="text-xl font-bold text-[#006F86] mb-4">開催が近いイベント</h3>
 
             {activeEvents.length === 0 ? (

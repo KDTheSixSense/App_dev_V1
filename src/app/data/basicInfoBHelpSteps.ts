@@ -9,7 +9,7 @@ export const basicInfoBHelpSteps: HelpStep[] = [
   {
     id: "basic_info_b_problem_overview",
     title: "基本情報技術者試験 科目B 問題詳細",
-    description: "このページでは、基本情報技術者試験の科目Bの問題を解くことができます。問題文とプログラムを読んで、正解の選択肢を選んでください。",
+    description: "このページでは、基本情報技術者試験の科目Bの問題を解くことができます。\n問題文とプログラムを読んで、正解の選択肢を選んでください。",
     imagePath: "/images/help/kihongB1.png",
     targetSelector: ".container",
     order: 1,
@@ -27,7 +27,7 @@ export const basicInfoBHelpSteps: HelpStep[] = [
   {
     id: "basic_info_b_problem_overview",
     title: "トレース画面と変数セクション",
-    description: "トレースの開始、リセット、次のステップの実行が可能です。ボタンを選択してトレースを開始すると、現在実行中のコード行がハイライトされます。これにより、トレース実行中に変数の値がどのように変化するかを行単位で直接確認できます。\n\n〇トレースとは、プログラムの実行過程を一歩一歩追いかけることです。コードの各行がどのように実行され、変数がどのように変化するかを理解するのに役立ちます。\n\n〇変数とは、プログラム内でデータを保存するための名前付きの場所(箱)です。トレースボタンの上に変数の状態が表示され、トレースの進行に伴って変数の値がどのように変わるかを確認できます。",
+    description: "トレースの開始、リセット、次のステップの実行が可能です。\nボタンを選択してトレースを開始すると、現在実行中のコード行がハイライトされます。\nこれにより、トレース実行中に変数の値がどのように変化するかを行単位で直接確認できます。\n\n〇トレースとは、プログラムの実行過程を一歩一歩追いかけることです。コードの各行がどのように実行され、変数がどのように変化するかを理解するのに役立ちます。\n\n〇変数とは、プログラム内でデータを保存するための名前付きの場所(箱)です。トレースボタンの上に変数の状態が表示され、トレースの進行に伴って変数の値がどのように変わるかを確認できます。",
     imagePath: "/images/help/kihongB3.png",
     targetSelector: ".bg-white.p-6.rounded-xl.shadow-lg.border.border-gray-200",
     order: 4,
@@ -37,7 +37,7 @@ export const basicInfoBHelpSteps: HelpStep[] = [
     id: "basic_info_b_problem_overview",
     title: "AIチャット (コハク)",
     description: "コハクに対してチャット形式で投げかけることができ、あなたの質問に対しコハクがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。",
-    imagePath: "/images/help/kihongB4.png",
+    imagePath: "/images/help/hint.png",
     targetSelector: ".bg-white.rounded-xl.shadow-lg.border.border-gray-200.overflow-hidden",
     order: 5,
     page: "issue_list/basic_info_b_problem",

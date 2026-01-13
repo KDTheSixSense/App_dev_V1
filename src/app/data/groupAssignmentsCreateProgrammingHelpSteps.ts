@@ -10,7 +10,7 @@ export const groupAssignmentsCreateProgrammingHelpSteps: HelpStep[] = [
   {
     id: "group_assignments_category_selection",
     title: "問題タイプの選択",
-    description: "左側のサイドバーから作成する問題のタイプを選択してください。「プログラミング問題」はコーディング問題、「4択問題」は選択式の問題を作成できます。",
+    description: "左側のサイドバーから作成する問題のタイプを選択してください。\n「プログラミング問題」はコーディング問題、「選択問題」は選択式の問題を作成できます。",
     imagePath: "/images/help/assiment.png",
     targetSelector: ".sidebar-menu",
     order: 1,
@@ -21,7 +21,7 @@ export const groupAssignmentsCreateProgrammingHelpSteps: HelpStep[] = [
   {
     id: "group_assignments_description_tab_programming",
     title: "問題文の作成（プログラミング問題）",
-    description: "タブで問題の基本的な情報を設定します。問題タイトル、難易度、制限時間、トピック、タグなどを入力してください。",
+    description: "問題の基本的な情報を設定します。問題タイトル、難易度、制限時間、トピック、タグなどを入力してください。",
     imagePath: "/images/help/assiment1.png",
     targetSelector: ".markdown-toolbar",
     order: 2,

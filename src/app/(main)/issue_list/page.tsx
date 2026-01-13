@@ -8,7 +8,7 @@
 
 // 'use client' は、このコンポーネントがクライアントサイドで動作することを示すNext.jsの宣言です。
 // これにより、useStateやuseEffect、useRouterなどのReactフックが使用可能になります。
-'use client'; 
+'use client';
 
 // --- React / Next.js のコア機能 ---
 import React from 'react';
@@ -78,7 +78,7 @@ const QuestionsPage: React.FC = () => {
   // 画面の構造をJSX（HTMLに似た記法）で記述します。
   return (
     // ページ全体のコンテナ。背景色や最小の高さなどを設定。
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col bg-gray-50">
       {/* Swiperの矢印とページネーションのスタイルを強制的に上書き */}
       <style>{`
         .swiper-button-next, .swiper-button-prev {
@@ -104,14 +104,14 @@ const QuestionsPage: React.FC = () => {
           background: #06b6d4 !important;
         }
       `}</style>
-      
+
       {/* メインコンテンツエリア */}
       <div className="w-full p-4 flex-1 flex flex-col justify-center">
-        
-        {/* 左側の出題項目（9つのカード）エリア */}
-        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-md overflow-hidden flex flex-col h-[85vh]">
 
-          
+        {/* 左側の出題項目（9つのカード）エリア */}
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-md overflow-hidden flex flex-col h-full">
+
+
           {/* カードをカルーセルで表示。画面サイズに応じて表示数が変わるレスポンシブ対応。 */}
           <Swiper
             // ナビゲーション（矢印）やページネーション（ドット）などのモジュールを有効化

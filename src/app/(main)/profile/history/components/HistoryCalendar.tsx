@@ -10,15 +10,24 @@ type Props = {
 
 export default function HistoryCalendar({ startDate, endDate, onChange }: Props) {
     const handleStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.valueAsDate;
+        const valStr = e.target.value;
+        if (!valStr) {
+            onChange(null, endDate);
+            return;
+        }
+        // Construct local date (00:00:00)
+        const val = new Date(valStr + 'T00:00:00');
         onChange(val, endDate);
     };
 
     const handleEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // Set to end of day? The action handles logic, but valueAsDate returns UTC midnight usually.
-        // Ideally we want to handle timezones correctly or just pass the date.
-        // valueAsDate returns a Date object.
-        const val = e.target.valueAsDate;
+        const valStr = e.target.value;
+        if (!valStr) {
+            onChange(startDate, null);
+            return;
+        }
+        // Construct local date (00:00:00) - HistoryClient will handle end-of-day logic
+        const val = new Date(valStr + 'T00:00:00');
         onChange(startDate, val);
     };
 

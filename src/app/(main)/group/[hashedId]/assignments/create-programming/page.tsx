@@ -66,11 +66,11 @@ export default function CreateProgrammingQuestionPage() {
   })
 
   const [sampleCases, setSampleCases] = useState<Case[]>([
-    { id: null, input: '', expectedOutput: '', description: '' }
+    { id: Date.now(), input: '', expectedOutput: '', description: '' }
   ])
 
   const [testCases, setTestCases] = useState<TestCase[]>([
-    { id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' }
+    { id: 1, name: 'ケース1', input: '', expectedOutput: '', description: '' }
   ])
 
   // 選択問題用の状態 ---
@@ -150,7 +150,7 @@ export default function CreateProgrammingQuestionPage() {
           if (!response.ok) throw new Error(`問題データの読み込みに失敗しました`);
           const data = await response.json();
 
-          if (isSelectApi || data.category === '4択問題' || data.problemType === '選択問題') {
+          if (isSelectApi || data.category === '選択問題' || data.problemType === '選択問題') {
             // Select Problem Data Loaded
             setSelectedCategory('itpassport');
             setFormData({
@@ -158,7 +158,7 @@ export default function CreateProgrammingQuestionPage() {
               description: data.description || '',
               difficulty: data.difficultyId || 1,
               problemType: '選択問題',
-              category: '4択問題',
+              category: '選択問題',
               timeLimit: 0,
               topic: '',
               tags: [],
@@ -231,7 +231,7 @@ export default function CreateProgrammingQuestionPage() {
       setProblemId(null);
       if (typeFromQuery === 'select') {
         setSelectedCategory('itpassport');
-        setFormData(prev => ({ ...prev, problemType: '選択問題', category: '4択問題' }));
+        setFormData(prev => ({ ...prev, problemType: '選択問題', category: '選択問題' }));
       } else {
         setSelectedCategory('programming');
         setFormData(prev => ({ ...prev, problemType: 'コーディング問題', category: 'プログラミング基礎' }));
@@ -267,7 +267,7 @@ export default function CreateProgrammingQuestionPage() {
     // カテゴリ切り替え時にフォームをリセットするかどうかは要件次第だが、
     // ここでは単純に切り替えるだけにする（データは保持される可能性があるため注意）
     if (categoryId === 'itpassport') {
-      setFormData(prev => ({ ...prev, problemType: '選択問題', category: '4択問題' }));
+      setFormData(prev => ({ ...prev, problemType: '選択問題', category: '選択問題' }));
     } else {
       setFormData(prev => ({ ...prev, problemType: 'コーディング問題', category: 'プログラミング基礎' }));
     }
@@ -291,7 +291,7 @@ export default function CreateProgrammingQuestionPage() {
   const addSampleCase = () => {
     setSampleCases(prev => [
       ...prev,
-      { id: null, input: '', expectedOutput: '', description: '' }
+      { id: Date.now(), input: '', expectedOutput: '', description: '' }
     ]);
   };
 
@@ -303,9 +303,10 @@ export default function CreateProgrammingQuestionPage() {
   // しかしUI変更は最小限にしたいので、とりあえずこのまま。
 
   const addTestCase = () => {
+    const newId = testCases.length > 0 ? Math.max(...testCases.map(c => c.id || 0)) + 1 : 1;
     setTestCases(prev => [
       ...prev,
-      { id: null, name: `ケース${prev.length + 1}`, input: '', expectedOutput: '', description: '' }
+      { id: newId, name: `ケース${prev.length + 1}`, input: '', expectedOutput: '', description: '' }
     ]);
   };
 
@@ -320,7 +321,7 @@ export default function CreateProgrammingQuestionPage() {
         problemType: selectedCategory === 'itpassport' ? '選択問題' : 'コーディング問題',
         difficulty: 4,
         timeLimit: 10,
-        category: selectedCategory === 'itpassport' ? '4択問題' : 'プログラミング基礎',
+        category: selectedCategory === 'itpassport' ? '選択問題' : 'プログラミング基礎',
         topic: '標準入力',
         tags: [],
         description: '',
@@ -328,8 +329,8 @@ export default function CreateProgrammingQuestionPage() {
         isPublic: false,
         allowTestCaseView: false
       });
-      setSampleCases([{ id: null, input: '', expectedOutput: '', description: '' }]);
-      setTestCases([{ id: null, name: 'ケース1', input: '', expectedOutput: '', description: '' }]);
+      setSampleCases([{ id: Date.now(), input: '', expectedOutput: '', description: '' }]);
+      setTestCases([{ id: 1, name: 'ケース1', input: '', expectedOutput: '', description: '' }]);
       setAnswerOptions([
         { id: 'a', text: '' },
         { id: 'b', text: '' },
@@ -388,6 +389,10 @@ export default function CreateProgrammingQuestionPage() {
           sampleCases: sampleCases.filter(sc => sc.input || sc.expectedOutput),
           testCases: testCases.filter(tc => tc.input || tc.expectedOutput),
         };
+
+        if (payload.testCases.length === 0) {
+          throw new Error('テストケースは最低1つ必須です（入力と出力を記入してください）');
+        }
 
         const response = await fetch('/api/problems', {
           method: 'POST',
@@ -927,8 +932,8 @@ export default function CreateProgrammingQuestionPage() {
                                     className="form-textarea"
                                     value={sampleCase.input}
                                     onChange={(e) => {
-                                      setSampleCases(prev => prev.map(c =>
-                                        c.id === sampleCase.id ? { ...c, input: e.target.value } : c
+                                      setSampleCases(prev => prev.map((c, i) =>
+                                        i === index ? { ...c, input: e.target.value } : c
                                       ))
                                     }}
                                     placeholder="入力例を記述..."
@@ -941,8 +946,8 @@ export default function CreateProgrammingQuestionPage() {
                                     className="form-textarea"
                                     value={sampleCase.expectedOutput}
                                     onChange={(e) => {
-                                      setSampleCases(prev => prev.map(c =>
-                                        c.id === sampleCase.id ? { ...c, expectedOutput: e.target.value } : c
+                                      setSampleCases(prev => prev.map((c, i) =>
+                                        i === index ? { ...c, expectedOutput: e.target.value } : c
                                       ))
                                     }}
                                     placeholder="期待される出力を記述..."
@@ -956,8 +961,8 @@ export default function CreateProgrammingQuestionPage() {
                                     className="form-input"
                                     value={sampleCase.description}
                                     onChange={(e) => {
-                                      setSampleCases(prev => prev.map(c =>
-                                        c.id === sampleCase.id ? { ...c, description: e.target.value } : c
+                                      setSampleCases(prev => prev.map((c, i) =>
+                                        i === index ? { ...c, description: e.target.value } : c
                                       ))
                                     }}
                                     placeholder="このケースの説明..."
@@ -1012,8 +1017,8 @@ export default function CreateProgrammingQuestionPage() {
                                     className="form-input"
                                     value={testCase.name}
                                     onChange={(e) => {
-                                      setTestCases(prev => prev.map(c =>
-                                        c.id === testCase.id ? { ...c, name: e.target.value } : c
+                                      setTestCases(prev => prev.map((c, i) =>
+                                        i === index ? { ...c, name: e.target.value } : c
                                       ))
                                     }}
                                     placeholder="ケース名..."
@@ -1026,21 +1031,24 @@ export default function CreateProgrammingQuestionPage() {
                                     className="form-input"
                                     value={testCase.description}
                                     onChange={(e) => {
-                                      setTestCases(prev => prev.map(c =>
-                                        c.id === testCase.id ? { ...c, description: e.target.value } : c
+                                      setTestCases(prev => prev.map((c, i) =>
+                                        i === index ? { ...c, description: e.target.value } : c
                                       ))
                                     }}
                                     placeholder="このケースの説明..."
                                   />
                                 </div>
                                 <div>
-                                  <label className="form-label">入力</label>
+                                  <label className="form-label">
+                                    <span className="required-badge">必須</span>
+                                    入力
+                                  </label>
                                   <textarea
                                     className="form-textarea"
                                     value={testCase.input}
                                     onChange={(e) => {
-                                      setTestCases(prev => prev.map(c =>
-                                        c.id === testCase.id ? { ...c, input: e.target.value } : c
+                                      setTestCases(prev => prev.map((c, i) =>
+                                        i === index ? { ...c, input: e.target.value } : c
                                       ))
                                     }}
                                     placeholder="入力データを記述..."
@@ -1048,13 +1056,16 @@ export default function CreateProgrammingQuestionPage() {
                                   />
                                 </div>
                                 <div>
-                                  <label className="form-label">期待出力</label>
+                                  <label className="form-label">
+                                    <span className="required-badge">必須</span>
+                                    期待出力
+                                  </label>
                                   <textarea
                                     className="form-textarea"
                                     value={testCase.expectedOutput}
                                     onChange={(e) => {
-                                      setTestCases(prev => prev.map(c =>
-                                        c.id === testCase.id ? { ...c, expectedOutput: e.target.value } : c
+                                      setTestCases(prev => prev.map((c, i) =>
+                                        i === index ? { ...c, expectedOutput: e.target.value } : c
                                       ))
                                     }}
                                     placeholder="期待される出力を記述..."

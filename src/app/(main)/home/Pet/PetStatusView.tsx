@@ -97,7 +97,7 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, subje
   }
 
   return (
-    <div className="flex flex-col justify-center p-8 bg-[#e0f4f9] rounded-3xl shadow-sm w-full relative overflow-hidden min-h-[400px]">
+    <div className="flex flex-col justify-center p-8 bg-gradient-to-r from-[#e0f4f9] to-cyan-100 rounded-3xl shadow-sm w-full relative overflow-hidden min-h-[400px]">
       {/* Decorative background circles (optional, to match style) */}
       <div className="absolute top-10 left-10 w-20 h-20 rounded-full bg-cyan-200 blur-2xl opacity-40 pointer-events-none"></div>
       <div className="absolute bottom-10 right-10 w-32 h-32 rounded-full bg-blue-200 blur-2xl opacity-40 pointer-events-none"></div>
@@ -125,23 +125,22 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, subje
           {/*満腹度ゲージ */}
           <div className="w-full max-w-sm mb-8 text-center">
             <h2 className="text-xl font-bold text-slate-700 mb-2">{petname}の満腹度</h2>
-
-        <div className="relative pt-1">
-          <div className="flex mb-2 items-center justify-center">
-            <div className="text-center w-full">
-              <span className="text-3xl font-bold inline-block text-slate-700">
-                {initialHunger} / {maxHunger}
-              </span>
+            <div className="relative pt-1">
+              <div className="flex mb-2 items-center justify-center">
+                <div className="text-center w-full">
+                  <span className="text-3xl font-bold inline-block text-slate-700">
+                    {initialHunger} / {maxHunger}
+                  </span>
+                </div>
+              </div>
+              <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-[#B2EBF2]">
+                <div
+                  style={{ width: `${fullnessPercentage}%` }}
+                  className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ease-out ${statusConfig.colorClass}`}
+                ></div>
+              </div>
             </div>
           </div>
-          <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-[#B2EBF2]">
-            <div
-              style={{ width: `${fullnessPercentage}%` }}
-              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ease-out ${statusConfig.colorClass}`}
-            ></div>
-          </div>
-        </div>
-      </div>
 
           {/* 4. Action Button */}
           <div className="w-full max-w-sm">

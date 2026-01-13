@@ -9,7 +9,7 @@ export const basicInfoAHelpSteps: HelpStep[] = [
   {
     id: "basic_info_a_overview",
     title: "基本情報技術者試験 科目A 問題詳細",
-    description: "このページでは、基本情報技術者試験の科目Aの問題を解くことができます。問題文と解答群を読んで、正解の選択肢を選んでください。",
+    description: "このページでは、基本情報技術者試験の科目Aの問題を解くことができます。\n問題文と解答群を読んで、正解の選択肢を選んでください。",
     imagePath: "/images/help/kihongA1.png",
     targetSelector: ".container",
     order: 1,
@@ -27,8 +27,8 @@ export const basicInfoAHelpSteps: HelpStep[] = [
   {
     id: "basic_info_a_ai_chat",
     title: "AIチャット (コハク)",
-    description: "コハクに対してチャット形式で投げかけることができ、あなたの質問に対しコハクがフィードバックを提供します。正解に近づくようにヒントをもらいながら学習を進めましょう。",
-    imagePath: "/images/help/kihongA3.png",
+    description: "コハクに対してチャット形式で質問ができ、あなたの質問に対しコハクがヒントをくれます。\n正解に近づくようにヒントをもらいながら学習を進めましょう。",
+    imagePath: "/images/help/hint.png",
     targetSelector: ".container",
     order: 3,
     page: "issue_list/basic_info_a_problem",

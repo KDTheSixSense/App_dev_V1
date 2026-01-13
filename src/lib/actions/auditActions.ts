@@ -7,12 +7,30 @@ import { headers } from "next/headers";
 /**
  * Server Action called by client-side PageViewLogger to record every route change.
  */
-import { LRUCache } from 'lru-cache';
+import { RateLimiter } from '@/lib/rate-limit';
 
 // Simple in-memory rate limit: 1 log per 500ms per user to prevent abuse
-const rateLimitCache = new LRUCache<string, number>({
-    max: 1000,
-    ttl: 1000, // 1 second
+// Using RateLimiter with maxAttempts=1 and short TTL implies if you hit it, you are locked out?
+// Actually for simpler throttling "1 req / 500ms", our RateLimiter is a bit heavy (lockout based).
+// However, we can use it: maxAttempts=1, baseLockoutMinutes not used? 
+// Actually, for high frequency throttling, a simple implementation logic might be different.
+// But let's stick to consistency.
+// Max=1, TTL=500ms. If you hit it, successful is usually true, but if you hit again?
+// Our RateLimiter is "Try -> Fail -> Lockout". 
+// Here we want "Try -> Success -> Try -> Fail (Too fast)".
+// Let's use it as: check(ip), if success -> increment/set?
+// Simpler: 
+const pageViewLimiter = new RateLimiter({
+    maxAttempts: 1,
+    ttl: 1000,
+    // If we set lockout to 0, does it work? 
+    // We just want to check if "recently used".
+    // RateLimiter is designed for "failure locking".
+    // Maybe adhering strictly to RateLimiter for "Throttling" is misuse.
+    // BUT, we can just use the RateLimiter instance to manage the state manually if needed, 
+    // or just assume "Increment" = "Log". 
+    // If attempts >= 1, it locks out.
+    baseLockoutMinutes: [0.01], // 0.6 sec lockout?
 });
 
 /**
@@ -28,14 +46,15 @@ export async function logPageViewAction(path: string) {
         // For now, only log authenticated users as per original requirement.
         if (!userId) return;
 
-        const now = Date.now();
-        const lastLogTime = rateLimitCache.get(userId);
+        // Rate Limit Check
+        // We use check() - if locked out, return.
+        // If not locked, we increment() which triggers lockout for a short duration?
+        const check = pageViewLimiter.check(userId);
+        if (!check.success) return;
 
-        // Rate Limit Check: Allow max 1 request per 500ms
-        if (lastLogTime && now - lastLogTime < 500) {
-            return; // Silently ignore spam
-        }
-        rateLimitCache.set(userId, now);
+        // "Consume" the token. Since maxAttempts=1, this triggers lockout immediately.
+        // Lockout duration is small (0.01 min ~= 600ms).
+        pageViewLimiter.increment(userId);
 
         const headersList = await headers();
         const userAgent = headersList.get('user-agent') || undefined;

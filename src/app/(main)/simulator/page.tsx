@@ -101,9 +101,9 @@ export default function SimulatorPage() {
 
   return (
     // ワイドにするために max-w の制限を緩和し、paddingを調整
-    <div className="min-h-screen bg-[#D3F7FF] p-4 pt-24 pb-4 flex flex-col">
+    <div className="h-full bg-[#D3F7FF] p-4 flex flex-col overflow-hidden">
       {/* 画面の高さを最大限使う設定 */}
-      <div className="w-full mx-auto h-[85vh] flex flex-col gap-4">
+      <div className="w-full mx-auto h-full flex flex-col gap-4">
 
         {/* ヘッダーエリア */}
         <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-md shrink-0">

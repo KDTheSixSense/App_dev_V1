@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import {getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
+import { getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
 
 type UserWithPetStatus = User & {
@@ -306,7 +306,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
   ];
 
   return (
-    <header ref={headerRef} className="fixed top-0 left-0 w-full bg-[#e0f4f9] text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
+    <header ref={headerRef} className="fixed top-0 left-0 w-full bg-gradient-to-r from-[#e0f4f9] to-cyan-100 text-black border-b border-gray-200 hidden md:flex items-center px-4 h-20 z-50">
 
       {/* 左側：ロゴ */}
       <div className="flex-shrink-0 ml-3">
@@ -332,12 +332,12 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
             return (
               <li key={item.label}>
-                <button 
-                  onClick={() => window.location.href = item.href} 
-                  className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg transition-colors hover:bg-[#b2ebf2]`} 
+                <button
+                  onClick={() => window.location.href = item.href}
+                  className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg transition-colors hover:bg-[#b2ebf2]`}
                 >
                   <Image src={item.icon} alt={item.label} width={40} height={40} unoptimized />
-                  
+
                   <span className={`text-xs mt-1 font-bold ${isActive ? 'text-[#f0b084]' : 'text-[#008391]'}`}>
                     {item.label}
                   </span>
@@ -375,7 +375,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
       {/* 右側：ユーザー情報 */}
       <div className="flex items-center gap-4 ml-6 h-full">
-        
+
 
         {/* ランクとログイン日数 */}
         <div className="flex items-center gap-4 h-full pt-1 w-35">
@@ -398,38 +398,39 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
           </div>
 
           {/* Rank Circular Gauge - Enlarged */}
-          <div className="relative flex flex-col items-center justify-center -mt-2 h-full flex-1">
+          <div className="relative flex flex-col items-center -mt-2 h-full flex-1">
             <div className="relative w-16 h-16">
               <svg className="w-full h-full transform -rotate-90">
                 {/* Background Circle */}
                 <circle
-                  cx="32" cy="32" r="26"
+                  cx="28" cy="28" r="22"
                   fill="transparent"
                   stroke="#E2E8F0"
                   strokeWidth="5"
                 />
                 {/* Progress Circle */}
                 <circle
-                  cx="32" cy="32" r="26"
+                  cx="28" cy="28" r="22"
                   fill="transparent"
                   stroke="#0EA5E9" // Sky blue
                   strokeWidth="5"
-                  strokeDasharray={`${2 * Math.PI * 26}`}
-                  strokeDashoffset={`${2 * Math.PI * 26 * (1 - ((Number.isNaN(progressPercentage) ? 0 : progressPercentage) / 100))}`}
+                  strokeDasharray={`${2 * Math.PI * 21}`}
+                  strokeDashoffset={`${2 * Math.PI * 21 * (1 - ((Number.isNaN(progressPercentage) ? 0 : progressPercentage) / 100))}`}
                   strokeLinecap="round"
                   className="transition-all duration-1000 ease-out"
                 />
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center pb-1">
+              <div className="absolute inset-0 flex items-center justify-center pb-1 mr-2 mt-2">
                 <span className="text-sm font-bold text-sky-600">
                   {Number.isNaN(progressPercentage) ? 0 : Math.floor(progressPercentage)}%
                 </span>
               </div>
             </div>
             <div className="absolute -bottom-1 rounded-full z-10 inline-flex items-center h-6">
-              <p className="inline-flex justify-end items-end text-[12px] font-bold text-cyan-600 whitespace-nowrap mt-auto">RANK {rank}</p>
+              <span className="inline-flex justify-end items-end text-[12px] font-bold text-[#1f758b] whitespace-nowrap mt-auto">RANK </span>
+              <span className="inline-flex justify-end items-end text-lg font-bold text-[#1f758b] ml-1 mt-auto">{rank}</span>
             </div>
-          </div>          
+          </div>
         </div>
 
         {/* プロフィールアイコン (プルダウンメニュー付き) */}
@@ -477,6 +478,13 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
                   問題解答履歴
                 </Link>
                 <Link
+                  href="/web_code"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
+                >
+                  Web版コード
+                </Link>
+                <Link
                   href="/customize_trace"
                   onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
@@ -491,14 +499,14 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
                   ノーコード
                 </Link>
                 <Link
-                  href="/terms"
+                  href="/terms_account"
                   onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >
                   利用規約
                 </Link>
                 <Link
-                  href="/privacypolicy"
+                  href="/privacypolicy_account"
                   onClick={() => setIsProfileMenuOpen(false)}
                   className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#D3F7FF] transition-colors"
                 >

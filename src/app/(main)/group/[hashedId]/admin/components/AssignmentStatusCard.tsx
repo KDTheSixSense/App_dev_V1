@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { returnMultipleSubmissions } from '@/lib/actions/submissionActions';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -12,6 +13,7 @@ type Submission = {
     icon?: string | null;
   };
   file_path?: string;
+  id: number;
 };
 
 export type AssignmentWithSubmissions = {
@@ -31,6 +33,7 @@ interface AssignmentStatusCardProps {
   isSelected: boolean;
   onSelect: () => void;
   groupId: string;
+  onViewSubmission: (submissionId: number) => void;
 }
 
 export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
@@ -38,6 +41,7 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
   isSelected,
   onSelect,
   groupId,
+  onViewSubmission
 }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -79,21 +83,79 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
     }
   };
 
+  // Modal state
+  const [isRemandModalOpen, setIsRemandModalOpen] = useState(false);
+
   const handleReturnSelectedSubmissions = async () => {
     if (selectedUserIds.length === 0) {
       alert('差し戻す提出を選択してください。');
       return;
     }
-    if (confirm(`${selectedUserIds.length}件の提出を差し戻しますか？`)) {
-      const result = await returnMultipleSubmissions(assignment.id, selectedUserIds, groupId);
-      if (result.success) {
-        alert('選択した提出を差し戻しました。');
-        setSelectedUserIds([]);
-        window.location.href = `${pathname}?tab=assignments&selectedAssignment=${assignment.id}`;
-      } else {
-        alert('差し戻しに失敗しました。');
-      }
+    setIsRemandModalOpen(true);
+  };
+
+  const confirmRemand = async () => {
+    setIsRemandModalOpen(false);
+    const result = await returnMultipleSubmissions(assignment.id, selectedUserIds, groupId);
+    if (result.success) {
+      toast.success('選択した提出を差し戻しました。');
+      setSelectedUserIds([]);
+      window.location.href = `${pathname}?tab=assignments&selectedAssignment=${assignment.id}`;
+    } else {
+      toast.error('差し戻しに失敗しました。');
     }
+  };
+
+  const RemandModal = () => {
+    if (!isRemandModalOpen) return null;
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'start', // 上寄せ
+        paddingTop: '100px', // 上からの距離
+        zIndex: 1000,
+      }} onClick={() => setIsRemandModalOpen(false)}>
+        <div style={{
+          backgroundColor: '#333', // ダークテーマっぽい背景
+          color: '#fff',
+          padding: '20px',
+          borderRadius: '12px',
+          width: '400px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          textAlign: 'center'
+        }} onClick={(e) => e.stopPropagation()}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: 'bold' }}>確認</h3>
+          <p style={{ margin: '0 0 20px 0', fontSize: '14px' }}>{selectedUserIds.length}件の提出を差し戻しますか？</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+            <button onClick={confirmRemand} style={{
+              padding: '8px 20px',
+              backgroundColor: '#72b01d', // 緑系 (OK)
+              color: 'white',
+              border: 'none',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}>OK</button>
+            <button onClick={() => setIsRemandModalOpen(false)} style={{
+              padding: '8px 20px',
+              backgroundColor: '#555', // グレー (Cancel)
+              color: 'white',
+              border: 'none',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}>キャンセル</button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -241,9 +303,21 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
                         )}
                       </div>
                       <span style={{ fontSize: '14px' }}>
-                        {sub.user.username}
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewSubmission(sub.id);
+                          }}
+                          style={{
+                            cursor: 'pointer',
+                            color: '#3182ce',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          {sub.user.username}
+                        </span>
                         {sub.file_path && (
-                          <a href={sub.file_path} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '8px', fontSize: '12px', color: '#3182ce' }}>ファイル表示</a>
+                          <a href={sub.file_path} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '8px', fontSize: '12px', color: '#718096' }}>[ダウンロード]</a>
                         )}
                       </span>
                     </div>
@@ -307,6 +381,7 @@ export const AssignmentStatusCard: React.FC<AssignmentStatusCardProps> = ({
           to { opacity: 0; transform: translateY(-10px); }
         }
       `}</style>
+      <RemandModal />
     </div>
   );
 };

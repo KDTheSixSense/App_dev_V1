@@ -27,7 +27,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
     const progressPercentage = (currentXpInLevel / requiredXpForNextLevel) * 100;
 
     return (
-        <div className="w-full bg-[#e0f4f9] rounded-2xl overflow-hidden shadow-sm shadow-sky-100">
+        <div className="w-full bg-gradient-to-r from-[#e0f4f9] to-cyan-100 rounded-2xl overflow-hidden shadow-sm shadow-sky-100">
             {/* Top Section: Blue Gradient - Now completely clickable */}
             {/* Background adjusted to be 'lighter' while keeping white text readable - used slightly softer gradient */}
             <Link href="/profile" className="block relative group cursor-pointer !no-underline decoration-0">
@@ -95,7 +95,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
                     </span>
                 </div>
                 <div className="bg-white rounded-xl p-2 py-5 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[14px] text-slate-500 font-bold mb-1">課題</span>
+                    <span className="text-[14px] text-slate-500 font-bold mb-1">残課題</span>
                     <span className="text-xl font-bold text-slate-700 block leading-none">
                         {unsubmittedAssignmentCount}
                     </span>

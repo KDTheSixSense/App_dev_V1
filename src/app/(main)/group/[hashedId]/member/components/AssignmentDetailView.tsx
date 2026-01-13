@@ -41,7 +41,14 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
     // ファイル提出関連
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedLanguage, setSelectedLanguage] = useState<string>('Text'); // Default
     const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
+
+    // Language options matching backend support
+    const LANGUAGE_OPTIONS = [
+        'Text', 'Python', 'Java', 'C', 'C++', 'C#', 'JavaScript', 'TypeScript',
+        'HTML', 'CSS', 'PHP', 'Ruby', 'Go', 'Rust', 'SQL', 'Markdown', 'JSON'
+    ];
 
     // 提出状況に応じてボタンのテキストと状態を決定
     const isSubmitted = kadai.submissionStatus === '提出済み';
@@ -103,6 +110,7 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
         setIsSubmittingAssignment(true);
         const formData = new FormData();
         formData.append('file', selectedFile);
+        formData.append('language', selectedLanguage);
 
         try {
             const res = await fetch(`/api/submit-assignment?assignmentId=${kadai.id}`, {
@@ -232,6 +240,23 @@ export const AssignmentDetailView: React.FC<AssignmentDetailViewProps> = ({ kada
                 <button onClick={handleFileSelect} style={{ width: '100%', padding: '12px', border: '1px solid #1976d2', backgroundColor: 'transparent', color: '#1976d2', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                     ＋ 追加または作成
                 </button>
+
+                {selectedFile && (
+                    <div style={{ marginTop: '12px' }}>
+                        <label style={{ display: 'block', fontSize: '12px', color: '#5f6368', marginBottom: '4px' }}>
+                            使用言語 (ファイルの内容に合わせて選択してください)
+                        </label>
+                        <select
+                            value={selectedLanguage}
+                            onChange={(e) => setSelectedLanguage(e.target.value)}
+                            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px' }}
+                        >
+                            {LANGUAGE_OPTIONS.map(lang => (
+                                <option key={lang} value={lang}>{lang}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
                 <button
                     onClick={handleAssignmentSubmit}
                     disabled={isSubmitButtonDisabled}

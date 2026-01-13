@@ -85,7 +85,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Security Alert: Malicious filename detected.' }, { status: 400 });
     }
 
-    const result = await submitAssignment(userId, assignmentId, formData);
+    const language = formData.get('language') as string | undefined;
+    const result = await submitAssignment(userId, assignmentId, formData, language);
 
     if (result.success) {
       return NextResponse.json({ success: true, message: result.message });

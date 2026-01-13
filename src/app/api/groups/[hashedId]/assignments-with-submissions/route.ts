@@ -51,6 +51,7 @@ export async function GET(
           // Adminなら全員分、Studentなら自分自身の提出のみを取得
           where: isAdmin ? undefined : { userid: userId },
           select: {
+            id: true,
             status: true,
             submitted_at: true,
             file_path: true,
