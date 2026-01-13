@@ -253,11 +253,25 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
     const [submitResult, setSubmitResult] = useState<any>(null);
     const [isReturning, setIsReturning] = useState(false);
     const storageKey = `event-problem-code-${eventId}-${problem.id}`;
+    const languageStorageKey = `event-problem-language-preference`; // Key for language preference
     const hasRecordedTime = useRef(false);
     const [annotations, setAnnotations] = useState<AceAnnotation[]>([]);
     const [testCaseResults, setTestCaseResults] = useState<TestCaseResult[]>([]);
     const [isResultModalOpen, setIsResultModalOpen] = useState(false);
     const [modalSuccess, setModalSuccess] = useState(false);
+
+    // Initialize state from local storage on mount (for language only)
+    useEffect(() => {
+        const savedLanguage = localStorage.getItem(languageStorageKey);
+        if (savedLanguage) {
+            setSelectedLanguage(savedLanguage);
+        }
+    }, []);
+
+    // Save language to local storage when changed
+    useEffect(() => {
+        localStorage.setItem(languageStorageKey, selectedLanguage);
+    }, [selectedLanguage]);
 
     const languages = [
         { value: 'python', label: 'Python' },

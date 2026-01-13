@@ -38,6 +38,7 @@ const convertToSerializableProblem = (dbProblem: any): SerializableProblem | und
         sampleCases: dbProblem.sampleCases || [],
         initialVariables: {},
         traceLogic: [],
+        tags: JSON.parse(dbProblem.tags || '[]'),
     };
 };
 

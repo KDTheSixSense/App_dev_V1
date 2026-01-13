@@ -64,7 +64,7 @@ async function getEventAndUserRole(eventId: number, userId: string | null) {
           user: {
             include: {
               eventSubmissions: {
-                select: { eventIssueId: true, startedAt: true, status: true },
+                select: { eventIssueId: true, startedAt: true, status: true, score: true },
               },
             },
           },

@@ -169,8 +169,8 @@ const ProblemDescriptionPanel: React.FC<{ problem: SerializableProblem }> = ({ p
                         <h4 className="font-medium text-sm mb-2 text-gray-800">サンプル {index + 1}</h4>
                         {sc.description && <p className="text-xs text-gray-600 mb-2 pl-2 border-l-2 border-gray-300">{sc.description}</p>}
                         <div className="space-y-2">
-                            <div><span className="text-xs font-semibold text-gray-600">入力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.input}</pre></div>
-                            <div><span className="text-xs font-semibold text-gray-600">期待する出力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1">{sc.expectedOutput}</pre></div>
+                            <div><span className="text-xs font-semibold text-gray-600">入力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1 overflow-x-auto">{sc.input}</pre></div>
+                            <div><span className="text-xs font-semibold text-gray-600">期待する出力:</span><pre className="bg-gray-100 p-3 rounded-md text-sm font-mono text-gray-900 mt-1 overflow-x-auto">{sc.expectedOutput}</pre></div>
                         </div>
                     </div>
                 ))}
@@ -435,7 +435,10 @@ const ProblemClient: React.FC<ProblemClientProps> = ({ initialProblem, /* initia
 
     const [problem, setProblem] = useState<SerializableProblem>(initialProblem);
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState('python3');
+    const [selectedLanguage, setSelectedLanguage] = useState(() => {
+        if (initialProblem.tags?.includes('C言語') || initialProblem.category?.includes('C言語')) return 'c';
+        return 'python3';
+    });
     const [selectedTheme, setSelectedTheme] = useState('solarized_light');
     const [userCode, setUserCode] = useState(initialProblem.programLines?.ja.join('\n') || '');
     const [stdin, setStdin] = useState('');

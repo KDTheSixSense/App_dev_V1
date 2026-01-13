@@ -480,7 +480,10 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
 
     // problemはpropsから直接受け取るので、useStateは不要
     const [isAnswered, setIsAnswered] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState('python');
+    const [selectedLanguage, setSelectedLanguage] = useState(() => {
+        if (problem.tags?.includes('C言語')) return 'c';
+        return 'python';
+    });
     const [selectedTheme, setSelectedTheme] = useState('solarized_light');
     const [userCode, setUserCode] = useState('');
     const [stdin, setStdin] = useState('');
@@ -637,6 +640,13 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, assi
         setChatMessages([{ sender: 'kohaku', text: `問${problem.id}について、何かヒントは必要ですか？` }]);
         setProblemStartTime(Date.now()); // タイムスタンプを保存
         hasRecordedTime.current = false;   // 記録フラグをリセット
+
+        // 言語設定の更新
+        if (problem.tags?.includes('C言語')) {
+            setSelectedLanguage('c');
+        } else {
+            setSelectedLanguage('python');
+        }
     }, [problem]);
 
     // --- 6. ページ離脱時の Effect を追加 ---

@@ -644,6 +644,10 @@ model Create_event {
   participants      Event_Participants[]
   issues            Event_Issue_List[]
 
+  // イベントのテーマ設定
+  theme      String    @default("default") // Background theme key
+  customImagePath String? // Path to custom uploaded background image
+
   //イベント開始の判別フラグ
   isStarted Boolean @default(false)
   hasBeenStarted Boolean  @default(false)
@@ -697,6 +701,7 @@ model Event_Submission {
   id          Int      @id @default(autoincrement())
   status      Boolean
   score       Int
+  language    String   @default("python")
   codeLog     String   @db.Text
   startedAt   DateTime
   submittedAt DateTime @default(now())

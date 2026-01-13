@@ -7,6 +7,8 @@ import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid';
+import { writeFile, mkdir } from 'fs/promises';
+import path from 'path';
 
 interface CreateEventFormData {
     title: string;
@@ -306,11 +308,11 @@ export async function acceptEventAction(eventId: number, userId: string) {
     if (!session.user?.id) {
         return { error: 'ログインしていません。' };
     }
-    
+
     // session.user.id can be compared with userId or we can just use session.user.id to be safe
     const currentUserId = session.user.id;
     if (currentUserId !== userId) {
-         return { error: 'ユーザーIDが一致しません。' };
+        return { error: 'ユーザーIDが一致しません。' };
     }
 
     try {
@@ -333,5 +335,103 @@ export async function acceptEventAction(eventId: number, userId: string) {
     } catch (error) {
         console.error('参加承認エラー:', error);
         return { error: '参加承認に失敗しました。' };
+    }
+}
+
+export async function updateEventThemeAction(eventId: number, theme: string) {
+    'use server';
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (!session.user?.id) {
+        return { error: 'ログインしていません。' };
+    }
+    const userId = session.user.id;
+
+    const event = await prisma.create_event.findUnique({
+        where: { id: eventId },
+        select: { creatorId: true },
+    });
+
+    if (!event) {
+        return { error: 'イベントが見つかりません。' };
+    }
+
+    if (event.creatorId !== userId) {
+        return { error: '設定を変更する権限がありません。' };
+    }
+
+    try {
+        await prisma.create_event.update({
+            where: { id: eventId },
+            data: { theme } as any,
+        });
+
+        revalidatePath(`/event/event_detail/${eventId}`);
+        return { success: true };
+    } catch (error) {
+        console.error('テーマ更新エラー:', error);
+        return { error: `テーマの更新に失敗しました: ${error instanceof Error ? error.message : String(error)}` };
+    }
+}
+
+export async function uploadEventBackgroundAction(eventId: number, formData: FormData) {
+    'use server';
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (!session.user?.id) {
+        return { error: 'ログインしていません。' };
+    }
+    const userId = session.user.id;
+
+    const file = formData.get('file') as File;
+    if (!file) {
+        return { error: 'ファイルが選択されていません。' };
+    }
+
+    // Validation (Size, Type)
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        return { error: 'ファイルサイズは5MB以下にしてください。' };
+    }
+    if (!file.type.startsWith('image/')) {
+        return { error: '画像ファイルのみアップロード可能です。' };
+    }
+
+    const event = await prisma.create_event.findUnique({
+        where: { id: eventId },
+        select: { creatorId: true },
+    });
+
+    if (!event) {
+        return { error: 'イベントが見つかりません。' };
+    }
+    if (event.creatorId !== userId) {
+        return { error: '権限がありません。' };
+    }
+
+    try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const filename = `${eventId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+
+        // Ensure directory exists
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'events');
+        await mkdir(uploadDir, { recursive: true });
+
+        const filePath = path.join(uploadDir, filename);
+        await writeFile(filePath, buffer);
+
+        const publicPath = `/uploads/events/${filename}`;
+
+        await prisma.create_event.update({
+            where: { id: eventId },
+            data: {
+                theme: 'custom',
+                customImagePath: publicPath,
+            } as any,
+        });
+
+        revalidatePath(`/event/event_detail/${eventId}`);
+        return { success: true, imagePath: publicPath };
+
+    } catch (error) {
+        console.error('画像アップロードエラー:', error);
+        return { error: '画像のアップロードに失敗しました。' };
     }
 }
