@@ -5,27 +5,24 @@ name: Next.js CI/CD - Build, Sign & Deploy
 # ---------------------------------------------------
 on:
   push:
-    branches: [ main ] # mainブランチにpushされたら実行
+    branches: [ main ]
 
 # ---------------------------------------------------
 # 環境変数の定義
 # ---------------------------------------------------
 env:
-  # コンテナレジストリを Docker Hub ではなく GHCR (GitHub Container Registry) に指定
   REGISTRY: ghcr.io
-  # イメージ名 (所有者名/リポジトリ名)
   IMAGE_NAME: ${{ github.repository_owner }}/my-nextjs-app
-  # ArgoCDが監視しているマニフェスト(Helmチャート)のリポジトリ情報
   MANIFEST_REPO: RyoNagashiro9280/ac-manifest-tss
   MANIFEST_PATH: next/values.yaml
 
 # ---------------------------------------------------
-# 権限設定 (セキュリティ強化)
+# 権限設定
 # ---------------------------------------------------
 permissions:
-  contents: read   # ソースコードの読み取り権限
-  packages: write  # GHCRへのパッケージ書き込み権限
-  id-token: write  # ★重要: CosignがOIDCを使ってキーレス署名を行うために必須
+  contents: read
+  packages: write
+  id-token: write
 
 jobs:
   # ===================================================
@@ -33,10 +30,8 @@ jobs:
   # ===================================================
   build-and-push-image:
     runs-on: ubuntu-latest
-    # 次のジョブ(マニフェスト更新)に渡すための変数を定義
     outputs:
       IMAGE_TAG: ${{ steps.meta.outputs.version }}
-      # ★ Level 2対策: タグだけでなく、一意なハッシュ値(digest)も出力して固定化する
       IMAGE_DIGEST: ${{ steps.build-runner.outputs.digest }}
       MIGRATOR_DIGEST: ${{ steps.build-migrator.outputs.digest }}
       SANDBOX_DIGEST: ${{ steps.build-sandbox.outputs.digest }}
@@ -45,11 +40,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ★ Level 3対策: イメージ署名ツール Cosign のインストール
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.5.0
 
-      # ★ Level 1対策: 固定のパスワードを使わず、GitHub Actionsの一時トークンでログイン
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -57,7 +50,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # コミットハッシュ(sha)を元にタグ名を生成 (例: sha-a1b2c3d)
       - name: Generate image metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -66,9 +58,7 @@ jobs:
           tags: |
             type=sha,prefix=,format=short
 
-      # ---------------------------------------------------
-      # 1. アプリ本体 (Runner) のビルド & 署名
-      # ---------------------------------------------------
+      # --- Runner (アプリ本体) ---
       - name: Build and push Docker image (Runner)
         id: build-runner
         uses: docker/build-push-action@v6
@@ -77,56 +67,49 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # ★セキュリティ: 秘密鍵はここには含めず、公開情報(PUBLIC)のみ渡す
           build-args: |
             NEXT_PUBLIC_APP_URL=https://infopia.nqg1t0.com
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
             NEXTAUTH_URL=https://infopia.nqg1t0.com
-            DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }} # ビルド用ダミーURL等
+            DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
           no-cache: true
-          target: runner # Dockerfile内の runner ステージのみビルド
+          target: runner
 
-      # ★ Level 3対策: 生成されたダイジェストに対して電子署名を行う
-      # これにより「このリポジトリからビルドされた正規のもの」であることを証明
       - name: Sign the Runner image
         run: |
           cosign sign --yes ${{ steps.meta.outputs.tags }}@${{ steps.build-runner.outputs.digest }}
 
-      # ---------------------------------------------------
-      # 2. マイグレーション用 (Migrator) のビルド & 署名
-      # ---------------------------------------------------
+      # --- Migrator (DBマイグレーション用) ---
       - name: Build and push Migrator image
         id: build-migrator
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}-migrator # タグ末尾に -migrator を付与
+          tags: ${{ steps.meta.outputs.tags }}-migrator
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
             NEXT_PUBLIC_APP_URL=https://infopia.nqg1t0.com
           no-cache: true
-          target: migrator # Dockerfile内の migrator ステージを使用
+          target: migrator
 
       - name: Sign the Migrator image
         run: |
           TAG_NAME="${{ steps.meta.outputs.tags }}-migrator"
           cosign sign --yes ${TAG_NAME}@${{ steps.build-migrator.outputs.digest }}
 
-      # ---------------------------------------------------
-      # 3. サンドボックス用 (Sandbox) のビルド & 署名
-      # ---------------------------------------------------
+      # --- Sandbox (コード実行環境) ---
       - name: Build and push Sandbox image
         id: build-sandbox
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}-sandbox # タグ末尾に -sandbox を付与
+          tags: ${{ steps.meta.outputs.tags }}-sandbox
           labels: ${{ steps.meta.outputs.labels }}
           no-cache: true
-          target: sandbox-env # Dockerfile内の sandbox-env ステージを使用
+          target: sandbox-env
 
       - name: Sign the Sandbox image
         run: |
@@ -137,4 +120,32 @@ jobs:
   # JOB 2: マニフェスト(values.yaml) の更新
   # ===================================================
   update-manifest:
-    runs-on: ubuntu-
+    runs-on: ubuntu-latest
+    needs: build-and-push-image
+    steps:
+      - name: Checkout Manifest Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.MANIFEST_REPO }}
+          token: ${{ secrets.PAT_FOR_MANIFEST_REPO }}
+
+      - name: Update Helm chart values.yaml
+        uses: mikefarah/yq@v4
+        with:
+          cmd: |
+            yq -i '.image.tag = "${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"' ${{ env.MANIFEST_PATH }}
+            yq -i '.image.digest = "${{ needs.build-and-push-image.outputs.IMAGE_DIGEST }}"' ${{ env.MANIFEST_PATH }}
+            yq -i '.migration.image.digest = "${{ needs.build-and-push-image.outputs.MIGRATOR_DIGEST }}"' ${{ env.MANIFEST_PATH }}
+            yq -i '.sandbox.image.digest = "${{ needs.build-and-push-image.outputs.SANDBOX_DIGEST }}"' ${{ env.MANIFEST_PATH }}
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions-bot@github.com"
+          if ! git diff --quiet ${{ env.MANIFEST_PATH }}; then
+            git add ${{ env.MANIFEST_PATH }}
+            git commit -m "Update image tag to ${{ needs.build-and-push-image.outputs.IMAGE_TAG }} (with digests)"
+            git push
+          else
+            echo "No changes to commit."
+          fi
