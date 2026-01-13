@@ -79,8 +79,11 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
   const problemsListRef = useRef<HTMLDivElement>(null);
   const codeContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollTopParticipants, setShowScrollTopParticipants] = useState(false);
+  const [showScrollLeftParticipants, setShowScrollLeftParticipants] = useState(false);
+  const [showScrollRightParticipants, setShowScrollRightParticipants] = useState(false);
   const [showScrollTopProblems, setShowScrollTopProblems] = useState(false);
   const [showScrollTopCode, setShowScrollTopCode] = useState(false);
+
   const handleOpenSubmission = async (submissionId: number) => {
     setLoadingSubmission(true);
     setSubmissionModalOpen(true);
@@ -141,7 +144,15 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
 
   const handleScrollParticipants = () => {
     if (participantsListRef.current) {
-      setShowScrollTopParticipants(participantsListRef.current.scrollTop > 200);
+      const { scrollTop, scrollLeft, scrollWidth, clientWidth } = participantsListRef.current;
+      setShowScrollTopParticipants(scrollTop > 200);
+
+      // User requested to show horizontal buttons only when scrolled past "Prob 2" (approx 400px)
+      const horizontalThreshold = 400;
+      const isPastThreshold = scrollLeft > horizontalThreshold;
+
+      setShowScrollLeftParticipants(isPastThreshold);
+      setShowScrollRightParticipants(isPastThreshold && (Math.ceil(scrollLeft + clientWidth) < scrollWidth));
     }
   };
 
@@ -159,6 +170,19 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
 
   const scrollToTopParticipants = () => {
     participantsListRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollLeftParticipants = () => {
+    participantsListRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+  };
+
+  const scrollRightParticipants = () => {
+    if (participantsListRef.current) {
+      participantsListRef.current.scrollTo({
+        left: participantsListRef.current.scrollWidth,
+        behavior: 'smooth'
+      });
+    }
   };
 
   const scrollToTopProblems = () => {
@@ -305,6 +329,30 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
       setIsSubmitting(false);
     }
   };
+
+  // Real-time Poll for Participants Score
+  useEffect(() => {
+    // Only poll if event is started
+    if (!event.isStarted) return;
+
+    const fetchParticipantsData = async () => {
+      try {
+        const { getEventParticipantsDataAction } = await import('@/lib/actions/admin-event');
+        const res = await getEventParticipantsDataAction(event.id);
+        if (res.success && res.participants) {
+          setEvent(prev => ({
+            ...prev,
+            participants: res.participants as any // Type assertion needed because of complex deep includes
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to poll participants data', error);
+      }
+    };
+
+    const intervalId = setInterval(fetchParticipantsData, 5000); // Poll every 5 seconds
+    return () => clearInterval(intervalId);
+  }, [event.id, event.isStarted]);
 
   //招待コードコピー機能
   const handleCopyInviteCode = () => {
@@ -618,8 +666,12 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
 
 
             {filteredParticipants.length > 0 ? (
-              <div className="relative flex-grow flex flex-col h-[500px]">
-                <div className="overflow-auto border border-slate-200 rounded-t-xl scrollbar-thin scrollbar-thumb-slate-300">
+              <div className="relative flex-grow flex flex-col h-[500px] group/scroll">
+                <div
+                  ref={participantsListRef}
+                  onScroll={handleScrollParticipants}
+                  className="overflow-auto border border-slate-200 rounded-t-xl scrollbar-thin scrollbar-thumb-slate-300 h-full"
+                >
                   <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead className="bg-slate-50 text-slate-500 text-sm font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm border-y border-slate-200">
                       <tr>
@@ -714,7 +766,14 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
 
                             {/* Problem Columns */}
                             {event.issues.map((issue) => {
-                              const submission = (participant.user as any).eventSubmissions?.find((s: any) => s.eventIssueId === issue.id);
+                              const submissions = (participant.user as any).eventSubmissions?.filter((s: any) => s.eventIssueId === issue.id);
+                              // Sort by score (desc) then date (desc) to find the best/latest result
+                              const submission = submissions?.sort((a: any, b: any) => {
+                                const scoreA = a.score ?? 0;
+                                const scoreB = b.score ?? 0;
+                                if (scoreA !== scoreB) return scoreB - scoreA;
+                                return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+                              })[0];
 
                               let content = (
                                 <div className="w-full h-16 flex items-center justify-center">
@@ -793,13 +852,35 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
                 </div>
 
                 {/* Scroll To Top for Participants */}
+                {/* Horizontal Scroll Buttons - Separated & Subtle */}
+                {showScrollLeftParticipants && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); scrollLeftParticipants(); }}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-4 rounded-r-2xl bg-slate-900/5 hover:bg-slate-900/20 text-slate-400 hover:text-slate-700 transition-all backdrop-blur-[1px] border-y border-r border-white/20 shadow-sm"
+                    title="左へ全スクロール"
+                  >
+                    <FiChevronLeft className="w-6 h-6" />
+                  </button>
+                )}
+
+                {showScrollRightParticipants && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); scrollRightParticipants(); }}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-4 rounded-l-2xl bg-slate-900/5 hover:bg-slate-900/20 text-slate-400 hover:text-slate-700 transition-all backdrop-blur-[1px] border-y border-l border-white/20 shadow-sm"
+                    title="右へ全スクロール"
+                  >
+                    <FiChevronLeft className="w-6 h-6 rotate-180" />
+                  </button>
+                )}
+
+                {/* Vertical Scroll Top */}
                 {showScrollTopParticipants && (
                   <button
-                    onClick={scrollToTopParticipants}
-                    className="absolute bottom-6 right-6 bg-slate-800/80 hover:bg-slate-900 text-white p-2.5 rounded-full shadow-lg transition-all hover:-translate-y-1 active:scale-95 z-20 border border-white/10"
+                    onClick={(e) => { e.preventDefault(); scrollToTopParticipants(); }}
+                    className="absolute bottom-4 right-4 p-2 rounded-full bg-slate-900/5 hover:bg-slate-900/20 text-slate-400 hover:text-slate-700 transition-all backdrop-blur-[1px] border border-white/20 shadow-sm z-20"
                     title="上へ戻る"
                   >
-                    <FiArrowUp className="w-4 h-4" />
+                    <FiArrowUp className="w-5 h-5" />
                   </button>
                 )}
               </div>
