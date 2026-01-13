@@ -21,8 +21,6 @@ const TraceScreen: React.FC<TraceScreenProps> = ({ programLines, currentLine, la
     // コンポーネントの最上位コンテナ。相対位置指定で内部の絶対位置指定要素（矢印）を制御。
     // 背景色、角丸、パディングを設定し、内容が溢れた場合は縦スクロール可能にする。
     <div className="relative p-4 bg-gray-50 rounded-lg h-full overflow-y-auto">
-      {/* トレース画面のタイトル（言語対応） */}
-      <h3 className="text-lg font-bold mb-4 text-gray-700">{t.traceScreenTitle}</h3>
       
       {/* 疑似言語コードの表示エリア
           `pre`タグで整形済みテキストとして表示し、`font-mono`で等幅フォント、`text-base`で基本の文字サイズに設定。 */}

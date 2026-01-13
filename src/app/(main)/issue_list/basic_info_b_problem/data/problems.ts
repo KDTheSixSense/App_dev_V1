@@ -82,6 +82,7 @@ export interface Problem {
  * 新しい問題を追加する場合は、この配列の末尾に新しいオブジェクトを追加してください。
  */
 export const problems: Problem[] = [
+  // 問１
   {
     id: '1',
     logicType: 'VARIABLE_SWAP',
@@ -96,11 +97,12 @@ export const problems: Problem[] = [
     calculateNextLine: undefined,
     difficultyId: 7
   },
+  // 問２
   {
     id: '2',
     logicType: 'FIZZ_BUZZ',
     title: { ja: "サンプル問題 [科目B] 比較演算と選択処理のプログラム", en: "Sample Problem [Subject B] Q2" },
-    description: { ja: "次のプログラム中の a ~ c に入れる正しい答えの組み合わせを、解答群の中から選べ。\n\n関数 fizzBuzz は、引数で与えられた値が、3で割り切れて5で割り切れない場合は\"3で割り切れる\"を、5で割り切れて3で割り切れない場合は\"5で割り切れる\"を、3と5で割り切れる場合は\"3と5で割り切れる\"を返します。それ以外の場合は\"3でも5でも割り切れない\"を返します。", en: "" },
+    description: { ja: "次のプログラム中の a ~ c に入れる正しい答えの組み合わせを、解答群の中から選べ。\n\n関数 fizzBuzz は、引数で与えられた値が、3で割り切れて5で割り切れない場合は\"3で割り切れる\"を、5で割り切れて3で割り切れない場合は\"5で割り切れる\"を、3と5で割り切れる場合は\"3と5で割り切れる\"を返す。それ以外の場合は\"3でも5でも割り切れない\"を返す。", en: "" },
     programLines: { ja: [' 1: ○文字列型: fizzBuzz(整数型: num)', ' 2: 　文字列型: result', ' 3: 　if (num が [  a  ] で割り切れる)', ' 4: 　　result ← "[  a  ]で割り切れる"', ' 5: 　elseif (num が [  b  ] で割り切れる)', ' 6: 　　result ← "[  b  ]で割り切れる"', ' 7: 　elseif (num が [  c  ] で割り切れる)', ' 8: 　　result ← "[  c  ]で割り切れる"', ' 9: 　else', '10: 　　result ← "3でも5でも割り切れない"', '11: 　endif', '12: 　return result',], en: [], },
     answerOptions: { ja: [{ label: 'ア', value: 'a:3, b:3と5, c:5' }, { label: 'イ', value: 'a:3, b:5, c:3と5' }, { label: 'ウ', value: 'a:3と5, b:3, c:5' }, { label: 'エ', value: 'a:5, b:3, c:3と5' }, { label: 'オ', value: 'a:5, b:3と5, c:3' },], en: [], },
     correctAnswer: 'a:3と5, b:3, c:5',
@@ -111,11 +113,12 @@ export const problems: Problem[] = [
     calculateNextLine: undefined,
     difficultyId: 7
   },
+  // 問３
   {
     id: '3',
     logicType: 'ARRAY_SUM',
     title: { ja: "サンプル問題 [科目B] 配列を処理するプログラム", en: "Sample Problem [Subject B] Q3" },
-    description: { ja: "配列の要素番号は1から始まる。関数 makeNewArray は、要素数2以上の整数型の配列を引数にとり、整数型の配列を返す関数である。\n関数 makeNewArray を makeNewArray({3, 2, 1, 6, 5, 4})として呼び出したとき、out配列の要素番号5の値はいくつになるか。", en: "", },
+    description: { ja: "次の記述中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は１から始まる。\n\n関数 makeNewArray は、要素数2以上の整数型の配列を引数にとり、整数型の配列を返す関数である。\n関数 makeNewArray を makeNewArray({3, 2, 1, 6, 5, 4})として呼び出したとき、戻り値の配列の要素番号5の値は[  ?  ]となる。", en: "", },
     programLines: { ja: [' 1: ○整数型の配列: makeNewArray(整数型の配列: in)', ' 2: 　整数型の配列: out ← {}', ' 3: 　整数型: i, tail', ' 4: 　outの末尾に in[1] の値 を追加する', ' 5: 　for (i を 2 から inの要素数 まで 1 ずつ増やす)', ' 6: 　　tail ← out[outの要素数]', ' 7: 　　outの末尾に (tail + in[i]) の結果を追加する', ' 8: 　endfor', ' 9: 　return out',], en: [], },
     answerOptions: { ja: [{ label: 'ア', value: '5' }, { label: 'イ', value: '6' }, { label: 'ウ', value: '9' }, { label: 'エ', value: '11' }, { label: 'オ', value: '12' }, { label: 'カ', value: '17' }, { label: 'キ', value: '21' },], en: [], },
     correctAnswer: '17',
@@ -125,11 +128,12 @@ export const problems: Problem[] = [
     calculateNextLine: undefined,
     difficultyId: 7
   },
+  // 問４
   {
     id: '4',
     logicType: 'GCD_SUBTRACTION',
     title: { ja: "サンプル問題 [科目B] 最大公約数を求めるプログラム", en: "Sample Problem [Subject B] Q4" },
-    description: { ja: "次のプログラム中の a ～ c に入れる正しい答えの組合せを，解答群の中から選べ。\n\n関数 gcd は，引数で与えられた二つの正の整数 num1 と num2 の最大公約数を，次の(1)～(3)の性質を利用して求める。\n(1) num1 と num2 が等しいとき，num1 と num2 の最大公約数は num1 である。\n(2) num1 が num2 より大きいとき，num1 と num2 の最大公約数は，(num1 - num2) と num2 の最大公約数と等しい。\n(3) num2 が num1 より大きいとき，num1 と num2 の最大公約数は，num1 と (num2 - num1) の最大公約数と等しい。", en: "Select the correct combination for a, b, and c in the following program from the answer choices. The function gcd finds the greatest common divisor (GCD) of two positive integers, num1 and num2, using properties (1) to (3)." },
+    description: { ja: "次のプログラム中の [  a  ] ～ [  c  ] に入れる正しい答えの組合せを，解答群の中から選べ。\n\n関数 gcd は，引数で与えられた二つの正の整数 num1 と num2 の最大公約数を，次の(1)～(3)の性質を利用して求める。\n(1)  num1 と num2 が等しいとき，num1 と num2 の最大公約数は num1 である。\n(2)  num1 が num2 より大きいとき，num1 と num2 の最大公約数は，(num1 - num2) と num2 の最大公約数と等しい。\n(3)  num2 が num1 より大きいとき，num1 と num2 の最大公約数は，num1 と (num2 - num1) の最大公約数と等しい。", en: "Select the correct combination for a, b, and c in the following program from the answer choices. The function gcd finds the greatest common divisor (GCD) of two positive integers, num1 and num2, using properties (1) to (3)." },
     programLines: { ja: [' 1: ○整数型: gcd(整数型: num1, 整数型: num2)', ' 2: 　整数型: x ← num1', ' 3: 　整数型: y ← num2', ' 4: 　[   a   ]', ' 5: 　　if ( [   b   ] )', ' 6: 　　　x ← x - y', ' 7: 　　else', ' 8: 　　　y ← y - x', ' 9: 　　endif', '10: 　[   c   ]', '11: 　return x',], en: [' 1: ○function gcd(integer: num1, integer: num2) -> integer', ' 2: 　integer: x ← num1', ' 3: 　integer: y ← num2', ' 4: 　[   a   ]', ' 5: 　　if ( [   b   ] )', ' 6: 　　　x ← x - y', ' 7: 　　else', ' 8: 　　　y ← y - x', ' 9: 　　endif', '10: 　[   c   ]', '11: 　return x',], },
     answerOptions: { ja: [{ label: 'ア', value: 'a: if (x ≠ y), b: x < y, c: endif' }, { label: 'イ', value: 'a: if (x ≠ y), b: x > y, c: endif' }, { label: 'ウ', value: 'a: while (x ≠ y), b: x < y, c: endwhile' }, { label: 'エ', value: 'a: while (x ≠ y), b: x > y, c: endwhile' },], en: [{ label: 'A', value: 'a: if (x ≠ y), b: x < y, c: endif' }, { label: 'B', value: 'a: if (x ≠ y), b: x > y, c: endif' }, { label: 'C', value: 'a: while (x ≠ y), b: x < y, c: endwhile' }, { label: 'D', value: 'a: while (x ≠ y), b: x > y, c: endwhile' },], },
     correctAnswer: 'a: while (x ≠ y), b: x > y, c: endwhile',
@@ -147,6 +151,7 @@ export const problems: Problem[] = [
     calculateNextLine: undefined,
     difficultyId: 7
   },
+  // 問５
   {
     id: '5',
     logicType: 'EXPRESSION_EVAL',
@@ -186,6 +191,7 @@ export const problems: Problem[] = [
     calculateNextLine: undefined,
     difficultyId: 7
   },
+  // 問６
   {
     id: '6',
     logicType: 'BIT_REVERSE',
@@ -209,6 +215,7 @@ export const problems: Problem[] = [
     calculateNextLine: undefined,
     difficultyId: 7
   },
+  //問７
   {
     id: '7',
     logicType: 'RECURSIVE_FACTORIAL',
@@ -244,6 +251,7 @@ export const problems: Problem[] = [
     calculateNextLine: undefined,
     difficultyId: 7
   },
+  //問８
   {
     id: '8',
     logicType: 'PRIORITY_QUEUE',
@@ -266,7 +274,7 @@ export const problems: Problem[] = [
     logicType: 'BINARY_TREE_TRAVERSAL',
     title: { ja: "サンプル問題 [科目B] 木構造を走査するプログラム", en: "Sample Problem [Subject B] Q9" },
     description: {
-      ja: "次の記述中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n手続 order は，図の2分木の，引数で指定した節を根とする部分木をたどりながら，全ての節番号を出力する。大域の配列 tree が図の2分木を表している。配列 tree の要素は，対応する節の子の節番号を，左の子，右の子の順に格納した配列である。例えば，配列 tree の要素番号1の要素は，節番号1の子の節番号から成る配列であり，左の子の節番号2，右の子の節番号3を配列 {2, 3} として格納する。手続 order を order(1) として呼び出すと，[  ?  ]の順に出力される。",
+      ja: "次の記述中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n手続 order は，図の2分木の，引数で指定した節を根とする部分木をたどりながら，全ての節番号を出力する。大域の配列 tree が図の2分木を表している。配列 tree の要素は，対応する節の子の節番号を，左の子，右の子の順に格納した配列である。例えば，配列 tree の要素番号1の要素は，節番号1の子の節番号から成る配列であり，左の子の節番号2，右の子の節番号3を配列 {2, 3} として格納する。\n手続 order を order(1) として呼び出すと，[  ?  ]の順に出力される。",
       en: "Select the correct answer for the blank from the answer choices. Array indices start from 1. The procedure 'order' traverses a subtree rooted at the node specified by the argument and outputs all node numbers. The global array 'tree' represents the binary tree shown. Each element of 'tree' is an array containing the node numbers of its children, left then right. For example, element 1 of 'tree' is {2, 3}, representing the children of node 1. When 'order' is called as order(1), the output is in the order of [ ]."
     },
     programLines: {
@@ -536,7 +544,7 @@ export const problems: Problem[] = [
     logicType: 'SIMILARITY_RATIO',
     title: { ja: "サンプル問題 [科目B] 文字列同士の類似度を求めるプログラム", en: "Sample Problem [Subject B] Q12" },
     description: {
-      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 simRatio は，引数として与えられた要素数1以上の二つの文字列の配列 s1 と s2 を比較し，要素数が等しい場合は，配列の並びがどの程度似ているかの指標として，(要素番号が同じ要素の文字列同士が一致する要素の組みの個数 ÷ s1の要素数)を実数型で返す。例えば，配列の全ての要素が一致する場合の戻り値は1，いずれの要素も一致しない場合の戻り値は0である。\n\nなお，二つの配列の要素数が等しくない場合は，-1を返す。関数 simRatio に与える s1，s2 及び戻り値の例を表に示す。プログラムでは，配列の領域外を参照してはならないものとする。",
+      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 simRatio は，引数として与えられた要素数1以上の二つの文字列の配列 s1 と s2 を比較し，要素数が等しい場合は，配列の並びがどの程度似ているかの指標として，(要素番号が同じ要素の文字列同士が一致する要素の組みの個数 ÷ s1の要素数)を実数型で返す。例えば，配列の全ての要素が一致する場合の戻り値は1，いずれの要素も一致しない場合の戻り値は0である。\nなお，二つの配列の要素数が等しくない場合は，-1を返す。\n関数 simRatio に与える s1，s2 及び戻り値の例を表に示す。プログラムでは，配列の領域外を参照してはならないものとする。",
       en: "Select the correct answer for the blank in the program. Array indices start from 1. The function simRatio compares two character arrays, s1 and s2, of one or more elements. If the element counts are equal, it returns a similarity index as a real number: (number of matching character pairs at the same index) / (number of elements in s1). For example, if all elements match, the return value is 1, and if no elements match, it is 0. If the element counts are not equal, it returns -1. The table shows examples of s1, s2, and the return values. The program must not access outside the array bounds."
     },
     programLines: {
@@ -812,7 +820,7 @@ export const problems: Problem[] = [
     logicType: 'STATIC_QA',
     title: { ja: "サンプル問題 [科目B] 三目並べのプログラム", en: "Sample Problem [Subject B] Q15" },
     description: {
-      ja: "次の記述中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n三目並べにおいて自分が勝利する可能性が最も高い手を決定する。次の手順で，ゲームの状態遷移を木構造として表現し，根以外の各節の評価値を求める。その結果，根の子の中で最も評価値が高い手を，最も勝利する可能性が高い手とする。自分が選択した手を〇で表し，相手が選択した手を×で表す。\n\n〔手順〕\n(1) 現在の盤面の状態を根とし，勝敗がつくか，引き分けとなるまでの考えられる全ての手を木構造で表現する。\n(2) 葉の状態を次のように評価する。\n    ① 自分が勝ちの場合は10\n    ② 自分が負けの場合は－10\n    ③ 引き分けの場合は0\n(3) 葉以外の節の評価値は，その節の全ての子の評価値を基に決定する。\n    ① 自分の手番の節である場合，子の評価値で最大の評価値を節の評価値とする。\n    ② 相手の手番の節である場合，子の評価値で最小の評価値を節の評価値とする。\n\nゲームが図の最上部にある根の状態のとき，自分が選択できる手は三つある。そのうちAが指す子の評価値は a であり，Bが指す子の評価値は b である。",
+      ja: "次の記述中の [  a  ] と [  b  ] に入れる正しい答えの組合せを，解答群の中から選べ。\n\n三目並べにおいて自分が勝利する可能性が最も高い手を決定する。次の手順で，ゲームの状態遷移を木構造として表現し，根以外の各節の評価値を求める。その結果，根の子の中で最も評価値が高い手を，最も勝利する可能性が高い手とする。自分が選択した手を〇で表し，相手が選択した手を×で表す。\n\n〔手順〕\n(1) 現在の盤面の状態を根とし，勝敗がつくか，引き分けとなるまでの考えられる全ての手を木構造で表現する。\n(2) 葉の状態を次のように評価する。\n    ① 自分が勝ちの場合は10\n    ② 自分が負けの場合は－10\n    ③ 引き分けの場合は0\n(3) 葉以外の節の評価値は，その節の全ての子の評価値を基に決定する。\n    ① 自分の手番の節である場合，子の評価値で最大の評価値を節の評価値とする。\n    ② 相手の手番の節である場合，子の評価値で最小の評価値を節の評価値とする。\n\nゲームが図の最上部にある根の状態のとき，自分が選択できる手は三つある。そのうちAが指す子の評価値は [  a  ] であり，Bが指す子の評価値は [  b  ] である。",
       en: "Select the correct combination for a and b. In Tic-Tac-Toe, determine the move with the highest probability of winning. Represent the game's state transitions as a tree and find the evaluation value for each node other than the root. The move with the highest evaluation value among the children of the root is considered the best move. Your moves are O, opponent's are X. [Procedures] (1) ... (2) Leaf nodes are evaluated: win=10, lose=-10, draw=0. (3) Non-leaf nodes: For your turn, take the max of children's values. For the opponent's turn, take the min. When the game is at the root state, what are the evaluation values for the children pointed to by A (value a) and B (value b)?"
     },
     programLines: { // この問題にはプログラムがないため、手順を記載
@@ -854,7 +862,7 @@ export const problems: Problem[] = [
     logicType: 'UTF8_ENCODE',
     title: { ja: "サンプル問題 [科目B] 文字列処理のプログラム", en: "Sample Problem [Subject B] Q16" },
     description: {
-      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。二つの[  ?  ]には，同じ答えが入る。ここで，配列の要素番号は1から始まる。\n\nUnicodeの符号位置を，UTF-8の符号に変換するプログラムである。本問で数値の後ろに\"(16)\"と記載した場合は，その数値が16進数であることを表す。\nUnicodeの各文字には，符号位置と呼ばれる整数値が与えられている。UTF-8は，Unicodeの文字を符号化する方式の一つであり，符号位置が 800(16) 以上 FFFF(16) 以下の文字は，次のように3バイトの値に符号化する。\n3バイトの長さのビットパターンを 1110xxxx 10xxxxxx 10xxxxxx とする。ビットパターンの下線の付いた\"x\"の箇所に，符号位置を2進数で表した値を右詰めで格納し，余った\"x\"の箇所に，0を格納する。この3バイトの値がUTF-8の符号である。\n例えば，ひらがなの\"あ\"の符号位置である 3042(16) を2進数で表すと 11000001000010 である。これを，上に示したビットパターンの\"x\"の箇所に右詰めで格納すると，1110xx11 10000001 10000010 となる。余った二つの\"x\"の箇所に0を格納すると，\"あ\"のUTF-8の符号 11100011 10000001 10000010 が得られる。\n\n関数 encode は，引数で渡されたUnicodeの符号位置をUTF-8の符号に変換し，先頭から順に1バイトずつ要素に格納した整数型の配列を返す。encode には，引数として，800(16) 以上 FFFF(16) 以下の整数値だけが渡されるものとする。",
+      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。二つの[  ?  ]には，同じ答えが入る。ここで，配列の要素番号は1から始まる。\n\nUnicodeの符号位置を，UTF-8の符号に変換するプログラムである。本問で数値の後ろに\"(16)\"と記載した場合は，その数値が16進数であることを表す。\nUnicodeの各文字には，符号位置と呼ばれる整数値が与えられている。UTF-8は，Unicodeの文字を符号化する方式の一つであり，符号位置が 800(16) 以上 FFFF(16) 以下の文字は，次のように3バイトの値に符号化する。\n3バイトの長さのビットパターンを 1110xxxx 10xxxxxx 10xxxxxx とする。ビットパターンの\"x\"の箇所に，符号位置を2進数で表した値を右詰めで格納し，余った\"x\"の箇所に，0を格納する。この3バイトの値がUTF-8の符号である。\n例えば，ひらがなの\"あ\"の符号位置である 3042(16) を2進数で表すと 11000001000010 である。これを，上に示したビットパターンの\"x\"の箇所に右詰めで格納すると，1110xx11 10000001 10000010 となる。余った二つの\"x\"の箇所に0を格納すると，\"あ\"のUTF-8の符号 11100011 10000001 10000010 が得られる。\n\n関数 encode は，引数で渡されたUnicodeの符号位置をUTF-8の符号に変換し，先頭から順に1バイトずつ要素に格納した整数型の配列を返す。encode には，引数として，800(16) 以上 FFFF(16) 以下の整数値だけが渡されるものとする。",
       en: "Select the correct answer for the blanks. Both blanks take the same answer. Array indices start at 1.\n\nThis program converts a Unicode code point to its UTF-8 representation..."
     },
     programLines: {
@@ -937,7 +945,7 @@ export const problems: Problem[] = [
     logicType: 'STATIC_QA', // トレース機能がないことを示す
     title: { ja: "サンプル問題 [科目B] 脆弱性診断", en: "Sample Problem [Subject B] Q17" },
     description: {
-      ja: "製造業のA社では，ECサイト（以下，A社のECサイトをAサイトという）を使用し，個人向けの製品販売を行っている。Aサイトは，A社の製品やサービスが検索可能で，ログイン機能を有しており，あらかじめAサイトに利用登録した個人（以下，会員という）の氏名やメールアドレスといった情報（以下，会員情報という）を管理している。Aサイトは，B社のPaaSで稼働しており，PaaS上のDBMSとアプリケーションサーバを利用している。\nA社は，Aサイトの開発，運用をC社に委託している。A社とC社との間の委託契約では，Webアプリケーションプログラムの脆弱性対策は，C社が実施するとしている。\n最近，A社の同業他社が運営しているWebサイトで脆弱性が悪用され，個人情報が漏えいするという事件が発生した。そこでA社は，セキュリティ診断サービスを行っているD社に，Aサイトの脆弱性診断を依頼した。脆弱性診断の結果，対策が必要なセキュリティ上の脆弱性が複数指摘された。図1にD社からの指摘事項を示す。\n\n項番1 Aサイトで利用しているアプリケーションサーバのOSに既知の脆弱性があり，脆弱性を悪用した攻撃を受けるおそれがある。\n項番2 Aサイトにクロスサイトスクリプティングの脆弱性があり，会員情報を不正に取得されるおそれがある。\n項番3 Aサイトで利用しているDBMSに既知の脆弱性があり，脆弱性を悪用した攻撃を受けるおそれがある。\n\n【設問】図1中の各項番それぞれに対処する組織の適切な組合せを，解答群の中から選べ。",
+      ja: "製造業のA社では，ECサイト（以下，A社のECサイトをAサイトという）を使用し，個人向けの製品販売を行っている。Aサイトは，A社の製品やサービスが検索可能で，ログイン機能を有しており，あらかじめAサイトに利用登録した個人（以下，会員という）の氏名やメールアドレスといった情報（以下，会員情報という）を管理している。Aサイトは，B社のPaaSで稼働しており，PaaS上のDBMSとアプリケーションサーバを利用している。\nA社は，Aサイトの開発，運用をC社に委託している。A社とC社との間の委託契約では，Webアプリケーションプログラムの脆弱性対策は，C社が実施するとしている。\n最近，A社の同業他社が運営しているWebサイトで脆弱性が悪用され，個人情報が漏えいするという事件が発生した。そこでA社は，セキュリティ診断サービスを行っているD社に，Aサイトの脆弱性診断を依頼した。脆弱性診断の結果，対策が必要なセキュリティ上の脆弱性が複数指摘された。図1にD社からの指摘事項を示す。\n\n【設問】図1中の各項番それぞれに対処する組織の適切な組合せを，解答群の中から選べ。",
       en: "Company A, a manufacturer, operates an e-commerce site (Site A) for direct-to-consumer sales..."
     },
     programLines: { ja: [], en: [] }, // プログラムはないので空
@@ -973,7 +981,7 @@ export const problems: Problem[] = [
     logicType: 'STATIC_QA', // トレース機能がないことを示す
     title: { ja: "サンプル問題 [科目B] セキュリティリスクの洗い出し", en: "Sample Problem [Subject B] Q18" },
     description: {
-      ja: "A社はIT開発を行っている従業員1,000名の企業である。総務部50名，営業部50名で，ほかは開発部に所属している。開発部員の9割は客先に常駐している。現在，A社におけるPCの利用状況は図1のとおりである。\n\n【図1 A社におけるPCの利用状況】\n1 A社のPC\n・総務部員，営業部員及びA社オフィスに勤務する開発部員には，会社が用意したPC(以下，A社PCという)を一人1台ずつ貸与している。\n・客先常駐開発部員には，A社PCを貸与していないが，代わりに客先常駐開発部員がA社オフィスに出社したときに利用するための共用PCを用意している。\n2 客先常駐開発部員の業務システム利用\n・客先常駐開発部員が休暇申請，経費精算などで業務システムを利用するためには共用PCを使う必要がある。\n3 A社のVPN利用\n・A社には，VPNサーバが設置されており，営業部員が出張時にA社PCからインターネット経由で社内ネットワークにVPN接続し，業務システムを利用できるようになっている。規則で，VPN接続にはA社PCを利用すると定められている。\n\nA社では，客先常駐開発部員が業務システムを使うためだけにA社オフィスに出社するのは非効率的であると考え，客先常駐開発部員に対して個人所有PCの業務用利用(BYOD)とVPN接続の許可を検討することにした。\n\n【設問】\n客先常駐開発部員に，個人所有PCからのVPN接続を許可した場合に，増加する又は新たに生じると考えられるリスクを二つ挙げた組合せは，次のうちどれか。解答群のうち，最も適切なものを選べ。\n\n(一) VPN接続が増加し，可用性が損なわれるリスク\n(二) 客先常駐開発部員がA社PCを紛失するリスク\n(三) 客先常駐開発部員がフィッシングメールのURLをクリックして個人PCがマルウェアに感染するリスク\n(四) 総務部員が個人所有PCをVPN接続するリスク\n(五) マルウェアに感染した個人所有PCが社内ネットワークにVPN接続され，マルウェアが社内ネットワークに拡散するリスク",
+      ja: "A社はIT開発を行っている従業員1,000名の企業である。総務部50名，営業部50名で，ほかは開発部に所属している。開発部員の9割は客先に常駐している。現在，A社におけるPCの利用状況は図1のとおりである。\n\nA社では，客先常駐開発部員が業務システムを使うためだけにA社オフィスに出社するのは非効率的であると考え，客先常駐開発部員に対して個人所有PCの業務用利用(BYOD)とVPN接続の許可を検討することにした。\n\n【設問】\n客先常駐開発部員に，個人所有PCからのVPN接続を許可した場合に，増加する又は新たに生じると考えられるリスクを二つ挙げた組合せは，次のうちどれか。解答群のうち，最も適切なものを選べ。\n\n(一) VPN接続が増加し，可用性が損なわれるリスク\n(二) 客先常駐開発部員がA社PCを紛失するリスク\n(三) 客先常駐開発部員がフィッシングメールのURLをクリックして個人PCがマルウェアに感染するリスク\n(四) 総務部員が個人所有PCをVPN接続するリスク\n(五) マルウェアに感染した個人所有PCが社内ネットワークにVPN接続され，マルウェアが社内ネットワークに拡散するリスク",
       en: "Company A, an IT development firm with 1,000 employees, is considering allowing off-site developers to use personal PCs (BYOD) with VPN access..."
     },
     programLines: { ja: [], en: [] }, // プログラムはないので空
@@ -1009,7 +1017,7 @@ export const problems: Problem[] = [
     logicType: 'STATIC_QA', // トレース機能がないことを示す
     title: { ja: "サンプル問題 [科目B] アクセス管理", en: "Sample Problem [Subject B] Q19" },
     description: {
-      ja: "A社は従業員200名の通信販売業者である。一般消費者向けに生活雑貨，ギフト商品などの販売を手掛けている。取扱商品の一つである商品Zは，Z販売課が担当している。\n\n〔Z販売課の業務〕\n現在，Z販売課の要員は，商品Zについての受注管理業務及び問合せ対応業務を行っている。商品Zについての受注管理業務の手順を図1に示す。\n\n【図1 受注管理業務の手順】\n商品Zの顧客からの注文は電子メールで届く。\n(1) 入力\n    販売担当者は，届いた注文(変更，キャンセルを含む)の内容を受注管理システム1)(以下，Jシステムという)に入力し，販売責任者2)に承認を依頼する。\n(2) 承認\n    販売責任者は，注文の内容とJシステムへの入力結果を突き合わせて確認し，問題がなければ承認する。問題があれば差し戻す。\n注1) A社情報システム部が運用している。利用者は，販売責任者，販売担当者などである。\n注2) Z販売課の課長1名だけである。\n\n〔Jシステムの操作権限〕\nZ販売課では，Jシステムについて，次の利用方針を定めている。\n〔方針1〕ある利用者が入力した情報は，別の利用者が承認する。\n〔方針2〕販売責任者は，Z販売課の全業務の情報を閲覧できる。\n\nJシステムでは，業務上必要な操作権限を利用者に与える機能が実装されている。\nこの度，商品Zの受注管理業務が受注増によって増えていることから，B社に一部を委託することにした(以下，商品Zの受注管理業務の入力作業を行うB社従業員を商品ZのB社販売担当者といい，商品ZのB社販売担当者の入力結果を閲覧して，不備があればA社に口頭で差戻しを依頼するB社従業員を商品ZのB社販売責任者という)。\n\n委託に当たって，Z販売課は情報システム部にJシステムに関する次の要求事項を伝えた。\n［要求1］B社が入力した場合は，A社が承認する。\n［要求2］A社の販売担当者が入力した場合は，現状どおりにA社の販売責任者が承認する。\n\n上記を踏まえ，情報システム部は今後の各利用者に付与される操作権限を表1にまとめ，Z販売課の情報セキュリティリーダーであるCさんに確認をしてもらった。\n\n【表1 操作権限案】\n利用者 (省略)\nZ販売課の販売担当者 (省略)\na1 (空欄)\na2 (空欄)\n(注記 ○は、操作権限が付与されることを示す。)\n\n【設問】\n表1中の a1， a2 に入れる字句の適切な組合せを，aに関する解答群の中から選べ。",
+      ja: "A社は従業員200名の通信販売業者である。一般消費者向けに生活雑貨，ギフト商品などの販売を手掛けている。取扱商品の一つである商品Zは，Z販売課が担当している。\n\n〔Z販売課の業務〕\n現在，Z販売課の要員は，商品Zについての受注管理業務及び問合せ対応業務を行っている。商品Zについての受注管理業務の手順を図1に示す。\n\n\n〔Jシステムの操作権限〕\nZ販売課では，Jシステムについて，次の利用方針を定めている。\n〔方針1〕ある利用者が入力した情報は，別の利用者が承認する。\n〔方針2〕販売責任者は，Z販売課の全業務の情報を閲覧できる。\n\nJシステムでは，業務上必要な操作権限を利用者に与える機能が実装されている。\nこの度，商品Zの受注管理業務が受注増によって増えていることから，B社に一部を委託することにした(以下，商品Zの受注管理業務の入力作業を行うB社従業員を商品ZのB社販売担当者といい，商品ZのB社販売担当者の入力結果を閲覧して，不備があればA社に口頭で差戻しを依頼するB社従業員を商品ZのB社販売責任者という)。\n\n委託に当たって，Z販売課は情報システム部にJシステムに関する次の要求事項を伝えた。\n［要求1］B社が入力した場合は，A社が承認する。\n［要求2］A社の販売担当者が入力した場合は，現状どおりにA社の販売責任者が承認する。\n\n上記を踏まえ，情報システム部は今後の各利用者に付与される操作権限を表1にまとめ，Z販売課の情報セキュリティリーダーであるCさんに確認をしてもらった。\n\n\n【設問】\n表1中の [  a1  ]， [  a2  ] に入れる字句の適切な組合せを， a に関する解答群の中から選べ。",
       en: "Company A, a mail-order business, has outsourced some of its order management tasks for Product Z to Company B..."
     },
     programLines: { ja: [], en: [] }, // プログラムはないので空
@@ -1040,7 +1048,7 @@ export const problems: Problem[] = [
     logicType: 'STATIC_QA', // トレース機能がないことを示す
     title: { ja: "サンプル問題 [科目B] 情報セキュリティ監査", en: "Sample Problem [Subject B] Q20" },
     description: {
-      ja: " A社は栄養補助食品を扱う従業員500名の企業である。A社のサーバ及びファイアウォール (以下、FWという)を含む情報システムの運用は情報システム部が担当している。ある日、内部監査部の監査があり、FWの運用状況について情報システム部の日部長が図1 のとおり説明したところ、表1に示す指摘を受けた。・FWを含め、情報システムの運用は、情報システム部の運用チームに所属する6名の運用担当者が担当している。FWの運用には、FWルールの編集、操作ログの確認、並びに編集後のFWルールの確認及び操作の承認(以下、 編集後のFWルールの確認及び操作の承認を操作承認というの三つがある。 FWルールの編集は事前に作成された操作指示書に従って行う。FWの機能には、FWルールの編集、操作ログの確認、及び操作承認の三つがある。FWルールの変更には、FWルールの編集と操作承認の両方が必要である。操作承認の前に操作ログの確認を行う。FWの利用者IDは各運用担当者に個別に発行されており、利用者IDの共用はしていない。FWでは、機能を利用する権限を運用担当者の利用者のごとに付与できる。現在は、6名の運用担当者とも全権限を付与されており、運用担当者はFWのルールの編集後、編集を行った運用担当者が操作に誤りがないことを確認し、操作承認をしている。FWへのログインにはパスワードを利用している。パスワードは文字の英数字である。・FWの運用では、運用担当者の利用者ごとに、ネットワークを経由せずコンソールでログインできるかどうか、ネットワークを経由してリモートからログインできるかどうかを設定できる。・FWは、ネットワークを経由せずコンソールでログインした場合でも、ネットワークを経由してリモートからログインした場合でも、同一の機能を利用できる。FWはサーバパレームに設置されており、サーバルームにはほかに数種類のサーバも設置されている。運用担当者だけがサーバルームへの入退室を許可されている。FWの運用の作業の中で、職務が適切に分離されていない。B部長は表1の指摘に対する改善策を検討することにした。設問表1中の指摘1について、FWルールの誤った変更を防ぐための改善策はどれか。解答群のうち、最も適切なものを選べ。",
+      ja: " A社は栄養補助食品を扱う従業員500名の企業である。A社のサーバ及びファイアウォール (以下、FWという)を含む情報システムの運用は情報システム部が担当している。\nある日、内部監査部の監査があり、FWの運用状況について情報システム部の日部長が図1 のとおり説明したところ、表1に示す指摘を受けた。\n\nB部長は表1の指摘に対する改善策を検討することにした。\n\n設問表1中の指摘1について、FWルールの誤った変更を防ぐための改善策はどれか。解答群のうち、最も適切なものを選べ。",
       en: "Company A, a mail-order business, has outsourced some of its order management tasks for Product Z to Company B..."
     },
     programLines: { ja: [], en: [] }, // プログラムはないので空
@@ -1470,7 +1478,7 @@ export const problems: Problem[] = [
       en: "Subject B Sample Problem Q26"
     },
     description: {
-      ja: "製造業のA社では，ECサイト（以下，A社のECサイトをAサイトという）を使用し，個人向けの製品販売を行っている。Aサイトは，A社の製品やサービスが検索可能で，ログイン機能を有しており，あらかじめAサイトに利用登録した個人（以下，会員という）の氏名やメールアドレスといった情報（以下，会員情報という）を管理している。Aサイトは，B社のPaaSで稼働しており，PaaS上のDBMSとアプリケーションサーバを利用している。\nA社は，Aサイトの開発，運用をC社に委託している。A社とC社との間の委託契約では，Webアプリケーションプログラムの脆弱性対策は，C社が実施するとしている。\n\n最近，A社の同業他社が運営しているWebサイトで脆弱性が悪用され，個人情報が漏えいするという事件が発生した。そこでA社は，セキュリティ診断サービスを行っているD社に，Aサイトの脆弱性診断を依頼した。脆弱性診断の結果，対策が必要なセキュリティ上の脆弱性が複数指摘された。図1にD社からの指摘事項を示す。\n\n(一) Aサイトで利用しているDBMSに既知の脆弱性があり，脆弱性を悪用した攻撃を受けるおそれがある。\n(二) Aサイトで利用しているアプリケーションサーバのOSに既知の脆弱性があり，脆弱性を悪用した攻撃を受けるおそれがある。\n(三) ログイン機能に脆弱性があり，Aサイトのデータベースに蓄積された情報のうち，会員には非公開の情報を閲覧されるおそれがある。\n\n【設問】\n図1中の項番(一)〜(三)それぞれに対処する組織の適切な組合せを，解答群の中から選べ。",
+      ja: "製造業のA社では，ECサイト（以下，A社のECサイトをAサイトという）を使用し，個人向けの製品販売を行っている。Aサイトは，A社の製品やサービスが検索可能で，ログイン機能を有しており，あらかじめAサイトに利用登録した個人（以下，会員という）の氏名やメールアドレスといった情報（以下，会員情報という）を管理している。Aサイトは，B社のPaaSで稼働しており，PaaS上のDBMSとアプリケーションサーバを利用している。\nA社は，Aサイトの開発，運用をC社に委託している。A社とC社との間の委託契約では，Webアプリケーションプログラムの脆弱性対策は，C社が実施するとしている。\n\n最近，A社の同業他社が運営しているWebサイトで脆弱性が悪用され，個人情報が漏えいするという事件が発生した。そこでA社は，セキュリティ診断サービスを行っているD社に，Aサイトの脆弱性診断を依頼した。脆弱性診断の結果，対策が必要なセキュリティ上の脆弱性が複数指摘された。図1にD社からの指摘事項を示す。\n\n【設問】\n図1中の項番(一)〜(三)それぞれに対処する組織の適切な組合せを，解答群の中から選べ。",
       en: "Company A, a manufacturer, uses an e-commerce site (Site A) for B2C product sales. Site A, which allows searching for Company A's products and services and has a login function, manages member information such as names and email addresses of individuals registered on the site. Site A operates on Company B's PaaS, utilizing the DBMS and application server on the PaaS. Company A has outsourced the development and operation of Site A to Company C. The outsourcing contract between A and C states that Company C is responsible for vulnerability countermeasures for the web application program.\n\nRecently, an incident occurred where a vulnerability was exploited on a competitor's website, leading to a personal information leak. Consequently, Company A commissioned Company D, a security diagnostic service provider, to perform a vulnerability assessment of Site A. The assessment pointed out several security vulnerabilities requiring countermeasures. Figure 1 shows the findings from Company D.\n\n(1) There is a known vulnerability in the DBMS used by Site A, posing a risk of exploitation.\n(2) There is a known vulnerability in the OS of the application server used by Site A, posing a risk of exploitation.\n(3) There is a vulnerability in the login function, posing a risk that non-public member information stored in Site A's database could be viewed.\n\n[Question]\nFor each item (1) to (3) in Figure 1, select the appropriate combination of organizations responsible for addressing them from the answer choices."
     },
     programLines: {
@@ -1998,7 +2006,7 @@ export const problems: Problem[] = [
       en: "Reiwa 5, Subject B, Question 6"
     },
     description: {
-      ja: "A社は，放送会社や運輸会社向けに広告制作ビジネスを展開している。A社は，人事事務の効率化を図るべく，人事事務の委託を検討することにした。A社が委託する業務（以下，B業務という）を図1に示す。\n\n【図1 B業務】\n採用予定者から郵送されてくる入社時の誓約書，前職の源泉徴収票などの書類をPDFファイルに変換し，ファイルサーバに格納する。（省略）\n\n委託先候補のC社は，B業務について，次のようにA社に提案した。\n・B業務だけに従事する専任の従業員を割り当てる。\n・B業務では，図2の複合機のスキャン機能を使用する。\n\n【図2 複合機のスキャン機能（抜粋）】\n・スキャン機能を使用する際は，従業員ごとに付与した利用者IDとパスワードをパネルに入力する。\n・スキャンしたデータをPDFファイルに変換する。\n・PDFファイルを従業員ごとに異なる鍵で暗号化して，電子メールに添付する。\n・スキャンを実行した本人宛てに電子メールを送信する。\n・PDFファイルが大きい場合は，PDFファイルを添付する代わりに，自社の社内ネットワーク上に設置したサーバ（以下，Bサーバという）に自動的に保存し，保存先のURLを電子メールの本文に記載して送信する。（注1）\n注1）Bサーバにアクセスする際は，従業員ごとの利用者IDとパスワードが必要になる。\n\nA社は，C社と業務委託契約を締結する前に，秘密保持契約を締結した。その後，C社に質問表を送付し，回答を受けて，業務委託での情報セキュリティリスクの評価を実施した。その結果，図3の発見があった。\n\n【図3 発見事項】\n・複合機のスキャン機能では，電子メールの差出人アドレス，件名，本文及び添付ファイル名を初期設定の状態で使用しており，誰がスキャンを実行しても同じである。\n・複合機のスキャン機能の初期設定情報はベンダーのWebサイトで公開されており，誰でも閲覧できる。\n\nそこで，A社では，初期設定の状態のままではA社にとって情報セキュリティリスクがあり，初期設定から変更するという対策が必要であると評価した。\n\n【設問】\n対策が必要であるとA社が評価した情報セキュリティリスクはどれか。解答群のうち，最も適切なものを選べ。",
+      ja: "A社は，放送会社や運輸会社向けに広告制作ビジネスを展開している。A社は，人事事務の効率化を図るべく，人事事務の委託を検討することにした。A社が委託する業務（以下，B業務という）を図1に示す。\n\n委託先候補のC社は，B業務について，次のようにA社に提案した。\n・B業務だけに従事する専任の従業員を割り当てる。\n・B業務では，図2の複合機のスキャン機能を使用する。\n\nA社は，C社と業務委託契約を締結する前に，秘密保持契約を締結した。その後，C社に質問表を送付し，回答を受けて，業務委託での情報セキュリティリスクの評価を実施した。その結果，図3の発見があった。\n\nそこで，A社では，初期設定の状態のままではA社にとって情報セキュリティリスクがあり，初期設定から変更するという対策が必要であると評価した。\n\n【設問】\n対策が必要であるとA社が評価した情報セキュリティリスクはどれか。解答群のうち，最も適切なものを選べ。",
       en: "Company A is in the advertising production business for broadcasting and transportation companies. To improve the efficiency of its human resources administration, Company A decided to consider outsourcing these tasks. The tasks to be outsourced by Company A (hereinafter referred to as B-Tasks) are shown in Figure 1.\n\n[Figure 1: B-Tasks]\nConvert documents such as pledge forms from prospective employees and withholding tax statements from previous jobs, sent by mail, into PDF files and store them on a file server. (Details omitted)\n\nCompany C, a potential outsourcing partner, proposed the following to Company A regarding B-Tasks:\n- Assign dedicated employees who will only engage in B-Tasks.\n- Use the scanning function of the multifunction peripheral (MFP) shown in Figure 2 for B-Tasks.\n\n[Figure 2: MFP Scan Function (Excerpt)]\n- When using the scan function, employees enter their assigned user ID and password on the panel.\n- The scanned data is converted into a PDF file.\n- The PDF file is encrypted with a different key for each employee and attached to an email.\n- An email is sent to the person who performed the scan.\n- If the PDF file is large, instead of attaching it, it is automatically saved to a server (hereinafter referred to as B-Server) on their internal network, and the URL of the storage location is included in the email body. (Note 1)\nNote 1) Accessing B-Server requires the employee's user ID and password.\n\nBefore concluding an outsourcing contract with Company C, Company A signed a non-disclosure agreement. Subsequently, Company A sent a questionnaire to Company C, received answers, and conducted an information security risk assessment for the outsourced tasks. As a result, the findings in Figure 3 were discovered.\n\n[Figure 3: Findings]\n- The MFP's scan function uses default settings for the sender's email address, subject, body, and attachment filename, which are the same regardless of who performs the scan.\n- The initial setup information for the MFP's scan function is publicly available on the vendor's website for anyone to view.\n\nTherefore, Company A assessed that leaving the settings as default poses an information security risk and that countermeasures to change them are necessary.\n\n[Question]\nWhich of the following is the information security risk that Company A determined requires countermeasures? Choose the most appropriate option from the answer choices."
     },
     programLines: {
@@ -2202,8 +2210,8 @@ export const problems: Problem[] = [
       en: "Reiwa 6, Subject B, Question 3"
     },
     description: {
-      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n図1に示すグラフの頂点には，1から順に整数で番号が付けられている。グラフは無向グラフであり，各頂点間には高々一つの辺がある。（...）\n\n関数 edgesToMatrix は，辺の配列を隣接行列に変換する。隣接行列とは，グラフに含まれる頂点の個数と等しい行数及び列数をもつ正方行列で，行i列jの成分は頂点iと頂点jを結ぶ辺があるときに1となり，それ以外は0となる。",
-      en: "Select the correct answer for the blank from the answer choices. Array indices start from 1.\n\nThe graph vertices shown in Figure 1 are numbered sequentially starting from 1. The graph is undirected, and there is at most one edge between any two vertices. (...)\n\nThe function edgesToMatrix converts an array of edges into an adjacency matrix. An adjacency matrix is a square matrix with the number of rows and columns equal to the number of vertices in the graph. The component at row i, column j is 1 if there is an edge connecting vertex i and vertex j, and 0 otherwise."
+      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n図1に示すグラフの頂点には，1から順に整数で番号が付けられている。グラフは無向グラフであり，各頂点間には高々一つの辺がある。ひとつの辺は両端の頂点の番号を要素にもつ要素数2の整数型の配列で表現できる。例えば，{1，3}は頂点 1 と頂点 3 を終点とする辺を表す。グラフ全体は，グラフに含まれる辺を表す要素数2の配列を全て格納した配列（以下，辺の配列という）で表現できる。辺の配列の要素数はグラフの辺の個数と等しい。図1のグラフは整数型配列の配列{{1，3}，{1，4}，{3，4}，{2，4}，{4，5}}と表現できる。\n\n関数 edgesToMatrix は，辺の配列を隣接行列に変換する。隣接行列とは，グラフに含まれる頂点の個数と等しい行数及び列数をもつ正方行列で，行i列jの成分は頂点iと頂点jを結ぶ辺があるときに1となり，それ以外は0となる。行列の対角成分は全て0で，無向グラフの場合は対象行列になる。図1のグラフを表現する隣接行列を図2に示す。\n\n関数edgesToMatrixは，引数edgeListで辺の配列を引数nodeNumでグラフの頂点の個数をそれぞれ受け取り，隣接行列を表す整数型の二次元配列を返す。",
+      en: "Select the correct answer for the blank from the answer choices. Array indices start from 1.\n\nThe graph vertices shown in Figure 1 are numbered sequentially starting from 1. The graph is undirected, and there is at most one edge between any two vertices. (...)\n\nThe function edgesTo3Matrix converts an array of edges into an adjacency matrix. An adjacency matrix is a square matrix with the number of rows and columns equal to the number of vertices in the graph. The component at row i, column j is 1 if there is an edge connecting vertex i and vertex j, and 0 otherwise."
     },
     programLines: {
       ja: [
@@ -2387,7 +2395,7 @@ export const problems: Problem[] = [
       en: "Reiwa 6, Subject B, Question 5"
     },
     description: {
-      ja: "次のプログラム中の a 〜 c に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n手続 putRelatedItem は，大域変数 orders に格納された注文データを基に，引数で与えられた商品との関連度が最も大きい商品のうちの一つと，その関連度を出力する。",
+      ja: "次のプログラム中の a 〜 c に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n一度の注文で購入された商品リストを，注文ごとに記録した注文データがある。表に，注文データの例を示す。\n注文データから，商品xと商品yとが同一の注文で購入されやすい傾向を示す関連度Lxyを計算式 Aで計算する。\n\nここで，Mxyは商品xと商品yとが同一の注文で購入された注文数，Kxは商品xが購入された注文数，Kyは商品yが購入された注文数を表す。表の例では，MABが2，全注文数が6，KAが4，K8が3であるので，商品Aと商品Bの関連度LABは，（2 × 6）/ （4 × 3）= 1.0である。\n手続 putRelatedItem は，大域変数 orders に格納された注文データを基に，引数で与えられた商品との関連度が最も大きい商品のうちの一つと，その関連度を出力する。プログラムでは，商品は文字列で表し，注文は購入された商品の配列，注文データは注文の配列で表している。注文データには2種類以上の商品が含まれるものとする。また，注文データにある商品以外の商品が，引数として与えられることはないものとする。",
       en: "Select the correct combination for a, b, and c from the answer choices. Array indices start from 1.\n\nThe procedure putRelatedItem, based on the order data stored in the global variable 'orders', outputs one of the items with the highest degree of relatedness to the item given as an argument, along with that degree of relatedness."
     },
     programLines: {
@@ -2499,7 +2507,7 @@ export const problems: Problem[] = [
       en: "Reiwa 6, Subject B, Question 6"
     },
     description: {
-      ja: "A社は従業員450名の商社であり，昨年から働き方改革の一環として，在宅でのテレワークを推進している。A社のシステム環境を図1に示す。\n\n【図1 A社のシステム環境（抜粋）】\n・従業員には，一人に1台デスクトップPC（以下，社内PCという）を貸与している。\n・従業員が利用するシステムには，自社で開発しA社に設置している業務システムのほかに，二つのSaaS（以下，二つのSaaSをA社利用クラウドサービスという）がある。\n 1. メール機能，チャット機能及びクラウドストレージ機能をもつグループウェア\n 2. オンライン会議サービス\n・テレワークでは，従業員の個人所有PC（以下，私有PCという）の業務用利用(BYOD)を許可している。\n・テレワークでは，社内PC及び私有PCのそれぞれに専用のアプリケーションソフトウェア（以下，専用アプリという）を導入し，社内PCのデスクトップから私有PCに画面転送を行うリモートデスクトップ方式を採用している。\n・専用アプリには，リモートデスクトップからPCへのファイルのダウンロード及びファイル，文字列，画像などのコピー＆ペーストを禁止する機能（保存禁止機能）があり，A社では私有PCに対して当該機能を有効にしている。\n・業務システムには，社内PCのデスクトップから利用者ID及びパスワードを入力してログインしている。\n・A社利用クラウドサービスへのログインは，A社利用クラウドサービス側の設定によってA社の社内ネットワークからだけに可能になるように制限している。\n\nテレワークの定着が進むにつれて，社内PCからインターネットへの接続が極端に遅くなり，業務に支障をきたしているので改善できないかと，従業員から問合せがあった。A社の情報システム部では，テレワークでA社利用クラウドサービスに接続する場合には，A社の社内ネットワークも社内PCも介さずに直接接続することを可能にするネットワークの設定変更を実施することにした。\n\n設定変更に当たり，情報セキュリティ上の問題がないかをA社の情報セキュリティリーダーであるBさんが検討したところ，幾つか問題があることが分かった。その一つは，A社利用クラウドサービスへの不正アクセスのリスクが増加することである。そこでBさんは，リスクを低減するために，情報システム部に対策を依頼することにした。\n\n【設問】\n次の対策のうち，情報システム部に依頼することにしたものはどれか。解答群のうち，最も適切なものを選べ。",
+      ja: "A社は従業員450名の商社であり，昨年から働き方改革の一環として，在宅でのテレワークを推進している。A社のシステム環境を図1に示す。\n\nテレワークの定着が進むにつれて，社内PCからインターネットへの接続が極端に遅くなり，業務に支障をきたしているので改善できないかと，従業員から問合せがあった。A社の社内ネットワークとインターネットとの間の通信料を調査したところ，テレワーク導入前に比べ，業務時間帯で顕著に増加していることが判明した。そのため，情報システム部では，テレワークでA社利用クラウドサービスに接続する場合には，A社の社内ネットワークも社内PCも介さずに直接接続することを可能にするネットワークの設定変更を実施することにした。\n\n設定変更に当たり，情報セキュリティ上の問題がないかをA社の情報セキュリティリーダーであるBさんが検討したところ，幾つか問題があることが分かった。その一つは，A社利用クラウドサービスへの不正アクセスのリスクが増加することである。そこでBさんは，リスクを低減するために，情報システム部に対策を依頼することにした。\n\n【設問】\n次の対策のうち，情報システム部に依頼することにしたものはどれか。解答群のうち，最も適切なものを選べ。",
       en: "Company A is a trading company with 450 employees and has been promoting telework as part of its work style reform since last year. Company A's system environment is shown in Figure 1.\n\n[Figure 1: Company A's System Environment (Excerpt)]\n- Each employee is provided with one desktop PC (hereinafter referred to as company PC).\n- In addition to the business systems developed in-house and installed at Company A, employees use two SaaS applications (hereinafter referred to as Company A's cloud services): a groupware with email, chat, and cloud storage, and an online conferencing service.\n- For telework, the company permits the business use of employees' personally owned PCs (BYOD, hereinafter referred to as private PCs).\n- For telework, a dedicated application software (hereinafter referred to as the dedicated app) is installed on both company and private PCs, employing a remote desktop method where the company PC's screen is transferred to the private PC.\n- The dedicated app has a function to prohibit downloading files to the PC, as well as copying and pasting files, text, and images (save prohibition function), which Company A has enabled for private PCs.\n- To log in to the business systems, users enter their user ID and password from the company PC's desktop.\n- Login to Company A's cloud services is restricted by the cloud service's settings to be possible only from Company A's internal network.\n\nAs telework became more established, the internet connection from company PCs became extremely slow, hindering business operations, and inquiries from employees about possible improvements arose. Company A's information systems department decided to implement a network setting change to allow direct connection to Company A's cloud services during telework, bypassing both the company's internal network and the company PC.\n\nUpon this setting change, Mr. B, Company A's information security leader, reviewed it for any information security issues and found several problems. One of them was an increased risk of unauthorized access to Company A's cloud services. Therefore, Mr. B decided to request countermeasures from the information systems department to mitigate this risk.\n\n[Question]\nOf the following countermeasures, which one did Mr. B decide to request from the information systems department? Choose the most appropriate option from the answer choices."
     },
     programLines: {

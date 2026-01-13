@@ -51,8 +51,6 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
   return (
     // コンポーネントの最上位コンテナ。高さをいっぱいに使い、中身を縦方向に配置
     <div className="flex flex-col h-full">
-      {/* 問題のタイトルを表示 */}
-      <h2 className="text-xl font-bold mb-4 text-gray-700">{t.title}</h2>
       {/* タイトルと問題文の間の区切り線 */}
       <hr className="mb-6 border-gray-300" />
 
@@ -67,7 +65,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({
           <img 
             src={`/images/basic_b/基本B問${problemId}.png`} 
             alt={`Problem ${problemId} image`}
-            className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+            className="w-[80%] max-w-[650px] h-auto"
           />
         </div>
       )}
