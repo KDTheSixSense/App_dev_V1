@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const userId = session.user.id;
 
     const body = await await request.json();
-    const { eventIssueId } = body;
+    const { eventIssueId, language } = body;
 
     if (!eventIssueId) {
       return NextResponse.json({ error: '問題IDが必要です' }, { status: 400 });
@@ -29,14 +29,23 @@ export async function POST(request: Request) {
       },
     });
 
-    // 記録がまだない場合のみ、新しいレコードを作成
-    if (!existingSubmission) {
+    if (existingSubmission) {
+      // 既に記録がある場合は、言語設定のみ更新する (解答中の言語変更を反映)
+      if (language && existingSubmission.language !== language) {
+        await prisma.event_Submission.update({
+          where: { id: existingSubmission.id },
+          data: { language: language },
+        });
+      }
+    } else {
+      // 記録がまだない場合、新しいレコードを作成
       await prisma.event_Submission.create({
         data: {
           userId: userId,
           eventIssueId: eventIssueId,
-          status: false, // status: 'started' のような状態がないため、不正解として記録
+          status: false,
           score: 0,
+          language: language || 'python', // 指定がなければデフォルト
           codeLog: '// 解答開始',
           startedAt: new Date(),
         },

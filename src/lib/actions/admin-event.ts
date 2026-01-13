@@ -102,3 +102,30 @@ export async function getRecentEventActivityAction(eventId: number) {
         return { error: 'アクティビティの取得に失敗しました。' };
     }
 }
+
+export async function getEventParticipantsDataAction(eventId: number) {
+    try {
+        const participants = await prisma.event_Participants.findMany({
+            where: {
+                eventId: eventId,
+            },
+            include: {
+                user: {
+                    include: {
+                        eventSubmissions: {
+                            orderBy: {
+                                score: 'desc'
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Prismaの型とAdminViewで期待する型を合わせるために必要なデータを返す
+        return { success: true, participants };
+    } catch (error) {
+        console.error("Error fetching event participants data:", error);
+        return { error: '参加者データの取得に失敗しました。' };
+    }
+}
