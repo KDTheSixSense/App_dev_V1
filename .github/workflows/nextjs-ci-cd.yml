@@ -1,25 +1,26 @@
-name: Next.js CI/CD - Build and Deploy
+name: Next.js CI/CD - Build, Sign & Deploy
 
-# ワークフローが実行されるタイミング
 on:
   push:
-    branches: [ main ] # ★ releaseブランチにプッシュされた時に実行
+    branches: [ main ]
 
-# ワークフロー全体で使う環境変数
 env:
-  # ★ Docker Hubのユーザー名と、アプリのイメージ名を指定
-  DOCKERHUB_USERNAME: rnagashiro # ★あんたのDocker Hubユーザー名
-  IMAGE_NAME: my-nextjs-app      # ★あんたが決めたイメージ名
+  # ★ GHCRを使うため、ユーザー名ではなくリポジトリ所有者を使います
+  REGISTRY: ghcr.io
+  # イメージ名は "所有者名/アプリ名" の形にします（大文字禁止のため小文字変換などの工夫が必要ですが、ここでは変数を直接利用）
+  IMAGE_NAME: ${{ github.repository_owner }}/my-nextjs-app
+  MANIFEST_REPO: RyoNagashiro9280/ac-manifest-tss
+  MANIFEST_PATH: next/values.yaml
 
-  # ★ マニフェスト用リポジトリの情報を指定
-  MANIFEST_REPO: RyoNagashiro9280/ac-manifest-tss # ★ユーザー名/リポジトリ名
-  MANIFEST_PATH: next/values.yaml  # ★Helmチャートのvalues.yamlまでのパス
+# ★ Level 1 & 3: 権限設定（OIDCトークン発行とGHCR書き込みに必要）
+permissions:
+  contents: read   # ソースコード読み取り
+  packages: write  # GHCRへの書き込み
+  id-token: write  # Cosignの署名(OIDC)に必要
 
 jobs:
-  # ジョブ1: Dockerイメージをビルドしてプッシュする
   build-and-push-image:
     runs-on: ubuntu-latest
-    # ジョブの出力を定義。ここで定義した値は、他のジョブから参照できる
     outputs:
       IMAGE_TAG: ${{ steps.meta.outputs.version }}
 
@@ -27,99 +28,121 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
+      # ★ Level 3: Cosignツールのインストール
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      # ★ Level 1: GHCRへのログイン（固定のSecretsを使わず、GITHUB_TOKENを使う）
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }} # ★GitHub Secretsに設定する必要がある
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate image tag from Git commit
+      # タグ生成（ghcr.io用）
+      - name: Generate image metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # Gitのコミットハッシュ (短い形式) をタグとして使う
             type=sha,prefix=,format=short
 
-      # --- Runner (アプリ本体) イメージのビルド ---
+      # --- Runner (アプリ本体) ---
       - name: Build and push Docker image (Runner)
+        id: build-runner
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }} # 例: rnagashiro/my-nextjs-app:d65b5c1
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # ★★★ ここに変数を追加して焼き込みます ★★★
+          # ★セキュリティ修正: 秘密鍵(OPENAI_API_KEYなど)はここに入れない！
+          # Next.jsのビルドに必要な PUBLIC 変数のみ渡す
           build-args: |
-            DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
             NEXT_PUBLIC_APP_URL=https://infopia.nqg1t0.com
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
             NEXTAUTH_URL=https://infopia.nqg1t0.com
+            # DATABASE_URL は Prisma generate に必要な場合のみ渡すが、
+            # 本番DBへの接続情報はK8sのSecretで渡すのが鉄則。
+            # ビルド専用のダミーURLか、スキーマ用URLを使うことを推奨。
+            DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
           no-cache: true
-          # "runner" ステージをビルド対象として指定
           target: runner
 
-      # --- Migrator (DBマイグレーション用) イメージのビルド ---
+      # ★ Level 3: イメージへの署名 (Runner)
+      - name: Sign the Runner image
+        run: |
+          cosign sign --yes ${{ steps.meta.outputs.tags }}@${{ steps.build-runner.outputs.digest }}
+
+      # --- Migrator (DBマイグレーション用) ---
       - name: Build and push Migrator image
+        id: build-migrator
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          # タグの末尾に '-migrator' をつける
-          tags: ${{ steps.meta.outputs.tags }}-migrator # 例: rnagashiro/my-nextjs-app:d65b5c1-migrator
+          tags: ${{ steps.meta.outputs.tags }}-migrator
           labels: ${{ steps.meta.outputs.labels }}
-          # ★ Migratorも同じbuilderステージを使うので、キャッシュヒットのために同じ引数を渡すのが無難
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL_FOR_BUILD }}
             NEXT_PUBLIC_APP_URL=https://infopia.nqg1t0.com
-            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
-            NEXTAUTH_URL=https://infopia.nqg1t0.com
           no-cache: true
-          # ビルド対象として 'migrator' ステージを指定
           target: migrator
 
-      # --- Sandbox (コード実行環境) イメージのビルド ---
+      # ★ Level 3: イメージへの署名 (Migrator)
+      # タグ名だけだと上書き可能なため、digest値(@sha256:...)を使って署名するのが最も安全
+      - name: Sign the Migrator image
+        run: |
+          # タグ名を取得
+          TAG_NAME="${{ steps.meta.outputs.tags }}-migrator"
+          # ダイジェストを使って署名
+          cosign sign --yes ${TAG_NAME}@${{ steps.build-migrator.outputs.digest }}
+
+      # --- Sandbox (コード実行環境) ---
       - name: Build and push Sandbox image
+        id: build-sandbox
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          # タグの末尾に '-sandbox' をつける (例: ...:d65b5c1-sandbox)
           tags: ${{ steps.meta.outputs.tags }}-sandbox
           labels: ${{ steps.meta.outputs.labels }}
           no-cache: true
-          # ★ Dockerfile内の 'sandbox-env' ステージを指定
           target: sandbox-env
 
-  # ジョブ2: Kubernetesマニフェスト (values.yaml) を更新する
+      # ★ Level 3: イメージへの署名 (Sandbox)
+      - name: Sign the Sandbox image
+        run: |
+          TAG_NAME="${{ steps.meta.outputs.tags }}-sandbox"
+          cosign sign --yes ${TAG_NAME}@${{ steps.build-sandbox.outputs.digest }}
+
+  # マニフェスト更新ジョブ
   update-manifest:
     runs-on: ubuntu-latest
-    needs: build-and-push-image # build-and-push-imageジョブが終わってから実行
-
+    needs: build-and-push-image
     steps:
       - name: Checkout Manifest Repository
         uses: actions/checkout@v4
         with:
           repository: ${{ env.MANIFEST_REPO }}
-          token: ${{ secrets.PAT_FOR_MANIFEST_REPO }} # ★マニフェストリポジトリを書き換えるためのPAT
+          token: ${{ secrets.PAT_FOR_MANIFEST_REPO }}
 
       - name: Update Helm chart values.yaml
         uses: mikefarah/yq@v4
         with:
-          # yqコマンドを使って、values.yamlの中の image.tag の値を書き換える
-          # needs.build-and-push-image.outputs.IMAGE_TAG で、前のジョブで作ったタグを参照
+          # image.repositoryもGHCRに書き換える必要があるならここで行うか、
+          # 最初からvalues.yamlに `repository: ghcr.io/ryonagashiro9280/my-nextjs-app` と書いておく
           cmd: yq -i '.image.tag = "${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"' ${{ env.MANIFEST_PATH }}
 
       - name: Commit and push changes
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "actions-bot@github.com"
-          # 変更がなければ、コミットせずに終了する
           if ! git diff --quiet ${{ env.MANIFEST_PATH }}; then
             git add ${{ env.MANIFEST_PATH }}
-            git commit -m "Update image tag for ${{ env.IMAGE_NAME }} to ${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"
+            git commit -m "Update image tag to ${{ needs.build-and-push-image.outputs.IMAGE_TAG }}"
             git push
           else
             echo "No changes to commit."
