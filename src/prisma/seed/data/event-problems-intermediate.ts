@@ -16,7 +16,7 @@ int main(void) {
     // ここにプログラムを記述してください
     return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -71,7 +71,7 @@ int main(void) {
     // ここにプログラムを記述してください
     return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -194,7 +194,7 @@ void PrintGraph(int loopCount)
 {
     // 処理内容：loopCount回 * を出力する
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -303,7 +303,7 @@ int main(void)
     }
 	return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -372,7 +372,7 @@ int main(void)
 	// 情報を出力
 	return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -466,7 +466,7 @@ int main(void) {
     // 関数を呼び出す
     return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -511,7 +511,7 @@ int main(void)
 	Fisher();
 	printf("これは%sです\\n",name);
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -580,7 +580,7 @@ int main(void) {
 	printf("正常動作");
 	return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -646,7 +646,7 @@ int main(void)
 	}
 	return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -695,7 +695,7 @@ int main(void) {
     // 処理記述
     return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {

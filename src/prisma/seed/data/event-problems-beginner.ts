@@ -21,7 +21,7 @@ int main(void) {
     // ここにプログラムを記述してください
     return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -69,7 +69,7 @@ int main(void) {
     // ここにプログラムを記述してください
     return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -124,7 +124,7 @@ int main(void) {
     // ここにプログラムを記述してください
     return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
@@ -195,7 +195,7 @@ char i='.';
 printf("%s",a+b+c+d+e+f+g+h+i);
 return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         testCases: [
             {
@@ -225,7 +225,7 @@ int main(void)
     // ここにプログラムを記述してください
     return 0;
 }`,
-        isPublic: true,
+        isPublic: false,
         isPublished: true,
         sampleCases: [
             {
