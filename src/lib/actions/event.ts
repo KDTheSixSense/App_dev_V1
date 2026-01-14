@@ -151,7 +151,7 @@ export async function saveEventDraftAction(data: EventFormData) {
         return { success: true, message: '下書きを保存しました。' };
 
     } catch (error) {
-        console.error('下書き保存に失敗しました:', error);
+        console.error('saveEventDraftAction Error:', error);
         return { error: '下書きの保存に失敗しました。' };
     }
 }
@@ -180,7 +180,7 @@ export async function getMyDraftEventsAction() {
         });
         return { data: drafts };
     } catch (error) {
-        console.error('下書き一覧の取得に失敗:', error);
+        console.error('getMyDraftEventsAction Error:', error);
         return { error: '下書きの読み込みに失敗しました。' };
     }
 }
@@ -236,34 +236,34 @@ export async function getDraftEventDetailsAction(eventId: number) {
         return { data: formattedEvent };
 
     } catch (error) {
-        console.error('下書き詳細の取得に失敗:', error);
+        console.error('getDraftEventDetailsAction Error:', error);
         return { error: '下書きの読み込みに失敗しました。' };
     }
 }
 
 export async function toggleEventStatusAction(eventId: number, start: boolean) {
     'use server';
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.user?.id) {
-        return { error: 'ログインしていません。' };
-    }
-    const userId = session.user.id;
-
-    const event = await prisma.create_event.findUnique({ where: { id: eventId } });
-    if (!event || event.creatorId !== userId) {
-        return { error: 'このイベントを操作する権限がありません。' };
-    }
-
-    let dataToUpdate: { isStarted: boolean; startTime?: Date; hasBeenStarted?: boolean } = { isStarted: start };
-
-    if (start) {
-        if (event.startTime && new Date() < new Date(event.startTime)) {
-            dataToUpdate.startTime = new Date();
-        }
-        dataToUpdate.hasBeenStarted = true;
-    }
-
     try {
+        const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+        if (!session.user?.id) {
+            return { error: 'ログインしていません。' };
+        }
+        const userId = session.user.id;
+
+        const event = await prisma.create_event.findUnique({ where: { id: eventId } });
+        if (!event || event.creatorId !== userId) {
+            return { error: 'このイベントを操作する権限がありません。' };
+        }
+
+        let dataToUpdate: { isStarted: boolean; startTime?: Date; hasBeenStarted?: boolean } = { isStarted: start };
+
+        if (start) {
+            if (event.startTime && new Date() < new Date(event.startTime)) {
+                dataToUpdate.startTime = new Date();
+            }
+            dataToUpdate.hasBeenStarted = true;
+        }
+
         await prisma.create_event.update({
             where: { id: eventId },
             data: dataToUpdate,
@@ -271,51 +271,58 @@ export async function toggleEventStatusAction(eventId: number, start: boolean) {
         revalidatePath(`/event/event_detail/${eventId}`);
         return { success: true };
     } catch (error) {
+        console.error('toggleEventStatusAction Error:', error);
         return { error: 'イベント状態の更新に失敗しました。' };
     }
 }
 
 export async function deleteEventAction(eventId: number) {
     'use server';
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.user?.id) {
-        return { error: 'ログインしていません。' };
+    try {
+        const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+        if (!session.user?.id) {
+            return { error: 'ログインしていません。' };
+        }
+        const userId = session.user.id;
+
+        const event = await prisma.create_event.findUnique({
+            where: { id: eventId },
+            select: { creatorId: true },
+        });
+
+        if (!event) {
+            return { error: 'イベントが見つかりません。' };
+        }
+
+        if (event.creatorId !== userId) {
+            return { error: 'このイベントを削除する権限がありません。' };
+        }
+
+        await prisma.create_event.delete({ where: { id: eventId } });
+
+        revalidatePath('/event/event_list');
+        return { success: true };
+
+    } catch (error) {
+        console.error('deleteEventAction Error:', error);
+        return { error: 'イベントの削除に失敗しました。' };
     }
-    const userId = session.user.id;
-
-    const event = await prisma.create_event.findUnique({
-        where: { id: eventId },
-        select: { creatorId: true },
-    });
-
-    if (!event) {
-        return { error: 'イベントが見つかりません。' };
-    }
-
-    if (event.creatorId !== userId) {
-        return { error: 'このイベントを削除する権限がありません。' };
-    }
-
-    await prisma.create_event.delete({ where: { id: eventId } });
-
-    revalidatePath('/event/event_list');
-    return { success: true };
 }
 
 export async function acceptEventAction(eventId: number, userId: string) {
     'use server';
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.user?.id) {
-        return { error: 'ログインしていません。' };
-    }
-
-    // session.user.id can be compared with userId or we can just use session.user.id to be safe
-    const currentUserId = session.user.id;
-    if (currentUserId !== userId) {
-        return { error: 'ユーザーIDが一致しません。' };
-    }
-
     try {
+        const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+        if (!session.user?.id) {
+            return { error: 'ログインしていません。' };
+        }
+
+        // session.user.id can be compared with userId or we can just use session.user.id to be safe
+        const currentUserId = session.user.id;
+        if (currentUserId !== userId) {
+            return { error: 'ユーザーIDが一致しません。' };
+        }
+
         const result = await prisma.event_Participants.updateMany({
             where: {
                 eventId: eventId,
@@ -333,33 +340,33 @@ export async function acceptEventAction(eventId: number, userId: string) {
         revalidatePath(`/event/event_detail/${eventId}`);
         return { success: true };
     } catch (error) {
-        console.error('参加承認エラー:', error);
+        console.error('acceptEventAction Error:', error);
         return { error: '参加承認に失敗しました。' };
     }
 }
 
 export async function updateEventThemeAction(eventId: number, theme: string) {
     'use server';
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.user?.id) {
-        return { error: 'ログインしていません。' };
-    }
-    const userId = session.user.id;
-
-    const event = await prisma.create_event.findUnique({
-        where: { id: eventId },
-        select: { creatorId: true },
-    });
-
-    if (!event) {
-        return { error: 'イベントが見つかりません。' };
-    }
-
-    if (event.creatorId !== userId) {
-        return { error: '設定を変更する権限がありません。' };
-    }
-
     try {
+        const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+        if (!session.user?.id) {
+            return { error: 'ログインしていません。' };
+        }
+        const userId = session.user.id;
+
+        const event = await prisma.create_event.findUnique({
+            where: { id: eventId },
+            select: { creatorId: true },
+        });
+
+        if (!event) {
+            return { error: 'イベントが見つかりません。' };
+        }
+
+        if (event.creatorId !== userId) {
+            return { error: '設定を変更する権限がありません。' };
+        }
+
         await prisma.create_event.update({
             where: { id: eventId },
             data: { theme } as any,
@@ -368,45 +375,45 @@ export async function updateEventThemeAction(eventId: number, theme: string) {
         revalidatePath(`/event/event_detail/${eventId}`);
         return { success: true };
     } catch (error) {
-        console.error('テーマ更新エラー:', error);
+        console.error('updateEventThemeAction Error:', error);
         return { error: `テーマの更新に失敗しました: ${error instanceof Error ? error.message : String(error)}` };
     }
 }
 
 export async function uploadEventBackgroundAction(eventId: number, formData: FormData) {
     'use server';
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.user?.id) {
-        return { error: 'ログインしていません。' };
-    }
-    const userId = session.user.id;
-
-    const file = formData.get('file') as File;
-    if (!file) {
-        return { error: 'ファイルが選択されていません。' };
-    }
-
-    // Validation (Size, Type)
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        return { error: 'ファイルサイズは5MB以下にしてください。' };
-    }
-    if (!file.type.startsWith('image/')) {
-        return { error: '画像ファイルのみアップロード可能です。' };
-    }
-
-    const event = await prisma.create_event.findUnique({
-        where: { id: eventId },
-        select: { creatorId: true },
-    });
-
-    if (!event) {
-        return { error: 'イベントが見つかりません。' };
-    }
-    if (event.creatorId !== userId) {
-        return { error: '権限がありません。' };
-    }
-
     try {
+        const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+        if (!session.user?.id) {
+            return { error: 'ログインしていません。' };
+        }
+        const userId = session.user.id;
+
+        const file = formData.get('file') as File;
+        if (!file) {
+            return { error: 'ファイルが選択されていません。' };
+        }
+
+        // Validation (Size, Type)
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            return { error: 'ファイルサイズは5MB以下にしてください。' };
+        }
+        if (!file.type.startsWith('image/')) {
+            return { error: '画像ファイルのみアップロード可能です。' };
+        }
+
+        const event = await prisma.create_event.findUnique({
+            where: { id: eventId },
+            select: { creatorId: true },
+        });
+
+        if (!event) {
+            return { error: 'イベントが見つかりません。' };
+        }
+        if (event.creatorId !== userId) {
+            return { error: '権限がありません。' };
+        }
+
         const buffer = Buffer.from(await file.arrayBuffer());
         const filename = `${eventId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
 
@@ -431,7 +438,7 @@ export async function uploadEventBackgroundAction(eventId: number, formData: For
         return { success: true, imagePath: publicPath };
 
     } catch (error) {
-        console.error('画像アップロードエラー:', error);
+        console.error('uploadEventBackgroundAction Error:', error);
         return { error: '画像のアップロードに失敗しました。' };
     }
 }

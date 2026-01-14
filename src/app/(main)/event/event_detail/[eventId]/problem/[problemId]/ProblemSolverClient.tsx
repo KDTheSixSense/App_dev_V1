@@ -379,22 +379,41 @@ const ProblemSolverClient: React.FC<ProblemSolverClientProps> = ({ problem, even
         setUserCode(((problem as any).codeTemplate) || '');
         setProblemStartTime(Date.now());
 
-        // 問題ページを開いたときに「解答中」として記録する 
-        const recordStartTime = async () => {
+        // 問題ページを開いたときに「解答中」として記録する、または言語変更を同期する
+        const recordStartOrUpdateLanguage = async () => {
+            // selectedLanguageがまだロードされていない可能性を考慮して少し待つか、
+            // 単にデフォルト(Python)で送って、ロード後に更新されてまた送られるのを期待するか。
+            // localStorage読み込みはmount時に走るので、このEffectが走るタイミングでは既に反映されているかも。
+            // 念のため、この関数は独立したEffectにするのが望ましいが、ここに入れてしまうと
+            // selectedLanguageが変わるたびに初期化処理が走ってしまう（依存配列の問題）。
+            // なので、API呼び出しだけを別のEffectに切り出す。
+        };
+    }, [problem, storageKey, eventIssueId]); // selectedLanguageは含めない
+
+    // 言語変更や問題開始時にサーバーと同期するEffect
+    useEffect(() => {
+        if (!eventIssueId) return;
+
+        const syncLanguageStatus = async () => {
             try {
                 await fetch('/api/event-submissions/start', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         eventIssueId: eventIssueId,
+                        language: selectedLanguage,
                     }),
                 });
             } catch (error) {
-                console.error('Failed to record problem start time:', error);
+                console.error('Failed to sync problem status:', error);
             }
         };
-        recordStartTime();
-    }, [problem, storageKey, eventIssueId]);
+
+        // デバウンスを入れる（連打防止）
+        const timer = setTimeout(syncLanguageStatus, 500);
+        return () => clearTimeout(timer);
+    }, [eventIssueId, selectedLanguage]);
+
 
     // --- 7. ページ離脱時の Effect---
     useEffect(() => {
