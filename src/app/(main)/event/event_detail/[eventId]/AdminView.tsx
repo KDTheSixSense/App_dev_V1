@@ -11,6 +11,7 @@ import { FaCrown, FaTrophy, FaMedal, FaPython, FaJs } from 'react-icons/fa';
 import { getSubmissionDetailAction, getParticipantSubmissionsAction } from '@/lib/actions/admin-event';
 import LiveActivityFeed from './LiveActivityFeed';
 import { EVENT_THEMES } from '@/lib/constants';
+import { ActionModal } from '../../components/ActionModal';
 
 // イベント詳細データの型定義
 // イベントの主体である `Create_event` モデルに対応（participants, issuesを含む）
@@ -68,6 +69,11 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
   const [submissionModalOpen, setSubmissionModalOpen] = useState(false);
   const [loadingSubmission, setLoadingSubmission] = useState(false);
+
+  // Action Modals State
+  const [isStartModalOpen, setIsStartModalOpen] = useState(false);
+  const [isEndModalOpen, setIsEndModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Participant Submissions List State
   const [selectedParticipantSubmissions, setSelectedParticipantSubmissions] = useState<any>(null);
@@ -280,14 +286,18 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
   );
 
   //イベント開始処理
-  const handleStartEvent = async () => {
-    if (!confirm('イベントを開始しますか？')) return;
+  const handleStartEvent = () => {
+    setIsStartModalOpen(true);
+  };
+
+  const executeStartEvent = async () => {
     setIsSubmitting(true);
     try {
       const result = await toggleEventStatusAction(event.id, true);
       if (result.error) throw new Error(result.error);
       setEvent(prev => ({ ...prev, isStarted: true, hasBeenStarted: true, startTime: new Date() }));
       toast.success('イベントを開始しました！');
+      setIsStartModalOpen(false);
     } catch (error) {
       console.error('イベント開始エラー:', error);
       toast.error(`イベント開始中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
@@ -297,14 +307,18 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
   };
 
   //イベント終了処理
-  const handleEndEvent = async () => {
-    if (!confirm('イベントを終了しますか？参加者は問題を見ることができなくなります。')) return;
+  const handleEndEvent = () => {
+    setIsEndModalOpen(true);
+  };
+
+  const executeEndEvent = async () => {
     setIsSubmitting(true);
     try {
       const result = await toggleEventStatusAction(event.id, false);
       if (result.error) throw new Error(result.error);
       setEvent(prev => ({ ...prev, isStarted: false }));
       toast.success('イベントを終了しました。');
+      setIsEndModalOpen(false);
     } catch (error) {
       console.error('イベント終了エラー:', error);
       toast.error(`イベント終了中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
@@ -314,8 +328,11 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
   };
 
   //イベント削除処理
-  const handleDeleteEvent = async () => {
-    if (!confirm('本当にこのイベントを削除しますか？\nこの操作は元に戻すことができません。')) return;
+  const handleDeleteEvent = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDeleteEvent = async () => {
     setIsSubmitting(true);
     try {
       const result = await deleteEventAction(event.id);
@@ -325,6 +342,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
     } catch (error) {
       console.error('イベント削除エラー:', error);
       toast.error(`イベントの削除中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      setIsDeleteModalOpen(false); // Only close on error, on success we redirect
     } finally {
       setIsSubmitting(false);
     }
@@ -1324,6 +1342,51 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
 
         </div>
       </div>
+      {/* Modals */}
+      <ActionModal
+        isOpen={isStartModalOpen}
+        onClose={() => setIsStartModalOpen(false)}
+        onAction={executeStartEvent}
+        title="イベントを開始"
+        actionLabel="開始する"
+        variant="success"
+        isLoading={isSubmitting}
+      >
+        <p>イベントを開始しますか？</p>
+        <p className="mt-2 text-sm text-gray-500">
+          開始すると、参加者は問題にアクセスできるようになり、ランキングの更新が始まります。
+        </p>
+      </ActionModal>
+
+      <ActionModal
+        isOpen={isEndModalOpen}
+        onClose={() => setIsEndModalOpen(false)}
+        onAction={executeEndEvent}
+        title="イベントを終了"
+        actionLabel="終了する"
+        variant="warning"
+        isLoading={isSubmitting}
+      >
+        <p>イベントを終了しますか？</p>
+        <p className="mt-2 text-sm text-gray-500">
+          終了すると、参加者は問題を見ることができなくなります。この操作は後から再開することができます。
+        </p>
+      </ActionModal>
+
+      <ActionModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onAction={executeDeleteEvent}
+        title="イベントを削除"
+        actionLabel="削除する"
+        variant="danger"
+        isLoading={isSubmitting}
+      >
+        <p className="font-bold text-red-600">本当にこのイベントを削除しますか？</p>
+        <p className="mt-2 text-sm text-gray-500">
+          この操作は元に戻すことができません。イベントに関連するすべてのデータ（参加者記録、回答など）が完全に削除されます。
+        </p>
+      </ActionModal>
     </div>
   );
 }

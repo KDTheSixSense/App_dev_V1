@@ -62,35 +62,35 @@ const HelpTour: React.FC<HelpTourProps> = ({ steps, onClose }) => {
       <div className="absolute inset-0 bg-white/80"></div>
 
       {/* Help modal positioned near the spotlight */}
-      <div className="help-tour-modal absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/4 bg-white px-6 py-4 rounded-lg shadow-xl w-[1400px] relative z-10 transition-all">
-        <h3 className="text-3xl font-bold mb-1 text-gray-900">{currentStep.title}</h3>
-        <p className="text-gray-700 mb-2 whitespace-pre-wrap text-xl leading-relaxed">{currentStep.description}</p>
+      <div className="help-tour-modal absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-6 py-4 rounded-lg shadow-xl w-[90vw] max-w-5xl max-h-[85vh] overflow-y-auto relative z-10 transition-all">
+        <h3 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900">{currentStep.title}</h3>
+        <p className="text-gray-700 mb-4 whitespace-pre-wrap text-base md:text-lg leading-relaxed">{currentStep.description}</p>
 
         {currentStep.imagePath && (
           // Next.jsのImageコンポーネントの代わりに標準のimgタグを使用
-          <div className="my-2 rounded-lg overflow-hidden min-h-[600px] min-w-[900px] flex items-center justify-center shadow-lg">
+          <div className="my-2 rounded-lg overflow-hidden w-full flex items-center justify-center shadow-md bg-gray-50 border border-gray-100">
             <img
               src={currentStep.imagePath}
               alt={currentStep.title}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-[50vh] object-contain"
             />
           </div>
         )}
 
-        <div className="flex justify-between items-center mt-2">
+        <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-100">
           <button
             onClick={goToPrevStep}
             disabled={currentStepIndex === 0}
-            className="px-6 py-3 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50 transition text-lg"
+            className="px-4 py-2 md:px-6 md:py-3 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50 transition text-base md:text-lg font-bold"
           >
             {'< 戻る'}
           </button>
-          <span className="text-lg text-gray-600">
+          <span className="text-base md:text-lg text-gray-600 font-medium">
             {currentStepIndex + 1} / {steps.length}
           </span>
           <button
             onClick={goToNextStep}
-            className="px-6 py-3 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-lg"
+            className="px-4 py-2 md:px-6 md:py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-base md:text-lg font-bold shadow-md"
           >
             {currentStepIndex === steps.length - 1 ? "終了" : "次へ"}
           </button>
