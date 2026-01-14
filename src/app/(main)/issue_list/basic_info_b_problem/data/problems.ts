@@ -1081,7 +1081,7 @@ export const problems: Problem[] = [
     logicType: 'ADMISSION_FEE',
     title: { ja: "基本情報技術者試験 科目B プログラムの条件分岐", en: "Fundamental Information Technology Engineer Examination, Subject B, Question 21" },
     description: {
-      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを、解答群の中から選べ。\n\nある施設の入場料は、0歳から3歳までは100円、4歳から9歳までは300円、10歳以上は500円である。関数 fee は、年齢を表す0以上の整数(num)を引数として受け取り、入場料を返す。",
+      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを、解答群の中から選べ。\n\nある施設の入場料は、0歳から3歳までは100円、4歳から9歳までは300円、10歳以上は500円である。関数 fee は、年齢を表す0以上の整数を引数として受け取り、入場料を返す。",
       en: "Select the correct answer for the blank in the following program from the answer choices.\n\nThe admission fee for a certain facility is 100 yen for ages 0 to 3, 300 yen for ages 4 to 9, and 500 yen for ages 10 and over. The function 'fee' takes a non-negative integer representing age(num) as an argument and returns the admission fee."
     },
     programLines: {
@@ -1164,7 +1164,7 @@ export const problems: Problem[] = [
     logicType: 'ARRAY_REVERSE',
     title: { ja: "基本情報技術者試験 科目B 配列の要素の逆順化", en: "Subject B Sample Problem Q22" },
     description: {
-      ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n次のプログラムは，整数型の配列 array の要素の並びを逆順にする。",
+      ja: "次のプログラム中の [  a  ] と [  b  ] に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n次のプログラムは，整数型の配列 array の要素の並びを逆順にする。",
       en: "Select the correct combination for a and b in the following program from the answer choices. Here, array indices start from 1.\n\nThe following program reverses the order of elements in an integer array 'array'."
     },
     programLines: {
@@ -1223,7 +1223,7 @@ export const problems: Problem[] = [
     logicType: 'LINKED_LIST_APPEND',
     title: { ja: "基本情報技術者試験 科目B 単方向リストへの要素追加", en: "Subject B Sample Problem Q23" },
     description: {
-      ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。\n\n手続 append は，引数で与えられた文字を単方向リストに追加する手続である。単方向リストの各要素は，クラスListElementを用いて表現す津。クラスListElementの説明を図に示す。ListElement型の変数はクラスListElementのインスタンスの参照を格納するものとする。大域変数listHeadは，単方向リストの先頭の要素を参照する。リストが空の時は，listHeadは未定義である。",
+      ja: "次のプログラム中の [  a  ] と [  b  ] に入れる正しい答えの組合せを，解答群の中から選べ。\n\n手続 append は，引数で与えられた文字を単方向リストに追加する手続である。単方向リストの各要素は，クラスListElementを用いて表現する。クラスListElementの説明を図に示す。ListElement型の変数はクラスListElementのインスタンスの参照を格納するものとする。大域変数listHeadは，単方向リストの先頭の要素を参照する。リストが空のときは，listHeadは未定義である。",
       en: "Select the correct combination for a and b from the answer choices. The procedure 'append' adds a character given as an argument to a singly linked list..."
     },
     programLines: {
@@ -1313,7 +1313,7 @@ export const problems: Problem[] = [
     logicType: 'SPARSE_MATRIX',
     title: { ja: "基本情報技術者試験 科目B スパースマトリックスへの変換", en: "Subject B Sample Problem Q24" },
     description: {
-      ja: "次の記述中の a 〜 c に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n要素の多くが0の行列を疎行列という。次のプログラムは，二次元配列に格納された行列のデータ量を削減するために，疎行列の格納に適したデータ構造に変換する。関数 transformSparseMatrix は，引数 matrix で二次元配列として与えられた行列を，整数型配列の配列に変換して返す。関数 transformSparseMatrix を transformSparseMatrix({{3, 0, 0, 0, 0}, {0, 2, 2, 0, 0}, {0, 0, 0, 1, 3}, {0, 0, 0, 2, 0}, {0, 0, 0, 0, 1}})として呼び出したときの戻り値は，{ {  a  }, {  b  }, {  c  } } である。",
+      ja: "次の記述中の [  a  ] 〜 [  c  ] に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n要素の多くが0の行列を疎行列という。次のプログラムは，二次元配列に格納された行列のデータ量を削減するために，疎行列の格納に適したデータ構造に変換する。関数 transformSparseMatrix は，引数 matrix で二次元配列として与えられた行列を，整数型配列の配列に変換して返す。関数 transformSparseMatrix を transformSparseMatrix({{3, 0, 0, 0, 0}, {0, 2, 2, 0, 0}, {0, 0, 0, 1, 3}, {0, 0, 0, 2, 0}, {0, 0, 0, 0, 1}})として呼び出したときの戻り値は，{ {  a  }, {  b  }, {  c  } } である。",
       en: "Select the correct combination for a, b, and c from the answer choices. Array indices start from 1. A matrix where most elements are zero is called a sparse matrix. The following program converts a matrix stored in a 2D array into a data structure suitable for storing a sparse matrix to reduce data volume. The function transformSparseMatrix converts a matrix given as a 2D array in the argument matrix and returns it as an array of integer arrays. When called as transformSparseMatrix(...), the return value is {{a}, {b}, {c}}."
     },
     programLines: {
@@ -1376,7 +1376,7 @@ export const problems: Problem[] = [
       en: "Subject B Sample Problem Q25"
     },
     description: {
-      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。\n\n任意の異なる2文字をc1, c2とするとき，英単語群に含まれる英単語において，c1の次にc2が出現する割合を求めるプログラムである。英単語は，英小文字だけから成る。英単語の末尾の文字がc1である場合，その箇所は割合の計算に含めない。例えば，図に示す4語の英単語から成る英単語群において，c1を\"n\", c2を\"f\"とすると，英単語の末尾の文字以外に\"n\"は五つあり，そのうち次の文字が\"f\"であるものは二つである。したがって，求める割合は，2÷5＝0.4である。c1とc2の並びが一度も出現しない場合，c1の出現回数によらず割合を0と定義する。\n\nプログラムにおいて，英単語群は Words 型の大域変数 words に格納されている。クラス Words のメソッドの説明を，表に示す。本問において，文字列に対する演算子\"+\"は，文字列の連結を表す。また，整数に対する演算子\"÷\"は，実数として計算する。",
+      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。\n\n任意の異なる2文字をc1, c2とするとき，英単語群に含まれる英単語において，c1の次にc2が出現する割合を求めるプログラムである。英単語は，英小文字だけから成る。英単語の末尾の文字がc1である場合，その箇所は割合の計算に含めない。例えば，図に示す4語の英単語\"importance\"，\"inflation\"，\"information\"，\"innovation\"から成る英単語群において，c1を\"n\", c2を\"f\"とすると，英単語の末尾の文字以外に\"n\"は五つあり，そのうち次の文字が\"f\"であるものは二つである。したがって，求める割合は，2÷5＝0.4である。c1とc2の並びが一度も出現しない場合，c1の出現回数によらず割合を0と定義する。\n\nプログラムにおいて，英単語群は Words 型の大域変数 words に格納されている。クラス Words のメソッドの説明を，表に示す。本問において，文字列に対する演算子\"+\"は，文字列の連結を表す。また，整数に対する演算子\"÷\"は，実数として計算する。",
       en: "Select the correct answer for the blank in the following program from the answer choices.\n\nGiven any two different characters c1 and c2, this is a program that calculates the proportion at which c2 appears after c1 in a corpus of English words. The English words consist only of lowercase letters. If c1 is the last character of a word, that instance is not included in the calculation. For example, in the given corpus of four English words, if c1 is 'n' and c2 is 'f', there are five instances of 'n' that are not at the end of a word, and of those, two are followed by 'f'. Therefore, the desired proportion is 2 ÷ 5 = 0.4. If the sequence c1 followed by c2 never appears, the proportion is defined as 0, regardless of the number of occurrences of c1.\n\nIn the program, the corpus of English words is stored in a global variable 'words' of type Words. The methods of the Words class are described in the table. In this problem, the '+' operator on strings represents string concatenation, and the '÷' operator on integers represents real number division."
     },
     programLines: {
@@ -1630,6 +1630,7 @@ export const problems: Problem[] = [
     calculateNextLine: undefined,
     difficultyId: 8
   },
+  // 問 28
   {
     id: '28',
     logicType: 'CALL_STACK',
@@ -1910,7 +1911,7 @@ export const problems: Problem[] = [
       en: "Reiwa 5, Subject B, Question 5"
     },
     description: {
-      ja: "次のプログラム中の a と b に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\nコサイン類似度は，二つのベクトルの向きの類似性を測る尺度である。関数 calcCosineSimilarity は，いずれも要素数が n(n≧1) である実数型の配列 vector1 と vector2 を受け取り，二つの配列のコサイン類似度を返す。配列 vector1 が {a1, a2, ... , an}，配列 vector2 が {b1, b2, ... , bn} のとき，コサイン類似度は数式で計算される。ここで，配列 vector1 と配列 vector2 のいずれも，全ての要素に0が格納されていることはないものとする。",
+      ja: "次のプログラム中の [  a  ] と [  b  ] に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\nコサイン類似度は，二つのベクトルの向きの類似性を測る尺度である。関数 calcCosineSimilarity は，いずれも要素数が n(n≧1) である実数型の配列 vector1 と vector2 を受け取り，二つの配列のコサイン類似度を返す。配列 vector1 が {a1, a2, ... , an}，配列 vector2 が {b1, b2, ... , bn} のとき，コサイン類似度は次の数式で計算される。ここで，配列 vector1 と配列 vector2 のいずれも，全ての要素に0が格納されていることはないものとする。",
       en: "Select the correct combination for a and b from the answer choices. Array indices start from 1.\n\nCosine similarity is a measure of the similarity between the directions of two vectors. The function calcCosineSimilarity takes two real-valued arrays, vector1 and vector2, both of length n (n>=1), and returns their cosine similarity. If vector1 is {a1, a2, ..., an} and vector2 is {b1, b2, ..., bn}, the cosine similarity is calculated by the formula shown. It is assumed that neither vector1 nor vector2 consists entirely of zeros."
     },
     programLines: {
@@ -2210,7 +2211,7 @@ export const problems: Problem[] = [
       en: "Reiwa 6, Subject B, Question 3"
     },
     description: {
-      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n図1に示すグラフの頂点には，1から順に整数で番号が付けられている。グラフは無向グラフであり，各頂点間には高々一つの辺がある。ひとつの辺は両端の頂点の番号を要素にもつ要素数2の整数型の配列で表現できる。例えば，{1，3}は頂点 1 と頂点 3 を終点とする辺を表す。グラフ全体は，グラフに含まれる辺を表す要素数2の配列を全て格納した配列（以下，辺の配列という）で表現できる。辺の配列の要素数はグラフの辺の個数と等しい。図1のグラフは整数型配列の配列{{1，3}，{1，4}，{3，4}，{2，4}，{4，5}}と表現できる。\n\n関数 edgesToMatrix は，辺の配列を隣接行列に変換する。隣接行列とは，グラフに含まれる頂点の個数と等しい行数及び列数をもつ正方行列で，行i列jの成分は頂点iと頂点jを結ぶ辺があるときに1となり，それ以外は0となる。行列の対角成分は全て0で，無向グラフの場合は対象行列になる。図1のグラフを表現する隣接行列を図2に示す。\n\n関数edgesToMatrixは，引数edgeListで辺の配列を引数nodeNumでグラフの頂点の個数をそれぞれ受け取り，隣接行列を表す整数型の二次元配列を返す。",
+      ja: "次のプログラム中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n図1に示すグラフの頂点には，1から順に整数で番号が付けられている。グラフは無向グラフであり，各頂点間には高々一つの辺がある。一つの辺は両端の頂点の番号を要素にもつ要素数2の整数型の配列で表現できる。例えば，{1，3}は頂点 1 と頂点 3 を終点とする辺を表す。グラフ全体は，グラフに含まれる辺を表す要素数2の配列を全て格納した配列（以下，辺の配列という）で表現できる。辺の配列の要素数はグラフの辺の個数と等しい。図1のグラフは整数型配列の配列{{1，3}，{1，4}，{3，4}，{2，4}，{4，5}}と表現できる。\n\n関数 edgesToMatrix は，辺の配列を隣接行列に変換する。隣接行列とは，グラフに含まれる頂点の個数と等しい行数及び列数をもつ正方行列で，ｉ行ｊ列の成分は頂点ｉと頂点ｊを結ぶ辺があるときに1となり，それ以外は0となる。行列の対角成分は全て0で，無向グラフの場合は対象行列になる。図1のグラフを表現する隣接行列を図2に示す。\n\n関数edgesToMatrixは，引数edgeListで辺の配列を引数nodeNumでグラフの頂点の個数をそれぞれ受け取り，隣接行列を表す整数型の二次元配列を返す。",
       en: "Select the correct answer for the blank from the answer choices. Array indices start from 1.\n\nThe graph vertices shown in Figure 1 are numbered sequentially starting from 1. The graph is undirected, and there is at most one edge between any two vertices. (...)\n\nThe function edgesTo3Matrix converts an array of edges into an adjacency matrix. An adjacency matrix is a square matrix with the number of rows and columns equal to the number of vertices in the graph. The component at row i, column j is 1 if there is an edge connecting vertex i and vertex j, and 0 otherwise."
     },
     programLines: {
@@ -2310,7 +2311,7 @@ export const problems: Problem[] = [
       en: "Reiwa 6, Subject B, Question 4"
     },
     description: {
-      ja: "次の記述中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 merge は，昇順に整列された整数型の配列 data1 及び data2 を受け取り，これらを併合してできる昇順に整列された整数型の配列を返す。関数 merge を merge({2, 3}, {1, 4})として呼び出すと，/*** α ***/ の行は[  ?  ]。",
+      ja: "次の記述中の[  ?  ]に入れる正しい答えを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n関数 merge は，昇順に整列された整数型の配列 data1 及び data2 を受け取り，これらを併合してできる昇順に整列された整数型の配列を返す。\n関数 merge を merge({2, 3}, {1, 4})として呼び出すと，/*** α ***/ の行は[  ?  ]。",
       en: "Select the correct answer for the blank from the answer choices. Array indices start from 1.\n\nThe function 'merge' takes two sorted integer arrays, data1 and data2, and returns a new sorted integer array created by merging them. When the function is called as merge({2, 3}, {1, 4}), the line marked /*** α ***/ is [ ]."
     },
     programLines: {
@@ -2395,7 +2396,7 @@ export const problems: Problem[] = [
       en: "Reiwa 6, Subject B, Question 5"
     },
     description: {
-      ja: "次のプログラム中の a 〜 c に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n一度の注文で購入された商品リストを，注文ごとに記録した注文データがある。表に，注文データの例を示す。\n注文データから，商品xと商品yとが同一の注文で購入されやすい傾向を示す関連度Lxyを計算式 Aで計算する。\n\nここで，Mxyは商品xと商品yとが同一の注文で購入された注文数，Kxは商品xが購入された注文数，Kyは商品yが購入された注文数を表す。表の例では，MABが2，全注文数が6，KAが4，K8が3であるので，商品Aと商品Bの関連度LABは，（2 × 6）/ （4 × 3）= 1.0である。\n手続 putRelatedItem は，大域変数 orders に格納された注文データを基に，引数で与えられた商品との関連度が最も大きい商品のうちの一つと，その関連度を出力する。プログラムでは，商品は文字列で表し，注文は購入された商品の配列，注文データは注文の配列で表している。注文データには2種類以上の商品が含まれるものとする。また，注文データにある商品以外の商品が，引数として与えられることはないものとする。",
+      ja: "次のプログラム中の [  a  ] 〜 [  c  ] に入れる正しい答えの組合せを，解答群の中から選べ。ここで，配列の要素番号は1から始まる。\n\n一度の注文で購入された商品リストを，注文ごとに記録した注文データがある。表に，注文データの例を示す。\n\n注文データから，商品xと商品yとが同一の注文で購入されやすい傾向を示す関連度Lxyを計算式 Aで計算する。\n\nここで，Mxyは商品xと商品yとが同一の注文で購入された注文数，Kxは商品xが購入された注文数，Kyは商品yが購入された注文数を表す。表の例では，MABが2，全注文数が6，KAが4，K8が3であるので，商品Aと商品Bの関連度LABは，（2 × 6）/ （4 × 3）= 1.0である。\n手続 putRelatedItem は，大域変数 orders に格納された注文データを基に，引数で与えられた商品との関連度が最も大きい商品のうちの一つと，その関連度を出力する。プログラムでは，商品は文字列で表し，注文は購入された商品の配列，注文データは注文の配列で表している。注文データには2種類以上の商品が含まれるものとする。また，注文データにある商品以外の商品が，引数として与えられることはないものとする。",
       en: "Select the correct combination for a, b, and c from the answer choices. Array indices start from 1.\n\nThe procedure putRelatedItem, based on the order data stored in the global variable 'orders', outputs one of the items with the highest degree of relatedness to the item given as an argument, along with that degree of relatedness."
     },
     programLines: {
