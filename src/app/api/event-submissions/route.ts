@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { getSession } from '@/lib/session';
 import { executeAgainstTestCases } from '@/lib/sandbox';
 
@@ -157,7 +157,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    let submission;
+    // Explicitly define type to include relation
+    let submission: Prisma.Event_SubmissionGetPayload<{ include: { eventIssue: true } }>;
+
     if (existingSubmission) {
       submission = await prisma.event_Submission.update({
         where: {
@@ -166,15 +168,16 @@ export async function POST(req: NextRequest) {
         data: {
           codeLog,
           status: isSuccess,
-          score: score, // Explicitly assign validated score
+          score: score,
           submittedAt,
           language: language || 'python',
+          // Force cast to any because testCaseResults is missing from generated Client types
           testCaseResults: executionResult.testCaseResults,
-        },
+        } as any,
         include: {
           eventIssue: true,
         }
-      });
+      }) as unknown as Prisma.Event_SubmissionGetPayload<{ include: { eventIssue: true } }>;
     } else {
       submission = await prisma.event_Submission.create({
         data: {
@@ -185,12 +188,13 @@ export async function POST(req: NextRequest) {
           score: score,
           submittedAt,
           language: language || 'python',
+          // Force cast to any because testCaseResults is missing from generated Client types
           testCaseResults: executionResult.testCaseResults,
-        },
+        } as any,
         include: {
           eventIssue: true,
         }
-      });
+      }) as unknown as Prisma.Event_SubmissionGetPayload<{ include: { eventIssue: true } }>;
     }
 
     if (submission && isSuccess) {

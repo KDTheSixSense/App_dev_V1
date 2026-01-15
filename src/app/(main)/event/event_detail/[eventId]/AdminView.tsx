@@ -53,7 +53,7 @@ const formatDateParts = (dateInput: Date | string | null | undefined) => {
   return { month, day, full };
 };
 
-interface ViewProps {
+interface AdminViewProps {
   event: EventWithDetails & { isStarted?: boolean }; // isStartedを追加
 }
 
