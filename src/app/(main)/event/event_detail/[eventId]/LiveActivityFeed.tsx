@@ -164,9 +164,9 @@ export default function LiveActivityFeed({ eventId }: { eventId: number }) {
                                 if (activity.codeLog === '// 解答開始') {
                                     isWorking = true;
                                     statusBadge = (
-                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border shadow-sm ${isRecentStart ? 'bg-cyan-50 text-cyan-600 border-cyan-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                                            {isRecentStart && <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span>}
-                                            {isRecentStart ? '挑戦中' : '未完了'}
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border shadow-sm bg-cyan-50 text-cyan-600 border-cyan-100">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span>
+                                            挑戦
                                         </span>
                                     );
                                 } else if (activity.status === true) {
@@ -195,7 +195,7 @@ export default function LiveActivityFeed({ eventId }: { eventId: number }) {
                                     <div key={activity.id} className={`relative pl-6 transition-all duration-500 ${isNew ? 'translate-x-0 opacity-100 bg-blue-50/50 rounded-lg -ml-2 py-2 pr-2' : 'translate-x-0 opacity-100'}`}>
                                         {/* Dot on timeline */}
                                         <div className={`absolute -left-[21px] top-3 w-3 h-3 border-2 rounded-full z-10 transition-all duration-300 ${isNew ? 'bg-blue-500 border-blue-200 scale-125' :
-                                            (isWorking && isRecentStart)
+                                            isWorking
                                                 ? 'bg-cyan-500 border-cyan-200 shadow-[0_0_8px_rgba(6,182,212,0.6)] animate-pulse'
                                                 : 'bg-white border-slate-300'}`}></div>
 

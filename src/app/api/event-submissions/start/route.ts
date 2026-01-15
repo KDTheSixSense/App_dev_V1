@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         data: {
           userId: userId,
           eventIssueId: eventIssueId,
-          status: false,
+          status: null, // null = 挑戦中/未判定
           score: 0,
           language: language || 'python', // 指定がなければデフォルト
           codeLog: '// 解答開始',

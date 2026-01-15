@@ -274,10 +274,10 @@ export default function MemberView({ event, role }: MemberViewProps) {
   const otherParticipants = currentEvent.participants.filter(p => !p.isAdmin);
   const dateInfo = formatDateParts(currentEvent.startTime);
 
-  if (!isClient) return <div className="min-h-screen bg-slate-100 dark:bg-slate-900"></div>;
+  if (!isClient) return <div className="min-h-screen bg-slate-100"></div>;
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 font-sans pb-12 transition-colors duration-500">
+    <div className="min-h-screen bg-slate-100 font-sans pb-12 transition-colors duration-500">
 
       {/* 1. Cover Area - Now Themed */}
       <div

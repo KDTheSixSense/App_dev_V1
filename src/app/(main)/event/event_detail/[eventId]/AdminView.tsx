@@ -7,8 +7,9 @@ import { useState, useEffect, useRef } from 'react'; // Import useState for loca
 import type { Prisma } from '@prisma/client'; // Import Prisma namespace for types
 import toast from 'react-hot-toast';
 import { FiCopy, FiPlay, FiStopCircle, FiTrash2, FiUsers, FiList, FiCheck, FiCheckCircle, FiStar, FiClock, FiImage, FiArrowUp, FiUpload, FiEye, FiAlertTriangle, FiXCircle, FiMinus, FiCode, FiCpu, FiDatabase, FiTerminal, FiDownload, FiRotateCw, FiUser, FiChevronLeft, FiX } from 'react-icons/fi'; // Icons for better UI
-import { FaCrown, FaTrophy, FaMedal, FaPython, FaJs } from 'react-icons/fa';
+import { FaCrown, FaTrophy, FaMedal, FaPython, FaJs, FaBrain, FaLaptopCode } from 'react-icons/fa';
 import { getSubmissionDetailAction, getParticipantSubmissionsAction } from '@/lib/actions/admin-event';
+import type { TestCaseResult } from '@/components/TestCaseResultModal';
 import LiveActivityFeed from './LiveActivityFeed';
 import { EVENT_THEMES } from '@/lib/constants';
 import { ActionModal } from '../../components/ActionModal';
@@ -52,7 +53,7 @@ const formatDateParts = (dateInput: Date | string | null | undefined) => {
   return { month, day, full };
 };
 
-interface AdminViewProps {
+interface ViewProps {
   event: EventWithDetails & { isStarted?: boolean }; // isStartedを追加
 }
 
@@ -607,8 +608,8 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
             {/* Left: Status Badge (Matching Image) */}
             <div className="flex items-center w-full md:w-auto">
               {!event.hasBeenStarted ? (
-                <span className="flex items-center gap-2 text-orange-500 font-bold bg-orange-50 px-3 py-1.5 rounded-full text-sm border border-orange-100 shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                <span className="flex items-center gap-2 text-cyan-600 font-bold bg-cyan-50 px-3 py-1.5 rounded-full text-sm border border-cyan-100 shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
                   開始待ち
                 </span>
               ) : event.isStarted ? (
@@ -639,7 +640,7 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
                   <FiPlay className="w-5 h-5" /> <span className="hidden sm:inline">イベントを開始</span><span className="sm:hidden">開始</span>
                 </button>
               ) : event.isStarted ? (
-                <button onClick={handleEndEvent} disabled={isSubmitting} className="flex-1 md:flex-none flex items-center justify-center gap-2.5 px-8 py-3 bg-white border border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300 rounded-xl font-bold text-sm md:text-base shadow-sm hover:shadow-md transition-all duration-200 active:scale-95">
+                <button onClick={handleEndEvent} disabled={isSubmitting} className="flex-1 md:flex-none flex items-center justify-center gap-2.5 px-8 py-3 bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 rounded-xl font-bold text-sm md:text-base shadow-sm hover:shadow-md transition-all duration-200 active:scale-95">
                   <FiStopCircle className="w-5 h-5" /> <span className="hidden sm:inline">イベントを終了</span><span className="sm:hidden">終了</span>
                 </button>
               ) : (
@@ -816,6 +817,14 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
                                       <span className="text-xs font-black text-amber-600 mt-1">{submission.score}</span>
                                     </div>
                                   );
+                                } else if (submission.status === null || submission.codeLog === '// 解答開始') {
+                                  // Attempting / Working
+                                  content = (
+                                    <div className="w-full h-16 flex flex-col items-center justify-center relative bg-blue-50 rounded-xl border border-blue-100">
+                                      <FaLaptopCode className="w-7 h-7 text-blue-500 drop-shadow-sm animate-pulse" />
+                                      <span className="text-xs font-black text-blue-600 mt-1">挑戦</span>
+                                    </div>
+                                  );
                                 } else {
                                   // Wrong
                                   content = (
@@ -863,8 +872,9 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
 
                 {/* Legend */}
                 <div className="mt-4 flex flex-wrap justify-center gap-4 text-xs font-medium text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2"><FiCheckCircle className="text-emerald-500 w-4 h-4" /> <span>正解 (100pt)</span></div>
+                  <div className="flex items-center gap-2"><FiCheckCircle className="text-emerald-500 w-4 h-4" /> <span>正解</span></div>
                   <div className="flex items-center gap-2"><FiAlertTriangle className="text-amber-500 w-4 h-4" /> <span>部分点</span></div>
+                  <div className="flex items-center gap-2"><FaLaptopCode className="text-blue-500 w-4 h-4" /> <span>挑戦</span></div>
                   <div className="flex items-center gap-2"><FiXCircle className="text-rose-500 w-4 h-4" /> <span>不正解</span></div>
                   <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-200 ml-1 mr-1"></div> <span>未解答</span></div>
                 </div>
@@ -1105,21 +1115,34 @@ export default function AdminView({ event: initialEvent }: AdminViewProps) {
                         {/* Test Cases */}
                         <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200">
                           <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            <FiCheckCircle className="text-cyan-500 w-6 h-6" /> テストケース結果 (例)
+                            <FiCheckCircle className="text-cyan-500 w-6 h-6" /> テストケース結果
                           </h3>
                           <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <span className="flex items-center gap-3 font-bold text-slate-700"><FiCheckCircle className="text-emerald-500 w-5 h-5" /> Test Case #1</span>
-                              <span className="text-emerald-600 font-mono text-sm bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">Passed 0.12s</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="flex items-center gap-3 font-bold text-slate-700"><FiCheckCircle className="text-emerald-500 w-5 h-5" /> Test Case #2</span>
-                              <span className="text-emerald-600 font-mono text-sm bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">Passed 0.15s</span>
-                            </div>
-                            <div className="w-full bg-slate-100 rounded-full h-3 mt-4 overflow-hidden border border-slate-200">
-                              <div className="bg-emerald-500 h-full rounded-full w-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                            </div>
-                            <p className="text-right text-xs text-slate-400 font-black uppercase tracking-widest mt-2">100% Passed</p>
+                            {selectedSubmission.testCaseResults && Array.isArray(selectedSubmission.testCaseResults) && (selectedSubmission.testCaseResults as unknown as TestCaseResult[]).length > 0 ? (
+                              <>
+                                {(selectedSubmission.testCaseResults as unknown as TestCaseResult[]).map((result, index) => (
+                                  <div key={index} className="flex items-center justify-between">
+                                    <span className="flex items-center gap-3 font-bold text-slate-700">
+                                      {result.isCorrect ? <FiCheckCircle className="text-emerald-500 w-5 h-5" /> : <FiXCircle className="text-rose-500 w-5 h-5" />}
+                                      {result.name || `Test Case #${index + 1}`}
+                                    </span>
+                                    <span className={`font-mono text-sm px-3 py-1 rounded-full border ${result.isCorrect ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-rose-600 bg-rose-50 border-rose-100'
+                                      }`}>
+                                      {result.status}
+                                    </span>
+                                  </div>
+                                ))}
+                                <div className="w-full bg-slate-100 rounded-full h-3 mt-4 overflow-hidden border border-slate-200">
+                                  <div
+                                    className={`h-full rounded-full w-full shadow-[0_0_10px_rgba(16,185,129,0.5)] ${selectedSubmission.status ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                                    style={{ width: `${(selectedSubmission.testCaseResults as unknown as TestCaseResult[]).filter((r) => r.isCorrect).length / (selectedSubmission.testCaseResults as unknown as TestCaseResult[]).length * 100}%` }}
+                                  ></div>
+                                </div>
+                                <p className="text-right text-xs text-slate-400 font-black uppercase tracking-widest mt-2">{((selectedSubmission.testCaseResults as unknown as TestCaseResult[]).filter((r) => r.isCorrect).length / (selectedSubmission.testCaseResults as unknown as TestCaseResult[]).length * 100).toFixed(0)}% Passed</p>
+                              </>
+                            ) : (
+                              <p className="text-gray-500">テストケース結果がありません。</p>
+                            )}
                           </div>
                         </div>
                       </div>
