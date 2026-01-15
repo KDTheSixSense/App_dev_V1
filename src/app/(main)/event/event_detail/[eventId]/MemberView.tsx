@@ -100,7 +100,7 @@ function EventProblemList({ eventId, issues, currentUserParticipant }: {
   }
 
   const submissionsMap = new Map(
-    currentUserParticipant?.user.eventSubmissions.map(sub => [sub.eventIssueId, sub])
+    (currentUserParticipant?.user.eventSubmissions || []).map(sub => [sub.eventIssueId, sub])
   );
 
   return (
@@ -569,7 +569,7 @@ export default function MemberView({ event, role }: MemberViewProps) {
                           >
                             <EventProblemList
                               eventId={eventId}
-                              issues={currentEvent.issues}
+                              issues={currentEvent.issues || []}
                               currentUserParticipant={currentEvent.currentUserParticipant}
                             />
                           </div>

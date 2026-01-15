@@ -19,14 +19,30 @@ export async function GET(
   try {
     const event = await prismaClient.create_event.findUnique({
       where: { id: eventId },
-      select: { isStarted: true, hasBeenStarted: true, theme: true, customImagePath: true }, // hasBeenStartedも取得
+      select: {
+        isStarted: true,
+        hasBeenStarted: true,
+        theme: true,
+        customImagePath: true,
+        issues: {
+          include: {
+            problem: true
+          }
+        }
+      }, // hasBeenStarted, issuesも取得
     });
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ isStarted: event.isStarted, hasBeenStarted: event.hasBeenStarted, theme: event.theme, customImagePath: (event as any).customImagePath });
+    return NextResponse.json({
+      isStarted: event.isStarted,
+      hasBeenStarted: event.hasBeenStarted,
+      theme: event.theme,
+      customImagePath: (event as any).customImagePath,
+      issues: event.issues
+    });
 
   } catch (error) {
     console.error(`Failed to get status for event ${eventId}:`, error);
