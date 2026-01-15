@@ -43,6 +43,10 @@ export async function seedEventProblems(prisma: PrismaClient) {
                 },
                 sampleCases: {
                     create: (p as any).sampleCases || []
+                },
+                // Difficulty 1-5 maps to EventDifficulty ID 1-5 (かんたん, ふつう, ちょいむず, むずい, おにむず)
+                eventDifficulty: {
+                    connect: { id: p.difficulty }
                 }
             }
         });

@@ -140,6 +140,9 @@ export async function executeAgainstTestCases(
         // 2. Sandboxサービスでの実行 (逐次実行)
         const results: TestCaseResult[] = [];
 
+        // console.log(`[DEBUG] Executing against ${testCases.length} test cases.`);
+        // testCases.forEach((tc, i) => console.log(`[DEBUG] Case #${i + 1}: input='${tc.input.replace(/\n/g, "\\n")}', expected='${tc.expectedOutput.replace(/\n/g, "\\n")}'`));
+
         for (const testCase of testCases) {
             let actualOutput = '';
             let status: TestCaseResult['status'] = 'System Error';
