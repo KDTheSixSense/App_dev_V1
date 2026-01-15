@@ -169,6 +169,7 @@ export async function POST(req: NextRequest) {
           score: score, // Explicitly assign validated score
           submittedAt,
           language: language || 'python',
+          testCaseResults: executionResult.testCaseResults,
         },
         include: {
           eventIssue: true,
@@ -182,9 +183,9 @@ export async function POST(req: NextRequest) {
           codeLog,
           status: isSuccess,
           score: score,
-          startedAt: validStartedAt,
           submittedAt,
           language: language || 'python',
+          testCaseResults: executionResult.testCaseResults,
         },
         include: {
           eventIssue: true,
