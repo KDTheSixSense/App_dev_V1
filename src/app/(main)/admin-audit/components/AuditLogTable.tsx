@@ -51,6 +51,7 @@ export function AuditLogTable({ initialLogs, currentLimit, initialBannedUsers }:
     const [banModalOpen, setBanModalOpen] = useState(false);
     const [banTarget, setBanTarget] = useState<{ type: 'IP' | 'COOKIE_ID', value: string, userId?: string } | null>(null);
     const [banReason, setBanReason] = useState('管理者による手動BAN');
+    const [detailsModalContent, setDetailsModalContent] = useState<string | null>(null);
 
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
@@ -221,6 +222,21 @@ export function AuditLogTable({ initialLogs, currentLimit, initialBannedUsers }:
     return (
         <div className="bg-white p-6 rounded-lg shadow-lg relative">
             <Toaster position="top-right" />
+
+            {/* Details Modal */}
+            {detailsModalContent && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+                    <div className="bg-white p-6 rounded-lg shadow-xl w-1/2 max-w-4xl animate-scale-in">
+                        <h3 className="text-lg font-bold mb-4">アクション詳細</h3>
+                        <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-[80vh] whitespace-pre-wrap">
+                            {detailsModalContent}
+                        </pre>
+                        <div className="flex justify-end mt-4">
+                            <button onClick={() => setDetailsModalContent(null)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded transition-colors text-sm font-bold">閉じる</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Kick Modal */}
             {kickModalOpen && (
@@ -592,9 +608,24 @@ export function AuditLogTable({ initialLogs, currentLimit, initialBannedUsers }:
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="max-w-[200px] max-h-[60px] overflow-y-auto text-xs font-mono bg-gray-50 p-1 rounded">
-                                                    {log.details || '-'}
+                                                <div className="max-w-[400px] truncate pr-2" title={log.details || ''}>
+                                                    {renderDetails(log)}
                                                 </div>
+                                                {log.details && (
+                                                    <button 
+                                                        onClick={() => {
+                                                            try {
+                                                                const parsed = JSON.parse(log.details!);
+                                                                setDetailsModalContent(JSON.stringify(parsed, null, 2));
+                                                            } catch (e) {
+                                                                setDetailsModalContent(log.details);
+                                                            }
+                                                        }} 
+                                                        className="text-blue-500 hover:text-blue-700 text-xs"
+                                                    >
+                                                        詳細
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -610,4 +641,22 @@ export function AuditLogTable({ initialLogs, currentLimit, initialBannedUsers }:
             )}
         </div>
     );
+}
+
+function renderDetails(log: AuditLogEntry): string {
+    if (log.action === 'GENERATE_HINT' && log.details) {
+        try {
+            const parsed = JSON.parse(log.details);
+            if (parsed.question) {
+                let details = `Q: ${parsed.question}`;
+                if (parsed.context?.problemTitle) {
+                    details += ` (問: ${parsed.context.problemTitle})`;
+                }
+                return details;
+            }
+        } catch (e) {
+            // Not a JSON, or malformed, fall through to default
+        }
+    }
+    return log.details || '-';
 }

@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     const userId = session.user.id;
 
     // 3. Rate Limiting (Log then Count)
-    await logAttempt(userId, question);
+    await logAttempt(userId, question, context);
     const isRateLimited = await checkRateLimit(userId);
 
     if (isRateLimited) {
@@ -74,15 +74,23 @@ export async function POST(req: Request) {
 
 // --- Helper Functions ---
 
-async function logAttempt(userId: string, question: string) {
+async function logAttempt(userId: string, question: string, context?: RequestData['context']) {
+  const detailsPayload = {
+    question,
+    context: {
+      problemTitle: context?.problemTitle,
+      problemType: context?.problemType,
+    },
+  };
+
   await prisma.auditLog.create({
     data: {
       userId: userId,
       action: 'GENERATE_HINT',
-      details: `Question: ${question.substring(0, 50)}...`,
-      ipAddress: 'unknown',
+      details: JSON.stringify(detailsPayload), // JSONとして保存
+      ipAddress: 'unknown', // TODO: middlewareなどから取得
       createdAt: new Date(),
-    }
+    },
   });
 }
 

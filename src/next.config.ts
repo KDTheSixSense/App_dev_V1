@@ -43,6 +43,14 @@ const nextConfig: NextConfig = {
       { key: 'Content-Disposition', value: 'inline' },
     ];
 
+    // Define cache headers for static assets
+    const cacheHeaders = [
+        {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+        },
+    ];
+
     const headers = [
       {
         source: '/:path*',
@@ -53,7 +61,15 @@ const nextConfig: NextConfig = {
         source: `/uploads/:path*.${ext}`,
         headers: codeFileHeaders,
       })),
+      
+      // Apply cache headers to all common image types
+      {
+        source: '/:path*.(?:jpg|jpeg|gif|png|svg|ico|webp)',
+        headers: cacheHeaders,
+      },
+
       // ZAP対策: 静的ファイルにもCSPを付与する（動的ページはMiddlewareで処理）
+      // Next.js will automatically merge these with the cache headers for the same source
       {
         source: '/images/:path*',
         headers: [
