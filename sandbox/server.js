@@ -303,7 +303,11 @@ async function executeCode(language, sourceCode, input) {
             });
 
             if (input) {
-                child.stdin.write(input);
+                // Ensure input ends with a newline to prevent buffering issues with scanf/cin
+                const inputToSend = input.endsWith('\n') ? input : input + '\n';
+                child.stdin.write(inputToSend);
+                child.stdin.end();
+            } else {
                 child.stdin.end();
             }
 
@@ -348,6 +352,7 @@ app.post('/execute', async (req, res) => {
     if (!language || !source_code) {
         return res.status(400).json({ error: 'Missing language or source_code' });
     }
+
 
     const result = await executeCode(language, source_code, input || '');
     res.json(result);
