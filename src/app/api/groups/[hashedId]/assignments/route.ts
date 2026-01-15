@@ -206,9 +206,12 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // グループの全メンバーを取得
+      // グループの全メンバーを取得（管理者を除く）
       const members = await tx.groups_User.findMany({
-        where: { group_id: group.id },
+        where: {
+          group_id: group.id,
+          admin_flg: false // 管理者権限を持つユーザーを除外
+        },
         select: { user_id: true },
       });
 
