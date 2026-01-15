@@ -33,7 +33,16 @@ const nextConfig: NextConfig = {
       { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
       {
         key: 'Content-Security-Policy',
-        value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://static.doubleclick.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' blob: data: https://lh3.googleusercontent.com https://*.ytimg.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://lh3.googleusercontent.com https://raw.githubusercontent.com; frame-src 'self' https://www.youtube.com https://youtube.com; worker-src 'self' blob: data: 'unsafe-inline' 'unsafe-eval';",
+        value: [
+          "default-src 'self';",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://static.doubleclick.net;",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
+          "img-src 'self' blob: data: https://lh3.googleusercontent.com https://*.ytimg.com;",
+          "font-src 'self' data: https://fonts.gstatic.com;",
+          "connect-src 'self' https://lh3.googleusercontent.com https://raw.githubusercontent.com;",
+          "frame-src 'self' https://www.youtube.com https://youtube.com;",
+          "worker-src 'self' blob: data: 'unsafe-inline' 'unsafe-eval';",
+        ].join(' '),
       },
     ];
 
@@ -45,10 +54,10 @@ const nextConfig: NextConfig = {
 
     // Define cache headers for static assets
     const cacheHeaders = [
-        {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-        },
+      {
+        key: 'Cache-Control',
+        value: 'public, max-age=31536000, immutable',
+      },
     ];
 
     const headers = [
@@ -61,10 +70,10 @@ const nextConfig: NextConfig = {
         source: `/uploads/:path*.${ext}`,
         headers: codeFileHeaders,
       })),
-      
+
       // Apply cache headers to all common image types
       {
-        source: '/:path*.(?:jpg|jpeg|gif|png|svg|ico|webp)',
+        source: '/:path*.(jpg|jpeg|gif|png|svg|ico|webp)',
         headers: cacheHeaders,
       },
 
