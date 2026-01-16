@@ -116,12 +116,28 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const limitParam = searchParams.get('limit');
-    const isDraftParam = searchParams.get('isDraft');
+    const isDraftParam = searchParams.get('isDraft'); // Restore this line
 
-    let whereClause: Prisma.ProgrammingProblemWhereInput = {};
+    // --- Improved Access Control ---
+    const session = await getAppSession();
+    const userId = session?.user?.id;
+
+    // Default: Show only Public & Published problems
+    let whereClause: Prisma.ProgrammingProblemWhereInput = {
+      isPublic: true,
+      isPublished: true,
+    };
 
     if (isDraftParam !== null) {
-      whereClause.isDraft = isDraftParam === 'true';
+      // If requesting drafts, user MUST be authenticated
+      if (!userId) {
+        return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+      }
+      // AND user can only see THEIR OWN drafts (or all if admin - assuming owner here for safety)
+      whereClause = {
+        isDraft: isDraftParam === 'true',
+        createdBy: userId // Restrict to own drafts
+      };
     }
 
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
