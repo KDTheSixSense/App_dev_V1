@@ -8,13 +8,13 @@ import {
   createEventAction,
   saveEventDraftAction,
   getMyDraftEventsAction,
-  getDraftEventDetailsAction, 
+  getDraftEventDetailsAction,
 } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 
 // CSS Modules を使うとスタイリングが楽です
 // このファイルは次のステップで作成します
-import styles from './CreateEvent.module.css'; 
+import styles from './CreateEvent.module.css';
 
 type Tab = 'basic' | 'problems';
 
@@ -25,12 +25,13 @@ interface DraftEvent {
 
 interface Props {
   problems: ProblemSelectItem[];
+  currentUserId: string | null;
 }
 
-export function CreateEventClient({ problems }: Props) {
+export function CreateEventClient({ problems, currentUserId }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('basic');
-  
+
   // フォームの状態管理
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -41,6 +42,10 @@ export function CreateEventClient({ problems }: Props) {
 
   // 通信状態
   const [isLoading, setIsLoading] = useState(false);
+
+  // カテゴリ選択の状態
+  const [selectedFilter, setSelectedFilter] = useState('すべて');
+
 
   // 下書き保存ハンドラ
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -104,7 +109,7 @@ export function CreateEventClient({ problems }: Props) {
 
   // イベント作成ボタンのハンドラ
   const handleSubmit = async () => {
-    
+
     // 1. 基本設定タブの必須項目をチェック
     if (!title) {
       toast.error('イベントタイトル名を入力してください。');
@@ -122,9 +127,9 @@ export function CreateEventClient({ problems }: Props) {
       return;
     }
     if (new Date(endTime) <= new Date(startTime)) {
-       toast.error('終了日時は開始日時より後に設定してください。');
-       setActiveTab('basic');
-       return;
+      toast.error('終了日時は開始日時より後に設定してください。');
+      setActiveTab('basic');
+      return;
     }
 
     // 2. プログラミング問題タブの必須項目をチェック
@@ -135,7 +140,7 @@ export function CreateEventClient({ problems }: Props) {
     }
 
     setIsLoading(true);
-    
+
     try {
       const result = await createEventAction({
         title,
@@ -171,7 +176,7 @@ export function CreateEventClient({ problems }: Props) {
     }
 
     setIsSavingDraft(true);
-    
+
     try {
       const result = await saveEventDraftAction({
         title,
@@ -221,7 +226,7 @@ export function CreateEventClient({ problems }: Props) {
             {/*下書き読み込みUIのロジックを接続) */}
             <div className={styles.draftLoaderSection}>
               <label htmlFor="draft-select">下書きを読み込む:</label>
-              <select 
+              <select
                 id="draft-select"
                 value={selectedDraftId}
                 onChange={(e) => setSelectedDraftId(e.target.value)}
@@ -234,7 +239,7 @@ export function CreateEventClient({ problems }: Props) {
                   </option>
                 ))}
               </select>
-              <button 
+              <button
                 onClick={handleLoadDraft}
                 disabled={!selectedDraftId || isLoadingDraft}
               >
@@ -252,7 +257,7 @@ export function CreateEventClient({ problems }: Props) {
                 disabled={isLoading}
               />
             </div>
-            
+
             <div className={styles.formGroup}>
               <label htmlFor="description">イベント説明 <span className={styles.required}>必須*</span></label>
               {/* TODO: B/I/U/S のリッチテキストエディタを導入 (ここではtextareaで代用) */}
@@ -269,8 +274,8 @@ export function CreateEventClient({ problems }: Props) {
             <div className={styles.dateGroup}>
               <div className={styles.formGroup}>
                 <label htmlFor="startTime">開始日時</label>
-                <input 
-                  type="datetime-local" 
+                <input
+                  type="datetime-local"
                   id="startTime"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
@@ -279,8 +284,8 @@ export function CreateEventClient({ problems }: Props) {
               </div>
               <div className={styles.formGroup}>
                 <label htmlFor="endTime">終了日時</label>
-                <input 
-                  type="datetime-local" 
+                <input
+                  type="datetime-local"
                   id="endTime"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
@@ -289,8 +294,8 @@ export function CreateEventClient({ problems }: Props) {
               </div>
               <div className={styles.formGroup}>
                 <label htmlFor="publicTime">公開日時</label>
-                <input 
-                  type="datetime-local" 
+                <input
+                  type="datetime-local"
                   id="publicTime"
                   value={publicTime}
                   onChange={(e) => setPublicTime(e.target.value)}
@@ -305,24 +310,48 @@ export function CreateEventClient({ problems }: Props) {
         {activeTab === 'problems' && (
           <div className={styles.formSection}>
             <div className={styles.formGroup}>
-              <label>プログラミング問題選択 <span className={styles.required}>1つ以上選択 必須*</span></label>
+              <div className={styles.problemHeader}>
+                <label>プログラミング問題選択 <span className={styles.required}>1つ以上選択 必須*</span></label>
+                <div className={styles.categoryFilter}>
+                  <label htmlFor="filter-select" className={styles.categoryLabel}>絞り込み:</label>
+                  <select
+                    id="filter-select"
+                    value={selectedFilter}
+                    onChange={(e) => setSelectedFilter(e.target.value)}
+                    className={styles.categorySelect}
+                  >
+                    <option value="すべて">すべて</option>
+                    <option value="標準問題">標準問題</option>
+                    <option value="作成した問題">作成した問題</option>
+                  </select>
+                </div>
+              </div>
               <div className={styles.problemList}>
-                {problems.length > 0 ? (
-                  problems.map((problem) => (
-                    <div key={problem.id} className={styles.checkboxItem}>
-                      <input
-                        type="checkbox"
-                        id={`problem-${problem.id}`}
-                        checked={selectedProblemIds.includes(problem.id)}
-                        onChange={() => handleProblemToggle(problem.id)}
-                        disabled={isLoading}
-                      />
-                      <label htmlFor={`problem-${problem.id}`}>{problem.title}</label>
-                    </div>
-                  ))
-                ) : (
-                  <p>登録されている問題がありません。</p>
-                )}
+                {(() => {
+                  const filteredProblems = problems.filter((problem) => {
+                    if (selectedFilter === 'すべて') return true;
+                    if (selectedFilter === '標準問題') return problem.createdBy === null;
+                    if (selectedFilter === '作成した問題') return problem.createdBy === currentUserId;
+                    return true;
+                  });
+
+                  return filteredProblems.length > 0 ? (
+                    filteredProblems.map((problem) => (
+                      <div key={problem.id} className={styles.checkboxItem}>
+                        <input
+                          type="checkbox"
+                          id={`problem-${problem.id}`}
+                          checked={selectedProblemIds.includes(problem.id)}
+                          onChange={() => handleProblemToggle(problem.id)}
+                          disabled={isLoading}
+                        />
+                        <label htmlFor={`problem-${problem.id}`}>{problem.title}</label>
+                      </div>
+                    ))
+                  ) : (
+                    <p>該当する問題がありません。</p>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -336,15 +365,15 @@ export function CreateEventClient({ problems }: Props) {
       {/* フッターボタン */}
       <div className={styles.footerActions}>
         {/* ボタンのロジックを更新 */}
-        <button 
-          className={styles.saveDraftButton} 
+        <button
+          className={styles.saveDraftButton}
           onClick={handleSaveDraft}
           disabled={isLoading || isSavingDraft} // どちらかが実行中なら無効
         >
           {isSavingDraft ? '保存中...' : '下書き保存'}
         </button>
-        <button 
-          className={styles.createEventButton} 
+        <button
+          className={styles.createEventButton}
           onClick={handleSubmit}
           disabled={isLoading || isSavingDraft} // どちらかが実行中なら無効
         >

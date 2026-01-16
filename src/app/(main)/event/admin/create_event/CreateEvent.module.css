@@ -114,6 +114,7 @@
   padding: 0.5rem 0;
   border-bottom: 1px solid #eee;
 }
+
 .checkboxItem:last-child {
   border-bottom: none;
 }
@@ -154,6 +155,7 @@
   background-color: #e9ecef;
   color: #333;
 }
+
 .saveDraftButton:hover:not(:disabled) {
   background-color: #ced4da;
 }
@@ -162,6 +164,7 @@
   background-color: #007bff;
   color: white;
 }
+
 .createEventButton:hover:not(:disabled) {
   background-color: #0056b3;
 }
@@ -210,10 +213,12 @@
 
 .draftLoaderSection label {
   font-weight: 600;
-  margin-bottom: 0;  }
+  margin-bottom: 0;
+}
 
 .draftLoaderSection select {
-  flex-grow: 1;  padding: 0.5rem;
+  flex-grow: 1;
+  padding: 0.5rem;
   border: 1px solid #ced4da;
   border-radius: 4px;
 }
@@ -235,4 +240,66 @@
 .draftLoaderSection button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.problemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.problemHeader label {
+  margin-bottom: 0;
+}
+
+.categoryFilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.categoryLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  /* Slate 500 */
+  margin-bottom: 0 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.categorySelect {
+  appearance: none;
+  padding: 8px 36px 8px 16px;
+  border: 1px solid #e2e8f0;
+  /* Slate 200 */
+  border-radius: 10px;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1e293b;
+  /* Slate 800 */
+  cursor: pointer;
+  min-width: 180px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.categorySelect:hover {
+  border-color: #cbd5e1;
+  /* Slate 300 */
+  background-color: #f8fafc;
+  /* Slate 50 */
+}
+
+.categorySelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+  /* Blue 500 */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
