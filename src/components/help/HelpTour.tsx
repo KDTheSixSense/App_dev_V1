@@ -72,7 +72,7 @@ const HelpTour: React.FC<HelpTourProps> = ({ steps, onClose }) => {
             <img
               src={currentStep.imagePath}
               alt={currentStep.title}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-[700px] object-contain"
             />
           </div>
         )}
