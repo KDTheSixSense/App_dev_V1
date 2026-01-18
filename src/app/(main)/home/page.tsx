@@ -99,8 +99,15 @@ export default async function HomePage({
       <main className="max-w-[1920px] mx-auto p-6 md:p-8 lg:p-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
-          {/* Main Content Column (lg:col-span-9) - Order: Pet, Event, Daily Mission */}
-          <div className="lg:col-span-9 space-y-6 order-1 lg:order-1 h-full flex flex-col">
+          {/* Left Column: Ranking (3 cols) */}
+          <div className="lg:col-span-3 space-y-6 order-2 lg:order-1 h-full">
+            <Suspense fallback={<LoadingSkeleton />}>
+              <RankingSection />
+            </Suspense>
+          </div>
+
+          {/* Center Column: Pet, Tasks, Events (6 cols) */}
+          <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col h-full gap-6">
             {/* 1. Pet Status (Large) */}
             <div className="shrink-0">
               <Pet user={user} assignmentCount={assignmentCount} nextAssignment={nextAssignment} subjectProgress={subjectProgress} />
@@ -109,22 +116,19 @@ export default async function HomePage({
             <div className="flex-1 min-h-0">
               <EventCard events={upcomingEvents} />
             </div>
-            {/* 3. Daily Missions */}
+          </div>
+
+          {/* Right Column: Profile, Daily Missions (3 cols) */}
+          <div className="lg:col-span-3 space-y-6 order-3 lg:order-3 h-full flex flex-col">
+            {/* 1. User Profile */}
+            <User user={user} unsubmittedAssignmentCount={assignmentCount} />
+
+            {/* 2. Daily Missions */}
             <div className="flex-1">
               <Suspense fallback={<LoadingSkeleton />}>
                 <DailyMissionSection />
               </Suspense>
             </div>
-          </div>
-
-          {/* Side Content Column (lg:col-span-3) - Order: Ranking, User Profile */}
-          <div className="lg:col-span-3 space-y-6 order-2 lg:order-2 h-full flex flex-col">
-            {/* 4. Ranking */}
-            <Suspense fallback={<LoadingSkeleton />}>
-              <RankingSection />
-            </Suspense>
-            {/* 5. User Profile */}
-            <User user={user} unsubmittedAssignmentCount={assignmentCount} />
           </div>
 
         </div>

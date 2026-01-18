@@ -25,6 +25,7 @@ import {
 } from 'react-icons/fa'; // Importing icons
 import Image from 'next/image';
 import { UserWithPetStatus } from '@/app/(main)/layout';
+import DailyMissionClient from './dashboard/DailyMissionClient';
 import type { User, Status_Kohaku } from '@prisma/client';
 
 const MAX_HUNGER = 200; // 満腹度の最大値
@@ -141,7 +142,17 @@ const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterPr
               )}
             </div>
           )}
-          {/* メインナビゲーション (DesktopHeaderと重複しないように削除) */}
+
+          {/* Daily Missions Section */}
+          <div className="space-y-1">
+            <h3 className="px-3 text-xs font-bold text-gray-500 uppercase tracking-wider">デイリーミッション</h3>
+            <div className="p-2 bg-gray-50 rounded-lg shadow-sm">
+              <DailyMissionClient />
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 my-2"></div>
+
           {/* プロフィール */}
           <div className="space-y-1">
             <h3 className="px-3 text-xs font-bold text-gray-500 uppercase tracking-wider">プロフィール</h3>

@@ -17,7 +17,7 @@ export default function MainLayout({
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden">
       <Header userWithPet={userWithPet} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-      <main className="flex-1 w-full mt-20 overflow-y-auto transition-all duration-300 ease-out relative">
+      <main className="flex-1 w-full mt-0 md:mt-20 overflow-y-auto transition-all duration-300 ease-out relative">
         <style jsx global>{`
           main a {
             color: #1a0dab;
