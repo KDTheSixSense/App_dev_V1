@@ -157,11 +157,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Explicitly define type to include relation
-    let submission: Prisma.Event_SubmissionGetPayload<{ include: { eventIssue: true } }>;
-
-    if (existingSubmission) {
-      submission = await prisma.event_Submission.update({
+    // Use implicit typing to avoid mismatches
+    const submission = existingSubmission
+      ? await prisma.event_Submission.update({
         where: {
           id: existingSubmission.id,
         },
@@ -171,15 +169,14 @@ export async function POST(req: NextRequest) {
           score: score,
           submittedAt,
           language: language || 'python',
-          // Force cast to any because testCaseResults is missing from generated Client types
+          // Cast data to any to bypass stale Prisma types missing testCaseResults
           testCaseResults: executionResult.testCaseResults,
         } as any,
         include: {
           eventIssue: true,
         }
-      }) as unknown as Prisma.Event_SubmissionGetPayload<{ include: { eventIssue: true } }>;
-    } else {
-      submission = await prisma.event_Submission.create({
+      })
+      : await prisma.event_Submission.create({
         data: {
           userId,
           eventIssueId,
@@ -188,14 +185,13 @@ export async function POST(req: NextRequest) {
           score: score,
           submittedAt,
           language: language || 'python',
-          // Force cast to any because testCaseResults is missing from generated Client types
+          // Cast data to any to bypass stale Prisma types missing testCaseResults
           testCaseResults: executionResult.testCaseResults,
         } as any,
         include: {
           eventIssue: true,
         }
-      }) as unknown as Prisma.Event_SubmissionGetPayload<{ include: { eventIssue: true } }>;
-    }
+      });
 
     if (submission && isSuccess) {
       await updateTotalScore(userId, submission.eventIssue.eventId);
@@ -210,6 +206,10 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('--- [API] Error in Event Submission POST request ---', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, { status: 500 });
   }
 }

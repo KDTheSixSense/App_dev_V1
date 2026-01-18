@@ -198,7 +198,7 @@ void PrintGraph(int loopCount)
         isPublished: true,
         sampleCases: [
             {
-                input: 'nLine = 5',
+                input: '5',
                 expectedOutput: `*
 **
 ***

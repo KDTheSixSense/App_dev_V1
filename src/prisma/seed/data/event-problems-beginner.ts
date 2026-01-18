@@ -25,7 +25,7 @@ int main(void) {
         isPublished: true,
         sampleCases: [
             {
-                input: 'a = 10, b = 5',
+                input: '10\n5',
                 expectedOutput: '50',
                 description: '例として示された値の場合',
                 order: 1
@@ -33,7 +33,7 @@ int main(void) {
         ],
         testCases: [
             {
-                input: '',
+                input: '12345\n56789',
                 expectedOutput: '701060205',
                 name: 'テストケース1',
                 description: '12345 * 56789 = 701060205',
@@ -73,7 +73,7 @@ int main(void) {
         isPublished: true,
         sampleCases: [
             {
-                input: 'a = 11, b = 3',
+                input: '11\n3',
                 expectedOutput: `a = 11
 b = 3
 a % b = 2
@@ -86,13 +86,13 @@ b % a = 3`,
         ],
         testCases: [
             {
-                input: '',
-                expectedOutput: `a = 12345678
-b = 123
-a % b = 45
-b - a = -12345555
+                input: '11\n3',
+                expectedOutput: `a = 11
+b = 3
+a % b = 2
+b - a = -8
 b / a = 0
-b % a = 123`,
+b % a = 3`,
                 name: 'テストケース1',
                 description: '指定された変数の演算結果',
                 order: 1
@@ -128,7 +128,7 @@ int main(void) {
         isPublished: true,
         sampleCases: [
             {
-                input: 'a = 2000, b = 10',
+                input: '2000\n10',
                 expectedOutput: `¥2000の商品を10個買いました。
 合計金額は¥20000です。`,
                 description: '例として示された値の場合',
@@ -137,9 +137,9 @@ int main(void) {
         ],
         testCases: [
             {
-                input: '',
-                expectedOutput: `\\19800の商品を12個買いました。
-合計金額は\\237600です。`,
+                input: '19800\n12',
+                expectedOutput: `¥19800の商品を12個買いました。
+合計金額は¥237600です。`,
                 name: 'テストケース1',
                 description: 'printfを1回だけ使用して出力',
                 order: 1

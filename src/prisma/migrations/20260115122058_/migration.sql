@@ -511,12 +511,13 @@ CREATE TABLE "Event_Issue_List" (
 -- CreateTable
 CREATE TABLE "Event_Submission" (
     "id" SERIAL NOT NULL,
-    "status" BOOLEAN NOT NULL,
+    "status" BOOLEAN,
     "score" INTEGER NOT NULL,
     "language" TEXT NOT NULL DEFAULT 'python',
     "codeLog" TEXT NOT NULL,
     "startedAt" TIMESTAMP(3) NOT NULL,
     "submittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "testCaseResults" JSONB,
     "userId" TEXT NOT NULL,
     "eventIssueId" INTEGER NOT NULL,
 

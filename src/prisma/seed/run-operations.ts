@@ -49,168 +49,129 @@ export async function runOperations(prisma: PrismaClient) {
 
   console.log('🌱 Seeding assignments and submissions...');
 
-  // 1. 既存の課題と配布状況をクリアして初期化
-  await prisma.submissions.deleteMany({});
-  await prisma.assignment.deleteMany({});
+  // 1. 既存の課題と配布状況をクリアして初期化 (無効化: KobeTaroData等を消してしまうため)
+  // await prisma.submissions.deleteMany({});
+  // await prisma.assignment.deleteMany({});
 
   // 2. 必要なグループと問題を取得
-  const kobeZemiGroup = await prisma.groups.findFirst({ where: { groupname: '神戸ゼミ' } });
-  const kditGroup = await prisma.groups.findFirst({ where: { groupname: 'KDITクラス' } });
-  const problemAplusB = await prisma.programmingProblem.findFirst({ where: { title: 'A + B' } });
-  const problemFizzBuzz = await prisma.programmingProblem.findFirst({ where: { title: 'FizzBuzz' } });
-  const problemPythonVar = await prisma.selectProblem.findFirst({ where: { title: 'Pythonの変数宣言について' } });
+  // const kobeZemiGroup = await prisma.groups.findFirst({ where: { groupname: '神戸ゼミ' } });
+  // const kditGroup = await prisma.groups.findFirst({ where: { groupname: 'KDITクラス' } });
+  // ... Assignment Creation Logic Removed ...
+  // users-groups-data.ts で KDITクラスの課題を作成しているので、ここでは作成しない。
 
-  if (kobeZemiGroup && kditGroup) {
-    const assignmentsToCreate = [];
+  console.log('🌱 Distributing assignments to members (Skipping creation in run-operations)...');
 
-    // --- 課題データを作成 ---
-    assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-10-30T23:59:59Z') });
 
-    // Constraint violation fix: This assignment conflicts with kobe-taro-data.ts which also uses problemFizzBuzz.id.
-    // Since programmingProblemId is unique in Assignment, we cannot create it here if we want kobe-taro-data.ts to succeed.
-    // if (problemFizzBuzz) {
-    //   assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '[アルゴリズム] FizzBuzz問題', description: '添付の問題を解き、プログラミングの基本的なループと条件分岐の理解を深めましょう。', due_date: new Date('2025-11-20T23:59:59Z'), programmingProblemId: problemFizzBuzz.id });
-    // }
-    if (problemPythonVar) {
-      // ユーザーが以前アクセスしていたID 9に合わせて、この課題をID 9にする
-      assignmentsToCreate.push({ id: 9, groupid: kditGroup.id, title: '[Python基礎] 変数宣言の基本', description: '添付の選択問題を解いて、Pythonにおける正しい変数宣言の方法を理解しましょう。', due_date: new Date('2025-10-31T23:59:59Z'), selectProblemId: problemPythonVar.id });
-    }
-    if (problemAplusB) {
-      assignmentsToCreate.push({ id: 4, groupid: kditGroup.id, title: '[ウォーミングアップ] 簡単な足し算', description: 'プログラミングに慣れるための最初のステップです。添付問題の指示に従い、2つの数値を足し合わせるプログラムを書いてみましょう。', due_date: new Date('2025-11-05T23:59:59Z'), programmingProblemId: problemAplusB.id });
-    }
+  // 4. 作成した課題をメンバーに配布 (Submissions作成)
+  console.log('🌱 Distributing assignments to members...');
+  const allAssignments = await prisma.assignment.findMany();
+  const allNonAdminMembers = await prisma.groups_User.findMany({
+    where: { admin_flg: false },
+  });
 
-    // 3. 課題を個別作成 (エラーハンドリング付き)
-    for (const assignmentData of assignmentsToCreate) {
-      try {
-        console.log(`Creating assignment with ID ${assignmentData.id || 'auto'}...`);
-        await prisma.assignment.create({
-          data: assignmentData,
-        });
-      } catch (e) {
-        console.error(`❌ Failed to create assignment "${assignmentData.title}":`, e);
-      }
-    }
-    console.log(`✅ Created ${assignmentsToCreate.length} assignments.`);
-
-    // 3.5. 手動ID指定によるシーケンスの不整合を修正 (PostgreSQL固有)
-    // ID=9などを手動で挿入した後、シーケンスが遅れていると次のauto-incrementで衝突するため
-    try {
-      await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"Assignment"', 'id'), (SELECT MAX(id) FROM "Assignment"))`);
-      console.log('✅ Sequence for Assignment ID reset to match max ID.');
-    } catch (e) {
-      console.warn('⚠️ Failed to reset sequence (Not PostgreSQL?):', e);
-    }
-
-    // 4. 作成した課題をメンバーに配布 (Submissions作成)
-    console.log('🌱 Distributing assignments to members...');
-    const allAssignments = await prisma.assignment.findMany();
-    const allNonAdminMembers = await prisma.groups_User.findMany({
-      where: { admin_flg: false },
-    });
-
-    const submissionsToCreate = [];
-    for (const assignment of allAssignments) {
-      const membersInGroup = allNonAdminMembers.filter(
-        (member) => member.group_id === assignment.groupid
-      );
-      for (const member of membersInGroup) {
-        submissionsToCreate.push({
-          assignment_id: assignment.id,
-          userid: member.user_id,
-          status: '未提出',
-          description: '',
-          codingid: 0,
-        });
-      }
-    }
-
-    if (submissionsToCreate.length > 0) {
-      await prisma.submissions.createMany({
-        data: submissionsToCreate,
+  const submissionsToCreate = [];
+  for (const assignment of allAssignments) {
+    const membersInGroup = allNonAdminMembers.filter(
+      (member) => member.group_id === assignment.groupid
+    );
+    for (const member of membersInGroup) {
+      submissionsToCreate.push({
+        assignment_id: assignment.id,
+        userid: member.user_id,
+        status: '未提出',
+        description: '',
+        codingid: 0,
       });
-      console.log(`✅ Distributed assignments, creating ${submissionsToCreate.length} submission records.`);
     }
-
-    console.log('🌱 Creating dummy "submitted" records...');
-
-    // 提出済みにしたい課題とユーザーを取得
-    const pythonAssignment = await prisma.assignment.findFirst({
-      where: { title: '[Python基礎] 変数宣言の基本' },
-    });
-    const aPlusBAssignment = await prisma.assignment.findFirst({
-      where: { title: '[ウォーミングアップ] 簡単な足し算' },
-    });
-
-    const bob = await prisma.user.findUnique({ where: { email: 'bob@example.com' } });
-    const charlie = await prisma.user.findUnique({ where: { email: 'charlie@example.com' } });
-    const diana = await prisma.user.findUnique({ where: { email: 'diana@example.com' } });
-
-    // BobとCharlieがPythonの課題を提出したことにする
-    if (pythonAssignment && bob && charlie) {
-      await prisma.submissions.updateMany({
-        where: {
-          assignment_id: pythonAssignment.id,
-          userid: { in: [bob.id, charlie.id] },
-        },
-        data: {
-          status: '提出済み',
-          submitted_at: new Date('2025-10-20T10:00:00Z'), // ダミーの提出日時
-          description: '提出しました。確認お願いします。', // ダミーのコメント
-        },
-      });
-      console.log(`✅ Created 2 dummy submissions for "${pythonAssignment.title}".`);
-
-      // --- コメントのシーディング (追加) ---
-      console.log('🌱 Seeding assignment comments...');
-      await prisma.assignmentComment.createMany({
-        data: [
-          {
-            assignmentId: pythonAssignment.id,
-            authorId: bob.id,
-            content: '変数の命名規則について質問があります。スネークケース以外は使ってはいけませんか？',
-            createdAt: new Date('2025-10-21T10:00:00Z'),
-          },
-          {
-            assignmentId: pythonAssignment.id,
-            authorId: charlie.id,
-            content: 'Bobさん、基本的にはスネークケースが推奨されていますが、強制ではありませんよ。PEP8を参照すると良いです。',
-            createdAt: new Date('2025-10-21T10:30:00Z'),
-          },
-          {
-            assignmentId: pythonAssignment.id,
-            authorId: bob.id,
-            content: 'なるほど、ありがとうございます！',
-            createdAt: new Date('2025-10-21T10:45:00Z'),
-          }
-        ]
-      });
-      console.log(`✅ Created 3 sample comments for "${pythonAssignment.title}".`);
-    }
-
-    // Dianaが足し算の課題を提出したことにする
-    if (aPlusBAssignment && diana) {
-      await prisma.submissions.updateMany({
-        where: {
-          assignment_id: aPlusBAssignment.id,
-          userid: diana.id,
-        },
-        data: {
-          status: '提出済み',
-          submitted_at: new Date('2025-10-22T15:30:00Z'),
-          description: '完了しました。',
-        },
-      });
-      console.log(`✅ Created 1 dummy submission for "${aPlusBAssignment.title}".`);
-    }
-  } else {
-    console.warn('⚠️ Could not find groups to seed assignments.');
   }
+
+  if (submissionsToCreate.length > 0) {
+    await prisma.submissions.createMany({
+      data: submissionsToCreate,
+    });
+    console.log(`✅ Distributed assignments, creating ${submissionsToCreate.length} submission records.`);
+  }
+
+  console.log('🌱 Creating dummy "submitted" records...');
+
+  // 提出済みにしたい課題とユーザーを取得
+  const pythonAssignment = await prisma.assignment.findFirst({
+    where: { title: '[Python基礎] 変数宣言の基本' },
+  });
+  const aPlusBAssignment = await prisma.assignment.findFirst({
+    where: { title: '[ウォーミングアップ] 簡単な足し算' },
+  });
+
+  const bob = await prisma.user.findUnique({ where: { email: 'bob@example.com' } });
+  const charlie = await prisma.user.findUnique({ where: { email: 'charlie@example.com' } });
+  const diana = await prisma.user.findUnique({ where: { email: 'diana@example.com' } });
+
+  // BobとCharlieがPythonの課題を提出したことにする
+  if (pythonAssignment && bob && charlie) {
+    await prisma.submissions.updateMany({
+      where: {
+        assignment_id: pythonAssignment.id,
+        userid: { in: [bob.id, charlie.id] },
+      },
+      data: {
+        status: '提出済み',
+        submitted_at: new Date('2025-10-20T10:00:00Z'), // ダミーの提出日時
+        description: '提出しました。確認お願いします。', // ダミーのコメント
+      },
+    });
+    console.log(`✅ Created 2 dummy submissions for "${pythonAssignment.title}".`);
+
+    // --- コメントのシーディング (追加) ---
+    console.log('🌱 Seeding assignment comments...');
+    await prisma.assignmentComment.createMany({
+      data: [
+        {
+          assignmentId: pythonAssignment.id,
+          authorId: bob.id,
+          content: '変数の命名規則について質問があります。スネークケース以外は使ってはいけませんか？',
+          createdAt: new Date('2025-10-21T10:00:00Z'),
+        },
+        {
+          assignmentId: pythonAssignment.id,
+          authorId: charlie.id,
+          content: 'Bobさん、基本的にはスネークケースが推奨されていますが、強制ではありませんよ。PEP8を参照すると良いです。',
+          createdAt: new Date('2025-10-21T10:30:00Z'),
+        },
+        {
+          assignmentId: pythonAssignment.id,
+          authorId: bob.id,
+          content: 'なるほど、ありがとうございます！',
+          createdAt: new Date('2025-10-21T10:45:00Z'),
+        }
+      ]
+    });
+    console.log(`✅ Created 3 sample comments for "${pythonAssignment.title}".`);
+  }
+
+  // Dianaが足し算の課題を提出したことにする
+  if (aPlusBAssignment && diana) {
+    await prisma.submissions.updateMany({
+      where: {
+        assignment_id: aPlusBAssignment.id,
+        userid: diana.id,
+      },
+      data: {
+        status: '提出済み',
+        submitted_at: new Date('2025-10-22T15:30:00Z'),
+        description: '完了しました。',
+      },
+    });
+    console.log(`✅ Created 1 dummy submission for "${aPlusBAssignment.title}".`);
+  }
+  // } else {
+  //   console.warn('⚠️ Could not find groups to seed assignments.');
+  // }
 
   // 5. ダミーのデイリーアクティビティサマリーを生成
   await seedDailyActivities(prisma);
 
-  // 6. 神戸太郎専用の追加シードを実行
-  await seedKobeTaroData(prisma);
+  // 6. 神戸太郎専用の追加シードは seed.ts で実行するため削除
+  // await seedKobeTaroData(prisma);
 
   console.log('✅ Post-seeding operations completed.');
 }
