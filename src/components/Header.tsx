@@ -9,7 +9,6 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { getEvolvedImageSrc, SubjectProgress } from './kohakuUtils';
 import type { User, Status_Kohaku } from '@prisma/client';
-import { FaHome, FaList, FaEdit, FaUsers, FaTasks, FaCalendarAlt, FaSignOutAlt } from 'react-icons/fa';
 
 type UserWithPetStatus = User & {
   status_Kohaku: Status_Kohaku | null;
@@ -298,12 +297,12 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
 
   // ナビゲーションボタンのデータを配列で管理
   const navItems = [
-    { href: '/home', icon: <FaHome className="text-3xl" />, label: 'ホーム' },
-    { href: '/issue_list', icon: <FaList className="text-3xl" />, label: '問題一覧' },
-    { href: '/CreateProgrammingQuestion', icon: <FaEdit className="text-3xl" />, label: '問題作成' },
-    { href: '/group', icon: <FaUsers className="text-3xl" />, label: 'グループ' },
-    { href: '/unsubmitted-assignments', icon: <FaTasks className="text-3xl" />, label: '課題' },
-    { href: '/event/event_list', icon: <FaCalendarAlt className="text-3xl" />, label: 'イベント' },
+    { href: '/home', icon: '/images/home.png', label: 'ホーム' },
+    { href: '/issue_list', icon: '/images/question_list.png', label: '問題一覧' },
+    { href: '/CreateProgrammingQuestion', icon: '/images/question_create.png', label: '問題作成' },
+    { href: '/group', icon: '/images/group.png', label: 'グループ' },
+    { href: '/unsubmitted-assignments', icon: '/images/assignment.png', label: '課題' },
+    { href: '/event/event_list', icon: '/images/event.png', label: 'イベント' },
   ];
 
   return (
@@ -337,7 +336,8 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
                   onClick={() => window.location.href = item.href}
                   className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg transition-colors hover:bg-[#b2ebf2]`}
                 >
-                  <div className={`mb-1 ${isActive ? 'text-[#f0b084]' : 'text-[#008391]'}`}>{item.icon}</div>
+                  <Image src={item.icon} alt={item.label} width={40} height={40} unoptimized />
+
                   <span className={`text-xs mt-1 font-bold ${isActive ? 'text-[#f0b084]' : 'text-[#008391]'}`}>
                     {item.label}
                   </span>
@@ -347,7 +347,7 @@ export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subject
           })}
           <li>
             <button onClick={handleLogout} className="w-24 h-20 flex flex-col items-center justify-center rounded-lg hover:bg-[#b2ebf2] transition-colors">
-              <FaSignOutAlt className="text-3xl text-[#008391]" />
+              <Image src="/images/logout.png" alt="ログアウト" width={40} height={40} unoptimized />
               <span className='text-[#008391] text-xs mt-1 font-bold'>ログアウト</span>
             </button>
           </li>
