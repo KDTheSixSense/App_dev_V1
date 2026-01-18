@@ -2,36 +2,55 @@
 
 import Link from 'next/link';
 import React from 'react';
-import { FaHome, FaList, FaTasks, FaUsers, FaCalendarAlt, FaBars, FaTimes, FaUser, FaEdit, FaHistory, FaCode, FaSearch, FaGamepad, FaShieldAlt, FaFileContract, FaUserShield } from 'react-icons/fa'; // Importing icons
+import {
+  FaHome,
+  FaList,
+  FaTasks,
+  FaUsers,
+  FaCalendarAlt,
+  FaBars,
+  FaTimes,
+  FaEdit,
+  FaHistory,
+  FaCode,
+  FaSearch,
+  FaGamepad,
+  FaShieldAlt,
+  FaFileContract,
+  FaUserShield,
+  FaTrophy, // For Level
+  FaCalendarCheck, // For Continuous Login
+  FaSignOutAlt, // For Logout
+  FaUser, // For Profile
+} from 'react-icons/fa'; // Importing icons
 import Image from 'next/image';
 import { UserWithPetStatus } from '@/app/(main)/layout';
 import type { User, Status_Kohaku } from '@prisma/client';
-
 
 const MAX_HUNGER = 200; // 満腹度の最大値
 
 const getPetDisplayState = (hungerLevel: number) => {
   if (hungerLevel >= 150) {
     return {
-      icon: '/images/Kohaku/kohaku-full.png',      // 満腹の画像
+      icon: '/images/Kohaku/kohaku-full.png', // 満腹の画像
       suffix: 'smile',
       colorClass: 'bg-gradient-to-r from-green-400 to-lime-500', // 緑色
     };
   } else if (hungerLevel >= 100) {
     return {
-      icon: '/images/Kohaku/kohaku-normal.png',    // 普通の画像
+      icon: '/images/Kohaku/kohaku-normal.png', // 普通の画像
       suffix: 'base',
-      colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500',   // 水色
+      colorClass: 'bg-gradient-to-r from-sky-400 to-cyan-500', // 水色
     };
   } else if (hungerLevel >= 50) {
     return {
-      icon: '/images/Kohaku/kohaku-hungry.png',    // 空腹の画像
+      icon: '/images/Kohaku/kohaku-hungry.png', // 空腹の画像
       suffix: 'cry',
       colorClass: 'bg-gradient-to-r from-amber-400 to-orange-500', // オレンジ色
     };
   } else {
     return {
-      icon: '/images/Kohaku/kohaku-starving.png',  // 死にかけの画像
+      icon: '/images/Kohaku/kohaku-starving.png', // 死にかけの画像
       suffix: 'death',
       colorClass: 'bg-gradient-to-r from-red-500 to-rose-600', // 赤色
     };
@@ -65,35 +84,32 @@ const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterPr
     }
   }
 
-  // ナビゲーションボタンのデータを配列で管理 (PC版Header.tsxと統一)
+  // ナビゲーションボタンのデータを配列で管理
   const navItems = [
-    { href: '/home', icon: '/images/home.png', label: 'ホーム' },
-    { href: '/issue_list', icon: '/images/question_list.png', label: '問題一覧' },
-    { href: '/CreateProgrammingQuestion', icon: '/images/question_create.png', label: '問題作成' },
-    { href: '/group', icon: '/images/group.png', label: 'グループ' },
-    { href: '/unsubmitted-assignments', icon: '/images/assignment.png', label: '課題' },
-    { href: '/event/event_list', icon: '/images/event.png', label: 'イベント' },
+    { href: '/home', icon: <FaHome className="text-2xl" />, label: 'ホーム' },
+    { href: '/issue_list', icon: <FaList className="text-2xl" />, label: '問題一覧' },
+    { href: '/CreateProgrammingQuestion', icon: <FaEdit className="text-2xl" />, label: '問題作成' },
+    { href: '/group', icon: <FaUsers className="text-2xl" />, label: 'グループ' },
+    { href: '/unsubmitted-assignments', icon: <FaTasks className="text-2xl" />, label: '課題' },
+    { href: '/event/event_list', icon: <FaCalendarAlt className="text-2xl" />, label: 'イベント' },
   ];
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-[#D3F7FF] text-black border-t border-gray-200 md:hidden z-50 h-20 flex items-center px-4">
-      <nav className="flex justify-around items-center flex-grow">
-        {navItems.slice(0, 5).map((item) => ( // Show first 5 items to fit, or adjust as needed. PC has 6 items. Mobile typically fits 4-5. Let's try to fit closely or pick most important.
-          // Wait, user request implies "fundamentally insufficient quantity". So I should probably show what fits or scroll.
-          // PC Header has: Home, Issue List, Problem Create, Group, Assignment, Event (6 items).
-          // Mobile usually fits 5 comfortably. Let's try to show them all or use the new icons for them.
-          // Note: Previous code had Profile, Tasks, List, Home, Group, Event (6 items).
-          // Let's stick to the new list order but maybe we need to be careful about width.
-          <Link key={item.label} href={item.href} className="flex flex-col items-center text-xs text-[#546E7A] hover:bg-[#b2ebf2] transition-colors p-1 rounded-lg min-w-[3.5rem]">
-            <Image src={item.icon} alt={item.label} width={24} height={24} unoptimized className="mb-1" />
-            <span className="scale-90 origin-top">{item.label}</span>
-          </Link>
-        ))}
-        <button onClick={() => setIsMenuOpen(true)} className="flex flex-col items-center text-xs text-[#546E7A] hover:bg-[#b2ebf2] transition-colors p-1 rounded-lg min-w-[3.5rem]">
-          <FaBars className="text-2xl mb-1 p-0.5" />
-          <span className="scale-90 origin-top">メニュー</span>
-        </button>
-      </nav>
+    <footer className="fixed bottom-0 left-0 right-0 bg-[#D3F7FF] text-black border-t border-gray-200 md:hidden z-50 h-20 flex items-center px-2">
+      <div className="flex-grow overflow-x-auto whitespace-nowrap">
+        <nav className="flex flex-nowrap justify-start items-center space-x-2">
+          {navItems.map((item) => (
+            <Link key={item.label} href={item.href} className="flex flex-col items-center text-xs text-[#546E7A] hover:bg-[#b2ebf2] transition-colors p-1 rounded-lg min-w-[4rem] text-center">
+              <div className="mb-1">{item.icon}</div>
+              <span className="scale-90 origin-top">{item.label}</span>
+            </Link>
+          ))}
+        </nav>
+      </div>
+      <button onClick={() => setIsMenuOpen(true)} className="flex flex-col items-center text-xs text-[#546E7A] hover:bg-[#b2ebf2] transition-colors p-1 rounded-lg min-w-[4rem] ml-2">
+        <FaBars className="text-2xl mb-1" />
+        <span className="scale-90 origin-top">メニュー</span>
+      </button>
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
@@ -110,11 +126,11 @@ const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterPr
           {userWithPet && (
             <div className="p-3 mb-4 bg-gray-50 rounded-lg shadow-sm">
               <div className="flex items-center mb-2">
-                <Image src="/images/rank.png" alt="レベル" width={24} height={24} className="w-6 h-6 mr-3" />
+                <FaTrophy className="w-6 h-6 mr-3 text-yellow-500" /> {/* Changed to FaTrophy */}
                 <span className="font-bold text-gray-800">レベル: {userWithPet.level}</span>
               </div>
               <div className="flex items-center mb-2">
-                <Image src="/images/login_icon.png" alt="連続ログイン日数" width={24} height={24} className="w-6 h-6 mr-3" />
+                <FaCalendarCheck className="w-6 h-6 mr-3 text-green-500" /> {/* Changed to FaCalendarCheck */}
                 <span className="font-bold text-gray-800">連続ログイン日数: {userWithPet.continuouslogin ?? 0}</span>
               </div>
               {userWithPet.status_Kohaku && (
@@ -125,18 +141,17 @@ const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterPr
               )}
             </div>
           )}
-          {/* メインナビゲーション */}
+          {/* メインナビゲーション (DesktopHeaderと重複しないように削除) */}
+          {/* プロフィール */}
           <div className="space-y-1">
-            <h3 className="px-3 text-xs font-bold text-gray-500 uppercase tracking-wider">メイン</h3>
-            {navItems.map((item) => (
-              <Link key={item.label} href={item.href} className="flex items-center text-base text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg" onClick={() => setIsMenuOpen(false)}>
-                <Image src={item.icon} alt={item.label} width={20} height={20} className="mr-3 w-5 h-5 object-contain" unoptimized />
-                {item.label}
-              </Link>
-            ))}
-            <Link href="/CreateProgrammingQuestion" className="flex items-center text-base text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg" onClick={() => setIsMenuOpen(false)}>
-              <FaEdit className="text-lg mr-3 w-5 text-gray-500" />
-              問題作成
+            <h3 className="px-3 text-xs font-bold text-gray-500 uppercase tracking-wider">プロフィール</h3>
+            <Link href="/profile" className="flex items-center text-base text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg" onClick={() => setIsMenuOpen(false)}>
+              <FaUser className="text-lg mr-3 w-5 text-gray-500" />
+              プロフィール
+            </Link>
+            <Link href="/profile/history" className="flex items-center text-base text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg" onClick={() => setIsMenuOpen(false)}>
+              <FaHistory className="text-lg mr-3 w-5 text-gray-500" />
+              問題解答履歴
             </Link>
           </div>
 
@@ -156,10 +171,6 @@ const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterPr
             <Link href="/simulator" className="flex items-center text-base text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg" onClick={() => setIsMenuOpen(false)}>
               <FaGamepad className="text-lg mr-3 w-5 text-gray-500" />
               ノーコード
-            </Link>
-            <Link href="/profile/history" className="flex items-center text-base text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg" onClick={() => setIsMenuOpen(false)}>
-              <FaHistory className="text-lg mr-3 w-5 text-gray-500" />
-              問題解答履歴
             </Link>
           </div>
 
@@ -190,6 +201,22 @@ const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterPr
               <FaUserShield className="text-lg mr-3 w-5 text-gray-400" />
               プライバシーポリシー
             </Link>
+            {/* ログアウトボタンを追加 */}
+            <button
+              onClick={async () => {
+                setIsMenuOpen(false);
+                const res = await fetch('/api/auth/logout', { method: 'POST' });
+                if (res.ok) {
+                  window.location.href = '/auth/login';
+                } else {
+                  console.error('ログアウトに失敗しました');
+                }
+              }}
+              className="flex items-center text-base text-gray-600 hover:bg-gray-100 px-3 py-2 rounded-lg w-full text-left"
+            >
+              <FaSignOutAlt className="text-lg mr-3 w-5 text-gray-400" />
+              ログアウト
+            </button>
           </div>
         </nav>
       </div>

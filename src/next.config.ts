@@ -64,7 +64,7 @@ const nextConfig: NextConfig = {
       
       // Apply cache headers to all common image types
       {
-        source: '/:path*.(?:jpg|jpeg|gif|png|svg|ico|webp)',
+        source: '/:path*.(jpg|jpeg|gif|png|svg|ico|webp)',
         headers: cacheHeaders,
       },
 
