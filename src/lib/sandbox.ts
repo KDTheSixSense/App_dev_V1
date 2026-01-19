@@ -51,10 +51,12 @@ export async function executeCode(
     // We inject sys.stdin mock directly into the code here.
     let codeToRun = sourceCode;
     if ((language === 'python' || language === 'python3') && input) {
-        const escapedInput = JSON.stringify(input);
+        // Use Base64 encoding to safely inject arbitrary input without escaping issues
+        const base64Input = Buffer.from(input).toString('base64');
+
         // Prepend stdin mocking if not already present (simple check)
         if (!codeToRun.includes('sys.stdin = io.StringIO')) {
-            codeToRun = `import sys\nimport io\nsys.stdin = io.StringIO(${escapedInput})\n\n` + sourceCode;
+            codeToRun = `import sys\nimport io\nimport base64\nsys.stdin = io.StringIO(base64.b64decode("${base64Input}").decode("utf-8"))\n\n` + sourceCode;
         }
     }
 

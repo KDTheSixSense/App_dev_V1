@@ -15,6 +15,8 @@ function containsSecurityThreats(input: string): boolean {
 const rateLimit = new LRUCache<string, number>({
   max: 500, // 最大500ユーザー
   ttl: 60 * 1000, // 1分間
+  // WARNING: This in-memory cache will not be shared across multiple server instances (e.g. Vercel, frequent scaling).
+  // For production with multiple instances, use Redis (e.g. @/lib/rate-limit.ts with Redis adapter).
 });
 
 function checkRateLimit(ip: string): boolean {

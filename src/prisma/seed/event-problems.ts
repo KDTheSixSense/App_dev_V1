@@ -21,6 +21,48 @@ export async function seedEventProblems(prisma: PrismaClient, eventId?: number) 
         console.warn('⚠️ Kobe Taro user not found. Event problems will be created without creatorId.');
     }
 
+    let targetEventId = eventId;
+
+    // eventIdが指定されていない場合、新規イベントを作成
+    if (!targetEventId && kobeTaro) {
+        console.log('🆕 Creating new event for problems...');
+        // 既存の同名イベントがあるか確認（重複作成防止）
+        const existingEvent = await prisma.create_event.findUnique({
+            where: { inviteCode: 'event-problems-seed-20' }
+        });
+
+        if (existingEvent) {
+            targetEventId = existingEvent.id;
+            console.log(`   Found existing event: ${existingEvent.title} (ID: ${targetEventId})`);
+        } else {
+            const newEvent = await prisma.create_event.create({
+                data: {
+                    title: '神戸電子 プログラミングコンテスト',
+                    description: 'C言語の問題20問に挑戦しよう！',
+                    inviteCode: 'event-problems-seed-20',
+                    publicStatus: true,
+                    startTime: new Date(), // Now
+                    endTime: new Date(new Date().setDate(new Date().getDate() + 30)), // 30 days later
+                    isStarted: true,
+                    hasBeenStarted: true,
+                    creatorId: kobeTaro.id,
+                }
+            });
+            targetEventId = newEvent.id;
+            console.log(`   Created new event: ${newEvent.title} (ID: ${targetEventId})`);
+
+            // 自分(Kobe Taro)を管理者として参加させる
+            await prisma.event_Participants.create({
+                data: {
+                    eventId: targetEventId,
+                    userId: kobeTaro.id,
+                    isAdmin: true,
+                    event_getpoint: 0
+                }
+            });
+        }
+    }
+
     for (const p of allProblems) {
 
         // 1. 問題自体の作成（重複チェック：タイトルで検索）
@@ -59,12 +101,12 @@ export async function seedEventProblems(prisma: PrismaClient, eventId?: number) 
             // console.log(`   Skipped existing problem: ${p.title}`);
         }
 
-        // 2. イベントへの紐付け（eventIdが指定されている場合）
-        if (eventId && problem) {
+        // 2. イベントへの紐付け（targetEventIdがある場合）
+        if (targetEventId && problem) {
             const existingLink = await prisma.event_Issue_List.findUnique({
                 where: {
                     eventId_problemId_unique: {
-                        eventId: eventId,
+                        eventId: targetEventId,
                         problemId: problem.id
                     }
                 }
@@ -73,14 +115,14 @@ export async function seedEventProblems(prisma: PrismaClient, eventId?: number) 
             if (!existingLink) {
                 await prisma.event_Issue_List.create({
                     data: {
-                        eventId: eventId,
+                        eventId: targetEventId,
                         problemId: problem.id
                     }
                 });
-                // console.log(`   Linked problem "${p.title}" to event ID ${eventId}`);
+                // console.log(`   Linked problem "${p.title}" to event ID ${targetEventId}`);
             }
         }
     }
 
-    console.log(`✅ Created ${allProblems.length} event problems.`);
+    console.log(`✅ Created/Linked ${allProblems.length} event problems.`);
 }
