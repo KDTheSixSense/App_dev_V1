@@ -131,10 +131,16 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
         else if (userData.email === 'evo@example4.com') targetSubjectId = 5; // 応用
         else if (userData.email === 'evo@example5.com') targetSubjectId = 4; // 選択問題
 
-        subjectXp = subjectId === targetSubjectId ? 28950 : 0;
+        // ランキングのばらつきを確認するために、レベルもばらけさせる (概ねLevel 20 ~ 50程度)
+        // 28950 XP = Level 29. ランダムに加算
+        const baseTargetXp = 28950;
+        const randomOffset = getRandomInt(-15000, 25000);
+
+        subjectXp = subjectId === targetSubjectId ? Math.max(1000, baseTargetXp + randomOffset) : 0;
       } else if (userData.email.startsWith('evo_mix_')) {
-        // 複合属性確認用: アカウントレベルが29 (XP 28950) になるように、対象科目にXPを分配する
-        const totalTargetXp = 28950;
+        // 複合属性確認用: アカウントレベルがばらけるように合計XPをランダム設定
+        // 概ね 20000 ~ 60000 程度
+        const totalTargetXp = getRandomInt(20000, 60000);
         // 科目IDマッピング: 1=Prog(P), 2=BasicA(A), 3=BasicB(B), 4=Select(A), 5=Applied(O)
 
         if (userData.email === 'evo_mix_ab@example.com') {
