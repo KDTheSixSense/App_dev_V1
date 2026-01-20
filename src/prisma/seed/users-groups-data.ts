@@ -121,7 +121,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
 
       // ユーザーごとにXPの生成範囲を変える
       if (userData.username === '神戸太郎') {
-        subjectXp = 8999;
+        subjectXp = 5799; // 5700 * 5 = 28500 XP -> Level 29
       } else if (userData.email.startsWith('evo@example')) {
         // ユーザーごとに特定の科目をレベル29 (XP 28950) に設定
         let targetSubjectId = 1;
