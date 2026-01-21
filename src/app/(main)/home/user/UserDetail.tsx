@@ -83,7 +83,7 @@ export default async function UserDetail({ user, unsubmittedAssignmentCount }: U
             {/* Stats text colors updated to match Blue theme */}
             <div className="p-4 grid grid-cols-3 gap-3">
                 <div className="bg-white rounded-xl p-2 py-5 flex flex-col items-center justify-center shadow-sm text-center">
-                    <span className="text-[14px] text-slate-500 font-bold mb-1">連続ログイン</span>
+                    <span className="text-[12px] text-slate-500 font-bold mb-1">連続ログイン</span>
                     <span className="text-xl font-bold text-slate-700 block leading-none">
                         {user?.continuouslogin ?? 0}<span className="text-xs ml-0.5 font-normal">日</span>
                     </span>
