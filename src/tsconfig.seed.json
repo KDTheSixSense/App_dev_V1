@@ -3,7 +3,7 @@
     "compilerOptions": {
         "module": "CommonJS",
         "moduleResolution": "node",
-        "noEmit": true
+        "outDir": "./prisma/dist"
     },
     "include": [
         "prisma/seed.ts",

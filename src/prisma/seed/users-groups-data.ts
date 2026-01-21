@@ -28,6 +28,24 @@ function generateJapaneseName(): string {
   return `${surname}${givenName}`;
 }
 
+const defaultIcons = [
+  '/images/DefaultIcons/cursor_fox_tail.png',
+  '/images/DefaultIcons/female1.jpg',
+  '/images/DefaultIcons/female2.jpg',
+  '/images/DefaultIcons/female3.jpg',
+  '/images/DefaultIcons/male1.jpg',
+  '/images/DefaultIcons/male2.jpg',
+  '/images/DefaultIcons/male3.jpg',
+];
+
+/**
+ * デフォルトアイコンのパスをランダムに返します
+ */
+function getRandomIcon(): string {
+  const index = Math.floor(Math.random() * defaultIcons.length);
+  return defaultIcons[index];
+}
+
 /**
  * 総経験値からレベルを計算します (1000XPごとに1レベルアップ)
  * @param xp 経験値
@@ -78,33 +96,33 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   // --- 2. シーディングするユーザーの基本情報を定義 ---
   const usersToSeed = [
     { email: 'alice@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png', isAdmin: true },
-    { email: 'bob@example.com', password: 'securepassword', username: generateJapaneseName(), icon: '/images/users/bob.png' },
-    { email: 'charlie@example.com', password: 'anotherpassword', username: generateJapaneseName(), icon: '/images/users/charlie.png' },
-    { email: 'diana@example.com', password: 'password456', username: generateJapaneseName(), icon: '/images/users/diana.png' },
-    { email: 'eva@example.com', password: 'password789', username: generateJapaneseName(), icon: '/images/users/eva.png' },
-    { email: 'frank@example.com', password: 'password101', username: generateJapaneseName(), icon: '/images/users/frank.png' },
-    { email: 'grace@example.com', password: 'password112', username: generateJapaneseName(), icon: '/images/users/grace.png' },
+    { email: 'bob@example.com', password: 'securepassword', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'charlie@example.com', password: 'anotherpassword', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'diana@example.com', password: 'password456', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'eva@example.com', password: 'password789', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'frank@example.com', password: 'password101', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'grace@example.com', password: 'password112', username: generateJapaneseName(), icon: getRandomIcon() },
 
     { email: 'kobe_taro@example.com', password: 'kobetarou', username: '神戸太郎', icon: '/images/users/kobe.png' },
     // その他ダミーユーザー (田中, 鈴木, 佐藤の代わり)
-    { email: 'tanaka@example.com', password: 'password131', username: generateJapaneseName(), icon: '/images/users/tanaka.png' },
-    { email: 'suzuki@example.com', password: 'password415', username: generateJapaneseName(), icon: '/images/users/suzuki.png' },
-    { email: 'sato@example.com', password: 'password617', username: generateJapaneseName(), icon: '/images/users/sato.png' },
+    { email: 'tanaka@example.com', password: 'password131', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'suzuki@example.com', password: 'password415', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'sato@example.com', password: 'password617', username: generateJapaneseName(), icon: getRandomIcon() },
 
-    { email: 'evo@example1.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo@example2.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo@example3.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo@example4.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo@example5.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
+    { email: 'evo@example1.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo@example2.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo@example3.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo@example4.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo@example5.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
     // 複合属性確認用アカウント
-    { email: 'evo_mix_ab@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo_mix_ap@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo_mix_ao@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo_mix_bp@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo_mix_bo@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo_mix_po@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo_mix_all@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
-    { email: 'evo_60_check@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png' },
+    { email: 'evo_mix_ab@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_ap@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_ao@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_bp@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_bo@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_po@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_all@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_60_check@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
 
   ];
 
