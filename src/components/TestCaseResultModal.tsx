@@ -34,7 +34,7 @@ const TestCaseResultModal: React.FC<TestCaseResultModalProps> = ({
   return (
     // fixed inset-0 と bg-black/50 で背景を半透明の黒にして透過させます
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
         <div className={`p-4 border-b flex justify-between items-center ${success ? 'bg-green-50' : 'bg-red-50'} rounded-t-lg`}>
           <div className="flex items-center gap-3">
@@ -66,8 +66,8 @@ const TestCaseResultModal: React.FC<TestCaseResultModalProps> = ({
                   <div className="flex justify-between items-center mb-2 border-b pb-2">
                     <span className="font-bold text-gray-700">{result.name}</span>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${result.isCorrect
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-red-100 text-red-700'
                       }`}>
                       {result.status}
                     </span>
@@ -76,13 +76,13 @@ const TestCaseResultModal: React.FC<TestCaseResultModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono">
                     <div>
                       <p className="text-xs text-gray-500 mb-1">期待される出力:</p>
-                      <pre className="bg-white border p-2 rounded text-gray-800 whitespace-pre-wrap min-h-[2.5rem]">
+                      <pre className="bg-white border p-2 rounded text-gray-800 whitespace-pre-wrap min-h-[2.5rem] max-h-96 overflow-y-auto custom-scrollbar">
                         {result.expectedOutput}
                       </pre>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">あなたの出力:</p>
-                      <pre className={`bg-white border p-2 rounded whitespace-pre-wrap min-h-[2.5rem] ${result.isCorrect ? 'text-gray-800 border-gray-300' : 'text-red-600 border-red-300 bg-red-50'
+                      <pre className={`bg-white border p-2 rounded whitespace-pre-wrap min-h-[2.5rem] max-h-96 overflow-y-auto custom-scrollbar ${result.isCorrect ? 'text-gray-800 border-gray-300' : 'text-red-600 border-red-300 bg-red-50'
                         }`}>
                         {result.actualOutput}
                       </pre>

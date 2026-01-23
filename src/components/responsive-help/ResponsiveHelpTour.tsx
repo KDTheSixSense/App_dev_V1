@@ -62,17 +62,17 @@ const ResponsiveHelpTour: React.FC<ResponsiveHelpTourProps> = ({ steps, onClose 
       <div className="absolute inset-0 bg-black/50"></div>
 
       {/* Help modal positioned near the spotlight - Responsive */}
-      <div className="help-tour-modal absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-xl w-full max-w-[90vw] sm:w-[600px] md:w-[800px] lg:w-[1200px] relative z-10 transition-all">
-        <h3 className="text-2xl sm:text-3xl font-bold mb-1 text-gray-900">{currentStep.title}</h3>
-        <p className="text-gray-700 mb-2 whitespace-pre-wrap text-lg sm:text-xl leading-relaxed">{currentStep.description}</p>
+      <div className="help-tour-modal absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-xl w-full max-w-[90vw] sm:w-[600px] md:w-[800px] lg:w-[1200px] relative z-10 transition-all max-h-[90vh] flex flex-col overflow-y-auto">
+        <h3 className="text-2xl sm:text-3xl font-bold mb-1 text-gray-900 flex-shrink-0">{currentStep.title}</h3>
+        <p className="text-gray-700 mb-2 whitespace-pre-wrap text-lg sm:text-lg leading-relaxed flex-shrink-0">{currentStep.description}</p>
 
         {currentStep.imagePath && (
           // Next.jsのImageコンポーネントの代わりに標準のimgタグを使用 - Responsive
-          <div className="my-2 rounded-lg overflow-hidden min-h-[300px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px] flex items-center justify-center shadow-lg">
+          <div className="my-2 rounded-lg overflow-hidden flex-shrink-1 min-h-0 flex items-center justify-center shadow-lg">
             <img
               src={currentStep.imagePath}
               alt={currentStep.title}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-[50vh] object-contain"
             />
           </div>
         )}

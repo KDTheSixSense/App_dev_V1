@@ -16,6 +16,37 @@ function getRandomInt(min: number, max: number) {
 }
 
 /**
+ * ランダムな4文字の日本人名を生成します (姓2文字 + 名2文字)
+ */
+function generateJapaneseName(): string {
+  const surnames = ['佐藤', '鈴木', '高橋', '田中', '伊藤', '渡辺', '山本', '中村', '小林', '加藤', '吉田', '山田', '佐々木', '山口', '松本'];
+  const givenNames = ['太郎', '花子', '一郎', '次郎', '健太', '美咲', '愛子', '結衣', '大輔', '直人', '真一', '翔太', '美優', '陽菜', '葵'];
+
+  const surname = surnames[Math.floor(Math.random() * surnames.length)];
+  const givenName = givenNames[Math.floor(Math.random() * givenNames.length)];
+
+  return `${surname}${givenName}`;
+}
+
+const defaultIcons = [
+  '/images/DefaultIcons/cursor_fox_tail.png',
+  '/images/DefaultIcons/female1.jpg',
+  '/images/DefaultIcons/female2.jpg',
+  '/images/DefaultIcons/female3.jpg',
+  '/images/DefaultIcons/male1.jpg',
+  '/images/DefaultIcons/male2.jpg',
+  '/images/DefaultIcons/male3.jpg',
+];
+
+/**
+ * デフォルトアイコンのパスをランダムに返します
+ */
+function getRandomIcon(): string {
+  const index = Math.floor(Math.random() * defaultIcons.length);
+  return defaultIcons[index];
+}
+
+/**
  * 総経験値からレベルを計算します (1000XPごとに1レベルアップ)
  * @param xp 経験値
  */
@@ -64,31 +95,34 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
 
   // --- 2. シーディングするユーザーの基本情報を定義 ---
   const usersToSeed = [
-    { email: 'alice@example.com', password: 'password123', username: 'Alice Smith', icon: '/images/users/alice.png', isAdmin: true },
-    { email: 'bob@example.com', password: 'securepassword', username: 'Bob Johnson', icon: '/images/users/bob.png' },
-    { email: 'charlie@example.com', password: 'anotherpassword', username: 'Charlie Brown', icon: '/images/users/charlie.png' },
-    { email: 'diana@example.com', password: 'password456', username: 'Diana Prince', icon: '/images/users/diana.png' },
-    { email: 'eva@example.com', password: 'password789', username: 'Eva Green', icon: '/images/users/eva.png' },
-    { email: 'frank@example.com', password: 'password101', username: 'Frank Castle', icon: '/images/users/frank.png' },
-    { email: 'grace@example.com', password: 'password112', username: 'Grace Hopper', icon: '/images/users/grace.png' },
-    { email: 'tanaka@example.com', password: 'password131', username: '田中 恵子', icon: '/images/users/tanaka.png' },
-    { email: 'suzuki@example.com', password: 'password415', username: '鈴木 一郎', icon: '/images/users/suzuki.png' },
-    { email: 'sato@example.com', password: 'password617', username: '佐藤 美咲', icon: '/images/users/sato.png' },
+    { email: 'alice@example.com', password: 'password123', username: generateJapaneseName(), icon: '/images/users/alice.png', isAdmin: true },
+    { email: 'bob@example.com', password: 'securepassword', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'charlie@example.com', password: 'anotherpassword', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'diana@example.com', password: 'password456', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'eva@example.com', password: 'password789', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'frank@example.com', password: 'password101', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'grace@example.com', password: 'password112', username: generateJapaneseName(), icon: getRandomIcon() },
+
     { email: 'kobe_taro@example.com', password: 'kobetarou', username: '神戸太郎', icon: '/images/users/kobe.png' },
-    { email: 'evo@example1.com', password: 'password123', username: 'Evolution Test1', icon: '/images/users/alice.png' },
-    { email: 'evo@example2.com', password: 'password123', username: 'Evolution Test2', icon: '/images/users/alice.png' },
-    { email: 'evo@example3.com', password: 'password123', username: 'Evolution Test3', icon: '/images/users/alice.png' },
-    { email: 'evo@example4.com', password: 'password123', username: 'Evolution Test4', icon: '/images/users/alice.png' },
-    { email: 'evo@example5.com', password: 'password123', username: 'Evolution Test5', icon: '/images/users/alice.png' },
+    // その他ダミーユーザー (田中, 鈴木, 佐藤の代わり)
+    { email: 'tanaka@example.com', password: 'password131', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'suzuki@example.com', password: 'password415', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'sato@example.com', password: 'password617', username: generateJapaneseName(), icon: getRandomIcon() },
+
+    { email: 'evo@example1.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo@example2.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo@example3.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo@example4.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo@example5.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
     // 複合属性確認用アカウント
-    { email: 'evo_mix_ab@example.com', password: 'password123', username: 'Evolution Mix AB', icon: '/images/users/alice.png' },
-    { email: 'evo_mix_ap@example.com', password: 'password123', username: 'Evolution Mix AP', icon: '/images/users/alice.png' },
-    { email: 'evo_mix_ao@example.com', password: 'password123', username: 'Evolution Mix AO', icon: '/images/users/alice.png' },
-    { email: 'evo_mix_bp@example.com', password: 'password123', username: 'Evolution Mix BP', icon: '/images/users/alice.png' },
-    { email: 'evo_mix_bo@example.com', password: 'password123', username: 'Evolution Mix BO', icon: '/images/users/alice.png' },
-    { email: 'evo_mix_po@example.com', password: 'password123', username: 'Evolution Mix PO', icon: '/images/users/alice.png' },
-    { email: 'evo_mix_all@example.com', password: 'password123', username: 'Evolution Mix ALL', icon: '/images/users/alice.png' },
-    { email: 'evo_60_check@example.com', password: 'password123', username: 'Evolution Check 60', icon: '/images/users/alice.png' },
+    { email: 'evo_mix_ab@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_ap@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_ao@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_bp@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_bo@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_po@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_mix_all@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
+    { email: 'evo_60_check@example.com', password: 'password123', username: generateJapaneseName(), icon: getRandomIcon() },
 
   ];
 
@@ -105,7 +139,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
 
       // ユーザーごとにXPの生成範囲を変える
       if (userData.username === '神戸太郎') {
-        subjectXp = 8999;
+        subjectXp = 5799; // 5700 * 5 = 28500 XP -> Level 29
       } else if (userData.email.startsWith('evo@example')) {
         // ユーザーごとに特定の科目をレベル29 (XP 28950) に設定
         let targetSubjectId = 1;
@@ -115,10 +149,16 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
         else if (userData.email === 'evo@example4.com') targetSubjectId = 5; // 応用
         else if (userData.email === 'evo@example5.com') targetSubjectId = 4; // 選択問題
 
-        subjectXp = subjectId === targetSubjectId ? 28950 : 0;
+        // ランキングのばらつきを確認するために、レベルもばらけさせる (概ねLevel 20 ~ 50程度)
+        // 28950 XP = Level 29. ランダムに加算
+        const baseTargetXp = 28950;
+        const randomOffset = getRandomInt(-15000, 25000);
+
+        subjectXp = subjectId === targetSubjectId ? Math.max(1000, baseTargetXp + randomOffset) : 0;
       } else if (userData.email.startsWith('evo_mix_')) {
-        // 複合属性確認用: アカウントレベルが29 (XP 28950) になるように、対象科目にXPを分配する
-        const totalTargetXp = 28950;
+        // 複合属性確認用: アカウントレベルがばらけるように合計XPをランダム設定
+        // 概ね 20000 ~ 60000 程度
+        const totalTargetXp = getRandomInt(20000, 60000);
         // 科目IDマッピング: 1=Prog(P), 2=BasicA(A), 3=BasicB(B), 4=Select(A), 5=Applied(O)
 
         if (userData.email === 'evo_mix_ab@example.com') {
@@ -142,9 +182,9 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
         if (subjectId === 2) subjectXp = 15000; // 基本A (Lv16)
         else if (subjectId === 3) subjectXp = 43900; // 基本B (Lv44)
         else subjectXp = 0;
-      } else if (['Frank Castle', 'Grace Hopper'].includes(userData.username!)) {
+      } else if (['フランク・キャッスル', 'グレース・ホッパー'].includes(userData.username!)) {
         subjectXp = getRandomInt(10000, 50000);
-      } else if (['Alice Smith', '鈴木 一郎'].includes(userData.username!)) {
+      } else if (['アリス・スミス', '鈴木 一郎'].includes(userData.username!)) {
         subjectXp = getRandomInt(5000, 20000);
       } else {
         subjectXp = getRandomInt(100, 8000);
@@ -178,8 +218,19 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
         totallogin: 100,
       };
     }
-    await prisma.user.create({
-      data: {
+    await prisma.user.upsert({
+      where: { email: userData.email },
+      update: {
+        username: userData.username,
+        password: hashedPassword,
+        icon: userData.icon,
+        level: accountLevel,
+        xp: totalAccountXp,
+        totallogin: getRandomInt(1, 500),
+        ...userLoginData,
+        isAdmin: userData.isAdmin || false,
+      },
+      create: {
         email: userData.email,
         username: userData.username,
         password: hashedPassword,
@@ -212,18 +263,8 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
   const kobeTaro = await prisma.user.findUnique({ where: { email: 'kobe_taro@example.com' } });
 
   if (alice && bob && kobeTaro) {
-    // グループ1: 神戸太郎が管理者
-    const group1 = await prisma.groups.create({
-      data: {
-        groupname: '神戸ゼミ',
-        body: '神戸太郎が主催するゼミです。',
-        invite_code: nanoid(8),
-      },
-    });
-    await prisma.groups_User.create({
-      data: { user_id: kobeTaro.id, group_id: group1.id, admin_flg: true },
-    });
-    console.log(`✅ Created group "${group1.groupname}" with Taro as Admin.`);
+    // グループ1: (削除 - Kobe Taro Dataで作成するため)
+
 
     // グループ2: 神戸太郎が一般メンバー
     const group2 = await prisma.groups.create({
@@ -273,19 +314,9 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     });
     console.log(`✅ Added ${group3Members.length} members to "${group3.groupname}".`);
 
-    // 「神戸ゼミ」のお知らせと課題
-    await prisma.post.createMany({
-      data: [
-        { content: '第一回ゼミ会のお知らせです。来週月曜の18時から開催します。', groupId: group1.id, authorId: kobeTaro.id },
-        { content: '参考文献リストを共有します。各自確認してください。', groupId: group1.id, authorId: kobeTaro.id },
-      ]
-    });
-    await prisma.assignment.createMany({
-      data: [
-        { groupid: group1.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-09-30T23:59:59Z') },
-        { groupid: group1.id, title: '[実践] ReactでTodoアプリ作成', description: 'Next.jsとTypeScriptを使い、簡単なTodoアプリを実装してください。', due_date: new Date('2025-10-15T23:59:59Z') },
-      ]
-    });
+    // 「神戸ゼミ」のお知らせと課題 (Kobe Taro Dataに移動)
+
+
 
     // 「KDITクラス」のお知らせ
     await prisma.post.create({
@@ -299,9 +330,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     console.log('🌱 Seeding assignments with problem relations...');
 
     // 1. 課題を割り当てるグループを名前で取得
-    const kobeZemiGroup = await prisma.groups.findFirst({
-      where: { groupname: '神戸ゼミ' },
-    });
+    // 神戸ゼミはここでは取得しない
     const kditGroup = await prisma.groups.findFirst({
       where: { groupname: 'KDITクラス' },
     });
@@ -311,11 +340,10 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
     const problemFizzBuzz = await prisma.programmingProblem.findFirst({ where: { title: 'FizzBuzz' } });
     const problemPythonVar = await prisma.selectProblem.findFirst({ where: { title: 'Pythonの変数宣言について' } });
 
-    if (kobeZemiGroup && kditGroup) {
+    if (kditGroup) {
       const assignmentsToCreate = [];
 
-      // --- 神戸ゼミの課題 ---
-      assignmentsToCreate.push({ groupid: kobeZemiGroup.id, title: '事前課題: 論文レビュー', description: '指定した論文を読み、A4一枚でレビューをまとめてください。', due_date: new Date('2025-10-30T23:59:59Z') });
+      // --- 神戸ゼミの課題 (削除) ---
 
       // FizzBuzz問題が見つかった場合のみ、課題を作成して紐付ける
       if (problemFizzBuzz) {
@@ -323,7 +351,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
           groupid: kditGroup.id,
           title: '[アルゴリズム] FizzBuzz問題',
           description: '添付の問題を解き、プログラミングの基本的なループと条件分岐の理解を深めましょう。',
-          due_date: new Date('2025-11-20T23:59:59Z'),
+          due_date: new Date('2026-01-24T23:59:59Z'), // 1/24
           programmingProblemId: problemFizzBuzz.id,
         });
       }
@@ -335,7 +363,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
           groupid: kditGroup.id,
           title: '[Python基礎] 変数宣言の基本',
           description: '添付の選択問題を解いて、Pythonにおける正しい変数宣言の方法を理解しましょう。',
-          due_date: new Date('2025-10-31T23:59:59Z'),
+          due_date: new Date('2026-01-31T23:59:59Z'), // 1/31
           selectProblemId: problemPythonVar.id,
         });
       }
@@ -346,8 +374,16 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
           groupid: kditGroup.id,
           title: '[ウォーミングアップ] 簡単な足し算',
           description: 'プログラミングに慣れるための最初のステップです。添付問題の指示に従い、2つの数値を足し合わせるプログラムを書いてみましょう。',
-          due_date: new Date('2025-11-05T23:59:59Z'),
+          due_date: new Date('2026-01-24T23:59:59Z'), // 1/24
           programmingProblemId: problemAplusB.id,
+        });
+        // もう一つ課題を追加して、2-2にする
+        assignmentsToCreate.push({
+          groupid: kditGroup.id,
+          title: '[復習] 足し算 再挑戦',
+          description: '復習としてもう一度解いてみましょう。',
+          due_date: new Date('2026-01-31T23:59:59Z'), // 1/31
+          programmingProblemId: problemAplusB.id, // 同じ問題でOK（Assignment的には別IDになる）
         });
       }
 
@@ -359,7 +395,7 @@ export async function seedUsersAndGroups(prisma: PrismaClient) {
       console.log(`✅ Created ${assignmentsToCreate.length} assignments.`);
 
     } else {
-      console.warn('⚠️ Could not find "神戸ゼミ" or "KDITクラス". Skipping assignment creation.');
+      console.warn('⚠️ Could not find "KDITクラス". Skipping assignment creation.');
     }
   }
 

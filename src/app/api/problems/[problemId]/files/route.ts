@@ -74,6 +74,13 @@ export async function POST(request: Request, context: { params: Promise<{ proble
                   const arrayBuffer = await file.arrayBuffer();
                   const buffer = Buffer.from(arrayBuffer);
 
+                  // Security Check: Validate Magic Number
+                  const { validateFileSignature } = await import('@/lib/file-validation');
+                  if (!validateFileSignature(buffer, ext)) {
+                        // Skip invalid file types (prevents malicious extension spoofing)
+                        continue;
+                  }
+
                   const safeBasename = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
                   const fileName = `${Date.now()}-${safeBasename}${ext}`;
                   const filePath = path.join(uploadDir, fileName);

@@ -26,6 +26,12 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Security Check: Validate Magic Number (File Signature)
+    const { validateFileSignature } = await import('@/lib/file-validation');
+    if (!validateFileSignature(buffer, ext)) {
+      return NextResponse.json({ error: 'ファイルの内容と拡張子が一致しません。正しい画像ファイルを選択してください。' }, { status: 400 });
+    }
     const safeBasename = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
     const filename = `${session.user.id}-${Date.now()}-${safeBasename}${ext}`;
     const filePath = path.join(process.cwd(), 'public', 'uploads', 'icons', filename);

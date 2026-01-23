@@ -15,6 +15,9 @@ export async function GET(request: Request, context: { params: Promise<{ problem
     }
 
     try {
+        const session = await getAppSession();
+        const userId = session?.user?.id;
+
         const problem = await prisma.programmingProblem.findUnique({
             where: { id: problemId },
             include: {
@@ -26,6 +29,25 @@ export async function GET(request: Request, context: { params: Promise<{ problem
 
         if (!problem) {
             return NextResponse.json({ message: '問題が見つかりません' }, { status: 404 });
+        }
+
+        // Access Control Logic
+        const isOwner = userId && problem.createdBy === userId;
+        // const isAdmin = session?.user?.isAdmin; // If admin check is needed
+        const isPubliclyAvailable = problem.isPublic && problem.isPublished;
+
+        // 1. 下書き/非公開問題へのアクセス制限
+        if (!isPubliclyAvailable && !isOwner) {
+            return NextResponse.json({ message: 'この問題にアクセスする権限がありません' }, { status: 403 });
+        }
+
+        // 2. テストケースの隠蔽 (一般ユーザーには見せない)
+        // 所有者、または明示的に許可された場合のみ表示
+        // それ以外の場合は空配列またはnullを返す
+        if (!isOwner && !problem.allowTestCaseView) {
+            // テストケースの内容を隠蔽 (入力/出力/説明を空にするか、配列自体を空にする)
+            // ここでは空配列にして返す戦略をとる
+            (problem as any).testCases = [];
         }
 
         return NextResponse.json(problem, { status: 200 });

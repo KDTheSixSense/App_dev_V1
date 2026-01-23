@@ -111,7 +111,7 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, subje
       <div className="absolute bottom-10 right-10 w-32 h-32 rounded-full bg-blue-200 blur-2xl opacity-40 pointer-events-none"></div>
 
       {/* 上部エリア: キャラクター表示と満腹度ゲージ */}
-      <div className="flex mx-6 justify-center items-center gap-10 mb-5">
+      <div className="flex flex-col lg:flex-row mx-6 justify-center items-center gap-10 mb-5">
         
         {/* 左側: キャラクター画像エリア */}
         <div className="min-w-50 min-h-50 rounded-full bg-white p-1.5 shadow-xl">
@@ -133,7 +133,7 @@ export default function PetStatusView({ initialHunger, maxHunger, petname, subje
         </div>
       
         {/* 右側: 満腹度情報とボタン */}
-        <div className='relative w-100 mx-5 justify-center'>
+        <div className='relative w-full mx-5 justify-center'>
           {/* 満腹度ゲージ */}
           <div className="w-full max-w-sm mb-8 text-center">
             <h2 className="text-xl font-bold text-slate-700 mb-2">{petname}の満腹度</h2>
