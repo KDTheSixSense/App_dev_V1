@@ -7,11 +7,17 @@ import dynamic from 'next/dynamic';
 
 // 3Dシーンは重いのでダイナミックインポート（遅延読み込み）
 // SSRは不要なので false
-const Scene404 = dynamic(() => import('@/components/Scene404'), { 
+const Scene404 = dynamic(() => import('@/components/Scene404'), {
   ssr: false,
   loading: () => <div className="min-h-screen bg-black flex items-center justify-center text-cyan-400">Loading World...</div>
 });
 
+/**
+ * 404 Not Found ページコンポーネント
+ * 
+ * 存在しないURLにアクセスした場合に表示されます。
+ * 通常の2D画面と、隠し要素としての3Dモード（Scene404）を切り替えることができます。
+ */
 export default function NotFound() {
   const [is3DMode, setIs3DMode] = useState(false);
 

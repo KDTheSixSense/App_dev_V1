@@ -3,6 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import bcrypt from 'bcryptjs'; // パスワードのハッシュ化にbcryptjsを使用
 
+/**
+ * パスワード再設定完了API
+ * 
+ * トークンと新しいパスワードを受け取り、
+ * トークンを検証してパスワードを更新します。
+ */
 export async function POST(req: Request) {
   try {
     const { token, password } = await req.json();

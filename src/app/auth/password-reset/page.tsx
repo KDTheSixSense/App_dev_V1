@@ -12,6 +12,12 @@ type Inputs = {
   anspassword?: string;
 };
 
+/**
+ * パスワードリセット（設定済みユーザー用）
+ * 
+ * ログイン済みユーザーなどがパスワードを変更するための画面のようです。
+ * （注：構成上、未ログインのリセット処理と混在している可能性があります）
+ */
 const PasswordReset = () => {
   const router = useRouter();
 

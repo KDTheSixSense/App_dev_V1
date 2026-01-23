@@ -10,6 +10,12 @@ import { RateLimiter } from '@/lib/rate-limit';
 // Default: 5 attempts, IP-based, 24h TTL, Exponential Backoff [1, 5, 10, 20...]
 const limiter = new RateLimiter();
 
+/**
+ * ログインAPI
+ * 
+ * メールアドレスとパスワードによる認証を行います。
+ * レート制限（Rate Limiting）と監査ログ（Audit Logging）の機能を含みます。
+ */
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown';
 

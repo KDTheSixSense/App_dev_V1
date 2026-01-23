@@ -25,6 +25,13 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * アプリケーション全体のルートレイアウトコンポーネント
+ * 
+ * 全てのページの共通レイアウトを定義します。
+ * <html lang="en">タグや<body>タグを含み、
+ * グローバルなフォント設定、トースト通知、監査ログ機能を提供します。
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

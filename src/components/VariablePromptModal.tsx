@@ -13,6 +13,12 @@ type VariablePromptModalProps = {
     confirmColor?: string;
 };
 
+/**
+ * 変数名入力プロンプトモーダル
+ * 
+ * ユーザーに新しい変数名の入力などを求めるための汎用的なモーダルダイアログです。
+ * ブラウザ標準の prompt() の代替として、UIの一貫性を保つために使用されます。
+ */
 const VariablePromptModal: React.FC<VariablePromptModalProps> = ({
     isOpen,
     onClose,

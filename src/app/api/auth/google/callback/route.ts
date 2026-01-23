@@ -8,6 +8,13 @@ import { sessionOptions } from '@/lib/session';
 import { updateUserLoginStats } from '@/lib/actions';
 import { env } from '@/lib/env';
 
+/**
+ * Google OAuth コールバックAPI
+ * 
+ * Google認証後のリダイレクトを受け付けます。
+ * 認証コードをアクセストークンと交換し、ユーザー情報を取得します。
+ * 既存ユーザーならログイン、新規なら確認画面へ誘導します。
+ */
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');

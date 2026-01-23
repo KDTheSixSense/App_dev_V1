@@ -23,6 +23,13 @@ interface SessionData {
   };
 }
 
+/**
+ * ホームページ (ダッシュボード) (Server Component)
+ * 
+ * ログイン直後に表示されるメイン画面です。
+ * ユーザー情報の取得、科目の進捗状況、未提出課題、近日開催イベントなどをサーバーサイドで並列取得し、
+ * 各ウィジェットコンポーネントに渡して表示します。
+ */
 export default async function HomePage({
   searchParams,
 }: {

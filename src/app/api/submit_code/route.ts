@@ -11,6 +11,12 @@ const submitCodeSchema = z.object({
   problemId: z.string().or(z.number()),
 });
 
+/**
+ * コード提出・実行API
+ * 
+ * 特定の問題IDに対してコードを提出し、サンドボックスでテスト実行します。
+ * テストケースとの照合結果を返します。
+ */
 export async function POST(req: Request) {
   try {
     const session = await getAppSession();

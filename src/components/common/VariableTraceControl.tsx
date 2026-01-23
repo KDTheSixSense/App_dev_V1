@@ -48,7 +48,10 @@ interface VariableTraceControlProps {
 }
 
 /**
- * 変数表示とトレース操作エリアのメインコンポーネント
+ * 変数表示とトレース操作エリアのメインコンポーネント (共通版)
+ * 
+ * 指定された変数状態 (`variables`) を表示し、トレースバック/フォワードの操作ボタンを提供します。
+ * 問題の種類に応じて、プリセットデータ選択やロジック選択などの追加UIも表示します。
  */
 const VariableTraceControl: React.FC<VariableTraceControlProps> = ({
     problem,

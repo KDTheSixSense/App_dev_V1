@@ -7,6 +7,12 @@ import { cookies } from 'next/headers';
 const MAX_HUNGER = 200; // 最大満腹度（ actions.ts と一致させる）
 
 // 現在のペットステータスを取得する (GET)
+/**
+ * ペットステータス取得API
+ * 
+ * ユーザーのペット（コハク）の現在の状態（満腹度など）と
+ * ユーザー自身のレベルや経験値などを取得します。
+ */
 export async function GET() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {

@@ -4,6 +4,12 @@ export interface CspOptions {
     pathname: string;
 }
 
+/**
+ * CSP (Content Security Policy) 生成関数
+ * 
+ * 環境（開発/本番）やパスに応じて適切なCSPヘッダー値を生成します。
+ * Nonceを使用してインラインスクリプトの実行を制御します（一部unsafe-inlineが必要な箇所の調整含む）。
+ */
 export function generateCsp({ nonce, isDev, pathname }: CspOptions): string {
     // Base Policies
     const defaultSrc = "'self'";

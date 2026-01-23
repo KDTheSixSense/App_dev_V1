@@ -9,6 +9,12 @@ interface SessionData {
 }
 
 // お知らせを更新 (PUT)
+/**
+ * 投稿更新API
+ * 
+ * 掲示板の投稿内容を更新します。
+ * 投稿者本人または管理者のみ実行可能です。
+ */
 export async function PUT(req: NextRequest) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     const sessionUserId = session.user?.id;
@@ -70,6 +76,12 @@ export async function PUT(req: NextRequest) {
 }
 
 // お知らせを削除 (DELETE)
+/**
+ * 投稿削除API
+ * 
+ * 掲示板の投稿を削除します。
+ * 投稿者本人または管理者のみ実行可能です。
+ */
 export async function DELETE(req: NextRequest) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     const sessionUserId = session.user?.id;

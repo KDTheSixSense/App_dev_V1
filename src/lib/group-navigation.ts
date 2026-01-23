@@ -13,6 +13,17 @@ export interface GroupMember {
  * @param members The list of members in the group
  * @returns The path to navigate to (/admin, /member, or intermediate page)
  */
+/**
+ * グループナビゲーションパス決定関数
+ * 
+ * ユーザーのロール（管理者/一般/未所属）に基づいて、
+ * グループ内の適切な遷移先パス（ダッシュボードなど）を決定します。
+ * 
+ * @param groupHashedId グループのハッシュ化ID
+ * @param currentUserId 現在のログインユーザーID
+ * @param members グループメンバーリスト
+ * @returns 遷移先パス string
+ */
 export function getGroupNavigationPath(
     groupHashedId: string,
     currentUserId: string | null,

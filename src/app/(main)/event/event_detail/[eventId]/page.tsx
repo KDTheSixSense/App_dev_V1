@@ -49,7 +49,15 @@ type EventForView = MemberViewEvent & { // MemberViewの型を拡張元にする
 type Role = 'admin' | 'member';
 
 /**
- * イベント詳細とユーザーの役割を取得する
+ * イベント詳細とユーザーの役割を取得する関数
+ * 
+ * イベントIDに基づいてDBからイベント情報を取得し、
+ * 指定されたユーザーが「作成者(admin)」「管理者権限を持つ参加者(admin)」「一般参加者(member)」の
+ * どの役割を持っているかを判定します。
+ * 
+ * @param eventId 取得対象のイベントID
+ * @param userId 判定対象のユーザーID
+ * @returns イベント情報、役割(admin|member|null)、参加者情報
  */
 async function getEventAndUserRole(eventId: number, userId: string | null) {
   const event = await prisma.create_event.findUnique({
@@ -104,6 +112,14 @@ async function getEventAndUserRole(eventId: number, userId: string | null) {
   return { event: typedEvent, role: null, participant: null };
 }
 
+/**
+ * イベント詳細ページ (Server Component)
+ * 
+ * イベントの個別ページを表示します。
+ * ユーザーの役割（管理者 vs 参加者）に応じて、`AdminView` または `MemberView` を切り替えて表示します。
+ * 
+ * また、イベントの開催期間チェックやアクセス制御（開始前、終了後のリダイレクト処理）も行います。
+ */
 export default async function EventDetailPage({ params }: any) {
   const resolvedParams = await params;
   const eventId = parseInt(resolvedParams.eventId, 10);

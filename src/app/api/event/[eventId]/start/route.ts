@@ -10,6 +10,11 @@ interface SessionData {
   };
 }
 
+/**
+ * イベント開始状態更新API
+ * 
+ * イベント管理者がイベントの開始状態（開始/未開始）を切り替えます。
+ */
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ eventId: string }> }

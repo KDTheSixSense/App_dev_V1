@@ -4,6 +4,12 @@
 import React, { useState, useEffect } from 'react';
 import MissionList, { Mission } from '@/app/(main)/home/daily/missionList';
 
+/**
+ * クライアントサイド デイリーミッションリストコンポーネント
+ * 
+ * 非同期でミッションデータをAPIから取得し、表示します。
+ * 主にローディング状態とエラーハンドリングを管理します。
+ */
 export default function DailyMissionClient() {
   const [missions, setMissions] = useState<Mission[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,9 +52,9 @@ export default function DailyMissionClient() {
 
   if (!missions || missions.length === 0) {
     return (
-        <div className="p-4 text-center">
-            <p>今日のミッションはありません。</p>
-        </div>
+      <div className="p-4 text-center">
+        <p>今日のミッションはありません。</p>
+      </div>
     );
   }
 

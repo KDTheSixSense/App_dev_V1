@@ -3,6 +3,11 @@ import { z } from 'zod';
 // SQL Injection対策: 一般的な攻撃文字列を明示的に禁止するRegex
 const sqlInjectionPattern = /['";\-\-]/;
 
+/**
+ * ログインフォーム検証スキーマ
+ * 
+ * メールアドレスとパスワードの形式検証、およびSQLインジェクション対策の文字種チェックを含みます。
+ */
 export const loginSchema = z.object({
     email: z.string()
         .email('Invalid email address')
@@ -60,6 +65,11 @@ export const submissionSchema = z.object({
     language: z.string().optional(),
 });
 
+/**
+ * プログラミング問題作成検証スキーマ
+ * 
+ * タイトル、難易度、テストケースなどの入力形式を厳密にチェックします。
+ */
 export const programmingProblemSchema = z.object({
     title: z.string().min(1, 'Title is required').max(100, 'Title is too long'),
     description: z.string().min(1, 'Description is required'),

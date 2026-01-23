@@ -4,6 +4,12 @@ import { NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { env } from '@/lib/env';
 
+/**
+ * Googleログイン開始API
+ * 
+ * GoogleのOAuth認証ページへのリダイレクトURLを生成し、
+ * クライアントをリダイレクトさせます。
+ */
 export async function GET() {
   try {
     // コールバックURLを環境変数から正しく構築します

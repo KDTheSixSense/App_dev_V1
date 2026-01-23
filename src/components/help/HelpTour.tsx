@@ -9,6 +9,11 @@ interface HelpTourProps {
   onClose: () => void;
 }
 
+/**
+ * ヘルプツアーオーバーレイコンポーネント
+ * 
+ * 指定されたステップに従って、画面上の要素をハイライトしながら説明を表示するモーダルツアーを実行します。
+ */
 const HelpTour: React.FC<HelpTourProps> = ({ steps, onClose }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const currentStep = steps[currentStepIndex];

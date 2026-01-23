@@ -2,6 +2,11 @@
  * Pure WAF Logic - No external dependencies (Edge Safe)
  */
 
+/**
+ * SQLインジェクション対策用正規表現
+ * 
+ * 一般的なSQLコメント、UNION SELECT、Blind SQL Injectionなどのパターンを検出します。
+ */
 export const SQL_INJECTION_REGEX = new RegExp(
     [
         /(--)/.source,                              // Standard SQL comment

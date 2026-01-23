@@ -10,6 +10,11 @@ interface SessionData {
 }
 
 // お知らせ一覧を取得 (GET)
+/**
+ * 投稿一覧取得API
+ * 
+ * 指定されたグループの投稿（掲示板）一覧をページネーション付きで取得します。
+ */
 export async function GET(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {
@@ -95,6 +100,12 @@ export async function GET(req: NextRequest) {
 }
 
 // お知らせを投稿 (POST)
+/**
+ * 投稿作成API
+ * 
+ * グループの掲示板に新しい投稿を作成します。
+ * メンバーのみ実行可能です。
+ */
 export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;

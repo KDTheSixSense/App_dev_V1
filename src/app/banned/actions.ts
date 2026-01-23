@@ -47,6 +47,15 @@ export type AppealState = {
     };
 };
 
+/**
+ * 異議申し立てメール送信アクション
+ * 
+ * ユーザーからのBAN解除申請を受け付け、管理者にメールを送信します。
+ * バリデーション、レート制限のチェックを行います。
+ * 
+ * @param prevState 直前の状態
+ * @param formData フォームデータ（email, reason）
+ */
 export async function sendAppealEmail(prevState: AppealState, formData: FormData): Promise<AppealState> {
     const validatedFields = formSchema.safeParse({
         email: formData.get('email'),

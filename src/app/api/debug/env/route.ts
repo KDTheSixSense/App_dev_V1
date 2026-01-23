@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 
+/**
+ * 環境変数デバッグ用API
+ * 
+ * 重要な環境変数の設定状況（存在するかどうか、長さなど）を確認します。
+ * 本番運用時は無効化または削除を推奨します。
+ */
 export async function GET() {
   // 注意: このエンドポイントはデバッグ目的でのみ使用し、確認後は必ず削除してください。
-  
+
   // 安全のため、機密情報は表示せず、存在と長さのみを確認します。
   const debugEnvs = {
     NODE_ENV: process.env.NODE_ENV,

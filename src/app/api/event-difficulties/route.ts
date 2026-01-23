@@ -4,6 +4,11 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+/**
+ * イベント難易度マスタ取得API
+ * 
+ * 全てのイベント難易度定義（ベースポイント、制限時間など）を取得します。
+ */
 export async function GET() {
   try {
     const eventDifficulties = await prisma.eventDifficulty.findMany({

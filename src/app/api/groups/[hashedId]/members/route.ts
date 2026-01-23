@@ -5,6 +5,11 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { Icon } from 'lucide-react';
 
+/**
+ * グループメンバー一覧取得API
+ * 
+ * グループに参加しているメンバーの一覧と統計情報（管理者数など）を取得します。
+ */
 export async function GET(request: NextRequest, context: { params: Promise<{ hashedId: string }> }) {
   const params = await context.params;
   try {
@@ -81,6 +86,12 @@ export async function GET(request: NextRequest, context: { params: Promise<{ has
 }
 
 // メンバーの権限を変更するPUTメソッド
+/**
+ * メンバー権限変更API
+ * 
+ * メンバーの管理者権限を付与または剥奪します。
+ * 最低1人の管理者を維持するロジックが含まれます。
+ */
 export async function PUT(request: NextRequest, context: { params: Promise<{ hashedId: string }> }) {
   const params = await context.params;
   try {

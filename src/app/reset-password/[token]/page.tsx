@@ -10,6 +10,11 @@ type Inputs = {
   confirmPassword: string;
 };
 
+/**
+ * 新しいパスワード設定画面
+ * 
+ * メールで送付されたトークンを使用して、新しいパスワードを設定します。
+ */
 const ResetPasswordPage = () => {
   const router = useRouter();
   const params = useParams();

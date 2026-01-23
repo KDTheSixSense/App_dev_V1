@@ -46,6 +46,12 @@ export const XSS_REGEX = new RegExp(
     'i'
 );
 
+/**
+ * 脅威タイプ検出関数
+ * 
+ * 入力文字列に対してSQLインジェクション、パストラバーサル、XSSの
+ * 正規表現チェックを行い、検出された脅威タイプを返します。
+ */
 export function detectThreatType(input: string): string | null {
     if (!input || typeof input !== 'string') return null;
 
@@ -60,6 +66,11 @@ export function detectThreatType(input: string): string | null {
     return null;
 }
 
+/**
+ * オブジェクト再帰的脅威チェック関数
+ * 
+ * オブジェクト内の全ての文字列値およびキーに対して脅威チェックを再帰的に行います。
+ */
 export function checkObjectForThreats(obj: any): string | null {
     if (typeof obj === 'string') {
         return detectThreatType(obj);

@@ -12,6 +12,12 @@ type Props = {
   allRankingsFull: { [key: string]: UserForRanking[] };
 };
 
+/**
+ * ランキング表示コンテナ
+ * 
+ * 総合・部門別などのランキングタブ切り替え機能と、リスト表示を管理します。
+ * 自分の現在の順位を画面下部に固定表示する機能も持ちます。
+ */
 export default function RankingContainer({
   tabs,
   allRankings,
@@ -58,7 +64,7 @@ export default function RankingContainer({
   const scoreToNextRank = useMemo(() => {
     if (!myRankInfo || !currentUserId) return null;
     const fullList = allRankingsFull[activeTab] || [];
-    
+
     // 現在のユーザーのインデックスを見つける
     const myIndex = fullList.findIndex(user => user.id === currentUserId);
     if (myIndex === -1) return null;

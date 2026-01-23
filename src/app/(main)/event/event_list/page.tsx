@@ -7,6 +7,12 @@ import { getAppSession } from "@/lib/auth";
 
 // クライアントコンポーネントが期待する型に合わせます
 // 注意: propsとして渡す際、Dateオブジェクトは文字列にシリアライズされます。
+/**
+ * イベントデータの型定義 (Client Component向け)
+ * 
+ * Date型を文字列に変換した後の構造を表します。
+ * ProblemClientコンポーネントのPropsとして使用されます。
+ */
 export type イベント = {
   id: number;
   title: string;
@@ -18,7 +24,12 @@ export type イベント = {
 };
 
 /**
- * タスク：サーバーサイドで初期表示に必要なイベントデータを取得します。
+ * イベント一覧ページ (Server Component)
+ * 
+ * ログインユーザーが参加しているイベントの一覧をデータベースから取得し、
+ * クライアントコンポーネント(ProblemClient)に渡して表示します。
+ * 
+ * 公開ステータスや開始日時順にソートして、直近の20件を取得します。
  */
 const EventListPage = async () => {
   let initialEvents: イベント[] = [];

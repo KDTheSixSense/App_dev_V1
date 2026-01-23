@@ -10,6 +10,12 @@ interface SessionData {
 }
 
 // 課題を更新 (PUT)
+/**
+ * 課題更新API
+ * 
+ * 課題のタイトル、説明、期限、紐づく問題などを更新します。
+ * グループ管理者のみ実行可能です。
+ */
 export async function PUT(req: NextRequest) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     const userId = session.user?.id ? session.user.id : null;
@@ -81,6 +87,12 @@ export async function PUT(req: NextRequest) {
 }
 
 // 課題を削除 (DELETE)
+/**
+ * 課題削除API
+ * 
+ * 課題とそれに関連する提出物を削除します。
+ * トランザクションを使用して整合性を保ちます。管理者のみ実行可能です。
+ */
 export async function DELETE(req: NextRequest) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     const userId = session.user?.id ? session.user.id : null;

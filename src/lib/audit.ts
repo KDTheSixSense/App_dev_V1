@@ -12,6 +12,12 @@ export enum AuditAction {
     PAGE_VIEW = 'PAGE_VIEW',
 }
 
+/**
+ * 監査ログ記録関数
+ * 
+ * ユーザーの重要な操作（ログイン、コード実行、作成など）をデータベースに記録します。
+ * IPアドレスやデバイス情報の捕捉も行います。
+ */
 export async function logAudit(
     userId: string | null,
     action: AuditAction,

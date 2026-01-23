@@ -33,6 +33,13 @@ const requestSchema = z.object({
 
 type RequestData = z.infer<typeof requestSchema>;
 
+/**
+ * AIヒント生成API
+ * 
+ * ユーザーの質問とコンテキスト（コードや問題情報）を受け取り、
+ * OpenAI APIを使用して解決のヒントを生成します。
+ * レート制限機能付きです。
+ */
 export async function POST(req: Request) {
   try {
     const json = await req.json();

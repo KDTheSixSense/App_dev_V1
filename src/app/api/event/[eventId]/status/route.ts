@@ -5,6 +5,11 @@ const prismaClient = prisma;
 /**
  * 特定のイベントの状態（特に isStarted）を取得するAPIエンドポイント
  */
+/**
+ * イベントステータス取得API
+ * 
+ * 特定のイベントの開始状況やテーマ、カスタム画像設定などを取得します。
+ */
 export async function GET(
   request: Request,
   { params }: any

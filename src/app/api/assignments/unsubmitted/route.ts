@@ -13,6 +13,12 @@ interface SessionData {
   user?: { id: string; email: string };
 }
 
+/**
+ * 未提出課題取得API
+ * 
+ * ログインユーザーが所属するグループの課題のうち、
+ * まだ提出していないものを期限の近い順に取得します。
+ */
 export async function GET() {
   try {
     // 1. セッションを取得 (iron-session)

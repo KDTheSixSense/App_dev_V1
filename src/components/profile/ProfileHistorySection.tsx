@@ -3,6 +3,11 @@ import { getUserHistory } from '@/app/(main)/profile/history/actions';
 import HistoryClient from '@/app/(main)/profile/history/components/HistoryClient';
 import Link from 'next/link';
 
+/**
+ * プロフィール履歴セクション (Server Component)
+ * 
+ * ユーザーの過去の問題解答履歴を取得し、直近の履歴を表示します。
+ */
 export default async function ProfileHistorySection() {
     const historyData = await getUserHistory();
 

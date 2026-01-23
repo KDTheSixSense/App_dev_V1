@@ -5,6 +5,12 @@ import { getAppSession } from '@/lib/auth';
 /**
  * ユーザーのAIアドバイスクレジットを1つ消費するAPI
  */
+/**
+ * ユーザーのAIアドバイスクレジットを1つ消費するAPI
+ * 
+ * ユーザーのクレジット残高を確認し、1つ減算します。
+ * クレジットが0の場合はエラーを返します。
+ */
 export async function POST(req: Request) {
   try {
     const session = await getAppSession();

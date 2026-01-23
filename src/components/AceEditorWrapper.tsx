@@ -16,7 +16,7 @@ import 'ace-builds/src-noconflict/mode-php';
 // 2. 必要な「テーマ」（エディタの配色）をインポート
 import 'ace-builds/src-noconflict/theme-github';
 import 'ace-builds/src-noconflict/theme-tomorrow_night';
-import 'ace-builds/src-noconflict/theme-monokai'; 
+import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/theme-dracula';
 import 'ace-builds/src-noconflict/theme-solarized_light'; // Solarized Light (人気のテーマ)
 import 'ace-builds/src-noconflict/theme-chrome';
@@ -41,6 +41,13 @@ ace.config.set("themePath", cdnBaseUrl);
 ace.config.set("workerPath", cdnBaseUrl);
 
 // このラッパーコンポーネントは、react-aceのすべてのプロパティを受け取れるようにIAceEditorPropsを型として使います
+/**
+ * Ace Editorラッパーコンポーネント
+ * 
+ * react-aceをラップし、必要なモード（言語）、テーマ、拡張機能を
+ * 事前にロードして設定するためのコンポーネントです。
+ * クライアントサイドでのみ動作します。
+ */
 const AceEditorWrapper: React.FC<IAceEditorProps> = (props) => {
   return <AceEditor {...props} />;
 };

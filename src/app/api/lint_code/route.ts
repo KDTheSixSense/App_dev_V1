@@ -658,6 +658,12 @@ async function lintCode(code: string, language: string): Promise<Annotation[]> {
 }
 
 
+/**
+ * コード構文チェック（リント）API
+ * 
+ * 様々な言語のコードを受け取り、サーバーサイドで構文チェックを行います。
+ * エラー箇所とメッセージ（日本語補足付き）を返します。
+ */
 export async function POST(req: NextRequest) {
     try {
         const session = await getAppSession();

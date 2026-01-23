@@ -1,10 +1,20 @@
 import { z } from 'zod';
 
+/**
+ * クライアントサイド環境変数スキーマ
+ * 
+ * ブラウザ側で公開される環境変数（NEXT_PUBLIC_プレフィックス付き）のバリデーション定義です。
+ */
 const clientSchema = z.object({
     NEXT_PUBLIC_APP_URL: z.string().url(),
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: z.string().min(1),
 });
 
+/**
+ * サーバーサイド環境変数スキーマ
+ * 
+ * サーバー側でのみ使用される環境変数のバリデーション定義です。
+ */
 const serverSchema = z.object({
     GOOGLE_CLIENT_SECRET: z.string().min(1),
 });
@@ -61,4 +71,10 @@ if (skipValidation) {
     };
 }
 
+/**
+ * 環境変数検証オブジェクト
+ * 
+ * Zodスキーマを使用して、起動時に環境変数が正しく設定されているか検証します。
+ * クライアントサイドとサーバーサイドの両方の変数を管理します。
+ */
 export const env = envData as z.infer<typeof clientSchema> & z.infer<typeof serverSchema>;

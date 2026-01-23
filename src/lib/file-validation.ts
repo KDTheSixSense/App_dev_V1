@@ -35,6 +35,12 @@ function checkSignature(buffer: Buffer, signature: number[]): boolean {
  * Note: For text-based files (txt, md, js, etc.), magic numbers are unreliable.
  * This checks strictly for binary formats where spoofing is most dangerous (images, executables disguised).
  */
+/**
+ * ファイルシグネチャ検証関数
+ * 
+ * ファイルのマジックナンバー（先頭バイト列）をチェックし、
+ * 拡張子と実際のファイル形式が一致しているか検証します（なりすまし防止）。
+ */
 export function validateFileSignature(buffer: Buffer, extension: string): boolean {
     const normExt = extension.toLowerCase().replace('.', '');
 

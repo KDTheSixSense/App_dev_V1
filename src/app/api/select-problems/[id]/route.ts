@@ -3,6 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 
 // GET: IDに基づいて単一の選択問題を取得
+/**
+ * 4択問題詳細取得API
+ * 
+ * 指定されたIDの4択問題を取得します。
+ * 作成者のみアクセス可能です。
+ */
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
@@ -40,6 +46,12 @@ export async function GET(
 }
 
 // PUT: IDに基づいて選択問題を更新
+/**
+ * 4択問題更新API
+ * 
+ * 指定された4択問題の内容を更新します。
+ * 作成者のみ実行可能です。
+ */
 export async function PUT(
   request: Request,
   context: { params: Promise<{ id: string }> }

@@ -10,6 +10,12 @@ export interface SessionData {
 /**
  * セッションの設定オブジェクト
  */
+/**
+ * セッション設定
+ * 
+ * Iron Sessionの設定オブジェクトです。
+ * クッキー名、パスワード、有効期限、セキュリティ属性などを定義します。
+ */
 export const sessionOptions: SessionOptions = {
     password: process.env.SECRET_COOKIE_PASSWORD!,
     cookieName: process.env.COOKIE_NAME!,

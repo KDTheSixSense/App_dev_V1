@@ -152,6 +152,12 @@ function EvolutionContent({ userLevel, subjectProgress, className = '' }: Evolut
   );
 }
 
+/**
+ * 進化演出コンポーネント
+ * 
+ * ペット（コハク）の進化決定時に、フルスクリーンの動画演出（Front/Back）と
+ * 進化後の姿を表示します。
+ */
 export default function Evolution(props: EvolutionProps) {
   return (
     <Suspense fallback={<div className={props.className} />}>

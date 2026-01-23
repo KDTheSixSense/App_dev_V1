@@ -1,3 +1,8 @@
+/**
+ * セキュリティヘッダー定数
+ * 
+ * HSTS, X-Frame-Options, X-XSS-Protection などの推奨セキュリティヘッダー設定です。
+ */
 export const SECURITY_HEADERS = {
   crossOriginResourcePolicy: 'same-origin',
   crossOriginOpenerPolicy: 'same-origin',

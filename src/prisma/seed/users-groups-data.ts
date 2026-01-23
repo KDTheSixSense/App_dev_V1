@@ -56,7 +56,15 @@ function calculateLevelFromXp(xp: number): number {
 }
 
 /**
- * ユーザーとグループのデモデータを作成する関数
+ * ユーザーとグループの初期データ（シードデータ）を作成するメイン関数
+ * 
+ * 以下の手順でデータを投入します：
+ * 1. 既存データのクリア（依存関係順）
+ * 2. ユーザー基本情報の定義と作成（管理者、一般、特殊アカウントなど）
+ * 3. ユーザーごとの科目進捗データ(SubjectProgress)の生成（ランダムなXP付与）
+ * 4. グループ（クラス）の作成とメンバーシップの登録
+ * 5. 課題（Assignment）とイベント（Event）、参加情報の作成
+ * 
  * @param prisma PrismaClientのインスタンス
  */
 export async function seedUsersAndGroups(prisma: PrismaClient) {

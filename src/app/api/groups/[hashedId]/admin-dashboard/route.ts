@@ -8,6 +8,12 @@ interface SessionData {
   user?: { id: number; email: string };
 }
 
+/**
+ * グループ管理者ダッシュボードAPI
+ * 
+ * グループの詳細情報、メンバー一覧、最新の投稿、課題などを一括で取得します。
+ * 管理者権限のチェックを行います。
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ hashedId: string }> }

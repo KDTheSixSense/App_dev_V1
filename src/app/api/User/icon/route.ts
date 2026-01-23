@@ -4,6 +4,13 @@ import { prisma } from '@/lib/prisma';
 import path from 'path';
 import { writeFile } from 'fs/promises';
 
+/**
+ * ユーザーアイコンアップロードAPI
+ * 
+ * 画像ファイルを受け取り、サーバーの `public/uploads/icons` ディレクトリに保存します。
+ * 保存後、ユーザーのアイコンパスを更新します。
+ * 拡張子とファイルシグネチャによる検証を行います。
+ */
 export async function POST(req: NextRequest) {
   const session = await getAppSession();
   if (!session?.user?.id) {

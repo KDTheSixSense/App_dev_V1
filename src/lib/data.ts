@@ -10,12 +10,21 @@ import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
 import { sessionOptions } from '@/lib/session';
 
+/**
+ * クイズの解答選択肢のデータ型
+ */
 export interface AnswerOption {
   label: string; // 解答の表示ラベル（例: 'ア'）
   value: string; // 解答の実際の値（正誤判定用）
 }
 
 // クライアントに渡すことができる、シリアライズ可能な問題の型
+/**
+ * クライアントサイドで使用する問題データのシリアライズ可能な型
+ * 
+ * Prismaの自動生成型から、関数などのシリアライズ不可能なプロパティを除外しています。
+ * また、多言語対応のテキスト構造を含みます。
+ */
 export type SerializableProblem = Omit<AppProblem, 'traceLogic' | 'calculateNextLine'> & {
   answerOptions?: { ja: AnswerOption[]; en: AnswerOption[] }; // answerOptions をオプションに修正
   sourceYear?: string;
@@ -29,6 +38,9 @@ interface SessionData {
 }
 
 // フロントエンドで使う課題データの型
+/**
+ * 未提出課題のフロントエンド用データ型
+ */
 export interface UnsubmittedAssignment {
   id: number;
   title: string;
@@ -380,7 +392,10 @@ export async function getAppliedInfoAmProblem(id: number): Promise<SerializableP
 }
 
 /**
- * ログイン中のユーザーの、未提出の課題「数」のみを取得する
+ * 未提出課題数を取得する関数
+ * 
+ * 現在ログインしているユーザーの、未提出または差し戻し状態の課題の総数をカウントします。
+ * ヘッダーのバッジ表示などに使用されます。
  */
 export async function getUnsubmittedAssignmentCount(): Promise<number> {
 
@@ -420,7 +435,10 @@ export async function getUnsubmittedAssignmentCount(): Promise<number> {
 }
 
 /**
- * 期限が最も近い未提出の課題を1件取得する
+ * 次に提出期限が迫っている課題を取得する関数
+ * 
+ * 未提出の課題の中で、期限が最も古い（近い）ものを1件取得します。
+ * ダッシュボードの重要通知などに利用されます。
  */
 export async function getNextDueAssignment(): Promise<UnsubmittedAssignment | null> {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -484,8 +502,12 @@ export async function getNextDueAssignment(): Promise<UnsubmittedAssignment | nu
 }
 
 /**
- * 開催が近いイベント（公開済み）を取得する
- * 優先順位: 開催中 > 開催予定 > 終了（直近2週間以内）
+ * 今後開催されるイベントを取得する関数
+ * 
+ * ユーザーが参加予定、または現在開催中のイベントを取得し、
+ * 重要度順（開催中 > 開催予定 > 直近終了）にソートして返します。
+ * 
+ * @returns ソート済みのイベント情報の配列
  */
 export async function getUpcomingEvents() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);

@@ -14,6 +14,12 @@ interface SessionData {
  * グループの詳細情報を取得する (GET)
  * 招待コード(invite_code)も一緒に返します。
  */
+/**
+ * グループ詳細取得API
+ * 
+ * グループの詳細情報（名前、説明、招待コードなど）を取得します。
+ * メンバーシップの確認を行います。
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ hashedId: string }> } // params is now a Promise in Next.js 15+

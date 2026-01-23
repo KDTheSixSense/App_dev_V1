@@ -5,9 +5,15 @@ import { cookies } from 'next/headers';
 import { sessionOptions } from '@/lib/session';
 import { IronSessionData } from 'iron-session';
 
+/**
+ * セッション情報取得API
+ * 
+ * 現在ログインしているユーザーのセッション情報を返します。
+ * フロントエンドでの認証状態確認に使用されます。
+ */
 export async function GET() {
   const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
-  
+
   if (!session.user) {
     return NextResponse.json({ user: null });
   }

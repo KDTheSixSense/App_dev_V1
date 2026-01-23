@@ -45,6 +45,12 @@ function containsForbiddenKeywords(code: string, language: string): boolean {
   return dangerousKeywords.some(keyword => code.includes(keyword));
 }
 
+/**
+ * コード実行API
+ * 
+ * ユーザーから送信されたコードを受け取り、サンドボックス環境で実行します。
+ * セキュリティチェック（WAF、禁止キーワード）、レート制限、監査ログ記録を行います。
+ */
 export async function POST(request: Request) {
   try {
     const session = await getAppSession();

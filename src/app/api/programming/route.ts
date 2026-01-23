@@ -10,6 +10,12 @@ interface SessionData {
   user?: { id: string; email: string };
 }
 
+/**
+ * グループ課題用プログラミング問題作成API
+ * 
+ * グループ内でのみ使用する非公開のプログラミング問題を作成し、
+ * それを課題として割り当てます。
+ */
 export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;

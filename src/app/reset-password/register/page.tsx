@@ -16,32 +16,37 @@ type Inputs = {
 };
 
 
+/**
+ * （旧）新規登録ページ
+ * 
+ * ※ 現在は `src/app/auth/register` が主に使用されている可能性があります。
+ */
 const Login = () => {
     //useFormフックの呼び出し const以下の関数受け取り
-    const { register, handleSubmit, formState: { errors },getValues } = useForm<Inputs>();
-    
+    const { register, handleSubmit, formState: { errors }, getValues } = useForm<Inputs>();
+
     //以下で画面表示するフォームの見た目を定義
     return (
         //Tailwind CSSを使用して見た目の変更・hookで入力チェック
         <div className="flex flex-col items-center justify-center h-screen">
             <form className="w-96 p-8 bg-white rounded-lg shadow-md">
-                
+
                 {/*見出しとラベル*/}
                 <h1 className="mb-4 text-2xl font-medium text-gray-700">新規登録</h1>
 
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-600">メールアドレス</label>
-                    
+
                     {/*入力部分*/}
                     <input
                         //registerでライブラリの管理下に登録する
-                            //今回は、emailという名前を設定
+                        //今回は、emailという名前を設定
                         {...register("email", {
 
                             //以下内容は、入力値のチェックになる
                             //requiredは必須指定
                             required: "メールアドレスは必須です",
-                            
+
                             //入力値が特定パターン(value)に一致するか/一致しない場合のメッセージ(message)
                             pattern: {
                                 value: /^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}$/,
@@ -52,7 +57,7 @@ const Login = () => {
                         type="email"
                         //入力値が空の場合の例文
                         placeholder="mail@myservice.com"
-                        
+
                         className="w-full p-2 mt-1 border-2 rounded-md"
                     />
                     {/*hookでエラーがでた場合のエラー内容*/}
@@ -79,7 +84,7 @@ const Login = () => {
                         <span className="text-sm text-red-600">{errors.newpassword.message}</span>
                     )}
 
-                    
+
                     {/*確認パスワード再入力*/}
                     <label className="block text-sm font-medium text-gray-600">パスワード確認</label>
                     <input

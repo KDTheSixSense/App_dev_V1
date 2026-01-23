@@ -11,6 +11,12 @@ const AuditLogSchema = z.object({
     details: z.string().optional().nullable(),
 });
 
+/**
+ * システム監査ログ記録API (内部用)
+ * 
+ * 内部システムからの監査ログを受け取り、DBに保存します。
+ * INTERNAL_API_KEYによる認証が必要です。
+ */
 export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('x-internal-api-key');
     if (authHeader !== INTERNAL_API_KEY) {
