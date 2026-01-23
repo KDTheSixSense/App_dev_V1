@@ -24,7 +24,7 @@ function checkRateLimit(ip: string): boolean {
   if (count >= 5) { // 実行は重いので1分間に5回まで
     return false;
   }
-  rateLimit.set(ip, count + 1);
+  // rateLimit.set(ip, count + 1);
   return true;
 }
 
@@ -53,10 +53,10 @@ export async function POST(request: Request) {
     }
 
     // Rate Limiting Check
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    if (!checkRateLimit(ip)) {
-      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
-    }
+    // const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    // if (!checkRateLimit(ip)) {
+    //   return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
+    // }
 
     const body = await request.json();
     const validationResult = executeCodeSchema.safeParse(body);
