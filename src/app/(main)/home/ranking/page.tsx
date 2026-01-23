@@ -59,7 +59,7 @@ export default async function RankingPage() {
         u.icon AS "iconUrl",
         -- DENSE_RANK: 同点の場合は同じ順位にし、次の順位を飛ばさない (1位, 1位, 2位...)
         -- PARTITION BY: 科目IDごとに区切って計算
-        DENSE_RANK() OVER (PARTITION BY usp.subject_id ORDER BY usp.level DESC) as rank
+        RANK() OVER (PARTITION BY usp.subject_id ORDER BY usp.level DESC) as rank
       FROM
         "UserSubjectProgress" usp
       JOIN
