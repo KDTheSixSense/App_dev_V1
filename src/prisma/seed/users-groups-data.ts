@@ -29,7 +29,6 @@ function generateJapaneseName(): string {
 }
 
 const defaultIcons = [
-  '/images/DefaultIcons/cursor_fox_tail.png',
   '/images/DefaultIcons/female1.jpg',
   '/images/DefaultIcons/female2.jpg',
   '/images/DefaultIcons/female3.jpg',
