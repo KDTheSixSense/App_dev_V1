@@ -151,6 +151,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     // 科目ID (subjectid) に応じてテーブルを切り替える必要があるため、if-elseで分岐
     let difficultyId: number | undefined;
     let alreadyCorrectToday = false; // 本日既に正解しているか？
+    let hasSolvedInPast = false;     // 今日より前に正解したことがあるか？
     let userAnswerForeignKeyData: any = {}; // 回答履歴テーブルへの外部キー設定用
     let createdByUser = false; // ユーザー自作問題か？
 
@@ -172,8 +173,12 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             where: { userId, isCorrect: true, programingProblem_id: problemId },
             orderBy: { answeredAt: 'desc' }
         });
-        if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
-            alreadyCorrectToday = true;
+        if (lastCorrectAnswer) {
+            if (isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
+                alreadyCorrectToday = true;
+            } else {
+                hasSolvedInPast = true; // 今日ではないが履歴がある = 過去に解いている
+            }
         }
 
     } else if (subjectid === 2) { // 基本情報A問題
@@ -188,8 +193,12 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             where: { userId, isCorrect: true, basic_A_Info_Question_id: problemId },
             orderBy: { answeredAt: 'desc' }
         });
-        if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
-            alreadyCorrectToday = true;
+        if (lastCorrectAnswer) {
+            if (isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
+                alreadyCorrectToday = true;
+            } else {
+                hasSolvedInPast = true; // 今日ではないが履歴がある = 過去に解いている
+            }
         }
 
     } else if (subjectid === 3) { // アルゴリズム問題
@@ -204,10 +213,13 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             where: { userId, isCorrect: true, questions_algorithm_id: problemId },
             orderBy: { answeredAt: 'desc' }
         });
-        if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
-            alreadyCorrectToday = true;
+        if (lastCorrectAnswer) {
+            if (isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
+                alreadyCorrectToday = true;
+            } else {
+                hasSolvedInPast = true; // 今日ではないが履歴がある = 過去に解いている
+            }
         }
-
     } else if (subjectid === 4) { // 選択式問題 (自作問題含む)
         const problem = await prisma.selectProblem.findUnique({
             where: { id: problemId },
@@ -223,8 +235,12 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             where: { userId, isCorrect: true, selectProblem_id: problemId },
             orderBy: { answeredAt: 'desc' }
         });
-        if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
-            alreadyCorrectToday = true;
+        if (lastCorrectAnswer) {
+            if (isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
+                alreadyCorrectToday = true;
+            } else {
+                hasSolvedInPast = true; // 今日ではないが履歴がある = 過去に解いている
+            }
         }
     } else if (subjectid === 5) { // 応用情報午前問題
         const problem = await prisma.applied_am_Question.findUnique({
@@ -238,8 +254,12 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             where: { userId, isCorrect: true, applied_am_question_id: problemId },
             orderBy: { answeredAt: 'desc' }
         });
-        if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
-            alreadyCorrectToday = true;
+        if (lastCorrectAnswer) {
+            if (isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
+                alreadyCorrectToday = true;
+            } else {
+                hasSolvedInPast = true; // 今日ではないが履歴がある = 過去に解いている
+            }
         }
     } else { // その他 (デフォルト: Algorithm)
         const problem = await prisma.questions_Algorithm.findUnique({
@@ -253,8 +273,12 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             where: { userId, isCorrect: true, questions_id: problemId },
             orderBy: { answeredAt: 'desc' }
         });
-        if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
-            alreadyCorrectToday = true;
+        if (lastCorrectAnswer) {
+            if (isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
+                alreadyCorrectToday = true;
+            } else {
+                hasSolvedInPast = true; // 今日ではないが履歴がある = 過去に解いている
+            }
         }
     }
 
@@ -277,6 +301,11 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     });
     if (difficulty) {
         xpAmount = difficulty.xp;
+        // 過去に正解済みなら 0.75倍 する (Math.floorで整数に丸める)
+        if (hasSolvedInPast) {
+            xpAmount = Math.floor(xpAmount * 0.75);
+            console.log(`ユーザーID:${userId} は過去にこの問題を解いているため、XPが0.75倍(${xpAmount})になります。`);
+        }
     }
 
     // 開始時刻が渡されている場合、経過時間を計算
@@ -319,7 +348,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     // 7. 自作問題でなければ、XP付与とペットの世話を行う
     if (!createdByUser) {
         // XP付与、レベルアップ、称号判定
-        const result = await addXp(userId, subjectid, difficultyId);
+        const result = await addXp(userId, subjectid || 0, xpAmount );
         unlockedTitle = result.unlockedTitle;
         const updatedUser = result.updatedUser;
         const isLevelUp = result.isLevelUp;
@@ -421,18 +450,10 @@ export async function recordAnswerAction(problemId: number, subjectid: number, i
 // -----------------------------------------------------------------------------
 // Action: XPを加算し、科目レベル・ユーザーレベル・称号を更新する (トランザクション処理)
 // -----------------------------------------------------------------------------
-export async function addXp(user_id: string, subject_id: number, difficulty_id: number) {
+export async function addXp(user_id: string, subject_id: number, xpAmount: number) {
     const nowJST = getNowJST();
 
-    const difficulty = await prisma.difficulty.findUnique({
-        where: { id: difficulty_id },
-    });
-
-    if (!difficulty) {
-        throw new Error(`'${difficulty_id}' が見つかりません。`);
-    }
-    const xpAmount = difficulty.xp;
-    console.log(`${difficulty_id}: ${xpAmount}xp`);
+    console.log(` ${xpAmount}xpを付与`);
 
     // ミッション更新: 「XPを獲得する」系
     updateDailyMissionProgress(3, xpAmount);
