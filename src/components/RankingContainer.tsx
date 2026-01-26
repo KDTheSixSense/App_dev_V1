@@ -129,12 +129,26 @@ export default function RankingContainer({
     <div className="flex flex-col h-full relative overflow-hidden">
       {/* 独自スクロールバーを非表示にするユーティリティCSS */}
       <style jsx>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
+        /* Webkit (Chrome, Safari, Edge) */
+        .tab-scrollbar::-webkit-scrollbar {
+          height: 4px; /* 横スクロールバーの高さ（細め） */
         }
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+        .tab-scrollbar::-webkit-scrollbar-track {
+          background: transparent; /* 背景は透明 */
+          margin: 0 4px; /* 両端に少し余白 */
+        }
+        .tab-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(103, 232, 249, 0.5); /* cyan-300の半透明 */
+          border-radius: 999px; /* 角丸 */
+        }
+        .tab-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(6, 182, 212, 0.7); /* ホバー時は少し濃く (cyan-500) */
+        }
+
+        /* Firefox */
+        .tab-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(103, 232, 249, 0.5) transparent;
         }
       `}</style>
 
@@ -142,7 +156,7 @@ export default function RankingContainer({
       <div className="mt-4 p-1 bg-sky-100/50 rounded-lg flex-shrink-0">
         <nav
           ref={navRef}
-          className="relative flex space-x-1 overflow-x-auto flex-nowrap hide-scrollbar"
+          className="relative flex space-x-1 overflow-x-auto flex-nowrap tab-scrollbar pb-1.5"
           aria-label="Tabs"
         >
           {/* アクティブなタブの背景にある白いスライダー */}
