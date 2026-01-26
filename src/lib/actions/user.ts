@@ -1,3 +1,6 @@
+// lib/actions/user.ts
+
+// サーバーアクションとして定義 (クライアントから直接呼び出し可能)
 'use server';
 
 import { prisma } from '@/lib/prisma';
@@ -7,26 +10,33 @@ import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
-import { getMissionDate } from '@/lib/utils'; // Fixed path
-import { getNowJST, getAppToday, isSameAppDay, getDaysDiff } from '@/lib/dateUtils'; // Fixed path
+import { getMissionDate } from '@/lib/utils'; 
+import { getNowJST, getAppToday, isSameAppDay, getDaysDiff } from '@/lib/dateUtils';
 import { registerSchema as baseRegisterSchema } from '@/lib/validations';
 import { z } from 'zod';
 import { TitleType } from '@prisma/client';
 import { calculateLevelFromXp } from '@/lib/leveling';
 import { checkAndSaveEvolution } from '@/lib/evolutionActions';
 
+// ペットの満腹度の上限値
 const MAX_HUNGER = 200;
 
+// バリデーションスキーマの拡張
 const registerSchema = baseRegisterSchema.extend({
     username: z.string().min(1, 'ユーザー名は必須です'),
     isAgreedToTerms: z.boolean().refine(val => val === true, '利用規約への同意が必要です'),
     isAgreedToPrivacyPolicy: z.boolean().refine(val => val === true, 'プライバシーポリシーへの同意が必要です'),
 });
 
+/**
+ * ユーザー登録処理
+ * ユーザー作成と同時に、初期ペットステータスも作成します。
+ */
 export async function registerUserAction(data: {
     username: string, email: string, password: string, birth?: string, isAgreedToTerms: boolean,
     isAgreedToPrivacyPolicy: boolean
 }) {
+    // 1. 入力値の検証
     const validationResult = registerSchema.safeParse(data);
     if (!validationResult.success) {
         return { error: validationResult.error.issues[0].message };
@@ -35,8 +45,11 @@ export async function registerUserAction(data: {
     const { username, email, password, birth, isAgreedToTerms, isAgreedToPrivacyPolicy } = validationResult.data;
 
     try {
+        // 2. パスワードのハッシュ化 (セキュリティ対策)
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // 3. ユーザーとペット情報の作成 (Nested Write)
+        // Userを作成しつつ、関連するstatus_Kohaku(ペット)も同時に作成します
         const newUser = await prisma.user.create({
             data: {
                 username: username,
@@ -45,6 +58,7 @@ export async function registerUserAction(data: {
                 birth: birth ? new Date(birth) : null,
                 isAgreedToTerms: isAgreedToTerms,
                 isAgreedToPrivacyPolicy: isAgreedToPrivacyPolicy,
+                // ペットの初期状態を設定
                 status_Kohaku: {
                     create: {
                         status: '満腹 ',
@@ -58,6 +72,7 @@ export async function registerUserAction(data: {
         return { success: true, user: newUser };
 
     } catch (error) {
+        // 一意制約違反 (メールアドレスやユーザー名の重複) のハンドリング
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
             return { error: 'そのメールアドレスまたはユーザー名は既に使用されています。' };
         }
@@ -66,6 +81,9 @@ export async function registerUserAction(data: {
     }
 }
 
+/**
+ * パスワード変更処理
+ */
 export async function changePasswordAction(currentPassword: string, newPassword: string) {
     'use server';
 
@@ -75,6 +93,7 @@ export async function changePasswordAction(currentPassword: string, newPassword:
     if (!userId) {
         return { success: false, error: '認証セッションが無効です。' };
     }
+    // ...バリデーション (省略)...
     if (!currentPassword || !newPassword) {
         return { success: false, error: '現在のパスワードと新しいパスワードを入力してください。' };
     }
@@ -83,6 +102,7 @@ export async function changePasswordAction(currentPassword: string, newPassword:
     }
 
     try {
+        // 現在のパスワードを取得して照合
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: { password: true },
@@ -97,6 +117,7 @@ export async function changePasswordAction(currentPassword: string, newPassword:
             return { success: false, error: '現在のパスワードが正しくありません。' };
         }
 
+        // 新しいパスワードをハッシュ化して保存
         const newHashedPassword = await bcrypt.hash(newPassword, 10);
 
         await prisma.user.update({
@@ -112,12 +133,18 @@ export async function changePasswordAction(currentPassword: string, newPassword:
     }
 }
 
+/**
+ * デイリーミッションの進捗レコードが存在することを保証する関数
+ * また、ログインストリーク（連続ログイン）のリセット判定もここで行います。
+ * @param userOrId ユーザーID または ユーザーオブジェクト
+ */
 export async function ensureDailyMissionProgress(userOrId: string | { id: string, lastlogin: Date | null, continuouslogin: number | null }) {
     'use server';
 
     let user: { id: string, lastlogin: Date | null, continuouslogin: number | null } | null = null;
     let userId: string;
 
+    // 引数の型判定
     if (typeof userOrId === 'string') {
         userId = userOrId;
         user = await prisma.user.findUnique({
@@ -138,13 +165,15 @@ export async function ensureDailyMissionProgress(userOrId: string | { id: string
         return false;
     }
 
-    const missionDate = getMissionDate();
+    const missionDate = getMissionDate(); // 今日の日付（アプリ基準）を取得
 
+    // 1. 連続ログインが途切れているかのチェック
     if (user.lastlogin && user.continuouslogin !== 0) {
         const lastLoginMissionDate = getMissionDate(user.lastlogin);
         const diffInMs = missionDate.getTime() - lastLoginMissionDate.getTime();
         const diffInDays = diffInMs / 86400000;
 
+        // 最終ログインから2日以上経過（＝昨日ログインしていない）場合、ストリークをリセット
         if (diffInDays >= 2) {
             console.log(`[ensureDailyMissionProgress] Resetting login streak for user ${userId}.`);
             await prisma.user.update({
@@ -155,6 +184,7 @@ export async function ensureDailyMissionProgress(userOrId: string | { id: string
     }
 
     try {
+        // 2. 今日のミッション進捗が既に作られているかチェック
         const existingProgressCount = await prisma.userDailyMissionProgress.count({
             where: {
                 userId: userId,
@@ -163,9 +193,10 @@ export async function ensureDailyMissionProgress(userOrId: string | { id: string
         });
 
         if (existingProgressCount > 0) {
-            return;
+            return; // 既に存在すれば何もしない
         }
 
+        // 3. ミッションマスタを取得して、進捗レコードを作成
         const missionMasters = await prisma.dailyMissionMaster.findMany({
             select: { id: true },
         });
@@ -183,6 +214,7 @@ export async function ensureDailyMissionProgress(userOrId: string | { id: string
             isCompleted: false,
         }));
 
+        // createManyで一括作成（skipDuplicates: true で競合回避）
         await prisma.userDailyMissionProgress.createMany({
             data: newProgressData,
             skipDuplicates: true,
@@ -199,6 +231,9 @@ export async function ensureDailyMissionProgress(userOrId: string | { id: string
     }
 }
 
+/**
+ * ユーザーのログイン統計（最終ログイン、連続日数、総日数）を更新
+ */
 export async function updateUserLoginStats(userId: string) {
     const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -219,16 +254,20 @@ export async function updateUserLoginStats(userId: string) {
     if (user.lastlogin) {
         const daysSinceLastLogin = getDaysDiff(user.lastlogin, appToday);
 
+        // 同日に既に更新済みならスキップ
         if (isSameAppDay(user.lastlogin, now)) {
             return;
         }
 
+        // 昨日ログインしていれば +1
         if (daysSinceLastLogin === 1) {
             newConsecutiveDays = (user.continuouslogin ?? 0) + 1;
         }
+        // 昨日ログインしていなければ 1 にリセット (上の初期値)
     }
     const newTotalDays = (user.totallogin ?? 0) + 1;
 
+    // ユーザー情報更新
     await prisma.user.update({
         where: { id: userId },
         data: {
@@ -238,6 +277,7 @@ export async function updateUserLoginStats(userId: string) {
         },
     });
 
+    // ログイン履歴テーブルにも記録
     await prisma.loginHistory.create({
         data: {
             userId: userId,
@@ -245,6 +285,7 @@ export async function updateUserLoginStats(userId: string) {
     });
 }
 
+// クライアントから呼ぶためのラッパー関数
 export async function updateLoginStreakAction() {
     'use server';
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -263,6 +304,10 @@ export async function updateLoginStreakAction() {
     }
 }
 
+/**
+ * ペットに餌をやる処理
+ * 課題の難易度に応じた餌の量が与えられます。
+ */
 export async function feedPetAction(difficultyId: number) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.user?.id) {
@@ -271,6 +316,7 @@ export async function feedPetAction(difficultyId: number) {
     const userId = session.user.id;
 
     try {
+        // 難易度テーブルから餌の量を取得
         const difficulty = await prisma.difficulty.findUnique({
             where: { id: difficultyId },
         });
@@ -279,12 +325,15 @@ export async function feedPetAction(difficultyId: number) {
             return { error: '指定された難易度が見つかりません。' };
         }
         const foodAmount = difficulty.feed;
+        
+        // ペットの状態を取得
         const petStatus = await prisma.status_Kohaku.findFirst({
             where: { user_id: userId },
         });
 
         const now = new Date();
 
+        // ペットデータがなければ作成、あれば更新
         if (!petStatus) {
             await prisma.status_Kohaku.create({
                 data: {
@@ -296,6 +345,7 @@ export async function feedPetAction(difficultyId: number) {
             });
         } else {
             const newHungerLevel = petStatus.hungerlevel + foodAmount;
+            // 上限値 (MAX_HUNGER) を超えないように制御
             const cappedHungerLevel = Math.min(newHungerLevel, MAX_HUNGER);
 
             await prisma.status_Kohaku.update({
@@ -305,7 +355,8 @@ export async function feedPetAction(difficultyId: number) {
                     hungerLastUpdatedAt: now,
                 },
             });
-            // Import necessary? updateDailyMissionProgress is in same file
+            // 【重要】ここで「餌やりミッション」の進捗を進めています
+            // TODO: ミッションID '2' がハードコードされているため、マスタ変更時に注意が必要
             updateDailyMissionProgress(2, foodAmount);
         }
         return { success: true };
@@ -315,7 +366,9 @@ export async function feedPetAction(difficultyId: number) {
     }
 }
 
+// ペットの名前変更
 export async function updatePetName(newName: string) {
+    // ...認証とバリデーション (省略)...
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     const userId = session.user?.id;
 
@@ -343,7 +396,9 @@ export async function updatePetName(newName: string) {
     }
 }
 
-// Exporting this for internal use by problem.ts/recordStudyTime etc
+/**
+ * 毎日の活動記録（XP獲得量、学習時間）を記録・更新する (Upsert)
+ */
 export async function upsertDailyActivity(
     userId: string,
     xpAmount: number,
@@ -351,7 +406,7 @@ export async function upsertDailyActivity(
 ) {
     const jstOffset = 9 * 60 * 60 * 1000;
     const todayJST = new Date(Date.now() + jstOffset);
-    const todayDate = new Date(todayJST.toISOString().split('T')[0]);
+    const todayDate = new Date(todayJST.toISOString().split('T')[0]); // YYYY-MM-DD形式の日付を取得
 
     try {
         await prisma.dailyActivitySummary.upsert({
@@ -379,8 +434,10 @@ export async function upsertDailyActivity(
     }
 }
 
+// 学習時間記録の公開アクション
 export async function recordStudyTimeAction(timeSpentMs: number) {
     'use server';
+    // ...認証とバリデーション...
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     const userId = session.user?.id;
 
@@ -401,6 +458,10 @@ export async function recordStudyTimeAction(timeSpentMs: number) {
     }
 }
 
+/**
+ * デイリーミッションの進捗を更新する関数
+ * 目標を達成した場合、自動的にXPが付与され、称号判定なども行われます。
+ */
 export async function updateDailyMissionProgress(
     missionId: number,
     incrementAmount: number
@@ -416,7 +477,9 @@ export async function updateDailyMissionProgress(
     const missionDate = getMissionDate();
 
     try {
+        // トランザクション処理: 進捗更新と達成処理を原子的に行う
         const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            // 現在の進捗を取得 (存在しない場合はエラー)
             const currentProgress = await tx.userDailyMissionProgress.findUniqueOrThrow({
                 where: {
                     userId_missionId_date: {
@@ -430,12 +493,14 @@ export async function updateDailyMissionProgress(
                 },
             });
 
+            // 既に完了済みなら処理しない
             if (currentProgress.isCompleted) {
                 return null;
             }
 
             const newProgress = currentProgress.progress + incrementAmount;
 
+            // 進捗を更新
             await tx.userDailyMissionProgress.update({
                 where: {
                     userId_missionId_date: {
@@ -452,9 +517,11 @@ export async function updateDailyMissionProgress(
             let unlockedTitle: { name: string } | null = null;
             let justCompleted = false;
 
+            // 目標値に到達した場合の達成処理
             if (newProgress >= currentProgress.mission.targetCount) {
                 justCompleted = true;
 
+                // 完了フラグを立てる
                 await tx.userDailyMissionProgress.update({
                     where: {
                         userId_missionId_date: {
@@ -468,6 +535,9 @@ export async function updateDailyMissionProgress(
                     },
                 });
 
+                // ★重要: XPを付与 (非同期で実行)
+                // Note: grantXpToUser自体も内部でトランザクションを持っているため、
+                // トランザクションのネストに注意が必要だが、ここでは .then で処理を繋げている
                 grantXpToUser(userId, currentProgress.mission.xpReward).then((res) => {
                     if (res && res.unlockedTitle) unlockedTitle = res.unlockedTitle;
                 });
@@ -491,6 +561,9 @@ export async function updateDailyMissionProgress(
     }
 }
 
+/**
+ * ユーザーにXPを付与し、レベルアップ、称号獲得、進化判定を行う関数
+ */
 export async function grantXpToUser(userId: string, xpAmount: number) {
     'use server';
 
@@ -498,8 +571,10 @@ export async function grantXpToUser(userId: string, xpAmount: number) {
         return { unlockedTitle: null };
     }
 
+    // XP付与、レベル計算、称号獲得をトランザクション内で実行
     const { unlockedTitle, updatedUser, isLevelUp, previousLevel } = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 
+        // 1. XPを加算
         let user = await tx.user.update({
             where: { id: userId },
             data: { xp: { increment: xpAmount } },
@@ -508,9 +583,12 @@ export async function grantXpToUser(userId: string, xpAmount: number) {
         let unlockedTitle: { name: string } | null = null;
         const previousLevel = user.level;
         const oldLevel = user.level;
+        
+        // 2. 新しいレベルを計算
         const newAccountLevel = calculateLevelFromXp(user.xp);
         let isLevelUp = false;
 
+        // 3. レベルが上がっていれば更新
         if (newAccountLevel > oldLevel) {
             isLevelUp = true;
             user = await tx.user.update({
@@ -518,6 +596,7 @@ export async function grantXpToUser(userId: string, xpAmount: number) {
                 data: { level: newAccountLevel },
             });
 
+            // 4. レベル条件の称号をチェック
             const userTitles = await tx.title.findMany({
                 where: {
                     type: TitleType.USER_LEVEL,
@@ -526,6 +605,7 @@ export async function grantXpToUser(userId: string, xpAmount: number) {
             });
 
             for (const title of userTitles) {
+                // まだ持っていない称号なら付与
                 const existingUnlock = await tx.userUnlockedTitle.findUnique({
                     where: { userId_titleId: { userId: userId, titleId: title.id } },
                 });
@@ -542,12 +622,21 @@ export async function grantXpToUser(userId: string, xpAmount: number) {
         return { unlockedTitle, updatedUser: user, isLevelUp, previousLevel };
     });
 
+    // 5. ペットの進化判定 (トランザクションの外で実行)
+    // レベルが30, 60...と30の倍数の大台に乗ったときに進化をチェック
     if (updatedUser && isLevelUp) {
         const currentLevel = updatedUser.level;
         const milestone = 30;
+        
+        // 前回レベルと今回レベルで、30の倍数の区切りを跨いだか判定
+        // 例: prev=29, curr=30 -> 0 < 1 -> True
         if (Math.floor(currentLevel / milestone) > Math.floor(previousLevel / milestone)) {
             const evolutionLevel = Math.floor(currentLevel / milestone) * milestone;
+            
+            // 進化処理を実行 (DB保存)
             await checkAndSaveEvolution(userId, evolutionLevel);
+            
+            // 画面更新
             revalidatePath('/profile');
             revalidatePath('/home');
             revalidatePath('/', 'layout');

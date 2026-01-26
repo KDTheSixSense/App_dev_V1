@@ -1,3 +1,6 @@
+// /workspaces/my-next-app/src/lib/actions/event.ts
+
+// イベント機能に関するサーバ―アクションのコード
 'use server';
 
 import { prisma } from '@/lib/prisma';
@@ -10,6 +13,7 @@ import { nanoid } from 'nanoid';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
+// イベント作成時のフォームデータ型定義
 interface CreateEventFormData {
     title: string;
     description: string;
@@ -19,6 +23,9 @@ interface CreateEventFormData {
     selectedProblemIds: number[];
 }
 
+// -----------------------------------------------------------------------------
+// Action: 新規イベントの作成 (公開状態)
+// -----------------------------------------------------------------------------
 export async function createEventAction(data: CreateEventFormData) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.user?.id) {
@@ -28,6 +35,7 @@ export async function createEventAction(data: CreateEventFormData) {
 
     const { title, description, startTime, endTime, publicTime, selectedProblemIds } = data;
 
+    // バリデーション: 必須項目と問題選択のチェック
     if (!title || !description || !startTime || !endTime || !publicTime) {
         return { error: '必須項目（基本設定）が不足しています。' };
     }
@@ -36,9 +44,12 @@ export async function createEventAction(data: CreateEventFormData) {
     }
 
     try {
+        // 招待コードの生成 (10文字のランダム文字列)
         const inviteCode = nanoid(10);
 
+        // トランザクション: イベント作成、問題紐付け、参加者登録を不可分な操作として実行
         const newEvent = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            // 1. イベント本体の作成
             const event = await tx.create_event.create({
                 data: {
                     title: title,
@@ -47,12 +58,13 @@ export async function createEventAction(data: CreateEventFormData) {
                     endTime: new Date(endTime),
                     publicTime: new Date(publicTime),
                     inviteCode: inviteCode,
-                    publicStatus: true,
-                    isStarted: true,
+                    publicStatus: true, // 公開状態で作成
+                    isStarted: true,    // 開始状態で作成
                     creatorId: userId,
                 },
             });
 
+            // 2. 選択された問題をイベントに紐付け (中間テーブル)
             const issueListData = selectedProblemIds.map(problemId => ({
                 eventId: event.id,
                 problemId: problemId,
@@ -61,6 +73,7 @@ export async function createEventAction(data: CreateEventFormData) {
                 data: issueListData,
             });
 
+            // 3. 作成者を管理者として参加者リストに追加
             await tx.event_Participants.create({
                 data: {
                     eventId: event.id,
@@ -84,6 +97,7 @@ export async function createEventAction(data: CreateEventFormData) {
     }
 }
 
+// 下書き保存用の型定義 (日付などがnull許容でない場合もあるため別定義か確認)
 interface EventFormData {
     title: string;
     description: string;
@@ -93,6 +107,9 @@ interface EventFormData {
     selectedProblemIds: number[];
 }
 
+// -----------------------------------------------------------------------------
+// Action: イベントの下書き保存
+// -----------------------------------------------------------------------------
 export async function saveEventDraftAction(data: EventFormData) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.user?.id) {
@@ -102,6 +119,7 @@ export async function saveEventDraftAction(data: EventFormData) {
 
     const { title, description, startTime, endTime, publicTime, selectedProblemIds } = data;
 
+    // 下書き保存はタイトルのみ必須とする
     if (!title) {
         return { error: '下書きを保存するには、イベントタイトル名が必須です。' };
     }
@@ -110,6 +128,8 @@ export async function saveEventDraftAction(data: EventFormData) {
         const inviteCode = nanoid(10);
 
         const newDraftEvent = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            // 1. イベント本体の作成 (publicStatus: false)
+            // 日付データは未入力なら null として保存
             const event = await tx.create_event.create({
                 data: {
                     title: title,
@@ -118,7 +138,7 @@ export async function saveEventDraftAction(data: EventFormData) {
                     endTime: endTime ? new Date(endTime) : null,
                     publicTime: publicTime ? new Date(publicTime) : null,
                     inviteCode: inviteCode,
-                    publicStatus: false,
+                    publicStatus: false, // 下書き状態
                     creator: {
                         connect: {
                             id: userId
@@ -127,6 +147,7 @@ export async function saveEventDraftAction(data: EventFormData) {
                 },
             });
 
+            // 2. 問題が選択されていれば紐付け
             if (selectedProblemIds.length > 0) {
                 const issueListData = selectedProblemIds.map(problemId => ({
                     eventId: event.id,
@@ -137,6 +158,7 @@ export async function saveEventDraftAction(data: EventFormData) {
                 });
             }
 
+            // 3. 作成者を管理者として追加
             await tx.event_Participants.create({
                 data: {
                     eventId: event.id,
@@ -156,6 +178,9 @@ export async function saveEventDraftAction(data: EventFormData) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: 自分の下書きイベント一覧を取得
+// -----------------------------------------------------------------------------
 export async function getMyDraftEventsAction() {
     'use server';
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -168,7 +193,7 @@ export async function getMyDraftEventsAction() {
         const drafts = await prisma.create_event.findMany({
             where: {
                 creatorId: userId,
-                publicStatus: false,
+                publicStatus: false, // 下書きのみ取得
             },
             select: {
                 id: true,
@@ -185,10 +210,12 @@ export async function getMyDraftEventsAction() {
     }
 }
 
+// datetime-local入力用のフォーマット変換ヘルパー
 const formatDateTimeForInput = (date: Date | null | undefined): string => {
     if (!date) return '';
     try {
         const d = new Date(date);
+        // タイムゾーンオフセットを考慮してローカル時間をISO文字列化
         d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
         return d.toISOString().slice(0, 16);
     } catch (e) {
@@ -196,6 +223,9 @@ const formatDateTimeForInput = (date: Date | null | undefined): string => {
     }
 };
 
+// -----------------------------------------------------------------------------
+// Action: 下書きイベントの詳細を取得 (編集画面用)
+// -----------------------------------------------------------------------------
 export async function getDraftEventDetailsAction(eventId: number) {
     'use server';
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -208,7 +238,7 @@ export async function getDraftEventDetailsAction(eventId: number) {
         const event = await prisma.create_event.findFirst({
             where: {
                 id: eventId,
-                creatorId: userId,
+                creatorId: userId, // 自分のイベントか確認
                 publicStatus: false,
             },
             include: {
@@ -224,6 +254,7 @@ export async function getDraftEventDetailsAction(eventId: number) {
             return { error: '指定された下書きが見つかりません。' };
         }
 
+        // フロントエンドのフォームに適した形式に変換
         const formattedEvent = {
             title: event.title,
             description: event.description,
@@ -241,6 +272,9 @@ export async function getDraftEventDetailsAction(eventId: number) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: イベントの開始/停止状態を切り替え
+// -----------------------------------------------------------------------------
 export async function toggleEventStatusAction(eventId: number, start: boolean) {
     'use server';
     try {
@@ -250,14 +284,18 @@ export async function toggleEventStatusAction(eventId: number, start: boolean) {
         }
         const userId = session.user.id;
 
+        // 権限チェック
         const event = await prisma.create_event.findUnique({ where: { id: eventId } });
         if (!event || event.creatorId !== userId) {
             return { error: 'このイベントを操作する権限がありません。' };
         }
 
+        // 更新データの準備
         let dataToUpdate: { isStarted: boolean; startTime?: Date; hasBeenStarted?: boolean } = { isStarted: start };
 
+        // イベントを開始する場合の追加処理
         if (start) {
+            // 現在時刻が設定された開始時刻より前なら、開始時刻を現在に更新
             if (event.startTime && new Date() < new Date(event.startTime)) {
                 dataToUpdate.startTime = new Date();
             }
@@ -276,6 +314,9 @@ export async function toggleEventStatusAction(eventId: number, start: boolean) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: イベントの削除
+// -----------------------------------------------------------------------------
 export async function deleteEventAction(eventId: number) {
     'use server';
     try {
@@ -294,6 +335,7 @@ export async function deleteEventAction(eventId: number) {
             return { error: 'イベントが見つかりません。' };
         }
 
+        // 作成者本人だけが削除可能
         if (event.creatorId !== userId) {
             return { error: 'このイベントを削除する権限がありません。' };
         }
@@ -309,6 +351,9 @@ export async function deleteEventAction(eventId: number) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: イベントへの参加承認 (ユーザーが参加ボタンを押した時)
+// -----------------------------------------------------------------------------
 export async function acceptEventAction(eventId: number, userId: string) {
     'use server';
     try {
@@ -317,12 +362,13 @@ export async function acceptEventAction(eventId: number, userId: string) {
             return { error: 'ログインしていません。' };
         }
 
-        // session.user.id can be compared with userId or we can just use session.user.id to be safe
+        // セキュリティチェック: ログインユーザー本人のIDと一致するか確認
         const currentUserId = session.user.id;
         if (currentUserId !== userId) {
             return { error: 'ユーザーIDが一致しません。' };
         }
 
+        // 参加者情報の更新 (招待済み -> 参加承認済み)
         const result = await prisma.event_Participants.updateMany({
             where: {
                 eventId: eventId,
@@ -345,6 +391,9 @@ export async function acceptEventAction(eventId: number, userId: string) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: イベントのテーマ(配色)を更新
+// -----------------------------------------------------------------------------
 export async function updateEventThemeAction(eventId: number, theme: string) {
     'use server';
     try {
@@ -354,6 +403,7 @@ export async function updateEventThemeAction(eventId: number, theme: string) {
         }
         const userId = session.user.id;
 
+        // 権限チェック
         const event = await prisma.create_event.findUnique({
             where: { id: eventId },
             select: { creatorId: true },
@@ -369,7 +419,7 @@ export async function updateEventThemeAction(eventId: number, theme: string) {
 
         await prisma.create_event.update({
             where: { id: eventId },
-            data: { theme } as any,
+            data: { theme } as any, // 型定義外の値を許容する場合as anyが必要
         });
 
         revalidatePath(`/event/event_detail/${eventId}`);
@@ -380,6 +430,9 @@ export async function updateEventThemeAction(eventId: number, theme: string) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: イベントの背景画像をアップロード
+// -----------------------------------------------------------------------------
 export async function uploadEventBackgroundAction(eventId: number, formData: FormData) {
     'use server';
     try {
@@ -394,7 +447,7 @@ export async function uploadEventBackgroundAction(eventId: number, formData: For
             return { error: 'ファイルが選択されていません。' };
         }
 
-        // Validation (Size, Type)
+        // ファイルバリデーション (サイズ5MB以下, 画像形式)
         if (file.size > 5 * 1024 * 1024) { // 5MB limit
             return { error: 'ファイルサイズは5MB以下にしてください。' };
         }
@@ -402,6 +455,7 @@ export async function uploadEventBackgroundAction(eventId: number, formData: For
             return { error: '画像ファイルのみアップロード可能です。' };
         }
 
+        // 権限チェック
         const event = await prisma.create_event.findUnique({
             where: { id: eventId },
             select: { creatorId: true },
@@ -414,18 +468,21 @@ export async function uploadEventBackgroundAction(eventId: number, formData: For
             return { error: '権限がありません。' };
         }
 
+        // ファイル保存処理
         const buffer = Buffer.from(await file.arrayBuffer());
         const filename = `${eventId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
 
-        // Ensure directory exists
+        // 保存ディレクトリの確保 (public/uploads/events)
         const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'events');
         await mkdir(uploadDir, { recursive: true });
 
+        // ファイル書き込み
         const filePath = path.join(uploadDir, filename);
         await writeFile(filePath, buffer);
 
         const publicPath = `/uploads/events/${filename}`;
 
+        // DB更新 (テーマをcustomにして画像パスを保存)
         await prisma.create_event.update({
             where: { id: eventId },
             data: {

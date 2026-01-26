@@ -23,7 +23,7 @@ export default function DueTasksCard({ count, nextAssignment }: DueTasksCardProp
 
     return (
         <div className="bg-white rounded-2xl shadow-sm p-6 w-full mb-6">
-            <h3 className="text-xl font-bold text-slate-800 mb-4">提出期限が近い課題</h3>
+            <h3 className="text-xl font-bold text-slate-800 mb-4">提出期限が近い課題???</h3>
 
             {count > 0 ? (
                 <div className="flex items-center justify-between bg-slate-50 rounded-xl p-4">
