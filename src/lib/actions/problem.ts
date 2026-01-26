@@ -1,14 +1,16 @@
-'use server';
+// /workspaces/my-next-app/src/lib/actions/problem.ts
+
+'use server'; // サーバーアクションとして定義 (クライアントから関数として呼び出し可能)
 
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { getSession } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
-import { getNowJST, isSameAppDay } from '@/lib/dateUtils'; // Fixed path
+import { getNowJST, isSameAppDay } from '@/lib/dateUtils';
 import type { Problem as SerializableProblem } from '@/lib/types';
 import { TitleType } from '@prisma/client';
-import { calculateLevelFromXp } from '@/lib/leveling'; // Fixed path
-import { checkAndSaveEvolution } from '@/lib/evolutionActions'; // Assuming this is correct
+import { calculateLevelFromXp } from '@/lib/leveling';
+import { checkAndSaveEvolution } from '@/lib/evolutionActions';
 import {
     updateDailyMissionProgress,
     feedPetAction,
@@ -16,20 +18,24 @@ import {
     updateUserLoginStats
 } from './user';
 
+// -----------------------------------------------------------------------------
+// ヘルパー関数: DBの問題データをフロントエンドで扱いやすい型に変換
+// -----------------------------------------------------------------------------
 const convertToSerializableProblem = (dbProblem: any): SerializableProblem | undefined => {
     if (!dbProblem) {
         return undefined;
     }
     return {
         id: String(dbProblem.id),
-        logicType: 'CODING_PROBLEM',
+        logicType: 'CODING_PROBLEM', // 現状はコーディング問題として固定
         title: { ja: dbProblem.title, en: dbProblem.title },
         description: { ja: dbProblem.description, en: dbProblem.description },
+        // コードテンプレートを行ごとの配列に変換
         programLines: {
             ja: (dbProblem.codeTemplate || '').split('\n'),
             en: (dbProblem.codeTemplate || '').split('\n'),
         },
-        answerOptions: { ja: [], en: [] },
+        answerOptions: { ja: [], en: [] }, // 選択肢はないため空配列
         correctAnswer: dbProblem.sampleCases?.[0]?.expectedOutput || '',
         explanationText: {
             ja: dbProblem.sampleCases?.[0]?.description || '解説は準備中です。',
@@ -38,10 +44,13 @@ const convertToSerializableProblem = (dbProblem: any): SerializableProblem | und
         sampleCases: dbProblem.sampleCases || [],
         initialVariables: {},
         traceLogic: [],
-        tags: JSON.parse(dbProblem.tags || '[]'),
+        tags: JSON.parse(dbProblem.tags || '[]'), // JSON文字列をパース
     };
 };
 
+// -----------------------------------------------------------------------------
+// Action: 問題IDから詳細データを取得 (コーディング問題用)
+// -----------------------------------------------------------------------------
 export async function getProblemByIdAction(problemId: string): Promise<SerializableProblem | undefined> {
     const id = parseInt(problemId, 10);
     if (isNaN(id)) {
@@ -50,6 +59,7 @@ export async function getProblemByIdAction(problemId: string): Promise<Serializa
     }
 
     try {
+        // 問題データ本体と、関連するサンプルケース・テストケースを一括取得
         const problemFromDb = await prisma.programmingProblem.findUnique({
             where: { id },
             include: {
@@ -66,10 +76,15 @@ export async function getProblemByIdAction(problemId: string): Promise<Serializa
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: 次の問題IDを取得 (「次の問題へ」ボタン用)
+// -----------------------------------------------------------------------------
 export async function getNextProblemId(currentId: number, category: string): Promise<number | null> {
     try {
         let problemIds: { id: number }[] = [];
 
+        // カテゴリに応じて対象テーブルを切り替え、全IDを取得
+        // ※データ量が増えると重くなる可能性があるため、将来的に最適化が推奨される箇所です
         if (category === 'basic_info_b_problem') {
             const [staticIds, algoIds] = await Promise.all([
                 prisma.questions.findMany({ select: { id: true } }),
@@ -90,12 +105,13 @@ export async function getNextProblemId(currentId: number, category: string): Pro
             });
         }
 
+        // IDリストをソートし、現在のIDの次を探す
         const allIds = problemIds.map(p => p.id);
         const sortedUniqueIds = [...new Set(allIds)].sort((a, b) => a - b);
         const currentIndex = sortedUniqueIds.indexOf(currentId);
 
         if (currentIndex === -1 || currentIndex >= sortedUniqueIds.length - 1) {
-            return null;
+            return null; // 次の問題がない場合
         }
 
         return sortedUniqueIds[currentIndex + 1];
@@ -106,9 +122,13 @@ export async function getNextProblemId(currentId: number, category: string): Pro
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: 正解時の処理 (XP付与、履歴記録、ペット育成、ミッション達成など)
+// -----------------------------------------------------------------------------
 export async function awardXpForCorrectAnswer(problemId: number, eventId: number | undefined, subjectid?: number, problemStartedAt?: string | number) {
     'use server';
 
+    // 1. 認証チェック
     const session = await getSession();
     const user = session.user;
 
@@ -127,12 +147,15 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
 
     const nowJST = getNowJST();
 
+    // 2. 問題情報の取得と重複正解チェック
+    // 科目ID (subjectid) に応じてテーブルを切り替える必要があるため、if-elseで分岐
     let difficultyId: number | undefined;
-    let alreadyCorrectToday = false;
-    let userAnswerForeignKeyData: any = {};
-    let createdByUser = false;
+    let alreadyCorrectToday = false; // 本日既に正解しているか？
+    let userAnswerForeignKeyData: any = {}; // 回答履歴テーブルへの外部キー設定用
+    let createdByUser = false; // ユーザー自作問題か？
 
-    if (subjectid === 1) {
+    // --- 各科目ごとの分岐処理 ---
+    if (subjectid === 1) { // プログラミング問題
         const problem = await prisma.programmingProblem.findUnique({
             where: { id: problemId },
             select: { difficulty: true, createdBy: true }
@@ -140,11 +163,11 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         difficultyId = problem?.difficulty;
         userAnswerForeignKeyData = { programingProblem_id: problemId };
 
-        //作成した問題の場合の分岐
         if (problem?.createdBy) {
             createdByUser = true;
         }
 
+        // 直近の正解履歴を確認し、今日の日付ならフラグを立てる
         const lastCorrectAnswer = await prisma.userAnswer.findFirst({
             where: { userId, isCorrect: true, programingProblem_id: problemId },
             orderBy: { answeredAt: 'desc' }
@@ -153,7 +176,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             alreadyCorrectToday = true;
         }
 
-    } else if (subjectid === 2) {
+    } else if (subjectid === 2) { // 基本情報A問題
         const problem = await prisma.basic_Info_A_Question.findUnique({
             where: { id: problemId },
             select: { difficultyId: true }
@@ -169,7 +192,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             alreadyCorrectToday = true;
         }
 
-    } else if (subjectid === 3) {
+    } else if (subjectid === 3) { // アルゴリズム問題
         const problem = await prisma.questions_Algorithm.findUnique({
             where: { id: problemId },
             select: { difficultyId: true }
@@ -185,7 +208,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             alreadyCorrectToday = true;
         }
 
-    } else if (subjectid === 4) {
+    } else if (subjectid === 4) { // 選択式問題 (自作問題含む)
         const problem = await prisma.selectProblem.findUnique({
             where: { id: problemId },
             select: { difficultyId: true, createdBy: true }
@@ -193,7 +216,6 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         difficultyId = problem?.difficultyId;
         userAnswerForeignKeyData = { selectProblem_id: problemId };
 
-        //作成した問題の場合の分岐
         if (problem?.createdBy) {
             createdByUser = true;
         }
@@ -204,7 +226,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
             alreadyCorrectToday = true;
         }
-    } else if (subjectid === 5) {
+    } else if (subjectid === 5) { // 応用情報午前問題
         const problem = await prisma.applied_am_Question.findUnique({
             where: { id: problemId },
             select: { difficultyId: true }
@@ -219,7 +241,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         if (lastCorrectAnswer && isSameAppDay(lastCorrectAnswer.answeredAt, new Date())) {
             alreadyCorrectToday = true;
         }
-    } else {
+    } else { // その他 (デフォルト: Algorithm)
         const problem = await prisma.questions_Algorithm.findUnique({
             where: { id: problemId },
             select: { difficultyId: true }
@@ -240,11 +262,13 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         throw new Error(`問題ID:${problemId} (科目ID:${subjectid}) が見つかりません、またはdifficultyIdが設定されていません。`);
     }
 
+    // 3. 既に本日正解済みの場合はここで終了
     if (alreadyCorrectToday) {
         console.log(`ユーザーID:${userId} は本日既に問題ID:${problemId}に正解済みです。`);
         return { message: '既に正解済みです。' };
     }
 
+    // 4. 獲得XPと学習時間の計算
     let xpAmount = 0;
     let timeSpentMs = 0;
 
@@ -255,6 +279,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         xpAmount = difficulty.xp;
     }
 
+    // 開始時刻が渡されている場合、経過時間を計算
     if (typeof problemStartedAt !== 'undefined' && problemStartedAt !== null) {
         try {
             const startTime = typeof problemStartedAt === 'number'
@@ -275,11 +300,14 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         console.log('[awardXp] problemStartedAt was not provided.');
     }
 
+    // 5. 日々の活動記録(Activity)を更新
     upsertDailyActivity(userId, xpAmount, timeSpentMs);
 
+    // 初めての回答かどうかを判定 (チュートリアル用など)
     const totalAnswerCount = await prisma.userAnswer.count({ where: { userId } });
     const isFirstAnswerEver = (totalAnswerCount === 0);
 
+    // 6. デイリーミッション進行 (問題を解いた数)
     updateDailyMissionProgress(1, 1);
 
     if (!subjectid) {
@@ -288,21 +316,26 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
 
     let unlockedTitle = undefined;
 
+    // 7. 自作問題でなければ、XP付与とペットの世話を行う
     if (!createdByUser) {
+        // XP付与、レベルアップ、称号判定
         const result = await addXp(userId, subjectid, difficultyId);
         unlockedTitle = result.unlockedTitle;
         const updatedUser = result.updatedUser;
         const isLevelUp = result.isLevelUp;
         const previousLevel = result.previousLevel;
 
+        // ペットに餌をやる (難易度に応じて)
         await feedPetAction(difficultyId);
 
+        // 8. 進化判定 (レベルアップ時かつ30の倍数到達時)
         if (updatedUser && isLevelUp) {
             const currentLevel = updatedUser.level;
             const milestone = 30;
             if (Math.floor(currentLevel / milestone) > Math.floor(previousLevel / milestone)) {
                 const evolutionLevel = Math.floor(currentLevel / milestone) * milestone;
                 await checkAndSaveEvolution(userId, evolutionLevel);
+                // 画面更新
                 revalidatePath('/profile');
                 revalidatePath('/home');
                 revalidatePath('/', 'layout');
@@ -310,6 +343,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         }
     }
 
+    // 9. イベント開催中ならイベントスコア加算
     if (eventId !== undefined && xpAmount > 0) {
         await prisma.event_Participants.updateMany({
             where: {
@@ -323,6 +357,7 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
         console.log(`[EventScore] ユーザーID:${userId} の イベントID:${eventId} での得点を ${xpAmount}点 加算しました。`);
     }
 
+    // 10. ログイン統計の更新と回答履歴の保存
     await updateUserLoginStats(userId);
 
     await prisma.userAnswer.create({
@@ -331,12 +366,13 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
             isCorrect: true,
             answer: 'CORRECT',
             answeredAt: new Date(),
-            ...userAnswerForeignKeyData
+            ...userAnswerForeignKeyData // 適切なカラムに問題IDを入れる
         },
     });
 
     console.log(`ユーザーID:${userId} が問題ID:${problemId} (科目ID:${subjectid}) に正解し、XPを獲得しました。`);
 
+    // 11. 初回正解時のみ、ペットの空腹度タイマーを開始
     if (isFirstAnswerEver) {
         await prisma.status_Kohaku.updateMany({
             where: { user_id: userId },
@@ -350,6 +386,9 @@ export async function awardXpForCorrectAnswer(problemId: number, eventId: number
     return { message: '経験値を獲得しました！', unlockedTitle };
 }
 
+// -----------------------------------------------------------------------------
+// Action: 回答履歴のみを記録 (不正解時などXPが発生しない場合に使用)
+// -----------------------------------------------------------------------------
 export async function recordAnswerAction(problemId: number, subjectid: number, isCorrect: boolean, answer: string) {
     'use server';
 
@@ -379,6 +418,9 @@ export async function recordAnswerAction(problemId: number, subjectid: number, i
     });
 }
 
+// -----------------------------------------------------------------------------
+// Action: XPを加算し、科目レベル・ユーザーレベル・称号を更新する (トランザクション処理)
+// -----------------------------------------------------------------------------
 export async function addXp(user_id: string, subject_id: number, difficulty_id: number) {
     const nowJST = getNowJST();
 
@@ -392,9 +434,11 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
     const xpAmount = difficulty.xp;
     console.log(`${difficulty_id}: ${xpAmount}xp`);
 
+    // ミッション更新: 「XPを獲得する」系
     updateDailyMissionProgress(3, xpAmount);
 
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        // 1. 科目ごとの進捗(XP)を更新
         const updatedProgress = await tx.userSubjectProgress.upsert({
             where: { user_id_subject_id: { user_id, subject_id } },
             create: { user_id, subject_id, xp: xpAmount, level: 1 },
@@ -403,6 +447,7 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
 
         let unlockedTitle: { name: string } | null = null;
 
+        // 2. 科目レベルの再計算と更新
         const newSubjectLevel = calculateLevelFromXp(updatedProgress.xp);
         if (newSubjectLevel > updatedProgress.level) {
             await tx.userSubjectProgress.update({
@@ -412,6 +457,7 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
             console.log(`[科目レベルアップ!] subjectId:${subject_id} がレベル ${newSubjectLevel} に！`);
         }
 
+        // 3. 科目レベル条件の称号チェック
         const subjectTitles = await tx.title.findMany({
             where: {
                 type: 'SUBJECT_LEVEL',
@@ -434,6 +480,7 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
             }
         }
 
+        // 4. ユーザー全体のXP更新とレベルアップ判定
         let user = await tx.user.update({
             where: { id: user_id },
             data: { xp: { increment: xpAmount } },
@@ -441,6 +488,7 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
         const previousLevel = user.level;
         const newAccountLevel = calculateLevelFromXp(user.xp);
         let isLevelUp = false;
+        
         if (newAccountLevel > user.level) {
             isLevelUp = true;
             user = await tx.user.update({
@@ -449,6 +497,7 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
             });
             console.log(`[アカウントレベルアップ!] ${user.username} がアカウントレベル ${newAccountLevel} に！`);
 
+            // 5. ユーザーレベル条件の称号チェック
             const userTitles = await tx.title.findMany({
                 where: {
                     type: 'USER_LEVEL',
@@ -477,6 +526,9 @@ export async function addXp(user_id: string, subject_id: number, difficulty_id: 
     return result;
 }
 
+// -----------------------------------------------------------------------------
+// Action: プログラミング問題の次のIDを取得 (管理用)
+// -----------------------------------------------------------------------------
 export async function getNextProgrammingProblemId(currentId: number): Promise<string | null> {
     try {
         const nextProblem = await prisma.programmingProblem.findFirst({
@@ -500,6 +552,9 @@ export async function getNextProgrammingProblemId(currentId: number): Promise<st
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: プログラミング問題の削除 (自作問題用)
+// -----------------------------------------------------------------------------
 export async function deleteProblemAction(formData: FormData) {
     'use server';
 
@@ -551,6 +606,9 @@ export async function deleteProblemAction(formData: FormData) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: 自分が作成したプログラミング問題の一覧取得
+// -----------------------------------------------------------------------------
 export async function getMineProblems() {
     'use server';
     try {
@@ -579,6 +637,9 @@ export async function getMineProblems() {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: 自分が作成した選択式問題の一覧取得
+// -----------------------------------------------------------------------------
 export async function getMineSelectProblems() {
     'use server';
     try {
@@ -608,6 +669,9 @@ export async function getMineSelectProblems() {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: 選択式問題の削除
+// -----------------------------------------------------------------------------
 export async function deleteSelectProblemAction(formData: FormData) {
     'use server';
 
@@ -646,6 +710,9 @@ export async function deleteSelectProblemAction(formData: FormData) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: 選択式問題の詳細取得 (編集用)
+// -----------------------------------------------------------------------------
 export async function getSelectProblemByIdAction(problemId: number) {
     'use server';
     try {
@@ -673,6 +740,9 @@ export async function getSelectProblemByIdAction(problemId: number) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Action: 選択式問題の更新
+// -----------------------------------------------------------------------------
 export async function updateSelectProblemAction(formData: FormData) {
     'use server';
     try {
@@ -682,6 +752,7 @@ export async function updateSelectProblemAction(formData: FormData) {
             return { error: '認証が必要です。' };
         }
 
+        // フォームデータの取得と型変換
         const problemId = Number(formData.get('problemId'));
         const title = formData.get('title') as string;
         const description = formData.get('description') as string;
@@ -695,11 +766,13 @@ export async function updateSelectProblemAction(formData: FormData) {
             return { error: '必須項目が不足しています。' };
         }
 
+        // 権限チェック
         const existingProblem = await prisma.selectProblem.findUnique({ where: { id: problemId } });
         if (!existingProblem || existingProblem.createdBy !== user.id) {
             return { error: 'この問題を更新する権限がありません。' };
         }
 
+        // 更新実行
         const updatedProblem = await prisma.selectProblem.update({
             where: { id: problemId },
             data: {
