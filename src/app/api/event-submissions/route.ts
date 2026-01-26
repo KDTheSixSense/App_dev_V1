@@ -130,19 +130,7 @@ export async function POST(req: NextRequest) {
 
     const isSuccess = executionResult.success ?? false;
 
-    // startedAt のバリデーション
-    const startDate = new Date(startedAt);
-    const validStartedAt = isNaN(startDate.getTime()) ? new Date() : startDate;
-
-    let calcedScore = 0;
-    if (isSuccess) {
-      const rawScore = await calculateScore(eventIssueId, validStartedAt, submittedAt);
-      calcedScore = isNaN(rawScore) ? 0 : Math.floor(rawScore || 0);
-    }
-    const score = calcedScore;
-
-    // console.log(`[API] Execution Result: Success=${isSuccess}, Score=${score}`);
-
+    // 3. 既存の提出状況を確認 (開始時刻の取得のため)
     const existingSubmission = await prisma.event_Submission.findUnique({
       where: {
         userId_eventIssueId: {
@@ -154,6 +142,27 @@ export async function POST(req: NextRequest) {
         eventIssue: true,
       },
     });
+
+    // startedAt のバリデーション (DBに保存された開始時刻を優先)
+    let validStartedAt: Date;
+    if (existingSubmission?.startedAt) {
+      validStartedAt = existingSubmission.startedAt;
+      // console.log(`[API] Using server-side startedAt: ${validStartedAt}`);
+    } else {
+      // フォールバック: DBにない場合はリクエスト値または現在時刻
+      const startDate = new Date(startedAt);
+      validStartedAt = isNaN(startDate.getTime()) ? new Date() : startDate;
+      // console.log(`[API] Using client-side/fallback startedAt: ${validStartedAt}`);
+    }
+
+    let calcedScore = 0;
+    if (isSuccess) {
+      const rawScore = await calculateScore(eventIssueId, validStartedAt, submittedAt);
+      calcedScore = isNaN(rawScore) ? 0 : Math.floor(rawScore || 0);
+    }
+    const score = calcedScore;
+
+    // console.log(`[API] Execution Result: Success=${isSuccess}, Score=${score}`);
 
     if (existingSubmission && existingSubmission.status === true) {
       return NextResponse.json({
