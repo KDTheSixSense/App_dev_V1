@@ -4,6 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image'; // Imageコンポーネントをインポート
 
 
+/**
+ * アカウント情報表示コンポーネント（デモ用）
+ * 
+ * ユーザーのランク（レベル）や連続ログイン日数を表示します。
+ * 現在はハードコードされたIDを使用してユーザーを取得しています。
+ */
 export default async function Account() {
 
     const user = await prisma.user.findUnique({

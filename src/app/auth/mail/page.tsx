@@ -16,6 +16,12 @@ type Inputs = {
 };
 
 // コンポーネント名をPascalCaseに修正（推奨）
+/**
+ * パスワードリセットリクエスト画面
+ * 
+ * パスワードを忘れたユーザーがメールアドレスを入力し、
+ * リセット用のリンクを受け取るための画面です。
+ */
 export default function PasswordResetPage() {
     const router = useRouter();
     // 戻るボタン処理

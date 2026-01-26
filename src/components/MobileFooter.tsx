@@ -64,6 +64,12 @@ type MobileFooterProps = {
   setIsMenuOpen: (isOpen: boolean) => void;
 };
 
+/**
+ * モバイル用フッターナビゲーション
+ * 
+ * モバイル表示時の下部固定メニューです。
+ * クイックアクセスアイコンと、ハンバーガーメニュー展開時のオーバーレイメニューを提供します。
+ */
 const MobileFooter = ({ isMenuOpen, setIsMenuOpen, userWithPet }: MobileFooterProps) => {
   const userImage = userWithPet?.icon;
 

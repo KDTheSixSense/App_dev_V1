@@ -11,6 +11,14 @@ type ProfileUpdateData = {
   selectedTitleId?: number | null;
 };
 
+/**
+ * ユーザープロフィール更新Server Action
+ * 
+ * ユーザーIDに基づき、ニックネーム、生年月日、アイコン、選択中の称号を更新します。
+ * 入力値のバリデーション（文字数制限）や、称号の所有権チェックも行います。
+ * 
+ * @param formData 更新するプロフィール情報
+ */
 export async function updateUserProfileAction(formData: ProfileUpdateData) {
   const session = await getAppSession();
   if (!session?.user) {

@@ -12,6 +12,12 @@ interface SessionData {
   user?: { id: string; email: string };
 }
 
+/**
+ * プログラミング問題公開API
+ * 
+ * 作成されたプログラミング問題を公開状態にします。
+ * 必要なデータを受け取り、DBに保存します。
+ */
 export async function POST(request: Request) {
   try {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);

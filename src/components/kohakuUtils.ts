@@ -1,11 +1,20 @@
 //components/kohakuUtils.ts
 
+/**
+ * 科目の進捗状況を表す型
+ * @property subjectName 科目名（例: "基本情報A", "アルゴリズム"）
+ * @property level ユーザーの現在のレベル
+ */
 export type SubjectProgress = {
   subjectName: string;
   level: number;
 };
 
-// 科目名から画像ファイル用のコード（A, B, P, O）に変換する関数
+/**
+ * 科目名から画像ファイル用のコード（A, B, P, O）に変換する関数
+ * @param subjectName 科目名
+ * @returns ファイル用コード (例: 'A')
+ */
 export const getSubjectCode = (subjectName: string): string => {
   if (subjectName.includes('基本A') || subjectName.includes('基本情報A') || subjectName.includes('四択') || subjectName.includes('選択')) return 'A';
   if (subjectName.includes('基本B') || subjectName.includes('基本情報B') || subjectName.includes('アルゴリズム')) return 'B';
@@ -14,7 +23,12 @@ export const getSubjectCode = (subjectName: string): string => {
   return 'A'; // デフォルト値
 };
 
-// 進化タイプ（例: "A-A", "P-O", "ALL"）を計算する関数
+/**
+ * 進化タイプ（例: "A-A", "P-O", "ALL"）を計算する関数
+ * 学習進捗に基づいて、コハクの進化形態を決定します。
+ * @param subjectProgress 科目ごとの進捗リスト
+ * @returns 進化タイプ文字列 Or null
+ */
 export const calculateEvolutionType = (subjectProgress: SubjectProgress[] | undefined): string | null => {
   if (!subjectProgress || subjectProgress.length === 0) {
     return null;
@@ -27,7 +41,7 @@ export const calculateEvolutionType = (subjectProgress: SubjectProgress[] | unde
 
   // 1. レベル降順でソート
   const sortedSubjects = [...subjectProgress].sort((a, b) => b.level - a.level);
-  
+
   const top1 = sortedSubjects[0];
   const top2 = sortedSubjects[1];
 
@@ -58,14 +72,17 @@ export const calculateEvolutionType = (subjectProgress: SubjectProgress[] | unde
   const pattern2 = `${code2}-${code1}`;
 
   // pattern1 または pattern2 が有効なリストにあれば採用
-  const finalPattern = validPatterns.includes(pattern1) ? pattern1 
-                     : validPatterns.includes(pattern2) ? pattern2 
-                     : 'A-A'; // どちらもなければデフォルト
-  
+  const finalPattern = validPatterns.includes(pattern1) ? pattern1
+    : validPatterns.includes(pattern2) ? pattern2
+      : 'A-A'; // どちらもなければデフォルト
+
   return finalPattern;
 };
 
-// 進化後の画像パスを取得する関数
+/**
+ * 進化後の画像パスを取得する関数
+ * 進化タイプに基づいて、表示すべき画像のパスを返します。
+ */
 export const getEvolvedImageSrc = (subjectProgress: SubjectProgress[] | undefined): string => {
   const type = calculateEvolutionType(subjectProgress);
   if (!type) return '/images/Kohaku/kohaku-normal.png';

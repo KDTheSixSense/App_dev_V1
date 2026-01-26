@@ -4,6 +4,12 @@ import { getIronSession, IronSession, IronSessionData } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions } from './session';
 
+/**
+ * アプリケーションセッション取得ヘルパー
+ * 
+ * Iron Sessionを取得し、ユーザーのトークンバージョンをDBと照合して
+ * セッションの有効性を確認します。（強制ログアウト対応）
+ */
 export async function getAppSession(): Promise<IronSession<IronSessionData>> {
 
   const cookieStore = cookies();

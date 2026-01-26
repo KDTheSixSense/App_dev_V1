@@ -9,6 +9,12 @@ interface SessionData {
 }
 
 // 課題と提出状況一覧を取得 (GET)
+/**
+ * 課題提出状況一覧取得API
+ * 
+ * 課題とその提出状況を取得します。
+ * 管理者は全員分、一般メンバーは自身の提出状況のみ閲覧可能です。
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ hashedId: string }> }

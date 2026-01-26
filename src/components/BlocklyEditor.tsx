@@ -54,10 +54,27 @@ const ScratchTheme = Blockly.Theme.defineTheme('scratch', {
 });
 
 interface BlocklyEditorProps {
+  /** 
+   * 初期表示するブロックのXML文字列
+   * 空の場合はデフォルトの空のワークスペースが表示されます。
+   */
   initialXml?: string;
+  /** 
+   * コードが変更されたときに呼び出されるコールバック関数
+   * 生成されたJavaScriptコードが引数として渡されます。
+   */
   onCodeChange: (code: string) => void;
 }
 
+/**
+ * Blocklyエディターコンポーネント (Scratch風テーマ)
+ * 
+ * Google Blocklyを使用したビジュアルプログラミング環境を提供します。
+ * 子供向けの親しみやすいUI（Scratch風の色使い）を採用しており、
+ * 論理、ループ、計算、変数などのブロックカテゴリをサポートしています。
+ * 
+ * モバイルデバイスでの表示や操作にもある程度対応しています。
+ */
 const BlocklyEditor: React.FC<BlocklyEditorProps> = ({ initialXml, onCodeChange }) => {
   const blocklyDiv = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);

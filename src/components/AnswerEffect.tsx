@@ -7,6 +7,12 @@ interface AnswerEffectProps {
   onAnimationEnd: () => void;
 }
 
+/**
+ * 解答フェーズエフェクトコンポーネント
+ * 
+ * 正解・不正解を視覚的にユーザーにフィードバックするアニメーションを表示します。
+ * アニメーション終了時にコールバックを呼び出します。
+ */
 const AnswerEffect: React.FC<AnswerEffectProps> = ({ type, onAnimationEnd }) => {
   const [isVisible, setIsVisible] = useState(true);
 

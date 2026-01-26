@@ -63,6 +63,12 @@ const getPetDisplayState = (hungerLevel: number) => {
   }
 };
 
+/**
+ * アプリケーションヘッダーコンポーネント
+ * 
+ * デスクトップ表示時の上部ナビゲーション、ペット（コハク）のステータス表示、
+ * ランク・ログイン日数表示、ユーザーメニューなどを管理します。
+ */
 export default function Header({ userWithPet, isMenuOpen, setIsMenuOpen, subjectProgress }: HeaderProps) {
   const user = userWithPet; // 既存のコードとの互換性のため
   const searchParams = useSearchParams();

@@ -7,6 +7,12 @@ type Props = {
   params: Promise<{ hashedId: string }>;
 };
 
+/**
+ * グループ詳細へのリダイレクトページ (Server Component)
+ * 
+ * URLパラメータのハッシュ化IDに基づき、ユーザーがそのグループの管理者か一般メンバーかを確認し、
+ * 適切な役割別ページ (`/admin` または `/member`) へリダイレクトします。
+ */
 export default async function GroupRedirectPage({ params }: Props) {
   const { hashedId } = await params;
 

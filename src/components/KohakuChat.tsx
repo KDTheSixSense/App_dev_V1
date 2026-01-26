@@ -19,6 +19,12 @@ interface KohakuChatProps {
   kohakuIcon?: string;  // コハクのアイコン画像パスを受け取るために追加
 }
 
+/**
+ * コハクチャットコンポーネント
+ * 
+ * ユーザーとAIキャラクター（コハク）とのチャットインターフェースを提供します。
+ * メッセージの表示、入力、送信、ローディング状態の表示を管理します。
+ */
 const KohakuChat: React.FC<KohakuChatProps> = ({
   messages,
   onSendMessage,
@@ -82,11 +88,10 @@ const KohakuChat: React.FC<KohakuChatProps> = ({
           <div
             key={index}
             // whitespace-pre-wrap を追加して改行を反映
-            className={`mb-2 p-3 rounded-lg max-w-[85%] text-sm whitespace-pre-wrap ${
-              msg.sender === 'user'
+            className={`mb-2 p-3 rounded-lg max-w-[85%] text-sm whitespace-pre-wrap ${msg.sender === 'user'
                 ? 'ml-auto bg-cyan-500 text-white border border-cyan-700'
                 : 'mr-auto bg-gray-200 text-gray-800'
-            }`}
+              }`}
           >
             {msg.text}
           </div>

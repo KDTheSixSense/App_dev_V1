@@ -12,6 +12,12 @@ type ProfileData = {
   picture: string | null;
 };
 
+/**
+ * Googleアカウント連携確認画面
+ * 
+ * Googleログイン後、未登録ユーザーの場合に表示されます。
+ * プロフィール情報の確認と、利用規約・プライバシーポリシーへの同意を行います。
+ */
 export default function ConfirmGoogleSignup() {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);

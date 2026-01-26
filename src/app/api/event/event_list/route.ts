@@ -8,6 +8,12 @@ import { getAppSession } from "@/lib/auth";
 /**
  * GET: 参加中のイベントリストを取得する
  */
+/**
+ * 参加中イベント取得API
+ * 
+ * ログインユーザーが参加しているイベントのリストを取得します。
+ * イベント名、開催期間、招待コードなどが含まれます。
+ */
 export async function GET(request: NextRequest) {
   const session = await getAppSession();
 

@@ -5,6 +5,12 @@ import RankingContainer from "@/components/RankingContainer";
 import { assignRanks } from "@/lib/ranking";
 import { Prisma } from '@prisma/client';
 
+/**
+ * ランキングセクション (Server Component)
+ * 
+ * 総合ランキングおよび科目別ランキングの上位データをデータベースから取得し、
+ * ランキングタブ付きのコンテナを表示します。
+ */
 export default async function RankingSection() {
     // --------------------------------------------------------------------------------
     // 1. 総合ランキングの取得

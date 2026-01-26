@@ -11,6 +11,11 @@ import { getSession } from "@/lib/session";
  * ヘルプコンテンツのリストを返すAPI
  * GET /api/help?page=pageName
  */
+/**
+ * ヘルプコンテンツ取得API
+ * 
+ * ページIDやロールに応じて、適切なヘルプコンテンツ（チュートリアルステップ）を返します。
+ */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

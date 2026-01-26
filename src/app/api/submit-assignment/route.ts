@@ -59,6 +59,12 @@ interface CustomSession {
   user?: { id?: string; email: string };
 }
 
+/**
+ * 課題ファイル提出API
+ * 
+ * ファイル形式での課題提出を受け付けます。
+ * セキュリティチェック（WAF）を行い、ファイルを処理します。
+ */
 export async function POST(request: NextRequest) {
   const session = await getIronSession<CustomSession>(await cookies(), sessionOptions);
   if (!session.user?.id) {

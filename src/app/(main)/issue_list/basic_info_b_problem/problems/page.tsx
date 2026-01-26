@@ -8,6 +8,13 @@ import BackButton from '../../components/BackButton';
 import StatusFilter from './StatusFilter';
 
 // ページコンポーネントを非同期関数に変更
+/**
+ * 基本情報技術者試験 科目B 問題一覧ページ (Server Component)
+ * 
+ * 指定された条件（履歴、カテゴリなど）に基づいてデータベースから問題を検索し、
+ * アニメーションリストとして表示します。
+ * ユーザーの解答履歴に基づき、当日解答済みかどうかのステータスも判定します。
+ */
 const BasicInfoBProblemsListPage = async ({
   searchParams,
 }: {

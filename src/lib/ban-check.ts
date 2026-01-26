@@ -2,6 +2,12 @@ import { prisma } from './prisma';
 import { headers, cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+/**
+ * BAN状態確認ヘルパー
+ * 
+ * リクエスト元のIPまたはクッキーIDがBANリストに含まれているか確認します。
+ * BANされている場合はブロック画面へリダイレクトします。
+ */
 export async function checkBanStatus() {
     const headersList = await headers();
     const cookiesList = await cookies();

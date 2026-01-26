@@ -12,6 +12,12 @@ interface SessionData {
   };
 }
 
+/**
+ * イベント参加API
+ * 
+ * 招待コードを使用してイベントに参加します。
+ * コードの検証、終了期間チェック、重複参加チェックを行います。
+ */
 export async function POST(request: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user?.id) {

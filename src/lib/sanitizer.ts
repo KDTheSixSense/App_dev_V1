@@ -1,3 +1,9 @@
+/**
+ * HTMLサニタイズ関数 (DOMPurify)
+ * 
+ * 入力されたHTML文字列から危険なスクリプトタグなどを除去し、
+ * 安全なHTMLのみを返します。XSS対策として使用されます。
+ */
 export const sanitize = (content: string) => {
     if (!content) return '';
     try {

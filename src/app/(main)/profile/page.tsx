@@ -34,7 +34,13 @@ const getRandomMessage = (messages: string[]): string => {
 };
 
 /**
- * AIアドバイスを生成するヘルパー関数 (新ロジック)
+ * AIアドバイスを生成する関数
+ * 
+ * ユーザーの学習統計（学習時間、完了問題数、ログイン頻度）とレベルに基づいて、
+ * 適切な励ましや称賛のメッセージを選択して返します。
+ * 
+ * @param stats 活動統計データ
+ * @param user ユーザー情報
  */
 const generateAdvice = (stats: ActivityStats, user: User): string => {
   // --- 優先度1: 基本的なチェック (既存ロジック) ---

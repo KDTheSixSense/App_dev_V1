@@ -6,6 +6,12 @@ import { getAppSession } from '@/lib/auth';
  * イベント問題の解答開始を記録するAPI
  * ユーザーが問題ページを開いたときに呼び出される
  */
+/**
+ * イベント課題開始記録API
+ * 
+ * ユーザーがイベント課題を開始した時刻を記録します。
+ * スコア計算（時間ボーナス）に使用されます。
+ */
 export async function POST(request: Request) {
   try {
     const session = await getAppSession();

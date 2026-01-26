@@ -11,6 +11,12 @@ import { getMissionDate } from '@/lib/utils';
 // 表示用のリストコンポーネント（クライアント側で動くことが多い）
 import MissionList, { Mission } from '@/app/(main)/home/daily/missionList';
 
+/**
+ * デイリーミッションセクション (Server Component)
+ * 
+ * サーバーサイドで当日のミッション進行状況をデータベースから取得・初期化し、
+ * クライアントコンポーネントに渡して表示します。
+ */
 export default async function DailyMissionSection() {
     // 1. ログインユーザーの特定
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);

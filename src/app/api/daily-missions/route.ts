@@ -8,6 +8,12 @@ import { ensureDailyMissionProgress } from '@/lib/actions';
 import { getMissionDate } from '@/lib/utils';
 import { Mission } from '@/app/(main)/home/daily/missionList';
 
+/**
+ * デイリーミッション取得API
+ * 
+ * ログインユーザーのその日のデイリーミッションとその進捗状況を取得します。
+ * ミッションデータが存在しない場合は初期化を行います。
+ */
 export async function GET() {
   try {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);

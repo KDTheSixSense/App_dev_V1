@@ -5,6 +5,11 @@ import { prisma } from '@/lib/prisma'; // シングルトンインスタンス�
 import { Prisma } from '@prisma/client';
 import { getAppSession } from '@/lib/auth';
 
+/**
+ * 掲示板投稿作成API
+ * 
+ * 指定されたグループの掲示板に新しい投稿を作成します。
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();

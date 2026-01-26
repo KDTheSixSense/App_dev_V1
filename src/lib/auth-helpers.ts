@@ -9,6 +9,12 @@ import { redirect } from 'next/navigation';
  * @returns The user object if verified as admin.
  * @throws Redirects to '/' if not authorized.
  */
+/**
+ * 管理者権限確認ヘルパー
+ * 
+ * 現在のユーザーが管理者権限を持っているかをDBに直接問い合わせて確認します。
+ * セッション情報だけに依存せず、よりセキュアなチェックを行います。
+ */
 export async function verifyAdminAccess() {
     const session = await getAppSession();
 

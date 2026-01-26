@@ -10,6 +10,11 @@ interface SessionData {
     user?: { id: string; email: string };
 }
 
+/**
+ * 4択問題単体作成API
+ * 
+ * 4択問題を単体で作成します（課題紐付けなし）。
+ */
 export async function POST(req: NextRequest) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     const user = session.user;

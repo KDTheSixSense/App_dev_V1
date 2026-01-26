@@ -15,6 +15,12 @@ const registerLimiter = new RateLimiter({
   baseLockoutMinutes: [60, 120, 240] // 1h, 2h, 4h
 });
 
+/**
+ * 新規会員登録API
+ * 
+ * メールアドレス、パスワード、生年月日などを受け取り、
+ * 新規ユーザーを作成します。レート制限機能付きです。
+ */
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for') || 'unknown';

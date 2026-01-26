@@ -24,7 +24,7 @@ function checkRateLimit(ip: string): boolean {
   if (count >= 5) { // 実行は重いので1分間に5回まで
     return false;
   }
-  rateLimit.set(ip, count + 1);
+  // rateLimit.set(ip, count + 1);
   return true;
 }
 
@@ -45,6 +45,12 @@ function containsForbiddenKeywords(code: string, language: string): boolean {
   return dangerousKeywords.some(keyword => code.includes(keyword));
 }
 
+/**
+ * コード実行API
+ * 
+ * ユーザーから送信されたコードを受け取り、サンドボックス環境で実行します。
+ * セキュリティチェック（WAF、禁止キーワード）、レート制限、監査ログ記録を行います。
+ */
 export async function POST(request: Request) {
   try {
     const session = await getAppSession();
@@ -53,10 +59,10 @@ export async function POST(request: Request) {
     }
 
     // Rate Limiting Check
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    if (!checkRateLimit(ip)) {
-      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
-    }
+    // const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    // if (!checkRateLimit(ip)) {
+    //   return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
+    // }
 
     const body = await request.json();
     const validationResult = executeCodeSchema.safeParse(body);

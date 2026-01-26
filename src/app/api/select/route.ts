@@ -8,6 +8,12 @@ interface SessionData {
   user?: { id: string; email: string };
 }
 
+/**
+ * 4択問題課題作成API
+ * 
+ * 4択問題（SelectProblem）を作成し、それを課題としてグループに割り当てます。
+ * トランザクション処理で整合性を保ちます。
+ */
 export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;

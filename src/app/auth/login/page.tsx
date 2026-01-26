@@ -26,6 +26,17 @@ type Inputs = {
 };
 
 
+/**
+ * ログインコンポーネント
+ * 
+ * メールアドレスとパスワードによるログイン、またはGoogleログインを提供します。
+ */
+/**
+ * ログインページコンポーネント (Client Component)
+ * 
+ * ユーザーがメールアドレス/パスワード、またはGoogle認証を使用してログインするためのページです。
+ * React Hook Formによるバリデーションと、Server Actions/API Routesへの送信処理を含みます。
+ */
 const Login = () => {
 
   // ★ Web APIを使用するように変更

@@ -21,6 +21,12 @@ export type UserWithPetStatus = User & {
 
 import { checkBanStatus } from '@/lib/ban-check';
 
+/**
+ * メイン画面用レイアウト (Server Component)
+ * 
+ * ログイン後の主要機能ページ（ホーム、問題一覧など）をラップするレイアウトです。
+ * ユーザー認証のチェック、BAN状態の確認、ペット情報の取得、デイリーミッションの進行確認を行います。
+ */
 export default async function MainPagesLayout({
   children,
 }: {

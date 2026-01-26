@@ -15,6 +15,12 @@ interface SessionData {
 /**
  * 課題に対する新しい提出を作成します。
  */
+/**
+ * 課題提出API
+ * 
+ * 課題に対する提出を受け付けます。
+ * プログラミング課題の場合はコードの自動テストも実行します。
+ */
 export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;

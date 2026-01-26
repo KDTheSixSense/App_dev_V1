@@ -783,6 +783,12 @@ const WARP_POINTS = [
 
 type Scene404Props = { onBack: () => void; };
 
+/**
+ * 404ページ用 3Dシーンコンポーネント (React Three Fiber)
+ * 
+ * 404エラー時に表示される、探検可能な3Dワールドです。
+ * キツネアバターの操作、お城やポータルの探索、昼夜サイクルなどが実装されています。
+ */
 export default function Scene404({ onBack }: Scene404Props) {
   // メニューの表示状態
   const [showMenu, setShowMenu] = useState(false);

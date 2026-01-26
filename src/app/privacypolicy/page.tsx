@@ -1,5 +1,10 @@
 import React from 'react';
 
+/**
+ * プライバシーポリシーページ
+ * 
+ * ユーザーの個人情報の取り扱いに関する方針を表示します。
+ */
 export default function PrivacyPolicyPage() {
   return (
     <div

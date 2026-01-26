@@ -6,6 +6,13 @@ import BanAppealForm from './components/BanAppealForm';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * BAN/Kick画面コンポーネント
+ * 
+ * アクセス元のIPアドレスやCookieのデバイスIDに基づいて、
+ * ユーザーがBAN（永久停止）またはKick（一時停止）されているかを確認し、
+ * 該当する場合に警告画面を表示します。
+ */
 export default async function BannedPage() {
     // 1. Identify the user (IP/Device)
     const headersList = await headers();

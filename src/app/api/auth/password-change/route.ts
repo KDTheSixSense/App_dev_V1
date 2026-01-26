@@ -3,6 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { getAppSession } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
+/**
+ * パスワード変更API（ログイン済みユーザー用）
+ * 
+ * 現在のパスワードと新しいパスワードを受け取り、
+ * 検証後にパスワードを更新します。
+ */
 export async function POST(req: Request) {
   try {
     const session = await getAppSession();

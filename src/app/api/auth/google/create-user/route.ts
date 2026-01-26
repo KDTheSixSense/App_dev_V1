@@ -9,6 +9,12 @@ import { updateUserLoginStats } from '@/lib/actions'; // 既存のログイン�
 // MAX_HUNGER は actions.ts で 200 と定義されていますが、ここでは 150 で初期化します
 const INITIAL_HUNGER = 150;
 
+/**
+ * Googleアカウント新規ユーザー作成API
+ * 
+ * 一時セッションに保存されたGoogleプロフィール情報を使用して、
+ * 新しいユーザーアカウントを作成し、ログインセッションを開始します。
+ */
 export async function POST(req: Request) {
   const session = await getIronSession<IronSessionData>(await cookies(), sessionOptions);
 

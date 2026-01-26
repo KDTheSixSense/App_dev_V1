@@ -12,6 +12,12 @@ interface SessionData {
   };
 }
 
+/**
+ * 課題コメント取得API
+ * 
+ * 指定された課題に対するコメント一覧を取得します。
+ * グループメンバーのみアクセス可能です。
+ */
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ hashedId: string, assignmentId: string }> }
@@ -83,6 +89,12 @@ export async function GET(
   }
 }
 
+/**
+ * 課題コメント投稿API
+ * 
+ * 課題に対して新しいコメントを投稿します。
+ * グループと課題の整合性チェックを行います。
+ */
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ hashedId: string, assignmentId: string }> }

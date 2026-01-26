@@ -51,11 +51,17 @@ type UserStats = {
 };
 
 interface ProfileClientProps {
+  /** シリアライズされた初期ユーザーデータ */
   initialUser: SerializedUser;
+  /** ユーザーの統計情報 (ログイン日数、学習進捗など) */
   initialStats: UserStats;
+  /** AIによって生成されたアドバイスメッセージ */
   aiAdvice: string;
+  /** パスワードが設定されているかどうか */
   hasPassword: boolean;
+  /** 科目ごとの進捗リスト */
   initialSubjectProgress: SubjectProgress[]; // 追加
+  /** チャート表示用の初期データ */
   initialChartData?: any[]; // Chart data type
   children?: React.ReactNode;
 }
@@ -65,6 +71,12 @@ const presetIcons = {
   female: ['/images/DefaultIcons/female1.jpg', '/images/DefaultIcons/female2.jpg', '/images/DefaultIcons/female3.jpg'],
 };
 
+/**
+ * プロフィール画面のクライアントコンポーネント
+ * 
+ * ユーザー情報の表示・編集、パスワード変更、アイコン変更、称号変更、
+ * ペットのステータス表示、学習履歴グラフの表示などの機能を統合しています。
+ */
 export default function ProfileClient({ initialUser, initialStats, aiAdvice, hasPassword, initialSubjectProgress, initialChartData, children }: ProfileClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);

@@ -13,6 +13,12 @@ type Props = {
   allRankingsFull: { [key: string]: UserForRanking[] }; // 計算用の全データ（自分の順位検索用）
 };
 
+/**
+ * ランキング表示コンテナ
+ * 
+ * 総合・部門別などのランキングタブ切り替え機能と、リスト表示を管理します。
+ * 自分の現在の順位を画面下部に固定表示する機能も持ちます。
+ */
 export default function RankingContainer({
   tabs,
   allRankings,

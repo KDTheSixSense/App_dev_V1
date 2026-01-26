@@ -5,6 +5,12 @@ import { getAppSession } from '@/lib/auth';
 
 
 
+/**
+ * ユーザー情報更新API
+ * 
+ * ユーザー名、誕生日、アイコン、称号などを更新します。
+ * 機密情報（パスワードなど）の直接更新は許可していません。
+ */
 export async function PATCH(req: NextRequest) {
   const session = await getAppSession();
   if (!session?.user?.id) {

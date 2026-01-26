@@ -5,10 +5,19 @@ import React, { useState, useEffect, useCallback } from "react";
 import { HelpStep } from "@/types/help";
 
 interface ResponsiveHelpTourProps {
+  /** ツアーで表示するステップ情報の配列 */
   steps: HelpStep[];
+  /** ツアー終了時（閉じるボタンや終了ボタン押下時）のコールバック */
   onClose: () => void;
 }
 
+/**
+ * レスポンシブ対応ヘルプツアーコンポーネント
+ * 
+ * 画面全体を覆うオーバーレイを表示し、中央に説明モーダルを配置します。
+ * モバイル端末でも見やすいように、画面サイズに応じたレイアウト調整を行います。
+ * 指定された要素(`targetSelector`)へスクロールする機能も備えています。
+ */
 const ResponsiveHelpTour: React.FC<ResponsiveHelpTourProps> = ({ steps, onClose }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const currentStep = steps[currentStepIndex];

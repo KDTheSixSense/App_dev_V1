@@ -19,6 +19,12 @@ type Inputs = {
   agreedToPrivacy: boolean;
 };
 
+/**
+ * 新規登録ページコンポーネント
+ * 
+ * ユーザー名、メールアドレス、パスワード、生年月日を入力して新規登録を行います。
+ * Googleアカウントによる登録もサポートしています。
+ */
 const Register = () => {
 
   const router = useRouter();

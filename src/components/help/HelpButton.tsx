@@ -6,6 +6,12 @@ import { usePathname } from "next/navigation";
 import HelpTour from "./HelpTour";
 import { HelpStep } from "@/types/help";
 
+/**
+ * ヘルプボタンコンポーネント
+ * 
+ * 画面右上に固定表示され、クリックすると現在のページに対応したヘルプツアー（ガイド）を開始します。
+ * 404ページやログインページなどでは非表示になります。
+ */
 const HelpButton: React.FC = () => {
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
@@ -103,7 +109,7 @@ const HelpButton: React.FC = () => {
 
     // ページ遷移直後はタイトル更新が遅れる場合があるため、少し待ってから再チェック
     const timer = setTimeout(check404, 200);
-    
+
     return () => clearTimeout(timer);
   }, [pathname]);
 
@@ -137,10 +143,10 @@ const HelpButton: React.FC = () => {
 
   // Hide help button on login page, terms, privacy policy or when modal is open...
   if (
-    !isClient || 
-    pathname === '/auth/login' || 
-    pathname === '/terms' || 
-    pathname === '/privacypolicy' || 
+    !isClient ||
+    pathname === '/auth/login' ||
+    pathname === '/terms' ||
+    pathname === '/privacypolicy' ||
     is404 ||
     (isModalOpen && page !== 'group_assignments_create_programming')
   ) {

@@ -25,6 +25,12 @@ export interface RateLimitResult {
     lockoutDurationMinutes?: number;
 }
 
+/**
+ * レート制限管理クラス
+ * 
+ * LRUキャッシュを使用してリクエスト頻度を制限し、
+ * しきい値を超えた場合のロックアウト機能を提供します。
+ */
 export class RateLimiter {
     private cache: LRUCache<string, RateLimitState>;
     private maxAttempts: number;

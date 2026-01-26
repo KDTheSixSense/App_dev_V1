@@ -1,5 +1,10 @@
 import React from 'react';
 
+/**
+ * 利用規約ページ
+ * 
+ * サービスの利用条件、免責事項、禁止事項などを表示します。
+ */
 export default function TermsPage() {
   return (
     <div

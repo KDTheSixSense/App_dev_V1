@@ -11,6 +11,12 @@ const CREDITS_PER_EXCHANGE = 1;
 /**
  * ユーザーがXPを消費してAIアドバイスクレジットと交換するAPI
  */
+/**
+ * ユーザーがXPを消費してAIアドバイスクレジットと交換するAPI
+ * 
+ * 指定されたXP（EXCHANGE_COST_XP）を消費して、クレジットを付与します。
+ * トランザクションを使用してアトミックに処理します。
+ */
 export async function POST(req: Request) {
   try {
     const session = await getAppSession();

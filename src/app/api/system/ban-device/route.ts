@@ -11,6 +11,12 @@ const BanDeviceSchema = z.object({
     reason: z.string().min(1).max(500),
 });
 
+/**
+ * デバイス自動BAN API (内部用)
+ * 
+ * 不正な挙動をしたデバイス(Cookie ID)を自動的にBANリストに追加します。
+ * INTERNAL_API_KEYによる認証が必要です。
+ */
 export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('x-internal-api-key');
     if (authHeader !== INTERNAL_API_KEY) {

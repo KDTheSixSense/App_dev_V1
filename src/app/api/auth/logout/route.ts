@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { getAppSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * ログアウトAPI
+ * 
+ * セッションを破棄し、ユーザーのトークンバージョンをインクリメントして
+ * 既存のセッションを無効化します。
+ */
 export async function POST() {
   try {
     // 専用関数でセッションを取得

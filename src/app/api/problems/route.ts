@@ -6,6 +6,12 @@ import { programmingProblemSchema } from '@/lib/validations';
 
 const prisma = new PrismaClient();
 
+/**
+ * プログラミング問題作成API
+ * 
+ * 新しいプログラミング問題を作成します。
+ * テストケースやサンプルケースも含めて保存します。
+ */
 export async function POST(request: NextRequest) {
   try {
     // --- 手順1: セッションを取得し、認証を行う ---
@@ -112,6 +118,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * プログラミング問題一覧取得API
+ * 
+ * 公開されているプログラミング問題の一覧を取得します。
+ * 下書き状態の問題は作成者本人のみが取得可能です。
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

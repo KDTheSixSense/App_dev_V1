@@ -83,6 +83,13 @@ async function updateTotalScore(userId: string, eventId: number) {
   // console.log(`[updateTotalScore] Successfully updated event_getpoint.`);
 }
 
+/**
+ * イベント課題提出API
+ * 
+ * イベント内の課題に対する解答コードを受け取ります。
+ * サンドボックス環境でコードを実行・テストし、正誤判定とスコア計算を行います。
+ * 合計スコアの更新も行います。
+ */
 export async function POST(req: NextRequest) {
   // console.log('\n--- [API] Event Submission POST request received ---');
   const session = await getSession();

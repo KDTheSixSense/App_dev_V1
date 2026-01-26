@@ -5,6 +5,12 @@ import MobileFooter from '@/components/MobileFooter';
 import type { UserWithPetStatus } from './layout';
 import React, { useState } from 'react';
 
+/**
+ * メイン画面UIレイアウト (Client Component)
+ * 
+ * ヘッダーとフッター（モバイル用）を含む、アプリケーションの基本骨格を提供します。
+ * モバイルメニューの開閉状態などを管理します。
+ */
 export default function MainLayout({
   children,
   userWithPet,

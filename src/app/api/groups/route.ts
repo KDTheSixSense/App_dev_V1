@@ -4,6 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { getAppSession } from '@/lib/auth';
 
 // グループ一覧を取得
+/**
+ * グループ一覧取得API
+ * 
+ * システム内の全グループを取得します（おそらく管理者用またはデバッグ用?）。
+ * 通常はユーザーが所属するグループのみを取得するAPIが別途必要かもしれません。
+ */
 export async function GET() {
   try {
     const groups = await prisma.groups.findMany({
@@ -22,6 +28,12 @@ export async function GET() {
 }
 
 // 新しいグループを作成
+/**
+ * グループ作成API
+ * 
+ * 新しいグループを作成し、作成者を管理として登録します。
+ * 招待コードも自動生成されます。
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();

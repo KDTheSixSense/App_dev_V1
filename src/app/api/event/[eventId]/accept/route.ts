@@ -11,6 +11,12 @@ interface SessionData {
   };
 }
 
+/**
+ * イベント参加承認API
+ * 
+ * 指定されたイベントへの参加を承認または辞退の状態を更新します。
+ * 自身のアカウントに対してのみ操作可能です。
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: any

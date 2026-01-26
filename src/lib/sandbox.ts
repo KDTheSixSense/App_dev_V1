@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/prisma';
 
 // Updated interface to match the actual flat response structure from the sandbox service
+/**
+ * Sandboxサービスの実行結果レスポンス型
+ */
 export interface SandboxResult {
     build_result?: {
         stdout: string;
@@ -20,6 +23,9 @@ export interface SandboxResult {
     };
 }
 
+/**
+ * テストケースごとの判定結果
+ */
 export interface TestCaseResult {
     name: string;
     input: string;
@@ -29,6 +35,9 @@ export interface TestCaseResult {
     status: 'Accepted' | 'Wrong Answer' | 'Runtime Error' | 'Time Limit Exceeded' | 'Compilation Error' | 'System Error';
 }
 
+/**
+ * 全体の実行結果（複数テストケースの集計）
+ */
 export interface ExecutionResult {
     success: boolean;
     message: string;
@@ -39,6 +48,16 @@ export interface ExecutionResult {
 }
 
 // Shared execution logic
+/**
+ * コード実行関数 (Sandbox Service)
+ * 
+ * 指定された言語とコードを外部のSandboxサービスに送信し、実行結果を取得します。
+ * Pythonの入力注入ハックなどが含まれます。
+ * 
+ * @param language 言語ID
+ * @param sourceCode ソースコード
+ * @param input 標準入力
+ */
 export async function executeCode(
     language: string,
     sourceCode: string,

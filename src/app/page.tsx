@@ -3,10 +3,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 
+/**
+
+* ランディングページ（LP）コンポーネント
+ * 
+ * 未ログインユーザーが最初に訪れるページです。
+ * 以下のセクションで構成されています：
+ * 1. ヘッダー（ロゴ、ログイン/新規登録ボタン）
+ * 2. ヒーローセクション（YouTube動画、キャッチコピー）
+ * 3. AIチャットボット「コハク」の紹介
+ * 4. トレース機能（科目B対策）の紹介
+ */
 export default function LandingPage() {
   return (
-    
-    <main 
+
+    <main
       className="relative min-h-screen w-full overflow-hidden text-white selection:bg-cyan-500 selection:text-slate-900"
     >
       {/* Background Image */}
@@ -17,45 +28,45 @@ export default function LandingPage() {
         priority
         className="object-cover z-0"
       />
-      
+
       {/* --- 背景の装飾 (オーバーレイ) --- */}
       <div className="absolute inset-0 z-10">
-        <div className="absolute inset-0 bg-slate-950/60" /> 
+        <div className="absolute inset-0 bg-slate-950/60" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent opacity-70"></div>
       </div>
 
       {/* --- コンテンツラッパー (z-20で背景より手前に表示) --- */}
       <div className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        
+
         {/* ==========================================
             ① ヘッダー (ロゴ中央、ログイン右端)
            ========================================== */}
         <header className="relative flex h-64 items-center justify-center py-6">
-          <Link 
-            href="/" 
-            className="relative h-full w-full max-w-5xl" 
+          <Link
+            href="/"
+            className="relative h-full w-full max-w-5xl"
           >
-             <Image 
-               src="/images/infopia_logo.png"
-               alt="Infopia Logo"
-               fill
-               priority 
-               className="object-contain" 
-             />
+            <Image
+              src="/images/infopia_logo.png"
+              alt="Infopia Logo"
+              fill
+              priority
+              className="object-contain"
+            />
           </Link>
           {/* ★★★ ログイン・新規登録ボタン (右端に配置) ★★★ */}
           <div className="absolute right-4 top-1/2 flex -translate-y-1/2 gap-4">
             {/* 新規登録ボタン (目立つスタイル) */}
-            <Link 
+            <Link
               href="/auth/register"
               className="rounded-full bg-cyan-500 px-6 py-2 text-sm font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-400 hover:scale-105"
             >
               新規登録
             </Link>
-            
+
             {/* ログインボタン (すりガラススタイル) */}
-            <Link 
+            <Link
               href="/auth/login"
               className="rounded-full border border-white/20 bg-white/5 px-6 py-2 text-sm font-bold backdrop-blur-md transition hover:bg-white/10 hover:scale-105"
             >
@@ -70,16 +81,16 @@ export default function LandingPage() {
             ② ヒーローセクション (YouTube & 認証)
            ========================================== */}
         <section className="flex flex-col items-center justify-center pt-12 pb-24 text-center">
-          
+
           {/* YouTube埋め込み */}
           <div className="relative mb-10 w-full max-w-4xl overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-blue-500/20 
                         aspect-video">
-            <iframe 
+            <iframe
               className="absolute top-0 left-0 h-full w-full"
               src="https://www.youtube.com/embed/9FrfDtypxzc" // ★ IDを置き換えました
-              title="YouTube video player" 
-              frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             ></iframe>
           </div>
@@ -92,7 +103,7 @@ export default function LandingPage() {
             </span>
             で学ぶ！！
           </h1>
-          
+
           {/* アクションボタンエリア */}
           <div className="flex w-full flex-col items-center gap-4 sm:w-auto">
             <Link
@@ -116,7 +127,7 @@ export default function LandingPage() {
            ========================================== */}
         <section className="mb-24 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl md:p-12">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:items-center">
-            
+
             {/* ★ 左半分全体: チャット画面のモックアップ ★ */}
             <div className="order-2 lg:order-1">
               <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 shadow-2xl">
@@ -140,7 +151,7 @@ export default function LandingPage() {
 
             {/* 右側: キャラクターと吹き出し */}
             <div className="order-1 flex flex-col items-center justify-center text-center lg:order-2 lg:items-start lg:text-left">
-              
+
               {/* 吹き出し (中央寄せのしっぽ) */}
               <div className="relative mb-8 rounded-xl border border-white/20 bg-white/5 px-8 py-5 text-2xl font-bold backdrop-blur-md shadow-lg">
                 ぼくがわからない問題をサポートするよ！
@@ -149,12 +160,12 @@ export default function LandingPage() {
 
               {/* コハク画像 */}
               <div className="relative h-64 w-64 md:h-80 md:w-80 lg:h-96 lg:w-96">
-                 <Image 
-                   src="/images/Kohaku/kohaku-talk.png" 
-                   alt="AI Character Kohaku"
-                   fill
-                   className="object-contain drop-shadow-[0_0_25px_rgba(34,211,238,0.6)]"
-                 />
+                <Image
+                  src="/images/Kohaku/kohaku-talk.png"
+                  alt="AI Character Kohaku"
+                  fill
+                  className="object-contain drop-shadow-[0_0_25px_rgba(34,211,238,0.6)]"
+                />
               </div>
 
               {/* 補足テキスト */}
@@ -173,23 +184,23 @@ export default function LandingPage() {
         <section className="mb-24 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl md:p-12">
           {/* ★ チャットセクションと同じ grid / lg:grid-cols-2 を使用 ★ */}
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:items-center">
-            
+
             {/* ★ 左半分: トレース画面の画像 ★ */}
             <div className="order-2">
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 shadow-2xl">
-                 <Image 
-                   src="/images/basic_info_b_trace.png" 
-                   alt="トレース機能のプレビュー"
-                   width={2500} 
-                   height={1400}
-                   className="object-contain"
-                 />
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 shadow-2xl">
+                <Image
+                  src="/images/basic_info_b_trace.png"
+                  alt="トレース機能のプレビュー"
+                  width={2500}
+                  height={1400}
+                  className="object-contain"
+                />
               </div>
             </div>
 
             {/* ★ 右半分: コハク、吹き出し、テキスト ★ */}
             <div className="order-1 flex flex-col items-center justify-center text-center lg:items-start lg:text-left">
-              
+
               {/* 吹き出し (新しいテキスト) */}
               <div className="relative mb-8 rounded-xl border border-white/20 bg-white/5 px-8 py-5 text-2xl font-bold backdrop-blur-md shadow-lg">
                 基本情報の科目B問題も得意だよ！
@@ -198,12 +209,12 @@ export default function LandingPage() {
 
               {/* コハク画像 (同じ画像を使用) */}
               <div className="relative h-64 w-64 md:h-80 md:w-80 lg:h-96 lg:w-96">
-                 <Image 
-                   src="/images/Kohaku/kohaku-full.png" 
-                   alt="AI Character Kohaku"
-                   fill
-                   className="object-contain drop-shadow-[0_0_25px_rgba(34,211,238,0.6)]"
-                 />
+                <Image
+                  src="/images/Kohaku/kohaku-full.png"
+                  alt="AI Character Kohaku"
+                  fill
+                  className="object-contain drop-shadow-[0_0_25px_rgba(34,211,238,0.6)]"
+                />
               </div>
 
               {/* 補足テキスト */}

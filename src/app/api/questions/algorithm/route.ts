@@ -4,6 +4,11 @@ import { getSession } from '@/lib/session'; // iron-sessionのセッション取
 
 const prisma = new PrismaClient();
 
+/**
+ * アルゴリズム（選択式）問題作成API
+ * 
+ * 新しい選択式のアルゴリズム問題を作成します。
+ */
 export async function POST(req: Request) {
   try {
     // 1. セッションを確認し、ログイン中のユーザー情報を取得

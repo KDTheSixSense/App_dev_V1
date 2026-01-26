@@ -13,6 +13,12 @@ interface SessionData {
 }
 
 // 課題一覧を取得 (GET)
+/**
+ * 課題一覧取得API
+ * 
+ * グループ内の課題一覧をページネーション付きで取得します。
+ * 管理者の場合は全員の提出状況を含めることができます。
+ */
 export async function GET(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const userId = session.user?.id ? session.user.id : null;
@@ -138,6 +144,12 @@ export async function GET(req: NextRequest) {
 }
 
 // 課題を作成 (POST)
+/**
+ * 課題作成API
+ * 
+ * 新しい課題を作成し、グループメンバー全員分の提出レコード（未提出状態）を作成します。
+ * トランザクション処理を行います。管理者のみ実行可能です。
+ */
 export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const sessionUserId = session.user?.id;

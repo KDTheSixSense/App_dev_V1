@@ -22,6 +22,12 @@ type TestCaseResultModalProps = {
   message?: string; // 補足メッセージ
 };
 
+/**
+ * テストケース実行結果モーダル
+ * 
+ * プログラミング課題の提出後に、各テストケースの詳細な結果（正誤、期待値、実際の出力）を
+ * ユーザーに提示するためのモーダルウィンドウです。
+ */
 const TestCaseResultModal: React.FC<TestCaseResultModalProps> = ({
   isOpen,
   onClose,

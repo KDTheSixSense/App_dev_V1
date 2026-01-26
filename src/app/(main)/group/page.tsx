@@ -9,6 +9,9 @@ import toast from 'react-hot-toast';
 import { getGroupNavigationPath } from '@/lib/group-navigation'; // ★ 追加: ナビゲーション関数をインポート
 
 // グループデータの型定義
+/**
+ * グループ（クラス）情報の型定義
+ */
 interface Group {
     id: number;
     hashedId: string;
@@ -23,6 +26,9 @@ interface Group {
 }
 
 // メンバーデータの型定義
+/**
+ * グループメンバー情報の型定義
+ */
 interface Member {
     admin_flg: boolean;
     user: {
@@ -33,6 +39,9 @@ interface Member {
 }
 
 // フォーマット状態の型定義
+/**
+ * リッチテキストエディターの書式状態
+ */
 interface FormatState {
     bold: boolean;
     italic: boolean;
@@ -41,6 +50,9 @@ interface FormatState {
 }
 
 // ★ 追加：通知設定の型定義
+/**
+ * ユーザー通知設定の型定義
+ */
 interface NotificationSettings {
     email: boolean;
     commentsOnMyPosts: boolean;
@@ -54,6 +66,9 @@ interface NotificationSettings {
 }
 
 // ★ 追加：トグルスイッチコンポーネントのプロパティ型定義
+/**
+ * トグルスイッチコンポーネントのProps
+ */
 interface ToggleSwitchProps {
     id: string;
     checked: boolean;
@@ -62,6 +77,15 @@ interface ToggleSwitchProps {
     description?: string;
 }
 
+/**
+ * グループ（クラスルーム）管理ページのメインコンポーネント
+ * 
+ * 以下の機能を提供します：
+ * - 参加しているグループの一覧表示
+ * - 新規グループの作成・参加
+ * - グループ詳細（お知らせ、課題、メンバー）の表示と操作
+ * - 投稿機能（リッチテキストエディタ）
+ */
 const ClassroomApp: React.FC = () => {
     // 状態管理
     const [currentView, setCurrentView] = useState<'empty' | 'groups' | 'detail' | 'settings'>('empty');

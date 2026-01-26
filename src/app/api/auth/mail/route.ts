@@ -3,6 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { randomBytes, createHash } from 'crypto';
 import nodemailer from 'nodemailer'; // Nodemailerをインポートします
 
+/**
+ * パスワード再設定メール送信API
+ * 
+ * メールアドレスを受け取り、ユーザーが存在する場合に
+ * リセットトークンを生成してメールで送信します。
+ */
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
