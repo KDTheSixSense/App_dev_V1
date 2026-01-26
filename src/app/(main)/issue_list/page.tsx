@@ -78,7 +78,7 @@ const QuestionsPage: React.FC = () => {
   // 画面の構造をJSX（HTMLに似た記法）で記述します。
   return (
     // ページ全体のコンテナ。背景色や最小の高さなどを設定。
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col bg-gray-50 select-none">
       {/* Swiperの矢印とページネーションのスタイルを強制的に上書き */}
       <style>{`
         .swiper-button-next, .swiper-button-prev {
@@ -100,8 +100,43 @@ const QuestionsPage: React.FC = () => {
           font-size: 30px !important; /* 矢印のサイズを小さく */
           font-weight: bold !important;
         }
+        /* ページネーション全体のコンテナ位置調整（必要に応じて） */
+        .swiper-pagination {
+          bottom: 0px !important; /* 下端に配置 */
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          flex-wrap: wrap !important; /* 画面幅が狭いときに折り返す */
+          gap: 8px !important; /* ボタン同士の間隔 */
+          padding: 10px !important;
+          pointer-events: none !important; /* コンテナ自体はクリックを邪魔しない */
+        }
+
+        /* 各ボタン（旧：丸い点）のスタイル */
+        .swiper-pagination-bullet {
+          width: auto !important;   /* 幅を文字数に合わせる */
+          height: auto !important;  /* 高さを自動に */
+          padding: 6px 16px !important; /* 内側の余白（上下 左右） */
+          border-radius: 20px !important; /* 角丸にする */
+          background: rgba(255, 255, 255, 0.8) !important; /* 背景色（薄い白） */
+          border: 1px solid #ddd !important; /* 薄い枠線 */
+          color: #555 !important;   /* 文字色 */
+          font-size: 12px !important; /* 文字サイズ */
+          font-weight: bold !important;
+          opacity: 1 !important;    /* 透明度をリセット */
+          margin: 0 !important;     /* マージンはgapで制御するので0 */
+          pointer-events: auto !important; /* ボタンはクリックできるようにする */
+          transition: all 0.3s ease !important;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; /* 軽い影 */
+        }
+
+        /* 選択中のボタンのスタイル */
         .swiper-pagination-bullet-active {
-          background: #06b6d4 !important;
+          background: #06b6d4 !important; /* テーマカラー（シアン） */
+          color: white !important; /* 文字色を白に */
+          border-color: #06b6d4 !important;
+          transform: scale(1.05) !important; /* 少し大きく強調 */
+          box-shadow: 0 4px 6px rgba(6, 182, 212, 0.3) !important;
         }
       `}</style>
 
@@ -123,7 +158,14 @@ const QuestionsPage: React.FC = () => {
             // ナビゲーション（左右の矢印）を表示
             navigation
             // ページネーション（下部のドット）を表示し、クリックで移動可能に
-            pagination={{ clickable: true }}
+            pagination={{
+              clickable: true,
+              // index: スライド番号, className: Swiperが生成するクラス名
+              renderBullet: function (index, className) {
+                // 配列からタイトルを取得して表示
+                return '<span class="' + className + '">' + questionCategories[index].title + '</span>';
+              },
+            }}
             // ループモードを有効にする
             loop={true}
             className="w-full px-12 h-full" // Swiperコンテナの幅と高さを親要素に合わせる
