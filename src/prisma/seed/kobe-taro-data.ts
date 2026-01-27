@@ -225,7 +225,11 @@ export async function seedKobeTaroData(prisma: PrismaClient) {
             data: {
                 assignment_id: assignmentAll.id,
                 userid: members[i].id,
-                description: '提出します。',
+                description: `def fib(n):
+    if n <= 1: return n
+    return fib(n-1) + fib(n-2)
+
+print(fib(10))`,
                 status: '提出済み', // 全員提出済み
                 codingid: 0,
             }
@@ -254,7 +258,7 @@ export async function seedKobeTaroData(prisma: PrismaClient) {
                 data: {
                     assignment_id: assignmentHalf.id,
                     userid: member.id,
-                    description: i < 2 ? '不十分な点がありました。' : '難しかったです。',
+                    description: '',
                     status: status,
                     codingid: 0,
                 }
@@ -643,11 +647,43 @@ export async function seedKobeTaroData(prisma: PrismaClient) {
     console.log('📝 Marking one KDIT assignment as submitted for Kobe Taro...');
     const kditGroup = await prisma.groups.findFirst({ where: { groupname: 'KDITクラス' } });
     if (kditGroup) {
-        const kditAssignments = await prisma.assignment.findMany({ where: { groupid: kditGroup.id } });
+        const kditAssignments = await prisma.assignment.findMany({ 
+            where: { groupid: kditGroup.id },
+            include: { programmingProblem: true, selectProblem: true }
+        });
         if (kditAssignments.length > 0) {
             // ランダムに1つ選ぶ
             const randomIndex = getRandomInt(0, kditAssignments.length - 1);
             const targetAssignment = kditAssignments[randomIndex];
+
+            let description = '';
+
+            if (targetAssignment.programmingProblem) {
+                const title = targetAssignment.programmingProblem.title;
+                if (title === 'FizzBuzz') {
+                    description = `for i in range(1, 101):
+    if i % 3 == 0 and i % 5 == 0:
+        print("FizzBuzz")
+    elif i % 3 == 0:
+        print("Fizz")
+    elif i % 5 == 0:
+        print("Buzz")
+    else:
+        print(i)`;
+                } else if (title === 'A + B') {
+                    description = `import sys
+
+for line in sys.stdin:
+    a, b = map(int, line.split())
+    print(a + b)`;
+                } else {
+                    description = '# No code template available for this problem.';
+                }
+            } else if (targetAssignment.selectProblem) {
+                description = '';
+            } else {
+                description = 'なんとか解けました。'; // Fallback if no problem linked (shouldn't happen based on seed logic)
+            }
 
             await prisma.submissions.upsert({
                 where: {
@@ -658,7 +694,7 @@ export async function seedKobeTaroData(prisma: PrismaClient) {
                 },
                 update: {
                     status: '提出済み',
-                    description: 'なんとか解けました。',
+                    description: description,
                     submitted_at: getDate(1), // 昨日提出
                     codingid: 0,
                 },
@@ -666,7 +702,7 @@ export async function seedKobeTaroData(prisma: PrismaClient) {
                     assignment_id: targetAssignment.id,
                     userid: kobeTaro.id,
                     status: '提出済み',
-                    description: 'なんとか解けました。',
+                    description: description,
                     submitted_at: getDate(1),
                     codingid: 0,
                 }

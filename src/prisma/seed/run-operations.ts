@@ -106,66 +106,89 @@ export async function runOperations(prisma: PrismaClient) {
   const charlie = await prisma.user.findUnique({ where: { email: 'charlie@example.com' } });
   const diana = await prisma.user.findUnique({ where: { email: 'diana@example.com' } });
 
-  // BobとCharlieがPythonの課題を提出したことにする
-  if (pythonAssignment && bob && charlie) {
-    await prisma.submissions.updateMany({
-      where: {
-        assignment_id: pythonAssignment.id,
-        userid: { in: [bob.id, charlie.id] },
-      },
-      data: {
-        status: '提出済み',
-        submitted_at: new Date('2025-10-20T10:00:00Z'), // ダミーの提出日時
-        description: '提出しました。確認お願いします。', // ダミーのコメント
-      },
+  // 50%のユーザーが「提出済み」になるようにランダムに更新する処理
+  const processRandomSubmissions = async (assignmentId: number, description: string) => {
+    // この課題に対する全ての提出（未提出含む）を取得
+    const submissions = await prisma.submissions.findMany({
+      where: { assignment_id: assignmentId },
     });
-    console.log(`✅ Created 2 dummy submissions for "${pythonAssignment.title}".`);
 
-    // --- コメントのシーディング (追加) ---
-    console.log('🌱 Seeding assignment comments...');
-    await prisma.assignmentComment.createMany({
-      data: [
-        {
-          assignmentId: pythonAssignment.id,
-          authorId: bob.id,
-          content: '変数の命名規則について質問があります。スネークケース以外は使ってはいけませんか？',
-          createdAt: new Date('2025-10-21T10:00:00Z'),
+    // ランダムにシャッフルして、半数を抽出
+    const shuffled = submissions.sort(() => 0.5 - Math.random());
+    const targetCount = Math.ceil(submissions.length * 0.5);
+    const targets = shuffled.slice(0, targetCount);
+
+    if (targets.length > 0) {
+      await prisma.submissions.updateMany({
+        where: {
+          id: { in: targets.map(s => s.id) }
         },
-        {
-          assignmentId: pythonAssignment.id,
-          authorId: charlie.id,
-          content: 'Bobさん、基本的にはスネークケースが推奨されていますが、強制ではありませんよ。PEP8を参照すると良いです。',
-          createdAt: new Date('2025-10-21T10:30:00Z'),
-        },
-        {
-          assignmentId: pythonAssignment.id,
-          authorId: bob.id,
-          content: 'なるほど、ありがとうございます！',
-          createdAt: new Date('2025-10-21T10:45:00Z'),
+        data: {
+          status: '提出済み',
+          submitted_at: new Date('2025-10-25T10:00:00Z'), // 一律の日時だが、必要ならランダム化可能
+          description: description,
         }
-      ]
-    });
-    console.log(`✅ Created 3 sample comments for "${pythonAssignment.title}".`);
+      });
+      console.log(`✅ Updated ${targets.length} submissions to 'submitted' for assignment ID ${assignmentId}.`);
+    }
+  };
+
+  // 1. Python基礎 (選択問題) -> 50% 提出済み (空文字)
+  if (pythonAssignment) {
+    await processRandomSubmissions(pythonAssignment.id, '');
+
+    // BobとCharlieが含まれていなかった場合のために、明示的に彼らは提出済みにする（既存ロジックの継承）
+    if (bob && charlie) {
+      await prisma.submissions.updateMany({
+        where: {
+          assignment_id: pythonAssignment.id,
+          userid: { in: [bob.id, charlie.id] },
+        },
+        data: {
+          status: '提出済み',
+          submitted_at: new Date('2025-10-20T10:00:00Z'),
+          description: '',
+        },
+      });
+
+      // コメントも追加
+      console.log('🌱 Seeding assignment comments...');
+      await prisma.assignmentComment.createMany({
+        data: [
+          {
+            assignmentId: pythonAssignment.id,
+            authorId: bob.id,
+            content: '変数の命名規則について質問があります。スネークケース以外は使ってはいけませんか？',
+            createdAt: new Date('2025-10-21T10:00:00Z'),
+          },
+          {
+            assignmentId: pythonAssignment.id,
+            authorId: charlie.id,
+            content: 'Bobさん、基本的にはスネークケースが推奨されていますが、強制ではありませんよ。PEP8を参照すると良いです。',
+            createdAt: new Date('2025-10-21T10:30:00Z'),
+          },
+          {
+            assignmentId: pythonAssignment.id,
+            authorId: bob.id,
+            content: 'なるほど、ありがとうございます！',
+            createdAt: new Date('2025-10-21T10:45:00Z'),
+          }
+        ],
+        skipDuplicates: true // 重複エラー回避
+      });
+      console.log(`✅ Created 3 sample comments for "${pythonAssignment.title}".`);
+    }
   }
 
-  // Dianaが足し算の課題を提出したことにする
-  if (aPlusBAssignment && diana) {
-    await prisma.submissions.updateMany({
-      where: {
-        assignment_id: aPlusBAssignment.id,
-        userid: diana.id,
-      },
-      data: {
-        status: '提出済み',
-        submitted_at: new Date('2025-10-22T15:30:00Z'),
-        description: '完了しました。',
-      },
-    });
-    console.log(`✅ Created 1 dummy submission for "${aPlusBAssignment.title}".`);
+  // 2. 簡単な足し算 (プログラミング問題) -> 50% 提出済み (コード)
+  if (aPlusBAssignment) {
+    const code = `import sys
+for line in sys.stdin:
+    a, b = map(int, line.split())
+    print(a + b)`;
+
+    await processRandomSubmissions(aPlusBAssignment.id, code);
   }
-  // } else {
-  //   console.warn('⚠️ Could not find groups to seed assignments.');
-  // }
 
   // 5. ダミーのデイリーアクティビティサマリーを生成
   await seedDailyActivities(prisma);
