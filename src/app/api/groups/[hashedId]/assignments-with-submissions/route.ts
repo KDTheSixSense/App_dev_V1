@@ -71,6 +71,8 @@ export async function GET(
           },
           orderBy: { submitted_at: 'desc' },
         },
+        programmingProblem: { select: { id: true, title: true, difficulty: true } },
+        selectProblem: { select: { id: true, title: true, difficultyId: true } },
       },
     });
 

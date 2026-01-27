@@ -134,22 +134,47 @@ export async function GET(request: NextRequest) {
     const session = await getAppSession();
     const userId = session?.user?.id;
 
-    // Default: Show only Public & Published problems
+    // Default: Show only Public & Published problems (base condition)
     let whereClause: Prisma.ProgrammingProblemWhereInput = {
-      isPublic: true,
       isPublished: true,
     };
 
+    if (userId) {
+      // If logged in: (Public) OR (Created by Accessing User)
+      whereClause.OR = [
+        { isPublic: true },
+        { createdBy: userId }
+      ];
+    } else {
+      // If not logged in: Public only
+      whereClause.isPublic = true;
+    }
+
     if (isDraftParam !== null) {
-      // If requesting drafts, user MUST be authenticated
-      if (!userId) {
-        return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+      const isDraftRequested = isDraftParam === 'true';
+
+      if (isDraftRequested) {
+        // If requesting DRAFTS:
+        // User MUST be authenticated and can ONLY see their own drafts.
+        if (!userId) {
+          return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+        }
+        whereClause = {
+          isDraft: true,
+          createdBy: userId
+        };
+      } else {
+        // If requesting PUBLISHED (non-drafts):
+        // Ensure we filter by isDraft: false
+        whereClause.isDraft = false;
+
+        // Note: The base `whereClause` constructed above already handles 
+        // "Public OR CreatedByMe" visibility logic. 
+        // e.g. 
+        // whereClause = { isPublished: true, OR: [{isPublic:true}, {createdBy:me}] }
+        // adding isDraft: false -> { isPublished: true, isDraft: false, OR: [...] }
+        // This is correct. We do NOT want to overwrite it with { createdBy: userId }.
       }
-      // AND user can only see THEIR OWN drafts (or all if admin - assuming owner here for safety)
-      whereClause = {
-        isDraft: isDraftParam === 'true',
-        createdBy: userId // Restrict to own drafts
-      };
     }
 
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;

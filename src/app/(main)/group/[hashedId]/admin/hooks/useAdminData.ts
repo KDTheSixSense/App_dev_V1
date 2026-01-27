@@ -264,7 +264,7 @@ export const useAdminData = (hashedId: string) => {
 
         if (problem) {
             if (problem.type === 'select') body.selectProblemId = problem.id;
-            else body.ProblemId = problem.id;
+            else body.programmingProblemId = problem.id;
         }
 
         const response = await fetch(endpoint, {

@@ -119,6 +119,8 @@ export async function GET(req: NextRequest) {
           include: {
             // ログインユーザー自身の提出状況のみを取得
             Submissions: { where: { userid: userId ?? -1 as any } },
+            programmingProblem: { select: { id: true, title: true, difficulty: true } },
+            selectProblem: { select: { id: true, title: true, difficultyId: true } },
           },
           orderBy: { created_at: 'desc' },
           skip,
