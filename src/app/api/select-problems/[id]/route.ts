@@ -75,7 +75,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, description, explanation, answerOptions, correctAnswer, difficultyId } = body;
+    const { title, description, explanation, answerOptions, correctAnswer, difficultyId, isPublic } = body;
 
     const updatedProblem = await prisma.selectProblem.update({
       where: { id: problemId },
@@ -86,6 +86,7 @@ export async function PUT(
         answerOptions,
         correctAnswer,
         difficultyId,
+        isPublic: isPublic !== undefined ? isPublic : existingProblem.isPublic,
       },
     });
 

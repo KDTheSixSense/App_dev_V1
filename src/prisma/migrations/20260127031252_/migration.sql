@@ -207,6 +207,7 @@ CREATE TABLE "SelectProblem" (
     "explanation" TEXT,
     "answerOptions" JSONB NOT NULL,
     "correctAnswer" TEXT NOT NULL,
+    "isPublic" BOOLEAN NOT NULL DEFAULT false,
     "difficultyId" INTEGER NOT NULL,
     "subjectId" INTEGER NOT NULL,
     "createdBy" TEXT,

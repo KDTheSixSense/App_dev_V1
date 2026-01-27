@@ -130,7 +130,10 @@ export const useProblemForm = () => {
                         if (correctIndex !== -1) {
                             setCorrectAnswer(String.fromCharCode(97 + correctIndex));
                         }
+                        // isPublicの読み込みを追加
+                        setFormData(prev => ({ ...prev, isPublic: data.isPublic || false }));
                     } else {
+
                         let parsedTags: string[] = [];
                         try {
                             const parsed = JSON.parse(data.tags || '[]');
@@ -162,7 +165,7 @@ export const useProblemForm = () => {
                             expectedOutput: sc.expectedOutput || sc.output || '',
                             description: sc.description
                         })) : [{ id: null, input: '', expectedOutput: '', description: '' }]);
-                        
+
                         const rawTestCases = data.testCases || data.TestCases || [];
                         setTestCases(rawTestCases.length > 0 ? rawTestCases.map((tc: any) => {
                             const testCase = tc.testCase || tc.TestCase || tc;
@@ -292,6 +295,7 @@ export const useProblemForm = () => {
                     answerOptions: answerOptions.map(opt => opt.text),
                     correctAnswer: answerOptions.find(opt => opt.id === correctAnswer)?.text || '',
                     difficultyId: formData.difficulty,
+                    isPublic: formData.isPublic,
                 };
                 response = await fetch(`/api/select-problems/${problemId}`, {
                     method: 'PUT',
@@ -344,6 +348,7 @@ export const useProblemForm = () => {
                     correctAnswer: answerOptions.find(opt => opt.id === correctAnswer)?.text || '',
                     subjectId: 4,
                     difficultyId: formData.difficulty,
+                    isPublic: formData.isPublic,
                 };
                 const response = await fetch('/api/selects_problems', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },

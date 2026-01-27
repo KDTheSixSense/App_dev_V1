@@ -851,6 +851,45 @@ export default function CreateProgrammingQuestionPage() {
                             </button>
                           </div>
                         </div>
+
+                        <div className="form-group">
+                          <label className="form-label">コードテンプレート (任意)</label>
+                          <textarea
+                            className="form-textarea"
+                            value={formData.codeTemplate}
+                            onChange={(e) => setFormData(prev => ({ ...prev, codeTemplate: e.target.value }))}
+                            placeholder="初期状態でエディタに表示されるコード"
+                            rows={6}
+                          />
+                        </div>
+
+                        <div className="checkbox-group">
+                          <label className="checkbox">
+                            <input
+                              type="checkbox"
+                              checked={formData.isPublic}
+                              onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                            />
+                            <span className="checkbox-custom"></span>
+                          </label>
+                          <label className="checkbox-label" onClick={() => setFormData(prev => ({ ...prev, isPublic: !prev.isPublic }))}>
+                            問題を公開する
+                          </label>
+                        </div>
+
+                        <div className="checkbox-group">
+                          <label className="checkbox">
+                            <input
+                              type="checkbox"
+                              checked={formData.allowTestCaseView}
+                              onChange={(e) => setFormData(prev => ({ ...prev, allowTestCaseView: e.target.checked }))}
+                            />
+                            <span className="checkbox-custom"></span>
+                          </label>
+                          <label className="checkbox-label" onClick={() => setFormData(prev => ({ ...prev, allowTestCaseView: !prev.allowTestCaseView }))}>
+                            ユーザーにテストケースの閲覧を許可する
+                          </label>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -878,18 +917,9 @@ export default function CreateProgrammingQuestionPage() {
                           />
                         </div>
 
-                        <div className="form-group">
-                          <label className="form-label">コードテンプレート</label>
-                          <textarea
-                            className="form-textarea"
-                            value={formData.codeTemplate}
-                            onChange={(e) => setFormData(prev => ({ ...prev, codeTemplate: e.target.value }))}
-                            placeholder="初期コードテンプレートを記述してください..."
-                            rows={10}
-                          />
-                        </div>
                       </div>
                     </div>
+
                   )}
 
                   {/* サンプルケースタブ */}
@@ -1080,43 +1110,7 @@ export default function CreateProgrammingQuestionPage() {
                     </div>
                   )}
 
-                  {/* 設定タブ */}
-                  {activeTab === 'settings' && (
-                    <div className="card">
-                      <div className="card-header">
-                        公開設定
-                      </div>
-                      <div className="card-body">
-                        <div className="checkbox-group">
-                          <label className="checkbox">
-                            <input
-                              type="checkbox"
-                              checked={formData.isPublic}
-                              onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
-                            />
-                            <span className="checkbox-custom"></span>
-                          </label>
-                          <label className="checkbox-label">
-                            問題を公開する
-                          </label>
-                        </div>
 
-                        <div className="checkbox-group">
-                          <label className="checkbox">
-                            <input
-                              type="checkbox"
-                              checked={formData.allowTestCaseView}
-                              onChange={(e) => setFormData(prev => ({ ...prev, allowTestCaseView: e.target.checked }))}
-                            />
-                            <span className="checkbox-custom"></span>
-                          </label>
-                          <label className="checkbox-label">
-                            テストケースの閲覧を許可する
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {/* アクションボタン */}
                   <div className="action-buttons">
@@ -1146,6 +1140,6 @@ export default function CreateProgrammingQuestionPage() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   )
 }

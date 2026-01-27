@@ -17,6 +17,13 @@ export async function GET(req: NextRequest) {
 
     // Fetch all selection problems
     const selectionProblemsRaw = await prisma.selectProblem.findMany({
+      where: {
+        OR: [
+          { isPublic: true }, // 公開問題
+          { createdBy: session.user.id }, // 自分が作成した問題
+          { createdBy: null } // システム作成問題 (シードデータなど)
+        ]
+      },
       orderBy: {
         createdAt: 'desc'
       },
@@ -47,7 +54,8 @@ export async function GET(req: NextRequest) {
       createdAt: problem.createdAt,
       updatedAt: problem.updatedAt,
       subject: problem.subject,
-      creator: problem.creator
+      creator: problem.creator,
+      isPublic: problem.isPublic
     }));
 
     return NextResponse.json(selectionProblems, { status: 200 });
@@ -69,7 +77,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       title, description, explanation, answerOptions,
-      correctAnswer, subjectId, difficultyId,
+      correctAnswer, subjectId, difficultyId, isPublic
     } = body;
 
     if (!title || !description || !answerOptions || !correctAnswer || !subjectId || !difficultyId) {
@@ -80,6 +88,7 @@ export async function POST(req: NextRequest) {
       data: {
         title, description, explanation, answerOptions,
         correctAnswer, difficultyId, subjectId, createdBy: userId,
+        isPublic: isPublic || false,
       },
     });
 

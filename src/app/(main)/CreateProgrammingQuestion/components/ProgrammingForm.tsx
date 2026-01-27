@@ -163,7 +163,22 @@ const ProgrammingForm: React.FC<ProgrammingFormProps> = ({
                                 onChange={(e) => setFormData(prev => ({ ...prev, codeTemplate: e.target.value }))}
                                 placeholder="初期状態でエディタに表示されるコード"
                                 style={{ fontFamily: 'monospace' }}
+                                rows={6}
                             />
+                        </div>
+
+                        <div className="checkbox-group">
+                            <label className="checkbox">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.isPublic}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                                />
+                                <span className="checkbox-custom"></span>
+                            </label>
+                            <label className="checkbox-label" onClick={() => setFormData(prev => ({ ...prev, isPublic: !prev.isPublic }))}>
+                                問題を公開する
+                            </label>
                         </div>
 
                         <div className="checkbox-group">
@@ -173,11 +188,11 @@ const ProgrammingForm: React.FC<ProgrammingFormProps> = ({
                                     checked={formData.allowTestCaseView}
                                     onChange={(e) => setFormData(prev => ({ ...prev, allowTestCaseView: e.target.checked }))}
                                 />
-                                <div className="checkbox-custom"></div>
+                                <span className="checkbox-custom"></span>
                             </label>
-                            <span className="checkbox-label" onClick={() => setFormData(prev => ({ ...prev, allowTestCaseView: !prev.allowTestCaseView }))}>
+                            <label className="checkbox-label" onClick={() => setFormData(prev => ({ ...prev, allowTestCaseView: !prev.allowTestCaseView }))}>
                                 ユーザーにテストケースの閲覧を許可する
-                            </span>
+                            </label>
                         </div>
                     </div>
                 </div>

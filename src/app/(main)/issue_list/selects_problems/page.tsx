@@ -69,6 +69,12 @@ const SelectProblemsListPage = async (props: PageProps) => {
 
   // サーバーサイドでデータベースから問題リストを取得します
   const problems = await prisma.selectProblem.findMany({
+    where: {
+      OR: [
+        { isPublic: true },
+        { createdBy: null }, // システム作成問題（シードデータ）を表示
+      ]
+    },
     orderBy: {
       id: 'asc', // IDの昇順で並べます
     },
@@ -104,12 +110,12 @@ const SelectProblemsListPage = async (props: PageProps) => {
           <BackButton />
         </div>
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">選択問題一覧</h1>
-        
+
         <StatusFilter />
-        
+
         {/* 新しいAnimatedListコンポーネントを使用 */}
-        <AnimatedList 
-          items={items} 
+        <AnimatedList
+          items={items}
           showGradients={true}
           displayScrollbar={true}
         />

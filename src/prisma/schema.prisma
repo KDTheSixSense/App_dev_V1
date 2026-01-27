@@ -300,6 +300,9 @@ model SelectProblem {
   answerOptions Json // 選択肢 (例: ["選択肢A", "選択肢B", ...])
   correctAnswer String // 正解のテキスト
 
+  // --- 公開設定 ---
+  isPublic      Boolean @default(false) // 公開フラグ
+
   // --- リレーション ---
   difficultyId Int
   difficulty   Difficulty @relation(fields: [difficultyId], references: [id])

@@ -1064,7 +1064,7 @@ async function seedSampleSelectionProblems(prisma: PrismaClient) {
     ];
 
     for (const problem of selectionProblems) {
-        await prisma.selectProblem.create({ data: problem });
+        await prisma.selectProblem.create({ data: { ...problem, isPublic: true } });
     }
     console.log(`✅ Created ${selectionProblems.length} selection problems.`);
 }
@@ -1201,7 +1201,8 @@ async function seedSelectProblemsFromExcel(prisma: PrismaClient) {
                 correctAnswer: correctAnswerText, // テキストで保存
                 difficultyId: TARGET_DIFFICULTY_ID, // 11: 選択問題
                 subjectId: TARGET_SUBJECT_ID,       // 4: 選択問題
-                // createdBy: null // システム作成
+                // createdBy: null, // システム作成
+                isPublic: true, // システム作成問題は公開
             };
 
             try {

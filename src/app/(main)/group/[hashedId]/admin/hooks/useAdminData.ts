@@ -132,7 +132,9 @@ export const useAdminData = (hashedId: string) => {
                 }
                 if (selectRes.ok) {
                     const data = await selectRes.json();
-                    setAvailableSelectionProblems(data.map((p: any) => ({ ...p, type: 'select' })));
+                    // 公開問題またはシステム作成問題（シードデータ）のみを表示
+                    const publicProblems = data.filter((p: any) => p.isPublic || !p.createdBy);
+                    setAvailableSelectionProblems(publicProblems.map((p: any) => ({ ...p, type: 'select' })));
                 }
             }
         } catch (e) {

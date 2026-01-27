@@ -71,9 +71,24 @@ const SelectProblemForm: React.FC<SelectProblemFormProps> = ({
                                 <option value={2}>2 (かんたん)</option>
                                 <option value={3}>3 (ふつう)</option>
                                 <option value={4}>4 (むずかしい)</option>
+                                <option value={4}>4 (むずかしい)</option>
                                 <option value={5}>5 (鬼むず)</option>
                             </select>
                         </div>
+                        <div className="checkbox-group">
+                            <label className="checkbox">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.isPublic}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                                />
+                                <span className="checkbox-custom"></span>
+                            </label>
+                            <label className="checkbox-label" onClick={() => setFormData(prev => ({ ...prev, isPublic: !prev.isPublic }))}>
+                                問題を公開する
+                            </label>
+                        </div>
+
                     </div>
                 </div>
             )}
@@ -132,6 +147,13 @@ const SelectProblemForm: React.FC<SelectProblemFormProps> = ({
                 .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #4fd1c7; box-shadow: 0 0 0 3px rgba(79, 209, 199, 0.1); }
                 .btn:disabled::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, 0.3); border-top: 2px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
                 @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+                .checkbox-group { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+                .checkbox { position: relative; display: inline-block; }
+                .checkbox input { opacity: 0; position: absolute; width: 0; height: 0; }
+                .checkbox-custom { width: 20px; height: 20px; background: white; border: 2px solid #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; }
+                .checkbox input:checked + .checkbox-custom { background: linear-gradient(135deg, #4fd1c7 0%, #38b2ac 100%); border-color: #4fd1c7; }
+                .checkbox input:checked + .checkbox-custom::after { content: '✓'; color: white; font-size: 0.75rem; font-weight: 600; }
+                .checkbox-label { font-size: 0.875rem; color: #2d3748; cursor: pointer; user-select: none; }
             `}</style>
         </>
     );
