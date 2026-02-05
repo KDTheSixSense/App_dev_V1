@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>データベース定義書 - ER図</title>
+    <!-- svg-pan-zoom library -->
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+    <style>
+        body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; max-width: 100%; margin: 0; padding: 20px; color: #333; background-color: #f4f6f8; height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eaeaea; padding-bottom: 10px; margin-top: 0; }
+        .nav { text-align: center; margin-bottom: 20px; flex-shrink: 0; }
+        .nav a { margin: 0 15px; text-decoration: none; color: #3498db; font-weight: bold; font-size: 1.2em; }
+        .nav a.active { color: #2c3e50; pointer-events: none; border-bottom: 2px solid #2c3e50; }
+        
+        /* Mermaidコンテナを画面いっぱいに広げ、ズームしやすくする */
+        .mermaid { 
+            flex-grow: 1;
+            background: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+            overflow: hidden; /* パン移動のためスクロールバーは隠す */
+            text-align: center; 
+            border: 1px solid #ccc;
+            position: relative;
+        }
+        
+        .mermaid svg {
+            height: 100%;
+            width: 100%;
+        }
+
+        @media print {
+            .no-print { display: none; }
+            .nav { display: none; }
+            body { padding: 0; background: #fff; height: auto; display: block; }
+            .mermaid { box-shadow: none; height: auto; overflow: visible; }
+            .mermaid svg { height: auto; width: 100%; }
+        }
+    </style>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        
+        // 設定
+        const config = {
+            startOnLoad: false, // 手動実行にして完了を待つ
+            maxTextSize: 1000000,
+            theme: 'default',
+            securityLevel: 'loose',
+        };
+        mermaid.initialize(config);
+
+        // 描画実行とPanZoom適用
+        window.addEventListener('load', async () => {
+            await mermaid.run();
+            
+            const svgElement = document.querySelector('.mermaid svg');
+            if (svgElement) {
+                // SVG本来のstyle属性が邪魔する場合があるのでリセット
+                svgElement.style.maxWidth = 'none';
+                svgElement.style.height = '100%';
+                
+                svgPanZoom(svgElement, {
+                    zoomEnabled: true,
+                    controlIconsEnabled: true,
+                    fit: true,
+                    center: true,
+                    minZoom: 0.1,
+                    maxZoom: 10
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="nav no-print">
+        <a href="db_er.html" class="active">ER図</a>
+        <a href="db_tables.html">テーブル一覧</a>
+    </div>
+
+    <h1>データベース定義書 - ER図</h1>
+    <p class="no-print" style="text-align: center; font-size: 0.9em; color: #666;">
+        ※ マウスホイールで拡大縮小、ドラッグで移動ができます。<br>
+        ※ 印刷時はブラウザの印刷機能(Ctrl+P)を使ってください。
+    </p>
+
+    <div class="mermaid">
+    erDiagram
+    M_User {
+        String id
+        String email
+        Boolean isAdmin
+        String password
+        String hash
+        String username
+        Int year
+        Int _class
+        DateTime birth
+        String resetPasswordToken
+        DateTime resetPasswordTokenExpiry
+        Int level
+        Int xp
+        String icon
+        Int selectedTitleId
+        Int continuouslogin
+        Int totallogin
+        DateTime lastlogin
+        Boolean isAgreedToTerms
+        Boolean isAgreedToPrivacyPolicy
+        Int aiAdviceCredits
+        Int tokenVersion
+    }
+    M_User }|--o| M_Title : "selectedTitle"
+    M_User ||--o{ M_UserSubjectProgress : "progresses"
+    M_User ||--o{ M_UserUnlockedTitle : "unlockedTitles"
+    M_User ||--o{ M_UserAnswer : "answers"
+    M_User ||--o{ M_Answer_Algorithm : "answer_Algorithm"
+    M_User ||--o{ M_Answerd_Genre_Table : "answerd_Genre_Table"
+    M_User ||--o{ M_Groups_User : "groups_User"
+    M_User ||--o{ M_ProgrammingProblem : "createdProblems"
+    M_User ||--o{ M_SelectProblem : "createdSelectProblems"
+    M_User ||--o{ M_Create_event : "createdEvents"
+    M_User ||--o{ M_Post : "posts"
+    M_User ||--o{ M_Assignment : "createdAssignments"
+    M_User ||--o{ M_LoginHistory : "loginHistory"
+    M_User ||--o{ M_Submissions : "submissions"
+    M_User ||--o{ M_Event_Participants : "eventParticipants"
+    M_User ||--o{ M_Event_Submission : "eventSubmissions"
+    M_User ||--o{ M_DailyActivitySummary : "dailyActivitySummaries"
+    M_User ||--o{ M_AssignmentComment : "assignmentComments"
+    M_User ||--o{ M_UserDailyMissionProgress : "dailyMissionProgresses"
+    M_User ||--o{ M_AuditLog : "auditLogs"
+    M_User ||--o{ M_BannedUser : "createdBans"
+    M_User ||--o{ M_BannedUser : "targetedBans"
+    M_BannedUser {
+        Int id
+        String targetType
+        String value
+        String reason
+        DateTime createdAt
+        String createdBy
+        String targetUserId
+        DateTime expiresAt
+    }
+    M_BannedUser }|--o| M_User : "creator"
+    M_BannedUser }|--o| M_User : "targetUser"
+    M_LoginHistory {
+        Int id
+        String userId
+        DateTime loggedInAt
+    }
+    M_LoginHistory }|--|| M_User : "user"
+    M_Post {
+        Int id
+        String content
+        DateTime createdAt
+        DateTime updatedAt
+        Int groupId
+        String authorId
+    }
+    M_Post }|--|| M_Groups : "group"
+    M_Post }|--|| M_User : "author"
+    M_UserAnswer {
+        Int id
+        String userId
+        String answer
+        Boolean isCorrect
+        DateTime answeredAt
+        Int programingProblem_id
+        Int basic_A_Info_Question_id
+        Int questions_id
+        Int selectProblem_id
+        Int applied_am_question_id
+        Int questions_algorithm_id
+    }
+    M_UserAnswer }|--|| M_User : "user"
+    M_UserAnswer }|--o| M_ProgrammingProblem : "programmingProblem"
+    M_UserAnswer }|--o| M_Basic_Info_A_Question : "basic_A_Info_Question"
+    M_UserAnswer }|--o| M_Questions : "questions"
+    M_UserAnswer }|--o| M_SelectProblem : "selectProblem"
+    M_UserAnswer }|--o| M_Applied_am_Question : "applied_am_question"
+    M_UserAnswer }|--o| M_Questions_Algorithm : "questions_algorithm"
+    M_Subject {
+        Int id
+        String name
+        String description
+    }
+    M_Subject ||--o{ M_UserSubjectProgress : "userProgresses"
+    M_Subject ||--o{ M_Questions_Algorithm : "Questions_Algorithm"
+    M_Subject ||--o{ M_SelectProblem : "SelectProblem"
+    M_Subject ||--o{ M_Basic_Info_A_Question : "problems"
+    M_Subject ||--o{ M_Applied_am_Question : "appliedAmQuestions"
+    M_Language {
+        Int id
+        String name
+    }
+    M_Language ||--o{ M_Questions_Algorithm : "Questions_Algorithm"
+    M_Language ||--o{ M_Questions : "Questions"
+    M_Answer_Algorithm {
+        Int id
+        Int questionId
+        String userId
+        String symbol
+        Boolean isCorrect
+        String text
+        DateTime answeredAt
+    }
+    M_Answer_Algorithm }|--|| M_User : "user"
+    M_Answer_Algorithm }|--|| M_Questions_Algorithm : "question"
+    M_Category {
+        Int id
+        String name
+    }
+    M_Category ||--o{ M_Basic_Info_A_Question : "problems"
+    M_Category ||--o{ M_Applied_am_Question : "appliedAmQuestions"
+    M_Basic_Info_A_Question {
+        Int id
+        String title
+        String imagePath
+        String description
+        String explanation
+        Json answerOptions
+        Int correctAnswer
+        String sourceYear
+        String sourceNumber
+        Int difficultyId
+        Int subjectId
+        Int assignmentId
+        Int categoryId
+    }
+    M_Basic_Info_A_Question }|--|| M_Difficulty : "difficulty"
+    M_Basic_Info_A_Question }|--|| M_Subject : "subject"
+    M_Basic_Info_A_Question }|--o| M_Assignment : "assignment"
+    M_Basic_Info_A_Question }|--|| M_Category : "category"
+    M_Basic_Info_A_Question ||--o{ M_UserAnswer : "userAnswers"
+    M_Applied_am_Question {
+        Int id
+        String title
+        String imagePath
+        String description
+        String explanation
+        Json answerOptions
+        Int correctAnswer
+        String sourceYear
+        String sourceNumber
+        Int difficultyId
+        Int subjectId
+        Int assignmentId
+        Int categoryId
+    }
+    M_Applied_am_Question }|--|| M_Difficulty : "difficulty"
+    M_Applied_am_Question }|--|| M_Subject : "subject"
+    M_Applied_am_Question }|--o| M_Assignment : "assignment"
+    M_Applied_am_Question }|--|| M_Category : "category"
+    M_Applied_am_Question ||--o{ M_UserAnswer : "userAnswers"
+    M_Questions_Algorithm {
+        Int id
+        String title
+        String description
+        String explanation
+        String programLines
+        String answerOptions
+        String correctAnswer
+        Int language_id
+        Json initialVariable
+        String logictype
+        Json options
+        String image
+        Int subjectId
+        Int difficultyId
+        String problemType
+    }
+    M_Questions_Algorithm ||--o{ M_Answer_Algorithm : "answers"
+    M_Questions_Algorithm }|--|| M_Subject : "subject"
+    M_Questions_Algorithm }|--|| M_Difficulty : "difficulty"
+    M_Questions_Algorithm }|--|| M_Language : "language"
+    M_Questions_Algorithm ||--o{ M_UserAnswer : "userAnswers"
+    M_Questions {
+        Int id
+        Int language_id
+        Int genre_id
+        String title
+        Int genreid
+        String question
+        Int answerid
+        String term
+        DateTime year
+        String explain
+        String image
+        Int difficultyId
+    }
+    M_Questions }|--|| M_Genre : "genre"
+    M_Questions }|--|| M_Difficulty : "difficulty"
+    M_Questions }|--|| M_Language : "language"
+    M_Questions ||--o{ M_UserAnswer : "userAnswers"
+    M_Questions ||--o{ M_Answers : "Answers"
+    M_SelectProblem {
+        Int id
+        String title
+        String description
+        String explanation
+        Json answerOptions
+        String correctAnswer
+        Boolean isPublic
+        Int difficultyId
+        Int subjectId
+        String createdBy
+        DateTime createdAt
+        DateTime updatedAt
+    }
+    M_SelectProblem }|--|| M_Difficulty : "difficulty"
+    M_SelectProblem }|--|| M_Subject : "subject"
+    M_SelectProblem }|--o| M_User : "creator"
+    M_SelectProblem ||--o{ M_UserAnswer : "userAnswers"
+    M_ProgrammingProblem {
+        Int id
+        String title
+        String problemType
+        Int difficulty
+        Int timeLimit
+        String category
+        String topic
+        String tags
+        String description
+        String codeTemplate
+        Boolean isPublic
+        Boolean allowTestCaseView
+        Boolean isDraft
+        Boolean isPublished
+        String createdBy
+        DateTime createdAt
+        DateTime updatedAt
+        Int eventDifficultyId
+    }
+    M_ProgrammingProblem }|--o| M_User : "creator"
+    M_ProgrammingProblem ||--o{ M_SampleCase : "sampleCases"
+    M_ProgrammingProblem ||--o{ M_TestCase : "testCases"
+    M_ProgrammingProblem ||--o{ M_ProblemFile : "files"
+    M_ProgrammingProblem ||--o{ M_Event_Issue_List : "eventIssues"
+    M_ProgrammingProblem ||--o{ M_UserAnswer : "userAnswers"
+    M_ProgrammingProblem }|--o| M_EventDifficulty : "eventDifficulty"
+    M_SampleCase {
+        Int id
+        Int problemId
+        String input
+        String expectedOutput
+        String description
+        Int _order
+    }
+    M_SampleCase }|--|| M_ProgrammingProblem : "problem"
+    M_TestCase {
+        Int id
+        Int problemId
+        String name
+        String input
+        String expectedOutput
+        String description
+        Int _order
+    }
+    M_TestCase }|--|| M_ProgrammingProblem : "problem"
+    M_ProblemFile {
+        Int id
+        Int problemId
+        String fileName
+        String originalName
+        String filePath
+        Int fileSize
+        String mimeType
+        DateTime uploadedAt
+    }
+    M_ProblemFile }|--|| M_ProgrammingProblem : "problem"
+    M_Genre {
+        Int id
+        String genre
+    }
+    M_Genre ||--o{ M_Questions : "Questions"
+    M_Answerd_Genre_Table {
+        Int id
+        String user_id
+        Int Answer_IT
+        Int Answer_Basic_A
+        Int Answer_Basic_B
+        Int Answer_Applied_Am
+        Int Answer_Applied_Pm
+        Int Answer_Info_Test
+        Int Answer_Python
+        Int Answer_Java
+    }
+    M_Answerd_Genre_Table }|--|| M_User : "user"
+    M_Coding {
+        Int id
+        String title
+        String question
+        String answer
+        String sample_case
+        Int testcase_id
+        String image
+        String explain
+        String difficulty
+        Int xpid
+    }
+    M_Test_Case {
+        Int id
+        String testcase
+    }
+    M_Answers {
+        Int id
+        Int question_id
+        String answer
+        Boolean isCorrect
+    }
+    M_Answers }|--|| M_Questions : "question"
+    M_UserSubjectProgress {
+        Int level
+        Int xp
+        String user_id
+        Int subject_id
+    }
+    M_UserSubjectProgress }|--|| M_User : "user"
+    M_UserSubjectProgress }|--|| M_Subject : "subject"
+    M_Difficulty {
+        Int id
+        String name
+        Int xp
+        Int feed
+    }
+    M_Difficulty ||--o{ M_Questions_Algorithm : "Questions_Algorithm"
+    M_Difficulty ||--o{ M_Questions : "Questions"
+    M_Difficulty ||--o{ M_SelectProblem : "SelectProblem"
+    M_Difficulty ||--o{ M_Basic_Info_A_Question : "problems"
+    M_Difficulty ||--o{ M_Applied_am_Question : "appliedAmQuestions"
+    M_Groups {
+        Int id
+        String hashedId
+        String groupname
+        String body
+        String invite_code
+    }
+    M_Groups ||--o{ M_Groups_User : "groups_User"
+    M_Groups ||--o{ M_Assignment : "assignment"
+    M_Groups ||--o{ M_Post : "posts"
+    M_Groups_User {
+        String user_id
+        Int group_id
+        Boolean admin_flg
+    }
+    M_Groups_User }|--|| M_User : "user"
+    M_Groups_User }|--|| M_Groups : "group"
+    M_Submission_Files_Table {
+        Int id
+        Int submissionid
+        String filename
+        String filepath
+        Int filesize
+        DateTime uploaded_at
+    }
+    M_Assignment {
+        Int id
+        Int groupid
+        String title
+        String description
+        DateTime due_date
+        DateTime created_at
+        DateTime updated_at
+        String authorId
+        Int programmingProblemId
+        Int selectProblemId
+    }
+    M_Assignment }|--o| M_User : "author"
+    M_Assignment }|--o| M_ProgrammingProblem : "programmingProblem"
+    M_Assignment }|--o| M_SelectProblem : "selectProblem"
+    M_Assignment }|--|| M_Groups : "group"
+    M_Assignment ||--o{ M_Submissions : "Submissions"
+    M_Assignment ||--o{ M_Basic_Info_A_Question : "problems"
+    M_Assignment ||--o{ M_AssignmentComment : "comments"
+    M_Assignment ||--o{ M_Applied_am_Question : "appliedAmQuestions"
+    M_Submissions {
+        Int id
+        Int assignment_id
+        String userid
+        String description
+        String status
+        Int codingid
+        DateTime submitted_at
+        String file_path
+        DateTime created_at
+        DateTime updated_at
+        String language
+    }
+    M_Submissions }|--|| M_User : "user"
+    M_Submissions }|--|| M_Assignment : "assignment"
+    M_Status_Kohaku {
+        Int id
+        String user_id
+        String name
+        String status
+        Int hungerlevel
+        DateTime hungerLastUpdatedAt
+        DateTime birthdate
+        String evolutionType
+    }
+    M_Status_Kohaku }|--|| M_User : "user"
+    M_Degree {
+        Int id
+        String degree
+    }
+    M_Title {
+        Int id
+        String name
+        String description
+        TitleType _type
+        Int requiredLevel
+        Int requiredSubjectId
+    }
+    M_Title ||--o{ M_UserUnlockedTitle : "unlockedByUsers"
+    M_Title ||--o{ M_User : "selectedByUsers"
+    M_UserUnlockedTitle {
+        String userId
+        Int titleId
+        DateTime unlockedAt
+    }
+    M_UserUnlockedTitle }|--|| M_User : "user"
+    M_UserUnlockedTitle }|--|| M_Title : "title"
+    M_Create_event {
+        Int id
+        String title
+        String description
+        String inviteCode
+        Boolean publicStatus
+        DateTime startTime
+        DateTime endTime
+        DateTime publicTime
+        DateTime createdAt
+        DateTime updatedAt
+        String creatorId
+        String theme
+        String customImagePath
+        Boolean isStarted
+        Boolean hasBeenStarted
+    }
+    M_Create_event }|--|| M_User : "creator"
+    M_Create_event ||--o{ M_Event_Participants : "participants"
+    M_Create_event ||--o{ M_Event_Issue_List : "issues"
+    M_Event_Participants {
+        Int id
+        Boolean isAdmin
+        DateTime joinedAt
+        Int eventId
+        String userId
+        Boolean hasAccepted
+        Int event_getpoint
+    }
+    M_Event_Participants }|--|| M_Create_event : "event"
+    M_Event_Participants }|--|| M_User : "user"
+    M_Event_Issue_List {
+        Int id
+        Int eventId
+        Int problemId
+    }
+    M_Event_Issue_List }|--|| M_Create_event : "event"
+    M_Event_Issue_List }|--|| M_ProgrammingProblem : "problem"
+    M_Event_Issue_List ||--o{ M_Event_Submission : "submissions"
+    M_Event_Submission {
+        Int id
+        Boolean status
+        Int score
+        String language
+        String codeLog
+        DateTime startedAt
+        DateTime submittedAt
+        Json testCaseResults
+        String userId
+        Int eventIssueId
+    }
+    M_Event_Submission }|--|| M_User : "user"
+    M_Event_Submission }|--|| M_Event_Issue_List : "eventIssue"
+    M_DailyMissionMaster {
+        Int id
+        String title
+        String description
+        DailyMissionType missionType
+        Int targetCount
+        Int xpReward
+    }
+    M_DailyMissionMaster ||--o{ M_UserDailyMissionProgress : "progressEntries"
+    M_UserDailyMissionProgress {
+        String userId
+        Int missionId
+        DateTime date
+        Int progress
+        Boolean isCompleted
+    }
+    M_UserDailyMissionProgress }|--|| M_User : "user"
+    M_UserDailyMissionProgress }|--|| M_DailyMissionMaster : "mission"
+    M_DailyActivitySummary {
+        Int id
+        String userId
+        DateTime date
+        Int totalXpGained
+        BigInt totalTimeSpentMs
+        Int problemsCompleted
+    }
+    M_DailyActivitySummary }|--|| M_User : "user"
+    M_EventDifficulty {
+        Int id
+        String difficultyName
+        Int basePoints
+        Int maxBonusPoints
+        Int maxTotalPoints
+        Int expectedTimeMinutes
+        Int bonusPointsPerMinute
+    }
+    M_EventDifficulty ||--o{ M_ProgrammingProblem : "programmingProblems"
+    M_AssignmentComment {
+        Int id
+        String content
+        DateTime createdAt
+        DateTime updatedAt
+        Int assignmentId
+        String authorId
+    }
+    M_AssignmentComment }|--|| M_Assignment : "assignment"
+    M_AssignmentComment }|--|| M_User : "author"
+    M_AuditLog {
+        Int id
+        String userId
+        String action
+        String details
+        String ipAddress
+        String userAgent
+        String deviceId
+        String path
+        String method
+        Int duration
+        Json metadata
+        DateTime createdAt
+    }
+    M_AuditLog }|--o| M_User : "user"
+    </div>
+    </body></html>

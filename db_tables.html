@@ -1,0 +1,3583 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>データベース定義書 - テーブル一覧</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #f4f6f8;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .nav {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .nav a.active {
+            color: #2c3e50;
+            pointer-events: none;
+            border-bottom: 2px solid #2c3e50;
+        }
+
+        .toc {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .toc ul {
+            column-count: 3;
+            list-style: none;
+            padding: 0;
+        }
+
+        .toc li {
+            margin-bottom: 5px;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: #3498db;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 30px;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        th,
+        td {
+            border: 1px solid #eee;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #34495e;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            .nav {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+                background: #fff;
+            }
+
+            .toc {
+                display: none;
+            }
+
+            table {
+                page-break-inside: auto;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav no-print">
+        <a href="db_er.html">ER図</a>
+        <a href="db_tables.html" class="active">テーブル一覧</a>
+    </div>
+
+    <h1>データベース定義書 - テーブル一覧</h1>
+    <div class="toc">
+        <h2>目次</h2>
+        <ul>
+            <li><a href="#User">User</a></li>
+            <li><a href="#BannedUser">BannedUser</a></li>
+            <li><a href="#LoginHistory">LoginHistory</a></li>
+            <li><a href="#Post">Post</a></li>
+            <li><a href="#UserAnswer">UserAnswer</a></li>
+            <li><a href="#Subject">Subject</a></li>
+            <li><a href="#Language">Language</a></li>
+            <li><a href="#Answer_Algorithm">Answer_Algorithm</a></li>
+            <li><a href="#Category">Category</a></li>
+            <li><a href="#Basic_Info_A_Question">Basic_Info_A_Question</a></li>
+            <li><a href="#Applied_am_Question">Applied_am_Question</a></li>
+            <li><a href="#Questions_Algorithm">Questions_Algorithm</a></li>
+            <li><a href="#Questions">Questions</a></li>
+            <li><a href="#SelectProblem">SelectProblem</a></li>
+            <li><a href="#ProgrammingProblem">ProgrammingProblem</a></li>
+            <li><a href="#SampleCase">SampleCase</a></li>
+            <li><a href="#TestCase">TestCase</a></li>
+            <li><a href="#ProblemFile">ProblemFile</a></li>
+            <li><a href="#Genre">Genre</a></li>
+            <li><a href="#Answerd_Genre_Table">Answerd_Genre_Table</a></li>
+            <li><a href="#Coding">Coding</a></li>
+            <li><a href="#Test_Case">Test_Case</a></li>
+            <li><a href="#Answers">Answers</a></li>
+            <li><a href="#UserSubjectProgress">UserSubjectProgress</a></li>
+            <li><a href="#Difficulty">Difficulty</a></li>
+            <li><a href="#Groups">Groups</a></li>
+            <li><a href="#Groups_User">Groups_User</a></li>
+            <li><a href="#Submission_Files_Table">Submission_Files_Table</a></li>
+            <li><a href="#Assignment">Assignment</a></li>
+            <li><a href="#Submissions">Submissions</a></li>
+            <li><a href="#Status_Kohaku">Status_Kohaku</a></li>
+            <li><a href="#Degree">Degree</a></li>
+            <li><a href="#Title">Title</a></li>
+            <li><a href="#UserUnlockedTitle">UserUnlockedTitle</a></li>
+            <li><a href="#Create_event">Create_event</a></li>
+            <li><a href="#Event_Participants">Event_Participants</a></li>
+            <li><a href="#Event_Issue_List">Event_Issue_List</a></li>
+            <li><a href="#Event_Submission">Event_Submission</a></li>
+            <li><a href="#DailyMissionMaster">DailyMissionMaster</a></li>
+            <li><a href="#UserDailyMissionProgress">UserDailyMissionProgress</a></li>
+            <li><a href="#DailyActivitySummary">DailyActivitySummary</a></li>
+            <li><a href="#EventDifficulty">EventDifficulty</a></li>
+            <li><a href="#AssignmentComment">AssignmentComment</a></li>
+            <li><a href="#AuditLog">AuditLog</a></li>
+        </ul>
+    </div>
+
+    <h2>テーブル詳細</h2>
+    <h3 id="User">User</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID: UUID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(uuid())</td>
+            </tr>
+            <tr>
+                <td>メールアドレス: 文字列型、ユニーク</td>
+                <td style="font-family: monospace;">email</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td>管理者フラグ: デフォルトFalse</td>
+                <td style="font-family: monospace;">isAdmin</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td>パスワード: 文字列型</td>
+                <td style="font-family: monospace;">password</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>ハッシュ値: 文字列型、Null許容</td>
+                <td style="font-family: monospace;">hash</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>ユーザー名: 文字列型、Null許容</td>
+                <td style="font-family: monospace;">username</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>年: 整数型、Null許容</td>
+                <td style="font-family: monospace;">year</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>クラス: 整数型、Null許容</td>
+                <td style="font-family: monospace;">class</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>誕生日: 日付型、Null許容</td>
+                <td style="font-family: monospace;">birth</td>
+                <td style="font-family: monospace;">DateTime?</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Date</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">resetPasswordToken</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">resetPasswordTokenExpiry</td>
+                <td style="font-family: monospace;">DateTime?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>アカウントレベル</td>
+                <td style="font-family: monospace;">level</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(1)</td>
+            </tr>
+            <tr>
+                <td>総経験値</td>
+                <td style="font-family: monospace;">xp</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td>アイコン</td>
+                <td style="font-family: monospace;">icon</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">selectedTitleId</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">selectedTitle</td>
+                <td style="font-family: monospace;">Title?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [selectedTitleId], references: [id])</td>
+            </tr>
+            <tr>
+                <td>このユーザーの科目別進捗のリスト</td>
+                <td style="font-family: monospace;">progresses</td>
+                <td style="font-family: monospace;">UserSubjectProgress[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">unlockedTitles</td>
+                <td style="font-family: monospace;">UserUnlockedTitle[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">continuouslogin</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">totallogin</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">lastlogin</td>
+                <td style="font-family: monospace;">DateTime?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>Userに対してStatus_Kohakuは1対1の関係です。</td>
+                <td style="font-family: monospace;">status_Kohaku</td>
+                <td style="font-family: monospace;">Status_Kohaku?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>利用規約への同意</td>
+                <td style="font-family: monospace;">isAgreedToTerms</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td>プライバシーポリシーへの同意</td>
+                <td style="font-family: monospace;">isAgreedToPrivacyPolicy</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answers</td>
+                <td style="font-family: monospace;">UserAnswer[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answer_Algorithm</td>
+                <td style="font-family: monospace;">Answer_Algorithm[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answerd_Genre_Table</td>
+                <td style="font-family: monospace;">Answerd_Genre_Table[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">groups_User</td>
+                <td style="font-family: monospace;">Groups_User[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">createdProblems</td>
+                <td style="font-family: monospace;">ProgrammingProblem[]</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("ProblemCreator")</td>
+            </tr>
+            <tr>
+                <td>SelectProblemとのリレーション</td>
+                <td style="font-family: monospace;">createdSelectProblems</td>
+                <td style="font-family: monospace;">SelectProblem[]</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("SelectProblemCreator")</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">createdEvents</td>
+                <td style="font-family: monospace;">Create_event[]</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("CreatedEvents")</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">posts</td>
+                <td style="font-family: monospace;">Post[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">createdAssignments</td>
+                <td style="font-family: monospace;">Assignment[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">loginHistory</td>
+                <td style="font-family: monospace;">LoginHistory[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">submissions</td>
+                <td style="font-family: monospace;">Submissions[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>このユーザーのイベント参加情報（EventParticipantとの対向リレーション）</td>
+                <td style="font-family: monospace;">eventParticipants</td>
+                <td style="font-family: monospace;">Event_Participants[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>このユーザーのイベントでの提出（EventSubmissionとの対向リレーション）</td>
+                <td style="font-family: monospace;">eventSubmissions</td>
+                <td style="font-family: monospace;">Event_Submission[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>日別アクティビティのサマリ（DailyActivitySummaryとの対向リレーション）</td>
+                <td style="font-family: monospace;">dailyActivitySummaries</td>
+                <td style="font-family: monospace;">DailyActivitySummary[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">aiAdviceCredits</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(5)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">assignmentComments</td>
+                <td style="font-family: monospace;">AssignmentComment[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">dailyMissionProgresses</td>
+                <td style="font-family: monospace;">UserDailyMissionProgress[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">auditLogs</td>
+                <td style="font-family: monospace;">AuditLog[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">createdBans</td>
+                <td style="font-family: monospace;">BannedUser[]</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("BanCreator")</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">targetedBans</td>
+                <td style="font-family: monospace;">BannedUser[]</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("BannedUserAccount")</td>
+            </tr>
+            <tr>
+                <td>セッション無効化用のバージョン</td>
+                <td style="font-family: monospace;">tokenVersion</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(1)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="BannedUser">BannedUser</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>'IP', 'COOKIE_ID'</td>
+                <td style="font-family: monospace;">targetType</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">value</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">reason</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>作成日時</td>
+                <td style="font-family: monospace;">createdAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">createdBy</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">creator</td>
+                <td style="font-family: monospace;">User?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("BanCreator", fields: [createdBy], references:
+                    [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">targetUserId</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">targetUser</td>
+                <td style="font-family: monospace;">User?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("BannedUserAccount", fields: [targetUserId],
+                    references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">expiresAt</td>
+                <td style="font-family: monospace;">DateTime?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="LoginHistory">LoginHistory</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>ユーザーID</td>
+                <td style="font-family: monospace;">userId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">loggedInAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userId], references: [id])</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Post">Post</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">content</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>作成日時</td>
+                <td style="font-family: monospace;">createdAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td>更新日時</td>
+                <td style="font-family: monospace;">updatedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@updatedAt</td>
+            </tr>
+            <tr>
+                <td>どのグループへの投稿か</td>
+                <td style="font-family: monospace;">groupId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">group</td>
+                <td style="font-family: monospace;">Groups</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [groupId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+            <tr>
+                <td>誰が投稿したか</td>
+                <td style="font-family: monospace;">authorId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">author</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [authorId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="UserAnswer">UserAnswer</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>ユーザーID</td>
+                <td style="font-family: monospace;">userId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answer</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">isCorrect</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answeredAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">programingProblem_id</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">basic_A_Info_Question_id</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">questions_id</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">selectProblem_id</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>応用情報問題のIDを保存するカラムを追加</td>
+                <td style="font-family: monospace;">applied_am_question_id</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>基本情報B問題（アルゴリズム）のIDを保存するカラムを追加</td>
+                <td style="font-family: monospace;">questions_algorithm_id</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">programmingProblem</td>
+                <td style="font-family: monospace;">ProgrammingProblem?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [programingProblem_id], references: [id])
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">basic_A_Info_Question</td>
+                <td style="font-family: monospace;">Basic_Info_A_Question?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [basic_A_Info_Question_id], references:
+                    [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">questions</td>
+                <td style="font-family: monospace;">Questions?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [questions_id], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">selectProblem</td>
+                <td style="font-family: monospace;">SelectProblem?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [selectProblem_id], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">applied_am_question</td>
+                <td style="font-family: monospace;">Applied_am_Question?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [applied_am_question_id], references: [id])
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">questions_algorithm</td>
+                <td style="font-family: monospace;">Questions_Algorithm?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [questions_algorithm_id], references: [id])
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Subject">Subject</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>名称</td>
+                <td style="font-family: monospace;">name</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td>説明/詳細</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>この科目を学習しているユーザーの進捗リスト</td>
+                <td style="font-family: monospace;">userProgresses</td>
+                <td style="font-family: monospace;">UserSubjectProgress[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Questions_Algorithm</td>
+                <td style="font-family: monospace;">Questions_Algorithm[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>SelectProblemとのリレーション</td>
+                <td style="font-family: monospace;">SelectProblem</td>
+                <td style="font-family: monospace;">SelectProblem[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">problems</td>
+                <td style="font-family: monospace;">Basic_Info_A_Question[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">appliedAmQuestions</td>
+                <td style="font-family: monospace;">Applied_am_Question[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Language">Language</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>名称</td>
+                <td style="font-family: monospace;">name</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Questions_Algorithm</td>
+                <td style="font-family: monospace;">Questions_Algorithm[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Questions</td>
+                <td style="font-family: monospace;">Questions[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Answer_Algorithm">Answer_Algorithm</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">questionId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>ユーザーID</td>
+                <td style="font-family: monospace;">userId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">symbol</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">isCorrect</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">text</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">question</td>
+                <td style="font-family: monospace;">Questions_Algorithm</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [questionId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answeredAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Category">Category</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>名称</td>
+                <td style="font-family: monospace;">name</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">problems</td>
+                <td style="font-family: monospace;">Basic_Info_A_Question[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">appliedAmQuestions</td>
+                <td style="font-family: monospace;">Applied_am_Question[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Basic_Info_A_Question">Basic_Info_A_Question</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>問題タイトル</td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>問題画像のパス（Null許容）</td>
+                <td style="font-family: monospace;">imagePath</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>問題文</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>解説</td>
+                <td style="font-family: monospace;">explanation</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answerOptions</td>
+                <td style="font-family: monospace;">Json</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">correctAnswer</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>出典の年/区分 (例: "令和5年度")</td>
+                <td style="font-family: monospace;">sourceYear</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>出典の問題番号 (例: "問1")</td>
+                <td style="font-family: monospace;">sourceNumber</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficultyId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subjectId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>課題は任意なのでオプショナル</td>
+                <td style="font-family: monospace;">assignmentId</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">categoryId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficulty</td>
+                <td style="font-family: monospace;">Difficulty</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [difficultyId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subject</td>
+                <td style="font-family: monospace;">Subject</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [subjectId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">assignment</td>
+                <td style="font-family: monospace;">Assignment?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [assignmentId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">category</td>
+                <td style="font-family: monospace;">Category</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [categoryId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">userAnswers</td>
+                <td style="font-family: monospace;">UserAnswer[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Applied_am_Question">Applied_am_Question</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>問題タイトル</td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>問題画像のパス（Null許容）</td>
+                <td style="font-family: monospace;">imagePath</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>問題文</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>解説</td>
+                <td style="font-family: monospace;">explanation</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answerOptions</td>
+                <td style="font-family: monospace;">Json</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">correctAnswer</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>出典の年/区分 (例: "令和5年度")</td>
+                <td style="font-family: monospace;">sourceYear</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>出典の問題番号 (例: "問1")</td>
+                <td style="font-family: monospace;">sourceNumber</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficultyId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subjectId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>課題は任意なのでオプショナル</td>
+                <td style="font-family: monospace;">assignmentId</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">categoryId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficulty</td>
+                <td style="font-family: monospace;">Difficulty</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [difficultyId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subject</td>
+                <td style="font-family: monospace;">Subject</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [subjectId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">assignment</td>
+                <td style="font-family: monospace;">Assignment?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [assignmentId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">category</td>
+                <td style="font-family: monospace;">Category</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [categoryId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">userAnswers</td>
+                <td style="font-family: monospace;">UserAnswer[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Questions_Algorithm">Questions_Algorithm</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>説明/詳細</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">explanation</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">programLines</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answerOptions</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">correctAnswer</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">language_id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">initialVariable</td>
+                <td style="font-family: monospace;">Json</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">logictype</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">options</td>
+                <td style="font-family: monospace;">Json</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">image</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subjectId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficultyId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>アルゴリズムと情報セキュリティの区別用</td>
+                <td style="font-family: monospace;">problemType</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("algorithm")</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answers</td>
+                <td style="font-family: monospace;">Answer_Algorithm[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subject</td>
+                <td style="font-family: monospace;">Subject</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [subjectId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficulty</td>
+                <td style="font-family: monospace;">Difficulty</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [difficultyId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">language</td>
+                <td style="font-family: monospace;">Language</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [language_id], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">userAnswers</td>
+                <td style="font-family: monospace;">UserAnswer[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Questions">Questions</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">language_id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">genre_id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">genreid</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">question</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answerid</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">term</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">year</td>
+                <td style="font-family: monospace;">DateTime?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">explain</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">image</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficultyId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">genre</td>
+                <td style="font-family: monospace;">Genre</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [genre_id], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficulty</td>
+                <td style="font-family: monospace;">Difficulty</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [difficultyId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">language</td>
+                <td style="font-family: monospace;">Language</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [language_id], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">userAnswers</td>
+                <td style="font-family: monospace;">UserAnswer[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Answers</td>
+                <td style="font-family: monospace;">Answers[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="SelectProblem">SelectProblem</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>問題タイトル</td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>問題文 (Markdown)</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>解説文</td>
+                <td style="font-family: monospace;">explanation</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>選択肢 (例: ["選択肢A", "選択肢B", ...])</td>
+                <td style="font-family: monospace;">answerOptions</td>
+                <td style="font-family: monospace;">Json</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>正解のテキスト</td>
+                <td style="font-family: monospace;">correctAnswer</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>公開フラグ</td>
+                <td style="font-family: monospace;">isPublic</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficultyId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficulty</td>
+                <td style="font-family: monospace;">Difficulty</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [difficultyId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subjectId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subject</td>
+                <td style="font-family: monospace;">Subject</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [subjectId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">createdBy</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">creator</td>
+                <td style="font-family: monospace;">User?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("SelectProblemCreator", fields: [createdBy],
+                    references: [id])</td>
+            </tr>
+            <tr>
+                <td>課題との関連 (オプショナル)</td>
+                <td style="font-family: monospace;">assignment</td>
+                <td style="font-family: monospace;">Assignment?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>作成日時</td>
+                <td style="font-family: monospace;">createdAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td>更新日時</td>
+                <td style="font-family: monospace;">updatedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@updatedAt</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">userAnswers</td>
+                <td style="font-family: monospace;">UserAnswer[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="ProgrammingProblem">ProgrammingProblem</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>タイトル</td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>問題タイプ</td>
+                <td style="font-family: monospace;">problemType</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("コーディング問題")</td>
+            </tr>
+            <tr>
+                <td>難易度 (1-10)</td>
+                <td style="font-family: monospace;">difficulty</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(4)</td>
+            </tr>
+            <tr>
+                <td>制限時間 (分)</td>
+                <td style="font-family: monospace;">timeLimit</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(10)</td>
+            </tr>
+            <tr>
+                <td>カテゴリ</td>
+                <td style="font-family: monospace;">category</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("プログラミング基礎")</td>
+            </tr>
+            <tr>
+                <td>トピック</td>
+                <td style="font-family: monospace;">topic</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("標準入力")</td>
+            </tr>
+            <tr>
+                <td>タグ (JSON文字列)</td>
+                <td style="font-family: monospace;">tags</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("[]")</td>
+            </tr>
+            <tr>
+                <td>問題文</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>コードテンプレート</td>
+                <td style="font-family: monospace;">codeTemplate</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("") @db.Text</td>
+            </tr>
+            <tr>
+                <td>公開フラグ</td>
+                <td style="font-family: monospace;">isPublic</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td>テストケース表示許可</td>
+                <td style="font-family: monospace;">allowTestCaseView</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td>下書きフラグ</td>
+                <td style="font-family: monospace;">isDraft</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(true)</td>
+            </tr>
+            <tr>
+                <td>公開済みフラグ</td>
+                <td style="font-family: monospace;">isPublished</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td>作成者ID</td>
+                <td style="font-family: monospace;">createdBy</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">creator</td>
+                <td style="font-family: monospace;">User?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("ProblemCreator", fields: [createdBy], references:
+                    [id])</td>
+            </tr>
+            <tr>
+                <td>作成日時</td>
+                <td style="font-family: monospace;">createdAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td>更新日時</td>
+                <td style="font-family: monospace;">updatedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@updatedAt</td>
+            </tr>
+            <tr>
+                <td>サンプルケース</td>
+                <td style="font-family: monospace;">sampleCases</td>
+                <td style="font-family: monospace;">SampleCase[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>テストケース</td>
+                <td style="font-family: monospace;">testCases</td>
+                <td style="font-family: monospace;">TestCase[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>添付ファイル</td>
+                <td style="font-family: monospace;">files</td>
+                <td style="font-family: monospace;">ProblemFile[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>イベントで出題される問題とのリレーション（EventIssueモデルの対向フィールド）</td>
+                <td style="font-family: monospace;">eventIssues</td>
+                <td style="font-family: monospace;">Event_Issue_List[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>課題との関連 (オプショナル)</td>
+                <td style="font-family: monospace;">assignment</td>
+                <td style="font-family: monospace;">Assignment?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">userAnswers</td>
+                <td style="font-family: monospace;">UserAnswer[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">eventDifficultyId</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">eventDifficulty</td>
+                <td style="font-family: monospace;">EventDifficulty?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [eventDifficultyId], references: [id])</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="SampleCase">SampleCase</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>問題ID</td>
+                <td style="font-family: monospace;">problemId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>入力</td>
+                <td style="font-family: monospace;">input</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>期待される出力</td>
+                <td style="font-family: monospace;">expectedOutput</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>説明</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("") @db.Text</td>
+            </tr>
+            <tr>
+                <td>表示順序</td>
+                <td style="font-family: monospace;">order</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">problem</td>
+                <td style="font-family: monospace;">ProgrammingProblem</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [problemId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="TestCase">TestCase</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>問題ID</td>
+                <td style="font-family: monospace;">problemId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>テストケース名</td>
+                <td style="font-family: monospace;">name</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("ケース1")</td>
+            </tr>
+            <tr>
+                <td>入力</td>
+                <td style="font-family: monospace;">input</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>期待される出力</td>
+                <td style="font-family: monospace;">expectedOutput</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>説明</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("") @db.Text</td>
+            </tr>
+            <tr>
+                <td>表示順序</td>
+                <td style="font-family: monospace;">order</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">problem</td>
+                <td style="font-family: monospace;">ProgrammingProblem</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [problemId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="ProblemFile">ProblemFile</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>問題ID</td>
+                <td style="font-family: monospace;">problemId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>ファイル名</td>
+                <td style="font-family: monospace;">fileName</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>元のファイル名</td>
+                <td style="font-family: monospace;">originalName</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>ファイルパス</td>
+                <td style="font-family: monospace;">filePath</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>ファイルサイズ (bytes)</td>
+                <td style="font-family: monospace;">fileSize</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>MIMEタイプ</td>
+                <td style="font-family: monospace;">mimeType</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>アップロード日時</td>
+                <td style="font-family: monospace;">uploadedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">problem</td>
+                <td style="font-family: monospace;">ProgrammingProblem</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [problemId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Genre">Genre</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">genre</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Questions</td>
+                <td style="font-family: monospace;">Questions[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Answerd_Genre_Table">Answerd_Genre_Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user_id</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Answer_IT</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Answer_Basic_A</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Answer_Basic_B</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Answer_Applied_Am</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Answer_Applied_Pm</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Answer_Info_Test</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Answer_Python</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Answer_Java</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [user_id], references: [id])</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Coding">Coding</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">question</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answer</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">sample_case</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">testcase_id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">image</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">explain</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">difficulty</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>イベントのXPでヌル許容対応のため</td>
+                <td style="font-family: monospace;">xpid</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Test_Case">Test_Case</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">testcase</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Answers">Answers</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">question_id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">answer</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">isCorrect</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">question</td>
+                <td style="font-family: monospace;">Questions</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [question_id], references: [id])</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="UserSubjectProgress">UserSubjectProgress</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>科目ごとのレベル</td>
+                <td style="font-family: monospace;">level</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(1)</td>
+            </tr>
+            <tr>
+                <td>科目ごとの経験値</td>
+                <td style="font-family: monospace;">xp</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user_id</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subject_id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [user_id], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">subject</td>
+                <td style="font-family: monospace;">Subject</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [subject_id], references: [id])</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Difficulty">Difficulty</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>難易度名 (例: "Easy", "Normal", "Hard")</td>
+                <td style="font-family: monospace;">name</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td>この難易度で得られる経験値</td>
+                <td style="font-family: monospace;">xp</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>この難易度で得られるコハクの満腹度回復量</td>
+                <td style="font-family: monospace;">feed</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Questions_Algorithm</td>
+                <td style="font-family: monospace;">Questions_Algorithm[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Questions</td>
+                <td style="font-family: monospace;">Questions[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">SelectProblem</td>
+                <td style="font-family: monospace;">SelectProblem[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">problems</td>
+                <td style="font-family: monospace;">Basic_Info_A_Question[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">appliedAmQuestions</td>
+                <td style="font-family: monospace;">Applied_am_Question[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Groups">Groups</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">hashedId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique @default(cuid())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">groupname</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">body</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">groups_User</td>
+                <td style="font-family: monospace;">Groups_User[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">assignment</td>
+                <td style="font-family: monospace;">Assignment[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">posts</td>
+                <td style="font-family: monospace;">Post[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">invite_code</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Groups_User">Groups_User</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user_id</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">group_id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">admin_flg</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [user_id], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">group</td>
+                <td style="font-family: monospace;">Groups</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [group_id], references: [id])</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Submission_Files_Table">Submission_Files_Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">submissionid</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">filename</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">filepath</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">filesize</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">uploaded_at</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Assignment">Assignment</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">groupid</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>説明/詳細</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">due_date</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">created_at</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">updated_at</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@updatedAt</td>
+            </tr>
+            <tr>
+                <td>課題作成者のID</td>
+                <td style="font-family: monospace;">authorId</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">author</td>
+                <td style="font-family: monospace;">User?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [authorId], references: [id])</td>
+            </tr>
+            <tr>
+                <td>プログラミング問題との関連付け (オプショナル)</td>
+                <td style="font-family: monospace;">programmingProblemId</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">programmingProblem</td>
+                <td style="font-family: monospace;">ProgrammingProblem?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [programmingProblemId], references: [id])
+                </td>
+            </tr>
+            <tr>
+                <td>選択問題との関連付け (オプショナル)</td>
+                <td style="font-family: monospace;">selectProblemId</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">selectProblem</td>
+                <td style="font-family: monospace;">SelectProblem?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [selectProblemId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">group</td>
+                <td style="font-family: monospace;">Groups</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [groupid], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">Submissions</td>
+                <td style="font-family: monospace;">Submissions[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">problems</td>
+                <td style="font-family: monospace;">Basic_Info_A_Question[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">comments</td>
+                <td style="font-family: monospace;">AssignmentComment[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">appliedAmQuestions</td>
+                <td style="font-family: monospace;">Applied_am_Question[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Submissions">Submissions</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">assignment_id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">userid</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>説明/詳細</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">status</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userid], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">codingid</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">submitted_at</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">file_path</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">created_at</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">updated_at</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@updatedAt</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">assignment</td>
+                <td style="font-family: monospace;">Assignment</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [assignment_id], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">language</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Status_Kohaku">Status_Kohaku</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user_id</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td>名称</td>
+                <td style="font-family: monospace;">name</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("コハク")</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">status</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>満腹度の初期値</td>
+                <td style="font-family: monospace;">hungerlevel</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(1000)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">hungerLastUpdatedAt</td>
+                <td style="font-family: monospace;">DateTime?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>誕生日</td>
+                <td style="font-family: monospace;">birthdate</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Date</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [user_id], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">evolutionType</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Degree">Degree</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">degree</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Title">Title</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>名称</td>
+                <td style="font-family: monospace;">name</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td>説明/詳細</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>'USER_LEVEL' or 'SUBJECT_LEVEL'</td>
+                <td style="font-family: monospace;">type</td>
+                <td style="font-family: monospace;">TitleType</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>必要レベル</td>
+                <td style="font-family: monospace;">requiredLevel</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>SUBJECT_LEVELの場合のみ</td>
+                <td style="font-family: monospace;">requiredSubjectId</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">unlockedByUsers</td>
+                <td style="font-family: monospace;">UserUnlockedTitle[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">selectedByUsers</td>
+                <td style="font-family: monospace;">User[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="UserUnlockedTitle">UserUnlockedTitle</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ユーザーID</td>
+                <td style="font-family: monospace;">userId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">titleId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">unlockedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">Title</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [titleId], references: [id])</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Create_event">Create_event</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>説明/詳細</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>招待コード</td>
+                <td style="font-family: monospace;">inviteCode</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">publicStatus</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(true)</td>
+            </tr>
+            <tr>
+                <td>開始日時</td>
+                <td style="font-family: monospace;">startTime</td>
+                <td style="font-family: monospace;">DateTime?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>終了日時</td>
+                <td style="font-family: monospace;">endTime</td>
+                <td style="font-family: monospace;">DateTime?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>公開日時</td>
+                <td style="font-family: monospace;">publicTime</td>
+                <td style="font-family: monospace;">DateTime?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>作成日時</td>
+                <td style="font-family: monospace;">createdAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td>更新日時</td>
+                <td style="font-family: monospace;">updatedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@updatedAt</td>
+            </tr>
+            <tr>
+                <td>作成者ID</td>
+                <td style="font-family: monospace;">creatorId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">creator</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation("CreatedEvents", fields: [creatorId], references:
+                    [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">participants</td>
+                <td style="font-family: monospace;">Event_Participants[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">issues</td>
+                <td style="font-family: monospace;">Event_Issue_List[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>Background theme key</td>
+                <td style="font-family: monospace;">theme</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("default")</td>
+            </tr>
+            <tr>
+                <td>Path to custom uploaded background image</td>
+                <td style="font-family: monospace;">customImagePath</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>イベント開始済みフラグ</td>
+                <td style="font-family: monospace;">isStarted</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">hasBeenStarted</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Event_Participants">Event_Participants</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">isAdmin</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">joinedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td>イベントID</td>
+                <td style="font-family: monospace;">eventId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">event</td>
+                <td style="font-family: monospace;">Create_event</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [eventId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+            <tr>
+                <td>ユーザーID</td>
+                <td style="font-family: monospace;">userId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">hasAccepted</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">event_getpoint</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Event_Issue_List">Event_Issue_List</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>イベントID</td>
+                <td style="font-family: monospace;">eventId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">event</td>
+                <td style="font-family: monospace;">Create_event</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [eventId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+            <tr>
+                <td>問題ID</td>
+                <td style="font-family: monospace;">problemId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">problem</td>
+                <td style="font-family: monospace;">ProgrammingProblem</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [problemId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">submissions</td>
+                <td style="font-family: monospace;">Event_Submission[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="Event_Submission">Event_Submission</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">status</td>
+                <td style="font-family: monospace;">Boolean?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">score</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">language</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@default("python")</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">codeLog</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">startedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">submittedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">testCaseResults</td>
+                <td style="font-family: monospace;">Json?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>ユーザーID</td>
+                <td style="font-family: monospace;">userId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">eventIssueId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">eventIssue</td>
+                <td style="font-family: monospace;">Event_Issue_List</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [eventIssueId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="DailyMissionMaster">DailyMissionMaster</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>例: "ログインしよう！"</td>
+                <td style="font-family: monospace;">title</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>例: "毎日1回のログインで達成"</td>
+                <td style="font-family: monospace;">description</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>ミッションタイプ</td>
+                <td style="font-family: monospace;">missionType</td>
+                <td style="font-family: monospace;">DailyMissionType</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>目標回数/数値</td>
+                <td style="font-family: monospace;">targetCount</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(1)</td>
+            </tr>
+            <tr>
+                <td>報酬XP</td>
+                <td style="font-family: monospace;">xpReward</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">progressEntries</td>
+                <td style="font-family: monospace;">UserDailyMissionProgress[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="UserDailyMissionProgress">UserDailyMissionProgress</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ユーザーID</td>
+                <td style="font-family: monospace;">userId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">missionId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">mission</td>
+                <td style="font-family: monospace;">DailyMissionMaster</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [missionId], references: [id])</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">date</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Date</td>
+            </tr>
+            <tr>
+                <td>現在の進捗</td>
+                <td style="font-family: monospace;">progress</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td>達成済みフラグ</td>
+                <td style="font-family: monospace;">isCompleted</td>
+                <td style="font-family: monospace;">Boolean</td>
+                <td style="font-size: 0.9em; color: #666;">@default(false)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="DailyActivitySummary">DailyActivitySummary</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>ユーザーID</td>
+                <td style="font-family: monospace;">userId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>重要な点: 時間を含まない「日付」のみを保存</td>
+                <td style="font-family: monospace;">date</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Date</td>
+            </tr>
+            <tr>
+                <td>その日に獲得した総XP</td>
+                <td style="font-family: monospace;">totalXpGained</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td>その日に学習した総時間 (ミリ秒)</td>
+                <td style="font-family: monospace;">totalTimeSpentMs</td>
+                <td style="font-family: monospace;">BigInt</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td>その日に完了した問題数</td>
+                <td style="font-family: monospace;">problemsCompleted</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@default(0)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="EventDifficulty">EventDifficulty</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>難易度名</td>
+                <td style="font-family: monospace;">difficultyName</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@unique</td>
+            </tr>
+            <tr>
+                <td>基本ポイント</td>
+                <td style="font-family: monospace;">basePoints</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>最大ボーナスポイント</td>
+                <td style="font-family: monospace;">maxBonusPoints</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">maxTotalPoints</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>想定所要時間(分)</td>
+                <td style="font-family: monospace;">expectedTimeMinutes</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">bonusPointsPerMinute</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">programmingProblems</td>
+                <td style="font-family: monospace;">ProgrammingProblem[]</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="AssignmentComment">AssignmentComment</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">content</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td>作成日時</td>
+                <td style="font-family: monospace;">createdAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td>更新日時</td>
+                <td style="font-family: monospace;">updatedAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@updatedAt</td>
+            </tr>
+            <tr>
+                <td>課題ID</td>
+                <td style="font-family: monospace;">assignmentId</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">assignment</td>
+                <td style="font-family: monospace;">Assignment</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [assignmentId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+            <tr>
+                <td>作成者ID</td>
+                <td style="font-family: monospace;">authorId</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">author</td>
+                <td style="font-family: monospace;">User</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [authorId], references: [id], onDelete:
+                    Cascade)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3 id="AuditLog">AuditLog</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">論理名(説明)</th>
+                <th style="width: 20%;">物理名</th>
+                <th style="width: 15%;">型</th>
+                <th style="width: 40%;">属性・制約</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ID</td>
+                <td style="font-family: monospace;">id</td>
+                <td style="font-family: monospace;">Int</td>
+                <td style="font-size: 0.9em; color: #666;">@id @default(autoincrement())</td>
+            </tr>
+            <tr>
+                <td>ユーザーID</td>
+                <td style="font-family: monospace;">userId</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>"LOGIN", "EXECUTE_CODE", "POST_CREATE", "PAGE_VIEW" etc.</td>
+                <td style="font-family: monospace;">action</td>
+                <td style="font-family: monospace;">String</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>JSON string or details (Legacy / Simple)</td>
+                <td style="font-family: monospace;">details</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;">@db.Text</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">ipAddress</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>Browser/OS info</td>
+                <td style="font-family: monospace;">userAgent</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>New field for Cookie ID</td>
+                <td style="font-family: monospace;">deviceId</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>Requested URL path</td>
+                <td style="font-family: monospace;">path</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>HTTP Method (GET, POST etc.)</td>
+                <td style="font-family: monospace;">method</td>
+                <td style="font-family: monospace;">String?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>Duration in ms</td>
+                <td style="font-family: monospace;">duration</td>
+                <td style="font-family: monospace;">Int?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>Structured data for easier querying</td>
+                <td style="font-family: monospace;">metadata</td>
+                <td style="font-family: monospace;">Json?</td>
+                <td style="font-size: 0.9em; color: #666;"></td>
+            </tr>
+            <tr>
+                <td>作成日時</td>
+                <td style="font-family: monospace;">createdAt</td>
+                <td style="font-family: monospace;">DateTime</td>
+                <td style="font-size: 0.9em; color: #666;">@default(now())</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td style="font-family: monospace;">user</td>
+                <td style="font-family: monospace;">User?</td>
+                <td style="font-size: 0.9em; color: #666;">@relation(fields: [userId], references: [id])</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+
+</html>
